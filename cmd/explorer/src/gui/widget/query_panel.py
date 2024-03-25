@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from typing import TYPE_CHECKING, cast
 
 from rich.markdown import Markdown
@@ -200,12 +201,10 @@ class QuerySetting(TuiWidget):
             )
 
             item = "ASC" if query.sort_order.value == 0 else "DESC"
-            self.query_one(
-                f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
-            ).index = self.query_one(
-                f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
-            ).choices.index(
-                item
+            self.query_one(f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices).index = (
+                self.query_one(
+                    f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
+                ).choices.index(item)
             )
 
     def hide(self) -> None:

@@ -16,8 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
+import pytest
 import pytz
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
@@ -61,7 +63,9 @@ web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-def deploy_bond_token_contract(address, private_key, personal_info_contract_address):
+async def deploy_bond_token_contract(
+    address, private_key, personal_info_contract_address
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -76,17 +80,19 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
         "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
-    contract_address, _, _ = bond_contrat.create(arguments, address, private_key)
+    contract_address, _, _ = await bond_contrat.create(arguments, address, private_key)
 
     data = IbetStraightBondUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
     data.face_value_currency = "JPY"
-    bond_contrat.update(data, address, private_key)
+    await bond_contrat.update(data, address, private_key)
 
     return contract_address
 
 
-def deploy_share_token_contract(address, private_key, personal_info_contract_address):
+async def deploy_share_token_contract(
+    address, private_key, personal_info_contract_address
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -99,11 +105,13 @@ def deploy_share_token_contract(address, private_key, personal_info_contract_add
         200,
     ]
     share_contract = IbetShareContract()
-    contract_address, _, _ = share_contract.create(arguments, address, private_key)
+    contract_address, _, _ = await share_contract.create(
+        arguments, address, private_key
+    )
 
     data = IbetShareUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
-    share_contract.update(data, address, private_key)
+    await share_contract.update(data, address, private_key)
 
     return contract_address
 
@@ -115,11 +123,15 @@ def deploy_personal_info_contract(address, private_key):
     return contract_address
 
 
-def set_personal_info_contract(db, contract_address, issuer_address, sender_list):
+async def set_personal_info_contract(
+    db, contract_address, issuer_account: Account, sender_list
+):
     contract = ContractUtils.get_contract("PersonalInfo", contract_address)
 
     for sender in sender_list:
-        tx = contract.functions.register(issuer_address, "").build_transaction(
+        tx = contract.functions.register(
+            issuer_account.issuer_address, ""
+        ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(sender["address"]),
                 "chainId": CHAIN_ID,
@@ -130,8 +142,8 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
         )
         ContractUtils.send_transaction(tx, sender["private_key"])
 
-        personal_info = PersonalInfoContract(db, issuer_address, contract_address)
-        personal_info.modify_info(sender["address"], sender["data"])
+        personal_info = PersonalInfoContract(issuer_account, contract_address)
+        await personal_info.modify_info(sender["address"], sender["data"])
 
 
 class TestCreateLedger:
@@ -141,7 +153,8 @@ class TestCreateLedger:
 
     # <Normal_1>
     # Share Token
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db, async_db):
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -174,10 +187,10 @@ class TestCreateLedger:
         personal_info_contract_address = deploy_personal_info_contract(
             issuer_address, issuer_private_key
         )
-        set_personal_info_contract(
+        await set_personal_info_contract(
             db,
             personal_info_contract_address,
-            issuer_address,
+            _account,
             [
                 {
                     "address": user_address_1,
@@ -197,7 +210,7 @@ class TestCreateLedger:
                 },
             ],
         )
-        token_address_1 = deploy_share_token_contract(
+        token_address_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract_address
         )
         _token_1 = Token()
@@ -432,8 +445,12 @@ class TestCreateLedger:
         _details_2_data_2.acquisition_date = "2022/12/03"
         db.add(_details_2_data_2)
 
+        db.commit()
+
         # Execute
-        ledger_utils.create_ledger(token_address_1, db)
+        await ledger_utils.create_ledger(token_address_1, async_db)
+        await async_db.commit()
+        await async_db.close()
 
         # assertion
         _notifications = db.scalars(select(Notification)).all()
@@ -605,10 +622,12 @@ class TestCreateLedger:
                 },
             ],
         }
+        db.close()
 
     # <Normal_2>
     # Bond Token
-    def test_normal_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, db, async_db):
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -641,10 +660,10 @@ class TestCreateLedger:
         personal_info_contract_address = deploy_personal_info_contract(
             issuer_address, issuer_private_key
         )
-        set_personal_info_contract(
+        await set_personal_info_contract(
             db,
             personal_info_contract_address,
-            issuer_address,
+            _account,
             [
                 {
                     "address": user_address_1,
@@ -664,7 +683,7 @@ class TestCreateLedger:
                 },
             ],
         )
-        token_address_1 = deploy_bond_token_contract(
+        token_address_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract_address
         )
         _token_1 = Token()
@@ -901,8 +920,12 @@ class TestCreateLedger:
         _details_2_data_2.acquisition_date = "2022/12/03"
         db.add(_details_2_data_2)
 
+        db.commit()
+
         # Execute
-        ledger_utils.create_ledger(token_address_1, db)
+        await ledger_utils.create_ledger(token_address_1, async_db)
+        await async_db.commit()
+        await async_db.close()
 
         # assertion
         _notifications = db.scalars(select(Notification)).all()
@@ -1073,10 +1096,12 @@ class TestCreateLedger:
                 },
             ],
         }
+        db.close()
 
     # <Normal_3>
     # SKIP: Not Exist Template
-    def test_normal_3(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, db, async_db):
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1085,7 +1110,7 @@ class TestCreateLedger:
 
         # prepare data
         # Token
-        token_address_1 = deploy_bond_token_contract(
+        token_address_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, ZERO_ADDRESS
         )
         _token_1 = Token()
@@ -1096,19 +1121,24 @@ class TestCreateLedger:
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
+        db.commit()
 
         # Execute
-        ledger_utils.create_ledger(token_address_1, db)
+        await ledger_utils.create_ledger(token_address_1, async_db)
+        await async_db.commit()
+        await async_db.close()
 
         # assertion
         _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 0
         _ledger = db.scalars(select(Ledger).limit(1)).first()
         assert _ledger is None
+        db.close()
 
     # <Normal_4>
     # SKIP: Other Token Type
-    def test_normal_4(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, db, async_db):
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1117,7 +1147,7 @@ class TestCreateLedger:
 
         # prepare data
         # Token
-        token_address_1 = deploy_bond_token_contract(
+        token_address_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, ZERO_ADDRESS
         )
         _token_1 = Token()
@@ -1129,14 +1159,19 @@ class TestCreateLedger:
         _token_1.version = TokenVersion.V_22_12
         db.add(_token_1)
 
+        db.commit()
+
         # Execute
-        ledger_utils.create_ledger(token_address_1, db)
+        await ledger_utils.create_ledger(token_address_1, async_db)
+        await async_db.commit()
+        await async_db.close()
 
         # assertion
         _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 0
         _ledger = db.scalars(select(Ledger).limit(1)).first()
         assert _ledger is None
+        db.close()
 
     ###########################################################################
     # Error Case

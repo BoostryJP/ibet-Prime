@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 
 from app.model.db import IDXPersonalInfo
@@ -72,6 +73,8 @@ class TestAppRoutersTokenHoldersPersonalInfoGET:
             "tax_category": 10,
         }
         db.add(personal_info_idx)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -157,6 +160,8 @@ class TestAppRoutersTokenHoldersPersonalInfoGET:
             "tax_category": 10,
         }
         db.add(personal_info_idx)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -273,6 +278,8 @@ class TestAppRoutersTokenHoldersPersonalInfoGET:
         }
         db.add(personal_info_idx)
 
+        db.commit()
+
         # request target API
         req_param = {"limit": 2, "offset": 1}
         resp = client.get(
@@ -377,6 +384,8 @@ class TestAppRoutersTokenHoldersPersonalInfoGET:
         }
         personal_info_idx.created = "2023-10-23 00:00:02"
         db.add(personal_info_idx)
+
+        db.commit()
 
         # request target API
         req_param = {"sort_order": 1}

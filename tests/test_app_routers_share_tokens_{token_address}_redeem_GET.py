@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from pytz import timezone
@@ -87,6 +88,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.block_timestamp = self.test_block_timestamp[0]
         db.add(_record)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
 
@@ -140,6 +143,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -219,6 +224,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -305,6 +312,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -358,6 +367,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.token_status = 0
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -413,11 +424,11 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"ge": 0},
-                    "input": "-1",
+                    "ctx": {"expected": "0 or 1"},
+                    "input": -1,
                     "loc": ["query", "sort_order"],
-                    "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "msg": "Input should be 0 or 1",
+                    "type": "enum",
                 }
             ],
         }
@@ -437,11 +448,11 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"le": 1},
-                    "input": "2",
+                    "ctx": {"expected": "0 or 1"},
+                    "input": 2,
                     "loc": ["query", "sort_order"],
-                    "msg": "Input should be less than or equal to 1",
-                    "type": "less_than_equal",
+                    "msg": "Input should be 0 or 1",
+                    "type": "enum",
                 }
             ],
         }

@@ -16,7 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
+from datetime import datetime, timedelta
 from unittest import mock
 from unittest.mock import patch
 
@@ -24,6 +26,7 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, select
 from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.exceptions import ServiceUnavailableError
@@ -32,6 +35,7 @@ from app.model.blockchain.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
 )
 from app.model.db import (
+    Account,
     IDXLock,
     IDXLockedPosition,
     IDXPosition,
@@ -40,13 +44,15 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenCache,
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.contract_utils import AsyncContractUtils, ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
+from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_position_share import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
+from config import CHAIN_ID, TOKEN_CACHE_TTL, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetExchangeContractTestUtils,
@@ -80,7 +86,7 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-def deploy_share_token_contract(
+async def deploy_share_token_contract(
     address,
     private_key,
     personal_info_contract_address,
@@ -99,8 +105,8 @@ def deploy_share_token_contract(
         30,
     ]
     share_contract = IbetShareContract()
-    token_address, _, _ = share_contract.create(arguments, address, private_key)
-    share_contract.update(
+    token_address, _, _ = await share_contract.create(arguments, address, private_key)
+    await share_contract.update(
         data=IbetShareUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
@@ -123,11 +129,19 @@ class TestProcessor:
     # Single Token
     # No event logs
     # not issue token
-    def test_normal_1_1(
+    @pytest.mark.asyncio
+    async def test_normal_1_1(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token(bond token)
         token_1 = Token()
@@ -154,7 +168,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -169,7 +183,8 @@ class TestProcessor:
     # Single Token
     # No event logs
     # issued token
-    def test_normal_1_2(
+    @pytest.mark.asyncio
+    async def test_normal_1_2(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -178,8 +193,15 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -222,7 +244,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -248,7 +270,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Issue
-    def test_normal_2_1(
+    @pytest.mark.asyncio
+    async def test_normal_2_1(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -259,8 +282,15 @@ class TestProcessor:
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -311,7 +341,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -348,7 +378,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Transfer(to account)
-    def test_normal_2_2_1(
+    @pytest.mark.asyncio
+    async def test_normal_2_2_1(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -359,8 +390,15 @@ class TestProcessor:
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -411,7 +449,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -448,7 +486,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Transfer(to DEX)
-    def test_normal_2_2_2(
+    @pytest.mark.asyncio
+    async def test_normal_2_2_2(
         self,
         processor: Processor,
         db: Session,
@@ -461,8 +500,15 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -516,7 +562,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -542,7 +588,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Transfer(HolderChanged in DEX)
-    def test_normal_2_2_3(
+    @pytest.mark.asyncio
+    async def test_normal_2_2_3(
         self,
         processor: Processor,
         db: Session,
@@ -557,8 +604,15 @@ class TestProcessor:
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -611,7 +665,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
         _position_list = db.scalars(select(IDXPosition)).all()
         assert len(_position_list) == 1
         _position = db.scalars(
@@ -653,7 +707,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -694,7 +748,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Lock
-    def test_normal_2_3(
+    @pytest.mark.asyncio
+    async def test_normal_2_3(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -703,8 +758,15 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -755,7 +817,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -829,7 +891,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Unlock
-    def test_normal_2_4(
+    @pytest.mark.asyncio
+    async def test_normal_2_4(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -838,8 +901,15 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -889,7 +959,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         _position_list = db.scalars(select(IDXPosition)).all()
         assert len(_position_list) == 1
@@ -921,7 +991,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -1027,7 +1097,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Redeem
-    def test_normal_2_5(
+    @pytest.mark.asyncio
+    async def test_normal_2_5(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -1036,8 +1107,15 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -1088,7 +1166,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -1114,7 +1192,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - ApplyForTransfer
-    def test_normal_2_6(
+    @pytest.mark.asyncio
+    async def test_normal_2_6(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -1128,8 +1207,15 @@ class TestProcessor:
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1189,7 +1275,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -1215,7 +1301,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - CancelTransfer
-    def test_normal_2_7(
+    @pytest.mark.asyncio
+    async def test_normal_2_7(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -1229,8 +1316,15 @@ class TestProcessor:
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1289,7 +1383,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
         _position_list = db.scalars(select(IDXPosition)).all()
         assert len(_position_list) == 1
         _position = db.scalars(
@@ -1317,7 +1411,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -1347,7 +1441,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - ApproveTransfer
-    def test_normal_2_8(
+    @pytest.mark.asyncio
+    async def test_normal_2_8(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -1361,8 +1456,15 @@ class TestProcessor:
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1421,7 +1523,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
         _position_list = db.scalars(select(IDXPosition)).all()
         assert len(_position_list) == 1
         _position = db.scalars(
@@ -1449,7 +1551,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -1490,7 +1592,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetExchange: NewOrder
-    def test_normal_2_9_1(
+    @pytest.mark.asyncio
+    async def test_normal_2_9_1(
         self,
         processor: Processor,
         db: Session,
@@ -1503,8 +1606,15 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1557,7 +1667,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
         _position_list = db.scalars(select(IDXPosition)).all()
         assert len(_position_list) == 1
         _position = db.scalars(
@@ -1587,7 +1697,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -1617,7 +1727,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetExchange: CancelOrder
-    def test_normal_2_9_2(
+    @pytest.mark.asyncio
+    async def test_normal_2_9_2(
         self,
         processor: Processor,
         db: Session,
@@ -1641,8 +1752,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1662,7 +1780,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -1718,7 +1836,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -1766,7 +1884,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetExchange: ForceCancelOrder
-    def test_normal_2_9_3(
+    @pytest.mark.asyncio
+    async def test_normal_2_9_3(
         self,
         processor: Processor,
         db: Session,
@@ -1790,8 +1909,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1811,7 +1937,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -1870,7 +1996,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -1918,7 +2044,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetExchange: Agree
-    def test_normal_2_9_4(
+    @pytest.mark.asyncio
+    async def test_normal_2_9_4(
         self,
         processor: Processor,
         db: Session,
@@ -1942,8 +2069,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1963,7 +2097,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2022,7 +2156,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -2070,7 +2204,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetExchange: SettlementOK
-    def test_normal_2_9_5(
+    @pytest.mark.asyncio
+    async def test_normal_2_9_5(
         self,
         processor: Processor,
         db: Session,
@@ -2094,8 +2229,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2115,7 +2257,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2183,7 +2325,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -2231,7 +2373,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetExchange: SettlementNG
-    def test_normal_2_9_6(
+    @pytest.mark.asyncio
+    async def test_normal_2_9_6(
         self,
         processor: Processor,
         db: Session,
@@ -2255,8 +2398,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2276,7 +2426,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2344,7 +2494,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -2392,7 +2542,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetSecurityTokenEscrow: EscrowCreated
-    def test_normal_2_10_1(
+    @pytest.mark.asyncio
+    async def test_normal_2_10_1(
         self,
         processor: Processor,
         db: Session,
@@ -2407,8 +2558,15 @@ class TestProcessor:
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2461,7 +2619,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
         _position_list = db.scalars(select(IDXPosition)).all()
         assert len(_position_list) == 1
         _position = db.scalars(
@@ -2491,7 +2649,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -2521,7 +2679,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetSecurityTokenEscrow: EscrowCanceled
-    def test_normal_2_10_2(
+    @pytest.mark.asyncio
+    async def test_normal_2_10_2(
         self,
         processor: Processor,
         db: Session,
@@ -2545,8 +2704,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2566,7 +2732,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2623,7 +2789,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -2671,7 +2837,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - IbetSecurityTokenEscrow: EscrowFinished
-    def test_normal_2_10_3(
+    @pytest.mark.asyncio
+    async def test_normal_2_10_3(
         self,
         processor: Processor,
         db: Session,
@@ -2695,8 +2862,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2716,7 +2890,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2775,7 +2949,7 @@ class TestProcessor:
         )
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -2823,7 +2997,8 @@ class TestProcessor:
     # Single Token
     # Multi event logs
     # - Transfer(twice)
-    def test_normal_3_1(
+    @pytest.mark.asyncio
+    async def test_normal_3_1(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -2842,8 +3017,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -2880,7 +3062,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Transfer: 1st
         tx = token_contract_1.functions.transferFrom(
@@ -2920,7 +3102,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -2968,7 +3150,8 @@ class TestProcessor:
     # Single Token
     # Multi event logs
     # - Transfer(BulkTransfer)
-    def test_normal_3_2(
+    @pytest.mark.asyncio
+    async def test_normal_3_2(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -2997,8 +3180,15 @@ class TestProcessor:
             raw_keyfile_json=user_5["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -3024,7 +3214,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3089,7 +3279,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         _position_list = db.scalars(select(IDXPosition)).all()
         assert len(_position_list) == 5
@@ -3165,7 +3355,8 @@ class TestProcessor:
     # Multi event logs
     # - IbetExchange: NewOrder
     # - IbetExchange: CancelOrder
-    def test_normal_3_3(
+    @pytest.mark.asyncio
+    async def test_normal_3_3(
         self,
         processor: Processor,
         db: Session,
@@ -3189,8 +3380,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -3210,7 +3408,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3280,7 +3478,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -3329,7 +3527,8 @@ class TestProcessor:
     # Multi event logs
     # - IbetSecurityTokenEscrow: EscrowCreated
     # - IbetSecurityTokenEscrow: EscrowCanceled
-    def test_normal_3_4(
+    @pytest.mark.asyncio
+    async def test_normal_3_4(
         self,
         processor: Processor,
         db: Session,
@@ -3353,8 +3552,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -3374,7 +3580,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3431,7 +3637,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -3477,7 +3683,8 @@ class TestProcessor:
 
     # <Normal_4>
     # Multi Token
-    def test_normal_4(
+    @pytest.mark.asyncio
+    async def test_normal_4(
         self,
         processor: Processor,
         db: Session,
@@ -3501,8 +3708,15 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
-        token_contract1 = deploy_share_token_contract(
+        token_contract1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -3520,7 +3734,7 @@ class TestProcessor:
         db.add(token_1)
 
         # Issuer issues share token.
-        token_contract2 = deploy_share_token_contract(
+        token_contract2 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -3540,7 +3754,7 @@ class TestProcessor:
         db.commit()
 
         # Before run(consume accumulated events)
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3589,7 +3803,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         _position_list = db.scalars(select(IDXPosition)).all()
@@ -3700,7 +3914,8 @@ class TestProcessor:
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip process".
     @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_5(
+    @pytest.mark.asyncio
+    async def test_normal_5(
         self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
     ):
         _idx_position_share_block_number = IDXPositionShareBlockNumber()
@@ -3709,14 +3924,16 @@ class TestProcessor:
         db.add(_idx_position_share_block_number)
         db.commit()
 
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.DEBUG, "skip process")
         )
 
-    # <Normal_6>
+    # <Normal_6_1>
     # Newly tokens added
-    def test_normal_6(
+    # -> Sync issuer position
+    @pytest.mark.asyncio
+    async def test_normal_6_1(
         self,
         processor: Processor,
         db: Session,
@@ -3730,8 +3947,15 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues bond token.
-        token_contract1 = deploy_share_token_contract(
+        token_contract1 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -3751,14 +3975,28 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         assert len(processor.token_list.keys()) == 1
         assert len(processor.exchange_address_list) == 1
 
+        positions = db.scalars(select(IDXPosition)).all()
+        assert len(positions) == 1
+        issuer_position = positions[0]
+        assert issuer_position.json() == {
+            "account_address": issuer_address,
+            "balance": 100,
+            "exchange_balance": 0,
+            "exchange_commitment": 0,
+            "pending_transfer": 0,
+        }
+
+        token_af = db.scalars(select(Token).limit(1)).first()
+        assert token_af.initial_position_synced is True
+
         # Prepare additional token
-        token_contract2 = deploy_share_token_contract(
+        token_contract2 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -3778,12 +4016,70 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        processor.sync_new_logs()
+        await processor.sync_new_logs()
 
         # Assertion
         # newly issued token is loaded properly
         assert len(processor.token_list.keys()) == 2
         assert len(processor.exchange_address_list) == 1
+
+    # <Normal_6_2>
+    # Already init synced
+    # -> Skip issuer position sync
+    @pytest.mark.asyncio
+    async def test_normal_6_2(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
+    ):
+        escrow_contract = ibet_security_token_escrow_contract
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Issuer issues bond token.
+        token_contract1 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+
+        # Prepare data: Token (Already init synced)
+        token_address_1 = token_contract1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_SHARE.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
+        token_1.initial_position_synced = True  # already synced
+        db.add(token_1)
+
+        db.commit()
+
+        # Run target process
+        await processor.sync_new_logs()
+
+        # Assertion
+        assert len(processor.token_list.keys()) == 1
+        assert len(processor.exchange_address_list) == 1
+
+        positions = db.scalars(select(IDXPosition)).all()
+        assert len(positions) == 0
 
     ###########################################################################
     # Error Case
@@ -3791,7 +4087,8 @@ class TestProcessor:
 
     # <Error_1>
     # If exception occurs out of Processor except-catch, batch outputs logs in mainloop.
-    def test_error_1(
+    @pytest.mark.asyncio
+    async def test_error_1(
         self,
         main_func,
         db: Session,
@@ -3803,9 +4100,18 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = deploy_share_token_contract(
+        token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -3818,17 +4124,63 @@ class TestProcessor:
         token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
+        # Prepare data : TokenCache
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address_1,
+            "name": "テスト株式-test",
+            "symbol": "TEST-test",
+            "total_supply": 999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "issue_price": 999997,
+            "cancellation_date": "99991231",
+            "memo": "memo_test",
+            "principal_value": 999998,
+            "is_canceled": True,
+            "dividends": 9.99,
+            "dividend_record_date": "99991230",
+            "dividend_payment_date": "99991229",
+        }
+        token_cache = TokenCache()
+        token_cache.token_address = token_address_1
+        token_cache.attributes = token_attr
+        token_cache.cached_datetime = datetime.utcnow()
+        token_cache.expiration_datetime = datetime.utcnow() + timedelta(
+            seconds=TOKEN_CACHE_TTL
+        )
+        db.add(token_cache)
+
         db.commit()
+
+        # Issue
+        tx = token_contract_1.functions.issueFrom(
+            user_address_1, ZERO_ADDRESS, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run mainloop once and fail with web3 utils error
         with patch(
             "batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            web3.eth, "contract", side_effect=ServiceUnavailableError()
+            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
         ), pytest.raises(
             TypeError
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.WARNING, "An external service was unavailable")
         )
@@ -3838,28 +4190,10 @@ class TestProcessor:
         with patch(
             "batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            Session, "scalars", side_effect=InvalidRequestError()
+            AsyncSession, "scalars", side_effect=InvalidRequestError()
         ), pytest.raises(
             TypeError
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.text.count("A database error has occurred")
-        caplog.clear()
-
-        # Run mainloop once and fail with connection to blockchain
-        with patch(
-            "batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            ContractUtils, "call_function", side_effect=ConnectionError()
-        ), pytest.raises(
-            TypeError
-        ):
-            main_func()
-        assert 1 == caplog.record_tuples.count(
-            (
-                LOG.name,
-                logging.ERROR,
-                "An exception occurred during event synchronization",
-            )
-        )
         caplog.clear()

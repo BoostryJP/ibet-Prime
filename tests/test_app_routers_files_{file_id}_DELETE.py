@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import base64
 
 from sqlalchemy import select
@@ -54,6 +55,8 @@ abc def"""
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
         db.add(_upload_file)
+
+        db.commit()
 
         # request target api
         resp = client.delete(
@@ -148,6 +151,8 @@ abc def"""
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
         db.add(_upload_file)
+
+        db.commit()
 
         # request target API
         resp = client.delete(

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 
 import pytz
@@ -47,7 +48,9 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.abi = "abi_test1"
         token.version = TokenVersion.V_23_12
         db.add(token)
+
         db.commit()
+
         _issue_datetime = (
             pytz.timezone("UTC")
             .localize(token.created)
@@ -169,7 +172,9 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.abi = "abi_test1"
         token.version = TokenVersion.V_23_12
         db.add(token)
+
         db.commit()
+
         _issue_datetime = (
             pytz.timezone("UTC")
             .localize(token.created)
@@ -306,6 +311,8 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         resp = client.get(self.base_apiurl + "token_address_test1")
 

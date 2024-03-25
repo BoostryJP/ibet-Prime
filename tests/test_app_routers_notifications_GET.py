@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from datetime import datetime
 from unittest.mock import ANY
@@ -197,6 +198,8 @@ class TestAppRoutersNotificationsGET:
             "2022/01/09 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/03
         db.add(_notification_9)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -404,6 +407,8 @@ class TestAppRoutersNotificationsGET:
         )  # JST 2022/01/03
         db.add(_notification_4)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url,
@@ -506,6 +511,8 @@ class TestAppRoutersNotificationsGET:
             "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/03
         db.add(_notification_4)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url, params={"offset": 1, "limit": 2})

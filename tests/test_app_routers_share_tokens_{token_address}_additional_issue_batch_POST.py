@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from typing import Optional
 
 from sqlalchemy import select
@@ -67,6 +68,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
@@ -130,6 +133,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -204,6 +209,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {}  # not a list
         resp = client.post(
@@ -254,6 +261,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": "0x0", "amount": 10}]
         resp = client.post(
@@ -274,7 +283,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
                     "ctx": {"error": {}},
                     "input": "0x0",
                     "loc": ["body", 0, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 }
             ],
@@ -306,6 +315,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 0}]
@@ -360,6 +371,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 1_000_000_000_001}]
         resp = client.post(
@@ -413,6 +426,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
@@ -459,6 +474,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
@@ -507,6 +524,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = []
         resp = client.post(
@@ -551,6 +570,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
@@ -597,6 +618,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
@@ -633,6 +656,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         account.keyfile = issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
@@ -680,6 +705,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         token.token_status = 0
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Integer, String
@@ -25,7 +26,7 @@ from .base import Base
 
 
 class E2EMessagingAccount(Base):
-    """E2E Messaging Account"""
+    """Account for E2E-Messaging"""
 
     __tablename__ = "e2e_messaging_account"
 

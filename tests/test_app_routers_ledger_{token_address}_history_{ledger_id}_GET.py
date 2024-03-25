@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 from unittest import mock
 from unittest.mock import call
@@ -168,6 +169,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
         db.add(_ledger_1)
+
+        db.commit()
 
         # request target AsPI
         resp = client.get(
@@ -411,6 +414,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
         db.add(_ledger_1)
+
+        db.commit()
 
         # request target AsPI
         resp = client.get(
@@ -686,6 +691,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
+
+        db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -988,6 +995,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _details_1.data_source = token_address
         db.add(_details_1)
 
+        db.commit()
+
         # Mock
         token = IbetStraightBondContract()
         token.personal_info_contract_address = personal_info_contract_address
@@ -1281,6 +1290,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _details_1.data_source = token_address
         db.add(_details_1)
 
+        db.commit()
+
         # Mock
         token = IbetStraightBondContract()
         token.personal_info_contract_address = personal_info_contract_address
@@ -1529,6 +1540,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         )  # JST 2022/01/02
         db.add(_ledger_1)
 
+        db.commit()
+
         # request target AsPI
         resp = client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
@@ -1765,6 +1778,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
@@ -1822,6 +1837,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
@@ -1856,6 +1873,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.abi = {}
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1964,6 +1983,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
         db.add(_ledger_1)
+
+        db.commit()
 
         # request target AsPI
         with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):

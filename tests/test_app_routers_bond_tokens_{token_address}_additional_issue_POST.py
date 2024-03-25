@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
@@ -59,6 +60,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
@@ -115,6 +118,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
@@ -161,6 +166,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": "0x0", "amount": 10}
 
@@ -182,7 +189,7 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
                     "ctx": {"error": {}},
                     "input": "0x0",
                     "loc": ["body", "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 }
             ],
@@ -205,6 +212,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 0}
@@ -250,6 +259,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 1_000_000_000_001}
@@ -351,6 +362,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
         resp = client.post(
@@ -390,6 +403,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
 
@@ -424,6 +439,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
         resp = client.post(
@@ -455,6 +472,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
@@ -497,6 +516,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
@@ -543,6 +564,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssuePOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}

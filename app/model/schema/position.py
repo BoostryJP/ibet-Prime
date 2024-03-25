@@ -16,16 +16,17 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from enum import Enum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, Field, PositiveInt, RootModel, field_validator
+from pydantic import BaseModel, Field, PositiveInt, RootModel
 from pydantic.dataclasses import dataclass
-from web3 import Web3
 
-from app.model.db import TokenType
-from app.model.schema.base import ResultSet, SortOrder
+from app.model import EthereumAddress
+
+from .base import ResultSet, SortOrder, TokenType
 
 ############################
 # COMMON
@@ -111,40 +112,19 @@ class ListAllLockEventsQuery:
         Optional[LockEventCategory], Query(description="Event category")
     ] = None
 
-    sort_item: Annotated[
-        ListAllLockEventsSortItem, Query(description="Sort item")
-    ] = ListAllLockEventsSortItem.block_timestamp
+    sort_item: Annotated[ListAllLockEventsSortItem, Query(description="Sort item")] = (
+        ListAllLockEventsSortItem.block_timestamp
+    )
     sort_order: Annotated[
         SortOrder, Query(description="Sort order(0: ASC, 1: DESC)")
     ] = SortOrder.DESC
 
 
 class ForceUnlockRequest(BaseModel):
-    token_address: str = Field(..., description="Token address")
-    lock_address: str = Field(..., description="Lock address")
-    recipient_address: str = Field(..., description="Recipient address")
+    token_address: EthereumAddress = Field(..., description="Token address")
+    lock_address: EthereumAddress = Field(..., description="Lock address")
+    recipient_address: EthereumAddress = Field(..., description="Recipient address")
     value: PositiveInt = Field(..., description="Unlock amount")
-
-    @field_validator("token_address")
-    @classmethod
-    def token_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("token_address is not a valid address")
-        return v
-
-    @field_validator("lock_address")
-    @classmethod
-    def lock_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("lock_address is not a valid address")
-        return v
-
-    @field_validator("recipient_address")
-    @classmethod
-    def recipient_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("recipient_address is not a valid address")
-        return v
 
 
 ############################

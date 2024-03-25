@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from datetime import datetime
 
@@ -50,6 +51,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         datetime_now_utc = datetime.utcnow()
         datetime_now_str = (
@@ -86,6 +89,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         token_event.data = data
         token_event.created = datetime_now_utc
         db.add(token_event)
+
+        db.commit()
 
         # request target API
         resp = client.delete(
@@ -190,6 +195,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         resp = client.delete(
             self.base_url.format(_token_address, "test_event_id"),
@@ -219,6 +226,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         resp = client.delete(

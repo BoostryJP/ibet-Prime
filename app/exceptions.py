@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from fastapi import status
 
 from app.utils.contract_error_code import REVERT_CODE_MAP, error_code_msg

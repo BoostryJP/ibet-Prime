@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
@@ -44,6 +45,8 @@ class TestAppRoutersLockedPositions:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target api
         resp = client.get(

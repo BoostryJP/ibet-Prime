@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from app.model.db import (
     Account,
     BatchRegisterPersonalInfo,
@@ -123,6 +124,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
                 "tax_category": 3,
             }
             db.add(batch_register)
+
+        db.commit()
 
         # request target API
         resp = client.get(

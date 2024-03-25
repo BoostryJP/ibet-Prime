@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 import uuid
 from typing import List, Sequence
@@ -68,7 +69,8 @@ class TestProcessor:
     # Normal_1
     # token type: IBET_STRAIGHT_BOND
     # processing category: ISSUE
-    def test_normal_1(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, processor, db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -118,7 +120,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
-            processor.process()
+            await processor.process()
 
             # Assertion: contract
             IbetStraightBondContract_additional_issue.assert_called_with(
@@ -169,7 +171,8 @@ class TestProcessor:
     # Normal_2
     # token type: IBET_STRAIGHT_BOND
     # processing category: REDEEM
-    def test_normal_2(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, processor, db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -219,7 +222,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetStraightBondContract.redeem",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_redeem:
-            processor.process()
+            await processor.process()
 
         # Assertion: contract
         IbetStraightBondContract_redeem.assert_called_with(
@@ -270,7 +273,8 @@ class TestProcessor:
     # Normal_3
     # token type: IBET_SHARE
     # processing category: ISSUE
-    def test_normal_3(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, processor, db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -320,7 +324,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetShareContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetShareContract_additional_issue:
-            processor.process()
+            await processor.process()
 
         # Assertion: contract
         IbetShareContract_additional_issue.assert_called_with(
@@ -371,7 +375,8 @@ class TestProcessor:
     # Normal_4
     # token type: IBET_SHARE
     # processing category: REDEEM
-    def test_normal_4(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, processor, db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -421,7 +426,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetShareContract.redeem",
             return_value="mock_tx_hash",
         ) as IbetShareContract_redeem:
-            processor.process()
+            await processor.process()
 
         # Assertion: contract
         IbetShareContract_redeem.assert_called_with(
@@ -475,7 +480,8 @@ class TestProcessor:
 
     # Error_1
     # Issuer account does not exist
-    def test_error_1(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_error_1(self, processor, db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -512,7 +518,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
-            processor.process()
+            await processor.process()
 
         # Assertion: contract
         IbetStraightBondContract_additional_issue.assert_not_called()
@@ -556,7 +562,8 @@ class TestProcessor:
 
     # Error_2
     # Failed to decode keyfile
-    def test_error_2(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_error_2(self, processor, db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -602,7 +609,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
-            processor.process()
+            await processor.process()
 
         # Assertion: contract
         IbetStraightBondContract_additional_issue.assert_not_called()
@@ -646,7 +653,8 @@ class TestProcessor:
 
     # Error_3
     # Failed to send transaction
-    def test_error_3(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_error_3(self, processor, db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -699,7 +707,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
             side_effect=SendTransactionError(),
         ) as IbetStraightBondContract_additional_issue:
-            processor.process()
+            await processor.process()
 
         # Assertion: DB
         _upload_after: BatchIssueRedeemUpload = db.scalars(
@@ -742,7 +750,8 @@ class TestProcessor:
 
     # <Error_4>
     # ContractRevertError
-    def test_error_4(
+    @pytest.mark.asyncio
+    async def test_error_4(
         self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
     ):
         # Test settings
@@ -811,7 +820,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetShareContract.additional_issue",
             side_effect=ContractRevertError("999999"),
         ):
-            processor.process()
+            await processor.process()
 
         # Assertion: DB
         _upload_1_after: BatchIssueRedeemUpload | None = db.scalars(

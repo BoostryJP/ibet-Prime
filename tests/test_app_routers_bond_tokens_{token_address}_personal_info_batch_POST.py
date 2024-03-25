@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from typing import Optional
 from unittest.mock import ANY
@@ -71,6 +72,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         personal_info = {
             "account_address": _test_account_address,
@@ -146,6 +149,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         personal_info = {
             "account_address": _test_account_address,
@@ -285,124 +290,64 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "input": None,
-                    "loc": ["body", 0, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 0, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 1, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 1, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 2, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 2, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 3, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 3, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 4, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 4, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 5, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 5, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 6, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 6, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 7, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 7, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 8, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 8, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
                 {
-                    "input": None,
-                    "loc": ["body", 9, "account_address"],
-                    "msg": "Input should be a valid string",
                     "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", 9, "key_manager"],
                     "msg": "Input should be a valid string",
-                    "type": "string_type",
+                    "input": None,
                 },
             ],
         }
@@ -448,74 +393,74 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 0, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 1, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 2, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 3, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 4, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 5, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 6, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 7, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 8, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
-                    "loc": ["body", 9, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
                     "type": "value_error",
+                    "loc": ["body", 9, "account_address"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
             ],
         }
@@ -679,6 +624,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -728,6 +675,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -789,6 +738,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -848,6 +799,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.token_status = 1
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = []

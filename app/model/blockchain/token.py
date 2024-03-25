@@ -16,24 +16,31 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List
+from random import randint
+from typing import List, TypeVar
 
 from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3.datastructures import AttributeDict
 from web3.exceptions import TimeExhausted
 
 from app import log
-from app.database import engine
-from app.exceptions import ContractRevertError, SendTransactionError
+from app.database import async_engine
+from app.exceptions import (
+    ContractRevertError,
+    SendTransactionError,
+    ServiceUnavailableError,
+)
 from app.model.blockchain import IbetExchangeInterface
 from app.model.blockchain.tx_params.ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
     ApproveTransferParams as IbetSecurityTokenApproveTransfer,
+    BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransfer,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
@@ -47,13 +54,15 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.model.db import TokenAttrUpdate, TokenCache
-from app.utils.contract_utils import ContractUtils
+from app.utils.asyncio_utils import SemaphoreTaskGroup
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import Web3Wrapper
 from config import (
     CHAIN_ID,
     DEFAULT_CURRENCY,
     TOKEN_CACHE,
     TOKEN_CACHE_TTL,
+    TOKEN_CACHE_TTL_JITTER,
     TX_GAS_LIMIT,
     ZERO_ADDRESS,
 )
@@ -82,13 +91,17 @@ class IbetStandardTokenInterface:
         self.contract_name = contract_name
         self.token_address = contract_address
 
-    def check_attr_update(self, db_session: Session, base_datetime: datetime):
+    async def check_attr_update(
+        self, db_session: AsyncSession, base_datetime: datetime
+    ):
         is_updated = False
-        _token_attr_update = db_session.scalars(
-            select(TokenAttrUpdate)
-            .where(TokenAttrUpdate.token_address == self.token_address)
-            .order_by(desc(TokenAttrUpdate.id))
-            .limit(1)
+        _token_attr_update = (
+            await db_session.scalars(
+                select(TokenAttrUpdate)
+                .where(TokenAttrUpdate.token_address == self.token_address)
+                .order_by(desc(TokenAttrUpdate.id))
+                .limit(1)
+            )
         ).first()
         if (
             _token_attr_update is not None
@@ -97,39 +110,42 @@ class IbetStandardTokenInterface:
             is_updated = True
         return is_updated
 
-    def record_attr_update(self, db_session: Session):
+    async def record_attr_update(self, db_session: AsyncSession):
         _token_attr_update = TokenAttrUpdate()
         _token_attr_update.token_address = self.token_address
         _token_attr_update.updated_datetime = datetime.utcnow()
         db_session.add(_token_attr_update)
 
-    def create_cache(self, db_session: Session):
+    async def create_cache(self, db_session: AsyncSession):
         token_cache = TokenCache()
         token_cache.token_address = self.token_address
         token_cache.attributes = self.__dict__
         token_cache.cached_datetime = datetime.utcnow()
         token_cache.expiration_datetime = datetime.utcnow() + timedelta(
-            seconds=TOKEN_CACHE_TTL
+            seconds=randint(
+                TOKEN_CACHE_TTL - TOKEN_CACHE_TTL_JITTER,
+                TOKEN_CACHE_TTL + TOKEN_CACHE_TTL_JITTER,
+            )
         )
-        db_session.merge(token_cache)
+        await db_session.merge(token_cache)
 
-    def delete_cache(self, db_session: Session):
-        db_session.execute(
+    async def delete_cache(self, db_session: AsyncSession):
+        await db_session.execute(
             delete(TokenCache).where(TokenCache.token_address == self.token_address)
         )
 
-    def get_account_balance(self, account_address: str):
+    async def get_account_balance(self, account_address: str):
         """Get account balance"""
-        contract = ContractUtils.get_contract(
+        contract = AsyncContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
-        balance = ContractUtils.call_function(
+        balance = await AsyncContractUtils.call_function(
             contract=contract,
             function_name="balanceOf",
             args=(account_address,),
             default_returns=0,
         )
-        tradable_exchange_address = ContractUtils.call_function(
+        tradable_exchange_address = await AsyncContractUtils.call_function(
             contract=contract,
             function_name="tradableExchange",
             args=(),
@@ -137,7 +153,7 @@ class IbetStandardTokenInterface:
         )
         if tradable_exchange_address != ZERO_ADDRESS:
             exchange_contract = IbetExchangeInterface(tradable_exchange_address)
-            exchange_balance = exchange_contract.get_account_balance(
+            exchange_balance = await exchange_contract.get_account_balance(
                 account_address=account_address, token_address=self.token_address
             )
             balance = (
@@ -160,18 +176,20 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
     ):
         super().__init__(contract_address, contract_name)
 
-    def transfer(
-        self, data: IbetSecurityTokenTransferParams, tx_from: str, private_key: str
+    async def transfer(
+        self, data: IbetSecurityTokenTransferParams, tx_from: str, private_key: bytes
     ):
         """Transfer ownership"""
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             _from = data.from_address
             _to = data.to_address
             _amount = data.amount
-            tx = contract.functions.transferFrom(_from, _to, _amount).build_transaction(
+            tx = await contract.functions.transferFrom(
+                _from, _to, _amount
+            ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -179,7 +197,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, _ = ContractUtils.send_transaction(
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
         except ContractRevertError:
@@ -191,20 +209,53 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
         return tx_hash
 
-    def additional_issue(
+    async def bulk_transfer(
+        self,
+        data: IbetSecurityTokenBulkTransferParams,
+        tx_from: str,
+        private_key: bytes,
+    ):
+        """Transfer ownership"""
+        try:
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+            tx = await contract.functions.bulkTransfer(
+                data.to_address_list, data.amount_list
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+        return tx_hash
+
+    async def additional_issue(
         self,
         data: IbetSecurityTokenAdditionalIssueParams,
         tx_from: str,
-        private_key: str,
+        private_key: bytes,
     ):
         """Additional issue"""
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             _target_address = data.account_address
             _amount = data.amount
-            tx = contract.functions.issueFrom(
+            tx = await contract.functions.issueFrom(
                 _target_address, ZERO_ADDRESS, _amount
             ).build_transaction(
                 {
@@ -214,7 +265,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, _ = ContractUtils.send_transaction(
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
         except ContractRevertError:
@@ -225,29 +276,29 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             raise SendTransactionError(err)
 
         # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
-            self.record_attr_update(db_session)
-            self.delete_cache(db_session)
-            db_session.commit()
+            await self.record_attr_update(db_session)
+            await self.delete_cache(db_session)
+            await db_session.commit()
         except Exception as err:
             raise SendTransactionError(err)
         finally:
-            db_session.close()
+            await db_session.close()
 
         return tx_hash
 
-    def redeem(
-        self, data: IbetSecurityTokenRedeemParams, tx_from: str, private_key: str
+    async def redeem(
+        self, data: IbetSecurityTokenRedeemParams, tx_from: str, private_key: bytes
     ):
         """Redeem a token"""
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             _target_address = data.account_address
             _amount = data.amount
-            tx = contract.functions.redeemFrom(
+            tx = await contract.functions.redeemFrom(
                 _target_address, ZERO_ADDRESS, _amount
             ).build_transaction(
                 {
@@ -257,7 +308,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, _ = ContractUtils.send_transaction(
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
         except ContractRevertError:
@@ -268,27 +319,27 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             raise SendTransactionError(err)
 
         # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
-            self.record_attr_update(db_session)
-            self.delete_cache(db_session)
-            db_session.commit()
+            await self.record_attr_update(db_session)
+            await self.delete_cache(db_session)
+            await db_session.commit()
         except Exception as err:
             raise SendTransactionError(err)
         finally:
-            db_session.close()
+            await db_session.close()
 
         return tx_hash
 
-    def approve_transfer(
-        self, data: IbetSecurityTokenApproveTransfer, tx_from: str, private_key: str
+    async def approve_transfer(
+        self, data: IbetSecurityTokenApproveTransfer, tx_from: str, private_key: bytes
     ):
         """Approve Transfer"""
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
-            tx = contract.functions.approveTransfer(
+            tx = await contract.functions.approveTransfer(
                 data.application_id, data.data
             ).build_transaction(
                 {
@@ -298,7 +349,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, tx_receipt = ContractUtils.send_transaction(
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
             return tx_hash, tx_receipt
@@ -309,15 +360,15 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
         except Exception as err:
             raise SendTransactionError(err)
 
-    def cancel_transfer(
-        self, data: IbetSecurityTokenCancelTransfer, tx_from: str, private_key: str
+    async def cancel_transfer(
+        self, data: IbetSecurityTokenCancelTransfer, tx_from: str, private_key: bytes
     ):
         """Cancel Transfer"""
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
-            tx = contract.functions.cancelTransfer(
+            tx = await contract.functions.cancelTransfer(
                 data.application_id, data.data
             ).build_transaction(
                 {
@@ -327,7 +378,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, tx_receipt = ContractUtils.send_transaction(
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
             return tx_hash, tx_receipt
@@ -338,13 +389,15 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
         except Exception as err:
             raise SendTransactionError(err)
 
-    def lock(self, data: IbetSecurityTokenLockParams, tx_from: str, private_key: str):
+    async def lock(
+        self, data: IbetSecurityTokenLockParams, tx_from: str, private_key: bytes
+    ):
         """Lock"""
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
-            tx = contract.functions.lock(
+            tx = await contract.functions.lock(
                 data.lock_address, data.value, data.data
             ).build_transaction(
                 {
@@ -354,7 +407,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, tx_receipt = ContractUtils.send_transaction(
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
             return tx_hash, tx_receipt
@@ -365,15 +418,15 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
         except Exception as err:
             raise SendTransactionError(err)
 
-    def force_unlock(
-        self, data: IbetSecurityTokenForceUnlockParams, tx_from: str, private_key: str
+    async def force_unlock(
+        self, data: IbetSecurityTokenForceUnlockParams, tx_from: str, private_key: bytes
     ):
         """Force Unlock"""
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
-            tx = contract.functions.forceUnlock(
+            tx = await contract.functions.forceUnlock(
                 data.lock_address,
                 data.account_address,
                 data.recipient_address,
@@ -387,7 +440,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, tx_receipt = ContractUtils.send_transaction(
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
             return tx_hash, tx_receipt
@@ -400,6 +453,8 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
 
 class IbetStraightBondContract(IbetSecurityTokenInterface):
+    """IbetStraightBond contract"""
+
     face_value: int
     face_value_currency: str
     interest_rate: float
@@ -418,7 +473,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
     def __init__(self, contract_address: str = ZERO_ADDRESS):
         super().__init__(contract_address, "IbetStraightBond")
 
-    def create(self, args: list, tx_from: str, private_key: str):
+    async def create(self, args: list, tx_from: str, private_key: bytes):
         """Deploy token
 
         :param args: deploy arguments
@@ -427,7 +482,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         :return: contract address, ABI, transaction hash
         """
         if self.token_address == ZERO_ADDRESS:
-            contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+            contract_address, abi, tx_hash = await AsyncContractUtils.deploy_contract(
                 contract_name="IbetStraightBond",
                 args=args,
                 deployer=tx_from,
@@ -439,150 +494,176 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         else:
             raise SendTransactionError("contract is already deployed")
 
-    def get(self):
+    async def get(self):
         """Get token attributes"""
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-
-        # When using the cache
-        if TOKEN_CACHE:
-            token_cache: TokenCache | None = db_session.scalars(
-                select(TokenCache)
-                .where(TokenCache.token_address == self.token_address)
-                .limit(1)
-            ).first()
-            if token_cache is not None:
-                is_updated = self.check_attr_update(
-                    db_session=db_session, base_datetime=token_cache.cached_datetime
-                )
-                if (
-                    is_updated is False
-                    and token_cache.expiration_datetime > datetime.utcnow()
-                ):
-                    # Get data from cache
-                    for k, v in token_cache.attributes.items():
-                        setattr(self, k, v)
-                    db_session.close()
-                    return AttributeDict(self.__dict__)
-
-        # When cache is not used
-        # Or, if there is no data in the cache
-        # Or, if the cache has expired
-
-        contract = ContractUtils.get_contract(
-            contract_name=self.contract_name, contract_address=self.token_address
-        )
-
-        # Set IbetStandardTokenInterface attribute
-        self.issuer_address = ContractUtils.call_function(
-            contract, "owner", (), ZERO_ADDRESS
-        )
-        self.name = ContractUtils.call_function(contract, "name", (), "")
-        self.symbol = ContractUtils.call_function(contract, "symbol", (), "")
-        self.total_supply = ContractUtils.call_function(contract, "totalSupply", (), 0)
-        self.tradable_exchange_contract_address = ContractUtils.call_function(
-            contract, "tradableExchange", (), ZERO_ADDRESS
-        )
-        self.contact_information = ContractUtils.call_function(
-            contract, "contactInformation", (), ""
-        )
-        self.privacy_policy = ContractUtils.call_function(
-            contract, "privacyPolicy", (), ""
-        )
-        self.status = ContractUtils.call_function(contract, "status", (), True)
-
-        # Set IbetSecurityTokenInterface attribute
-        self.personal_info_contract_address = ContractUtils.call_function(
-            contract, "personalInfoAddress", (), ZERO_ADDRESS
-        )
-        self.transferable = ContractUtils.call_function(
-            contract, "transferable", (), False
-        )
-        self.is_offering = ContractUtils.call_function(
-            contract, "isOffering", (), False
-        )
-        self.transfer_approval_required = ContractUtils.call_function(
-            contract, "transferApprovalRequired", (), False
-        )
-
-        # Set IbetStraightBondToken attribute
-        self.face_value = ContractUtils.call_function(contract, "faceValue", (), 0)
-        self.face_value_currency = ContractUtils.call_function(
-            contract, "faceValueCurrency", (), DEFAULT_CURRENCY
-        )
-        self.interest_rate = float(
-            Decimal(str(ContractUtils.call_function(contract, "interestRate", (), 0)))
-            * Decimal("0.0001")
-        )
-        self.interest_payment_currency = ContractUtils.call_function(
-            contract, "interestPaymentCurrency", (), ""
-        )
-        self.redemption_date = ContractUtils.call_function(
-            contract, "redemptionDate", (), ""
-        )
-        self.redemption_value = ContractUtils.call_function(
-            contract, "redemptionValue", (), 0
-        )
-        self.redemption_value_currency = ContractUtils.call_function(
-            contract, "redemptionValueCurrency", (), ""
-        )
-        self.return_date = ContractUtils.call_function(contract, "returnDate", (), "")
-        self.return_amount = ContractUtils.call_function(
-            contract, "returnAmount", (), ""
-        )
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
-            _raw_base_fx_rate = ContractUtils.call_function(
-                contract, "baseFXRate", (), ""
-            )
-            if _raw_base_fx_rate is not None and _raw_base_fx_rate != "":
-                self.base_fx_rate = float(_raw_base_fx_rate)
-            else:
-                self.base_fx_rate = 0.0
-        except ValueError:
-            self.base_fx_rate = 0.0
-        self.purpose = ContractUtils.call_function(contract, "purpose", (), "")
-        self.memo = ContractUtils.call_function(contract, "memo", (), "")
-        self.is_redeemed = ContractUtils.call_function(
-            contract, "isRedeemed", (), False
-        )
+            # When using the cache
+            if TOKEN_CACHE:
+                token_cache: TokenCache | None = (
+                    await db_session.scalars(
+                        select(TokenCache)
+                        .where(TokenCache.token_address == self.token_address)
+                        .limit(1)
+                    )
+                ).first()
+                if token_cache is not None:
+                    is_updated = await self.check_attr_update(
+                        db_session=db_session, base_datetime=token_cache.cached_datetime
+                    )
+                    if (
+                        is_updated is False
+                        and token_cache.expiration_datetime > datetime.utcnow()
+                    ):
+                        # Get data from cache
+                        for k, v in token_cache.attributes.items():
+                            setattr(self, k, v)
+                        await db_session.close()
+                        return AttributeDict(self.__dict__)
 
-        interest_payment_date_list = []
-        interest_payment_date_string = ContractUtils.call_function(
-            contract, "interestPaymentDate", (), ""
-        ).replace("'", '"')
-        interest_payment_date = {}
-        try:
-            if interest_payment_date_string != "":
-                interest_payment_date = json.loads(interest_payment_date_string)
-        except Exception as err:
-            LOG.warning("Failed to load interestPaymentDate: ", err)
-        for i in range(1, 13):
-            interest_payment_date_list.append(
-                interest_payment_date.get(f"interestPaymentDate{str(i)}", "")
-            )
-        self.interest_payment_date = interest_payment_date_list
+            # When cache is not used
+            # Or, if there is no data in the cache
+            # Or, if the cache has expired
 
-        if TOKEN_CACHE:
-            # Create token cache
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+
             try:
-                self.create_cache(db_session)
-                db_session.commit()
-            except SAIntegrityError:
-                db_session.rollback()
+                tasks = await SemaphoreTaskGroup.run(
+                    # IbetStandardTokenInterface attribute
+                    AsyncContractUtils.call_function(
+                        contract, "owner", (), ZERO_ADDRESS
+                    ),
+                    AsyncContractUtils.call_function(contract, "name", (), ""),
+                    AsyncContractUtils.call_function(contract, "symbol", (), ""),
+                    AsyncContractUtils.call_function(contract, "totalSupply", (), 0),
+                    AsyncContractUtils.call_function(
+                        contract, "tradableExchange", (), ZERO_ADDRESS
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "contactInformation", (), ""
+                    ),
+                    AsyncContractUtils.call_function(contract, "privacyPolicy", (), ""),
+                    AsyncContractUtils.call_function(contract, "status", (), True),
+                    # IbetSecurityTokenInterface attribute
+                    AsyncContractUtils.call_function(
+                        contract, "personalInfoAddress", (), ZERO_ADDRESS
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "transferable", (), False
+                    ),
+                    AsyncContractUtils.call_function(contract, "isOffering", (), False),
+                    AsyncContractUtils.call_function(
+                        contract, "transferApprovalRequired", (), False
+                    ),
+                    # IbetStraightBondToken attribute
+                    AsyncContractUtils.call_function(contract, "faceValue", (), 0),
+                    AsyncContractUtils.call_function(
+                        contract, "faceValueCurrency", (), DEFAULT_CURRENCY
+                    ),
+                    AsyncContractUtils.call_function(contract, "interestRate", (), 0),
+                    AsyncContractUtils.call_function(
+                        contract, "interestPaymentCurrency", (), ""
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "interestPaymentDate", (), ""
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "redemptionDate", (), ""
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "redemptionValue", (), 0
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "redemptionValueCurrency", (), ""
+                    ),
+                    AsyncContractUtils.call_function(contract, "returnDate", (), ""),
+                    AsyncContractUtils.call_function(contract, "returnAmount", (), ""),
+                    AsyncContractUtils.call_function(contract, "baseFXRate", (), ""),
+                    AsyncContractUtils.call_function(contract, "purpose", (), ""),
+                    AsyncContractUtils.call_function(contract, "memo", (), ""),
+                    AsyncContractUtils.call_function(contract, "isRedeemed", (), False),
+                    max_concurrency=3,
+                )
+                (
+                    self.issuer_address,
+                    self.name,
+                    self.symbol,
+                    self.total_supply,
+                    self.tradable_exchange_contract_address,
+                    self.contact_information,
+                    self.privacy_policy,
+                    self.status,
+                    self.personal_info_contract_address,
+                    self.transferable,
+                    self.is_offering,
+                    self.transfer_approval_required,
+                    self.face_value,
+                    self.face_value_currency,
+                    _interest_rate,
+                    self.interest_payment_currency,
+                    _interest_payment_date,
+                    self.redemption_date,
+                    self.redemption_value,
+                    self.redemption_value_currency,
+                    self.return_date,
+                    self.return_amount,
+                    _base_fx_rate,
+                    self.purpose,
+                    self.memo,
+                    self.is_redeemed,
+                ) = [task.result() for task in tasks]
+            except ExceptionGroup:
+                raise ServiceUnavailableError from None
 
-        db_session.close()
+            self.interest_rate = float(Decimal(str(_interest_rate)) * Decimal("0.0001"))
+            try:
+                if _base_fx_rate is not None and _base_fx_rate != "":
+                    self.base_fx_rate = float(_base_fx_rate)
+                else:
+                    self.base_fx_rate = 0.0
+            except ValueError:
+                self.base_fx_rate = 0.0
+
+            interest_payment_date_list = []
+            interest_payment_date_string = _interest_payment_date.replace("'", '"')
+            interest_payment_date = {}
+            try:
+                if interest_payment_date_string != "":
+                    interest_payment_date = json.loads(interest_payment_date_string)
+            except Exception as err:
+                LOG.warning("Failed to load interestPaymentDate: ", err)
+            for i in range(1, 13):
+                interest_payment_date_list.append(
+                    interest_payment_date.get(f"interestPaymentDate{str(i)}", "")
+                )
+            self.interest_payment_date = interest_payment_date_list
+
+            if TOKEN_CACHE:
+                # Create token cache
+                try:
+                    await self.create_cache(db_session)
+                    await db_session.commit()
+                except SAIntegrityError:
+                    await db_session.rollback()
+        finally:
+            await db_session.close()
 
         return AttributeDict(self.__dict__)
 
-    def update(
-        self, data: IbetStraightBondUpdateParams, tx_from: str, private_key: str
+    async def update(
+        self, data: IbetStraightBondUpdateParams, tx_from: str, private_key: bytes
     ):
         """Update token"""
-        contract = ContractUtils.get_contract(
+        contract = AsyncContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
 
         if data.face_value is not None:
-            tx = contract.functions.setFaceValue(data.face_value).build_transaction(
+            tx = await contract.functions.setFaceValue(
+                data.face_value
+            ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -591,7 +672,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -600,7 +683,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.face_value_currency is not None:
-            tx = contract.functions.setFaceValueCurrency(
+            tx = await contract.functions.setFaceValueCurrency(
                 data.face_value_currency
             ).build_transaction(
                 {
@@ -611,7 +694,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -621,7 +706,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
         if data.interest_rate is not None:
             _interest_rate = int(Decimal(str(data.interest_rate)) * Decimal("10000"))
-            tx = contract.functions.setInterestRate(_interest_rate).build_transaction(
+            tx = await contract.functions.setInterestRate(
+                _interest_rate
+            ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -630,7 +717,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -643,7 +732,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             for i, item in enumerate(data.interest_payment_date):
                 _interest_payment_date[f"interestPaymentDate{i + 1}"] = item
             _interest_payment_date_string = json.dumps(_interest_payment_date)
-            tx = contract.functions.setInterestPaymentDate(
+            tx = await contract.functions.setInterestPaymentDate(
                 _interest_payment_date_string
             ).build_transaction(
                 {
@@ -654,7 +743,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -663,7 +754,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.interest_payment_currency is not None:
-            tx = contract.functions.setInterestPaymentCurrency(
+            tx = await contract.functions.setInterestPaymentCurrency(
                 data.interest_payment_currency
             ).build_transaction(
                 {
@@ -674,7 +765,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -683,7 +776,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.redemption_value is not None:
-            tx = contract.functions.setRedemptionValue(
+            tx = await contract.functions.setRedemptionValue(
                 data.redemption_value
             ).build_transaction(
                 {
@@ -694,14 +787,16 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
                 raise SendTransactionError(err)
 
         if data.redemption_value_currency is not None:
-            tx = contract.functions.setRedemptionValueCurrency(
+            tx = await contract.functions.setRedemptionValueCurrency(
                 data.redemption_value_currency
             ).build_transaction(
                 {
@@ -712,7 +807,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -721,7 +818,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.base_fx_rate is not None:
-            tx = contract.functions.setBaseFXRate(
+            tx = await contract.functions.setBaseFXRate(
                 str(data.base_fx_rate)
             ).build_transaction(
                 {
@@ -732,7 +829,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -741,7 +840,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.transferable is not None:
-            tx = contract.functions.setTransferable(
+            tx = await contract.functions.setTransferable(
                 data.transferable
             ).build_transaction(
                 {
@@ -752,7 +851,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -761,7 +862,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.status is not None:
-            tx = contract.functions.setStatus(data.status).build_transaction(
+            tx = await contract.functions.setStatus(data.status).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -770,7 +871,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -779,7 +882,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_offering is not None:
-            tx = contract.functions.changeOfferingStatus(
+            tx = await contract.functions.changeOfferingStatus(
                 data.is_offering
             ).build_transaction(
                 {
@@ -790,7 +893,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -799,7 +904,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_redeemed is not None and data.is_redeemed:
-            tx = contract.functions.changeToRedeemed().build_transaction(
+            tx = await contract.functions.changeToRedeemed().build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -808,7 +913,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -817,7 +924,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.tradable_exchange_contract_address is not None:
-            tx = contract.functions.setTradableExchange(
+            tx = await contract.functions.setTradableExchange(
                 data.tradable_exchange_contract_address
             ).build_transaction(
                 {
@@ -828,7 +935,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -837,7 +946,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.personal_info_contract_address is not None:
-            tx = contract.functions.setPersonalInfoAddress(
+            tx = await contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
             ).build_transaction(
                 {
@@ -848,7 +957,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -857,7 +968,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.contact_information is not None:
-            tx = contract.functions.setContactInformation(
+            tx = await contract.functions.setContactInformation(
                 data.contact_information
             ).build_transaction(
                 {
@@ -868,7 +979,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -877,7 +990,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.privacy_policy is not None:
-            tx = contract.functions.setPrivacyPolicy(
+            tx = await contract.functions.setPrivacyPolicy(
                 data.privacy_policy
             ).build_transaction(
                 {
@@ -888,7 +1001,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -897,7 +1012,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.transfer_approval_required is not None:
-            tx = contract.functions.setTransferApprovalRequired(
+            tx = await contract.functions.setTransferApprovalRequired(
                 data.transfer_approval_required
             ).build_transaction(
                 {
@@ -908,7 +1023,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -917,7 +1034,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.memo is not None:
-            tx = contract.functions.setMemo(data.memo).build_transaction(
+            tx = await contract.functions.setMemo(data.memo).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -926,7 +1043,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -935,18 +1054,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
-            self.record_attr_update(db_session)
-            self.delete_cache(db_session)
-            db_session.commit()
+            await self.record_attr_update(db_session)
+            await self.delete_cache(db_session)
+            await db_session.commit()
         except Exception as err:
             raise SendTransactionError(err)
         finally:
-            db_session.close()
+            await db_session.close()
 
 
 class IbetShareContract(IbetSecurityTokenInterface):
+    """IbetShare contract"""
+
     issue_price: int
     cancellation_date: str
     memo: str
@@ -959,7 +1080,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
     def __init__(self, contract_address: str = ZERO_ADDRESS):
         super().__init__(contract_address, "IbetShare")
 
-    def create(self, args: list, tx_from: str, private_key: str):
+    async def create(self, args: list, tx_from: str, private_key: bytes):
         """Deploy token
 
         :param args: deploy arguments
@@ -968,7 +1089,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         :return: contract address, ABI, transaction hash
         """
         if self.token_address == ZERO_ADDRESS:
-            contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+            contract_address, abi, tx_hash = await AsyncContractUtils.deploy_contract(
                 contract_name="IbetShare",
                 args=args,
                 deployer=tx_from,
@@ -980,112 +1101,135 @@ class IbetShareContract(IbetSecurityTokenInterface):
         else:
             raise SendTransactionError("contract is already deployed")
 
-    def get(self):
+    T = TypeVar("T")
+
+    async def get(self) -> T:
         """Get token attributes"""
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
+        try:
+            # When using the cache
+            if TOKEN_CACHE:
+                token_cache: TokenCache | None = (
+                    await db_session.scalars(
+                        select(TokenCache)
+                        .where(TokenCache.token_address == self.token_address)
+                        .limit(1)
+                    )
+                ).first()
+                if token_cache is not None:
+                    is_updated = await self.check_attr_update(
+                        db_session=db_session, base_datetime=token_cache.cached_datetime
+                    )
+                    if (
+                        is_updated is False
+                        and token_cache.expiration_datetime > datetime.utcnow()
+                    ):
+                        # Get data from cache
+                        for k, v in token_cache.attributes.items():
+                            setattr(self, k, v)
+                        await db_session.close()
+                        return AttributeDict(self.__dict__)
 
-        # When using the cache
-        if TOKEN_CACHE:
-            token_cache: TokenCache | None = db_session.scalars(
-                select(TokenCache)
-                .where(TokenCache.token_address == self.token_address)
-                .limit(1)
-            ).first()
-            if token_cache is not None:
-                is_updated = self.check_attr_update(
-                    db_session=db_session, base_datetime=token_cache.cached_datetime
-                )
-                if (
-                    is_updated is False
-                    and token_cache.expiration_datetime > datetime.utcnow()
-                ):
-                    # Get data from cache
-                    for k, v in token_cache.attributes.items():
-                        setattr(self, k, v)
-                    db_session.close()
-                    return AttributeDict(self.__dict__)
+            # When cache is not used
+            # Or, if there is no data in the cache
+            # Or, if the cache has expired
 
-        # When cache is not used
-        # Or, if there is no data in the cache
-        # Or, if the cache has expired
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
 
-        contract = ContractUtils.get_contract(
-            contract_name=self.contract_name, contract_address=self.token_address
-        )
-
-        # Set IbetStandardTokenInterface attribute
-        self.issuer_address = ContractUtils.call_function(
-            contract, "owner", (), ZERO_ADDRESS
-        )
-        self.name = ContractUtils.call_function(contract, "name", (), "")
-        self.symbol = ContractUtils.call_function(contract, "symbol", (), "")
-        self.total_supply = ContractUtils.call_function(contract, "totalSupply", (), 0)
-        self.tradable_exchange_contract_address = ContractUtils.call_function(
-            contract, "tradableExchange", (), ZERO_ADDRESS
-        )
-        self.contact_information = ContractUtils.call_function(
-            contract, "contactInformation", (), ""
-        )
-        self.privacy_policy = ContractUtils.call_function(
-            contract, "privacyPolicy", (), ""
-        )
-        self.status = ContractUtils.call_function(contract, "status", (), True)
-
-        # Set IbetSecurityTokenInterface attribute
-        self.personal_info_contract_address = ContractUtils.call_function(
-            contract, "personalInfoAddress", (), ZERO_ADDRESS
-        )
-        self.transferable = ContractUtils.call_function(
-            contract, "transferable", (), False
-        )
-        self.is_offering = ContractUtils.call_function(
-            contract, "isOffering", (), False
-        )
-        self.transfer_approval_required = ContractUtils.call_function(
-            contract, "transferApprovalRequired", (), False
-        )
-
-        # Set IbetShareToken attribute
-        self.issue_price = ContractUtils.call_function(contract, "issuePrice", (), 0)
-        self.cancellation_date = ContractUtils.call_function(
-            contract, "cancellationDate", (), ""
-        )
-        self.memo = ContractUtils.call_function(contract, "memo", (), "")
-        self.principal_value = ContractUtils.call_function(
-            contract, "principalValue", (), 0
-        )
-        self.is_canceled = ContractUtils.call_function(
-            contract, "isCanceled", (), False
-        )
-        _dividend_info = ContractUtils.call_function(
-            contract, "dividendInformation", (), (0, "", "")
-        )
-        self.dividends = float(
-            Decimal(str(_dividend_info[0])) * Decimal("0.0000000000001")
-        )
-        self.dividend_record_date = _dividend_info[1]
-        self.dividend_payment_date = _dividend_info[2]
-
-        if TOKEN_CACHE:
-            # Create token cache
             try:
-                self.create_cache(db_session)
-                db_session.commit()
-            except SAIntegrityError:
-                db_session.rollback()
+                tasks = await SemaphoreTaskGroup.run(
+                    # IbetStandardTokenInterface attribute
+                    AsyncContractUtils.call_function(
+                        contract, "owner", (), ZERO_ADDRESS
+                    ),
+                    AsyncContractUtils.call_function(contract, "name", (), ""),
+                    AsyncContractUtils.call_function(contract, "symbol", (), ""),
+                    AsyncContractUtils.call_function(contract, "totalSupply", (), 0),
+                    AsyncContractUtils.call_function(
+                        contract, "tradableExchange", (), ZERO_ADDRESS
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "contactInformation", (), ""
+                    ),
+                    AsyncContractUtils.call_function(contract, "privacyPolicy", (), ""),
+                    AsyncContractUtils.call_function(contract, "status", (), True),
+                    # IbetSecurityTokenInterface attribute
+                    AsyncContractUtils.call_function(
+                        contract, "personalInfoAddress", (), ZERO_ADDRESS
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "transferable", (), False
+                    ),
+                    AsyncContractUtils.call_function(contract, "isOffering", (), False),
+                    AsyncContractUtils.call_function(
+                        contract, "transferApprovalRequired", (), False
+                    ),
+                    # IbetShareToken attribute
+                    AsyncContractUtils.call_function(contract, "issuePrice", (), 0),
+                    AsyncContractUtils.call_function(
+                        contract, "cancellationDate", (), ""
+                    ),
+                    AsyncContractUtils.call_function(contract, "memo", (), ""),
+                    AsyncContractUtils.call_function(contract, "principalValue", (), 0),
+                    AsyncContractUtils.call_function(contract, "isCanceled", (), False),
+                    AsyncContractUtils.call_function(
+                        contract, "dividendInformation", (), (0, "", "")
+                    ),
+                    max_concurrency=3,
+                )
+                (
+                    self.issuer_address,
+                    self.name,
+                    self.symbol,
+                    self.total_supply,
+                    self.tradable_exchange_contract_address,
+                    self.contact_information,
+                    self.privacy_policy,
+                    self.status,
+                    self.personal_info_contract_address,
+                    self.transferable,
+                    self.is_offering,
+                    self.transfer_approval_required,
+                    self.issue_price,
+                    self.cancellation_date,
+                    self.memo,
+                    self.principal_value,
+                    self.is_canceled,
+                    _dividend_info,
+                ) = [task.result() for task in tasks]
+            except ExceptionGroup:
+                raise ServiceUnavailableError from None
 
-        db_session.close()
+            self.dividends = float(
+                Decimal(str(_dividend_info[0])) * Decimal("0.0000000000001")
+            )
+            self.dividend_record_date = _dividend_info[1]
+            self.dividend_payment_date = _dividend_info[2]
+
+            if TOKEN_CACHE:
+                # Create token cache
+                try:
+                    await self.create_cache(db_session)
+                    await db_session.commit()
+                except SAIntegrityError:
+                    await db_session.rollback()
+        finally:
+            await db_session.close()
 
         return AttributeDict(self.__dict__)
 
-    def update(self, data: IbetShareUpdateParams, tx_from: str, private_key: str):
+    async def update(
+        self, data: IbetShareUpdateParams, tx_from: str, private_key: bytes
+    ):
         """Update token"""
-        contract = ContractUtils.get_contract(
+        contract = AsyncContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
 
         if data.tradable_exchange_contract_address is not None:
-            tx = contract.functions.setTradableExchange(
+            tx = await contract.functions.setTradableExchange(
                 data.tradable_exchange_contract_address
             ).build_transaction(
                 {
@@ -1096,7 +1240,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1105,7 +1251,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.personal_info_contract_address is not None:
-            tx = contract.functions.setPersonalInfoAddress(
+            tx = await contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
             ).build_transaction(
                 {
@@ -1116,7 +1262,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1126,7 +1274,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
         if data.dividends is not None:
             _dividends = int(Decimal(str(data.dividends)) * Decimal("10000000000000"))
-            tx = contract.functions.setDividendInformation(
+            tx = await contract.functions.setDividendInformation(
                 _dividends, data.dividend_record_date, data.dividend_payment_date
             ).build_transaction(
                 {
@@ -1137,7 +1285,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1146,7 +1296,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.cancellation_date is not None:
-            tx = contract.functions.setCancellationDate(
+            tx = await contract.functions.setCancellationDate(
                 data.cancellation_date
             ).build_transaction(
                 {
@@ -1157,7 +1307,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1166,7 +1318,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.contact_information is not None:
-            tx = contract.functions.setContactInformation(
+            tx = await contract.functions.setContactInformation(
                 data.contact_information
             ).build_transaction(
                 {
@@ -1177,7 +1329,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1186,7 +1340,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.privacy_policy is not None:
-            tx = contract.functions.setPrivacyPolicy(
+            tx = await contract.functions.setPrivacyPolicy(
                 data.privacy_policy
             ).build_transaction(
                 {
@@ -1197,7 +1351,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1206,7 +1362,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.status is not None:
-            tx = contract.functions.setStatus(data.status).build_transaction(
+            tx = await contract.functions.setStatus(data.status).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -1215,7 +1371,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1224,7 +1382,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.transferable is not None:
-            tx = contract.functions.setTransferable(
+            tx = await contract.functions.setTransferable(
                 data.transferable
             ).build_transaction(
                 {
@@ -1235,7 +1393,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1244,7 +1404,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_offering is not None:
-            tx = contract.functions.changeOfferingStatus(
+            tx = await contract.functions.changeOfferingStatus(
                 data.is_offering
             ).build_transaction(
                 {
@@ -1255,7 +1415,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1264,7 +1426,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.transfer_approval_required is not None:
-            tx = contract.functions.setTransferApprovalRequired(
+            tx = await contract.functions.setTransferApprovalRequired(
                 data.transfer_approval_required
             ).build_transaction(
                 {
@@ -1275,7 +1437,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1284,7 +1448,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.principal_value is not None:
-            tx = contract.functions.setPrincipalValue(
+            tx = await contract.functions.setPrincipalValue(
                 data.principal_value
             ).build_transaction(
                 {
@@ -1295,7 +1459,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1304,7 +1470,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_canceled is not None and data.is_canceled:
-            tx = contract.functions.changeToCanceled().build_transaction(
+            tx = await contract.functions.changeToCanceled().build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -1313,7 +1479,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1322,7 +1490,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.memo is not None:
-            tx = contract.functions.setMemo(data.memo).build_transaction(
+            tx = await contract.functions.setMemo(data.memo).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -1331,7 +1499,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 }
             )
             try:
-                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
             except ContractRevertError:
                 raise
             except TimeExhausted as timeout_error:
@@ -1340,12 +1510,12 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
-            self.record_attr_update(db_session)
-            self.delete_cache(db_session)
-            db_session.commit()
+            await self.record_attr_update(db_session)
+            await self.delete_cache(db_session)
+            await db_session.commit()
         except Exception as err:
             raise SendTransactionError(err)
         finally:
-            db_session.close()
+            await db_session.close()

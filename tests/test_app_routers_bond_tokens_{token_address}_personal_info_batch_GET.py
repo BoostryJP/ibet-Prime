@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 
 from app.model.db import (
@@ -63,6 +64,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
@@ -108,6 +111,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
             BatchRegisterPersonalInfoUploadStatus.PENDING.value
         )
         db.add(batch_register_upload)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -166,6 +171,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         )
         db.add(batch_register_upload)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
@@ -218,6 +225,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
             BatchRegisterPersonalInfoUploadStatus.PENDING.value
         )
         db.add(batch_register_upload)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -272,6 +281,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         )
         db.add(batch_register_upload)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
@@ -318,6 +329,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -366,6 +379,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         batch_register_upload.upload_id = self.upload_id_list[0]
         batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE.value
         db.add(batch_register_upload)
+
+        db.commit()
 
         # request target API
         resp = client.get(

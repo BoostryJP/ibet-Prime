@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from app.model.db import (
     Account,
     IDXLockedPosition,
@@ -56,6 +57,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -98,6 +101,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -159,6 +164,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         idx_locked_position.value = 5
         db.add(idx_locked_position)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -209,6 +216,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 0
         db.add(idx_locked_position)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -298,6 +307,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         idx_locked_position.value = 5
         db.add(idx_locked_position)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -371,6 +382,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         account.issuer_address = _issuer_address
         db.add(account)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -406,6 +419,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         token.token_status = 0
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         resp = client.get(

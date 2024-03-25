@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 # make application directory
 RUN mkdir -p /app/ibet-Prime/
@@ -11,6 +11,7 @@ RUN groupadd -g 1000 apl \
 
 # install packages
 RUN apt-get update -q \
+ && apt-get upgrade -qy \
  && apt-get install -y --no-install-recommends \
  unzip \
  build-essential \
@@ -57,7 +58,7 @@ RUN . ~/.bash_profile \
 
 # install poetry
 RUN . ~/.bash_profile \
- && python -m pip install poetry==1.6.1
+ && python -m pip install poetry==1.7.1
 RUN . ~/.bash_profile \
  && poetry config virtualenvs.create false
 
@@ -87,7 +88,7 @@ COPY pyproject.toml /app/ibet-Prime/pyproject.toml
 COPY poetry.lock /app/ibet-Prime/poetry.lock
 RUN . ~/.bash_profile \
  && cd /app/ibet-Prime \
- && poetry install --no-root \
+ && poetry install --no-root -E ibet-explorer \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/poetry.lock
 
@@ -96,6 +97,7 @@ USER root
 RUN mkdir -p /app/ibet-Prime/tests/
 COPY --chown=apl:apl tests/ /app/ibet-Prime/tests/
 RUN chmod -R 755 /app/ibet-Prime/tests/
+ENV PYTHONPATH /app/ibet-Prime
 
 USER apl
 RUN mkdir -p /app/ibet-Prime/cov/

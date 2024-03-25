@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import asyncio
 from asyncio import Event, Lock
 from datetime import datetime
@@ -171,9 +172,9 @@ class BlockScreen(TuiScreen):
         ):
             return
 
-        self.query_one(
-            BlockListQueryPanel
-        ).block_list_query = self.tui.state.block_list_query
+        self.query_one(BlockListQueryPanel).block_list_query = (
+            self.tui.state.block_list_query
+        )
         asyncio.create_task(self.fetch_block_list())
 
     ##################################################

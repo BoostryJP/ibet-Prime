@@ -16,11 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
+import sys
 
 from sqlalchemy import Table
 

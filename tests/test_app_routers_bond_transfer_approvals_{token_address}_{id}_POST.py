@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from datetime import datetime
 from unittest import mock
@@ -143,6 +144,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -283,6 +286,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             return_value=("test_tx_hash", {"status": 1}),
         )
 
+        db.commit()
+
         # request target API
         with IbetSecurityTokenEscrow_approve_transfer as mock_transfer:
             resp = client.post(
@@ -408,6 +413,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
@@ -545,6 +552,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -747,6 +756,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         id = 10
 
         # request target api
@@ -779,6 +790,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         id = 10
 
@@ -822,6 +835,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         id = 10
 
         # request target api
@@ -864,6 +879,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         id = 10
 
@@ -930,6 +947,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = True
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -993,6 +1012,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1054,6 +1075,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1114,6 +1137,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target api
         resp = client.post(
@@ -1182,6 +1207,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _cancel_op.application_id = 100
         _cancel_op.operation_type = TransferApprovalOperationType.CANCEL.value
         db.add(_cancel_op)
+
+        db.commit()
 
         # request target api
         resp = client.post(
@@ -1278,6 +1305,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1368,6 +1397,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1478,6 +1509,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1569,6 +1602,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
@@ -1672,6 +1707,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1763,6 +1800,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
@@ -1828,6 +1867,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1909,6 +1950,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_from)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
@@ -51,6 +52,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account_before.eoa_password = eoa_password
         _account_before.rsa_status = AccountRsaStatus.UNSET.value
         db.add(_account_before)
+
         db.commit()
 
         password = self.valid_password
@@ -92,6 +94,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account_before.rsa_passphrase = rsa_passphrase
         _account_before.rsa_status = AccountRsaStatus.SET.value
         db.add(_account_before)
+
         db.commit()
 
         _temporary_before = db.scalars(select(AccountRsaKeyTemporary)).all()
@@ -138,6 +141,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account_before.eoa_password = eoa_password
         _account_before.rsa_status = AccountRsaStatus.UNSET.value
         db.add(_account_before)
+
         db.commit()
 
         req_param = {}
@@ -227,6 +231,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.rsa_status = AccountRsaStatus.SET.value
         db.add(_account)
 
+        db.commit()
+
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
         _user_2 = config_eth_account("user2")
@@ -250,6 +256,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.eoa_password = E2EEUtils.encrypt("password")
         _account.rsa_status = AccountRsaStatus.CREATING.value
         db.add(_account)
+
+        db.commit()
 
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
@@ -277,6 +285,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.rsa_status = AccountRsaStatus.CHANGING.value
         db.add(_account)
 
+        db.commit()
+
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
@@ -302,6 +312,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.rsa_passphrase = E2EEUtils.encrypt("password")
         _account.rsa_status = AccountRsaStatus.SET.value
         db.add(_account)
+
+        db.commit()
 
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.invalid_password)}
 

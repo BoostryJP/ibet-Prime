@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from unittest import mock
 
@@ -75,6 +76,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
 
         db.add(_token_holders_collection)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(token_address=token_address, list_id=list_id),
@@ -117,7 +120,6 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         db.commit()
 
         holders = []
-
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -126,6 +128,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _token_holder.locked_balance = 20000 * (i + 1)
             db.add(_token_holder)
             holders.append(_token_holder.json())
+        db.commit()
 
         # request target api
         resp = client.get(
@@ -197,6 +200,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(_token_holders_list)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(token_address=token_address, list_id=list_id),
@@ -237,6 +242,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(_token_holders_list)
 
+        db.commit()
+
         # request target api with invalid list_id
         resp = client.get(
             self.base_url.format(token_address=token_address, list_id="some_id"),
@@ -269,7 +276,10 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         list_id = str(uuid.uuid4())
+
         # request target api
         resp = client.get(
             self.base_url.format(token_address=token_address, list_id=list_id),
@@ -302,6 +312,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token1.abi = {}
         _token1.version = TokenVersion.V_22_12
         db.add(_token1)
+
         _token2 = Token()
         _token2.type = TokenType.IBET_STRAIGHT_BOND.value
         _token2.tx_hash = ""
@@ -318,6 +329,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token_holders_list.block_number = 100
         _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(_token_holders_list)
+
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(token_address=token_address2, list_id=list_id),
@@ -359,6 +373,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token_holders_collection.batch_status = TokenHolderBatchStatus.DONE.value
 
         db.add(_token_holders_collection)
+
+        db.commit()
 
         # request target api
         resp = client.get(

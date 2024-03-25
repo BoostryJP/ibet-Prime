@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from datetime import datetime, timedelta
 
@@ -79,6 +80,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsGET:
         token_event.data = update_data
         token_event.created = datetime_now_utc
         db.add(token_event)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -149,6 +152,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsGET:
             token_event.data = update_data
             token_event.created = _datetime
             db.add(token_event)
+
+        db.commit()
 
         # request target API
         resp = client.get(

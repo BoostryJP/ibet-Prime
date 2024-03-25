@@ -5,6 +5,7 @@ Revises: 8ed94523e21c
 Create Date: 2023-10-30 21:35:34.922094
 
 """
+
 from alembic import op
 from sqlalchemy import delete
 

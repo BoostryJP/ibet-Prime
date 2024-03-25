@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from typing import Optional, Sequence
 
 import pytz
@@ -23,7 +24,7 @@ from fastapi import APIRouter, Header, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, func, select
 
-from app.database import DBSession
+from app.database import DBAsyncSession
 from app.model.db import Notification
 from app.model.schema import ListAllNotificationsResponse
 from app.utils.check_utils import address_is_valid_address, validate_headers
@@ -43,8 +44,8 @@ utc_tz = pytz.timezone("UTC")
     response_model=ListAllNotificationsResponse,
     responses=get_routers_responses(422),
 )
-def list_all_notifications(
-    db: DBSession,
+async def list_all_notifications(
+    db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
     notice_type: str = Query(None),
     offset: int = Query(None),
@@ -57,7 +58,7 @@ def list_all_notifications(
 
     stmt = select(Notification).order_by(Notification.created)
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if issuer_address is not None:
@@ -65,7 +66,7 @@ def list_all_notifications(
     if notice_type is not None:
         stmt = stmt.where(Notification.type == notice_type)
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
@@ -73,7 +74,7 @@ def list_all_notifications(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _notification_list: Sequence[Notification] = db.scalars(stmt).all()
+    _notification_list: Sequence[Notification] = (await db.scalars(stmt)).all()
 
     notifications = []
     for _notification in _notification_list:
@@ -111,8 +112,8 @@ def list_all_notifications(
     response_model=None,
     responses=get_routers_responses(422, 404),
 )
-def delete_notification(
-    db: DBSession,
+async def delete_notification(
+    db: DBAsyncSession,
     notice_id: str,
     issuer_address: str = Header(...),
 ):
@@ -122,21 +123,23 @@ def delete_notification(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Notification
-    _notification = db.scalars(
-        select(Notification)
-        .where(
-            and_(
-                Notification.notice_id == notice_id,
-                Notification.issuer_address == issuer_address,
+    _notification = (
+        await db.scalars(
+            select(Notification)
+            .where(
+                and_(
+                    Notification.notice_id == notice_id,
+                    Notification.issuer_address == issuer_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _notification is None:
         raise HTTPException(status_code=404, detail="notification does not exist")
 
     # Delete Notification
-    db.delete(_notification)
-    db.commit()
+    await db.delete(_notification)
+    await db.commit()
 
     return

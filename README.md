@@ -1,7 +1,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-23.12-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.3-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -29,7 +29,7 @@ English | [日本語](./README_JA.md)
 
 ## Supported ibet smart contract version
 
-* ibet-SmartContract: version 22.12.0
+* ibet-SmartContract: Supports the latest version of contract specifications.
 * See [details](./contracts/contract_version.md).
 
 

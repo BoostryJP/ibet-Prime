@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from datetime import datetime
 
@@ -48,6 +49,7 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
+        db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
@@ -97,6 +99,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         auth_token.valid_duration = 120
         db.add(auth_token)
 
+        db.commit()
+
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
@@ -141,6 +145,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
 
+        db.commit()
+
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
@@ -180,6 +186,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
+
+        db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
@@ -222,6 +230,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
 
+        db.commit()
+
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
@@ -263,6 +273,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
+
+        db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
@@ -308,6 +320,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
 
+        db.commit()
+
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
@@ -350,6 +364,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
+
+        db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
@@ -394,6 +410,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
 
+        db.commit()
+
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
@@ -435,6 +453,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
+
+        db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
@@ -480,6 +500,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         auth_token.valid_duration = 0  # endless
         db.add(auth_token)
 
+        db.commit()
+
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
@@ -515,6 +537,8 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )  # 2022-07-15 12:34:56 - 120sec
         auth_token.valid_duration = 120
         db.add(auth_token)
+
+        db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")

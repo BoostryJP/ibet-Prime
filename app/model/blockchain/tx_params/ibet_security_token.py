@@ -16,52 +16,31 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import BaseModel, PositiveInt, field_validator
-from web3 import Web3
+
+from pydantic import BaseModel, PositiveInt
+
+from app.model import EthereumAddress
 
 
 class TransferParams(BaseModel):
-    from_address: str
-    to_address: str
+    from_address: EthereumAddress
+    to_address: EthereumAddress
     amount: PositiveInt
 
-    @field_validator("from_address")
-    @classmethod
-    def from_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("from_address is not a valid address")
-        return v
 
-    @field_validator("to_address")
-    @classmethod
-    def to_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("to_address is not a valid address")
-        return v
+class BulkTransferParams(BaseModel):
+    to_address_list: list[EthereumAddress]
+    amount_list: list[PositiveInt]
 
 
 class AdditionalIssueParams(BaseModel):
-    account_address: str
+    account_address: EthereumAddress
     amount: PositiveInt
-
-    @field_validator("account_address")
-    @classmethod
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
-        return v
 
 
 class RedeemParams(BaseModel):
-    account_address: str
+    account_address: EthereumAddress
     amount: PositiveInt
-
-    @field_validator("account_address")
-    @classmethod
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
-        return v
 
 
 class ApproveTransferParams(BaseModel):
@@ -75,42 +54,14 @@ class CancelTransferParams(BaseModel):
 
 
 class LockParams(BaseModel):
-    lock_address: str
+    lock_address: EthereumAddress
     value: PositiveInt
     data: str
-
-    @field_validator("lock_address")
-    @classmethod
-    def lock_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("lock_address is not a valid address")
-        return v
 
 
 class ForceUnlockParams(BaseModel):
-    lock_address: str
-    account_address: str
-    recipient_address: str
+    lock_address: EthereumAddress
+    account_address: EthereumAddress
+    recipient_address: EthereumAddress
     value: PositiveInt
     data: str
-
-    @field_validator("lock_address")
-    @classmethod
-    def lock_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("lock_address is not a valid address")
-        return v
-
-    @field_validator("account_address")
-    @classmethod
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
-        return v
-
-    @field_validator("recipient_address")
-    @classmethod
-    def recipient_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("recipient_address is not a valid address")
-        return v

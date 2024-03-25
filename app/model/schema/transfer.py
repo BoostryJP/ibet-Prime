@@ -16,14 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from enum import Enum
+
+from enum import Enum, IntEnum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, Field, NonNegativeInt
+from pydantic import BaseModel, Field, NonNegativeInt, conint
 from pydantic.dataclasses import dataclass
 
-from app.model.schema.base import ResultSet
+from app.model.schema.base import ResultSet, SortOrder
 
 from .personal_info import PersonalInfo
 
@@ -35,6 +36,13 @@ from .personal_info import PersonalInfo
 class TransferSourceEventType(str, Enum):
     Transfer = "Transfer"
     Unlock = "Unlock"
+
+
+class TransferApprovalStatus(IntEnum):
+    UNAPPROVED = 0
+    ESCROW_FINISHED = 1
+    TRANSFERRED = 2
+    CANCELED = 3
 
 
 ############################
@@ -59,13 +67,15 @@ class ListTransferHistoryQuery:
     sort_item: Annotated[
         ListTransferHistorySortItem, Query(description="sort item")
     ] = ListTransferHistorySortItem.BLOCK_TIMESTAMP
-    sort_order: Annotated[int, Query(ge=0, le=1, description="0:asc, 1:desc")] = 1
-    offset: Annotated[
-        Optional[NonNegativeInt], Query(description="start position")
-    ] = None
-    limit: Annotated[
-        Optional[NonNegativeInt], Query(description="number of set")
-    ] = None
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
+    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
+        None
+    )
+    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
+        None
+    )
 
 
 class UpdateTransferApprovalOperationType(str, Enum):
@@ -77,6 +87,40 @@ class UpdateTransferApprovalRequest(BaseModel):
     """Update Transfer Approval schema (Request)"""
 
     operation_type: UpdateTransferApprovalOperationType = Field(...)
+
+
+class ListTransferApprovalHistorySortItem(str, Enum):
+    ID = "id"
+    EXCHANGE_ADDRESS = "exchange_address"
+    APPLICATION_ID = "application_id"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+    APPLICATION_DATETIME = "application_datetime"
+    APPROVAL_DATETIME = "approval_datetime"
+    STATUS = "status"
+
+
+@dataclass
+class ListTransferApprovalHistoryQuery:
+    from_address: Annotated[Optional[str], Query()] = None
+    to_address: Annotated[Optional[str], Query()] = None
+    status: Annotated[
+        Optional[List[TransferApprovalStatus]],
+        Query(description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"),
+    ] = None
+    sort_item: Annotated[Optional[ListTransferApprovalHistorySortItem], Query()] = (
+        ListTransferApprovalHistorySortItem.ID
+    )
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
+    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
+        None
+    )
+    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
+        None
+    )
 
 
 ############################

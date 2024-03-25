@@ -16,39 +16,78 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import BaseModel
 
-from app.model.db import TokenType
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+from .base import TokenType
+from .token import IbetShareTransfer, IbetStraightBondTransfer
+
+
+############################
+# REQUEST
+############################
+class IbetStraightBondBulkTransferRequest(BaseModel):
+    transfer_list: list[IbetStraightBondTransfer] = Field(
+        ...,
+        description="List of data to be transferred",
+        min_length=1,
+        max_length=500000,
+    )
+    transaction_compression: Optional[bool] = Field(
+        default=None,
+        description="Transaction compression mode",
+    )
+
+
+class IbetShareBulkTransferRequest(BaseModel):
+    transfer_list: list[IbetShareTransfer] = Field(
+        ...,
+        description="List of data to be transferred",
+        min_length=1,
+        max_length=500000,
+    )
+    transaction_compression: Optional[bool] = Field(
+        default=None,
+        description="Transaction compression mode",
+    )
+
 
 ############################
 # RESPONSE
 ############################
-
-
 class BulkTransferUploadIdResponse(BaseModel):
     """bulk transfer upload id"""
 
-    upload_id: str
+    upload_id: str = Field(..., description="Upload id")
 
 
 class BulkTransferUploadResponse(BaseModel):
     """bulk transfer upload"""
 
-    upload_id: str
-    issuer_address: str
-    token_type: TokenType
-    status: int
-    created: str
+    upload_id: str = Field(..., description="Upload id")
+    issuer_address: str = Field(..., description="Issuer account address")
+    token_type: TokenType = Field(..., description="Token type")
+    transaction_compression: bool = Field(
+        ..., description="Transaction compression mode"
+    )
+    status: int = Field(..., description="Processing status")
+    created: str = Field(..., description="Upload created datetime (ISO8601)")
 
 
 class BulkTransferResponse(BaseModel):
     """bulk transfer data"""
 
-    upload_id: str
-    issuer_address: str
-    token_address: str
-    token_type: TokenType
-    from_address: str
-    to_address: str
-    amount: int
-    status: int
+    upload_id: str = Field(..., description="Upload id")
+    issuer_address: str = Field(..., description="Issuer account address")
+    token_address: str = Field(..., description="Token address")
+    token_type: TokenType = Field(..., description="Token type")
+    from_address: str = Field(..., description="Transfer source address")
+    to_address: str = Field(..., description="Transfer destination address")
+    amount: int = Field(..., description="Transfer amount")
+    status: int = Field(..., description="Transfer status")
+    transaction_error_code: int | None = Field(..., description="Transfer error code")
+    transaction_error_message: str | None = Field(
+        ..., description="Transfer error message"
+    )

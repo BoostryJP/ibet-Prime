@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import base64
 import json
 from unittest import mock
@@ -62,7 +63,7 @@ def initialize(issuer, db):
     )
 
     personal_info_contract = PersonalInfoContract(
-        db, issuer["address"], contract_address
+        issuer=_account, contract_address=contract_address
     )
     return personal_info_contract
 
@@ -73,7 +74,8 @@ class TestGetInfo:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -98,7 +100,7 @@ class TestGetInfo:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -117,20 +119,21 @@ class TestGetInfo:
         ContractUtils.send_transaction(tx, private_key)
 
         # Run Test
-        get_info = personal_info_contract.get_info(setting_user["address"])
+        get_info = await personal_info_contract.get_info(setting_user["address"])
 
         assert get_info == data
 
     # <Normal_2>
     # Unset Information
-    def test_normal_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], "").build_transaction(
+        tx = await contract.functions.register(issuer["address"], "").build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
                 "from": setting_user["address"],
@@ -147,7 +150,7 @@ class TestGetInfo:
         ContractUtils.send_transaction(tx, private_key)
 
         # Run Test
-        get_info = personal_info_contract.get_info(
+        get_info = await personal_info_contract.get_info(
             setting_user["address"], default_value="test"
         )
 
@@ -168,7 +171,8 @@ class TestGetInfo:
 
     # <Error_1>
     # Invalid RSA Private Key
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -193,7 +197,7 @@ class TestGetInfo:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -215,7 +219,7 @@ class TestGetInfo:
         personal_info_contract.issuer.rsa_private_key = "testtest"
 
         # Run Test
-        get_info = personal_info_contract.get_info(
+        get_info = await personal_info_contract.get_info(
             setting_user["address"], default_value="test"
         )
 
@@ -232,14 +236,15 @@ class TestGetInfo:
 
     # <Error_2>
     # Decrypt Fail
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], "testtest"
         ).build_transaction(
             {
@@ -258,7 +263,7 @@ class TestGetInfo:
         ContractUtils.send_transaction(tx, private_key)
 
         # Run Test
-        get_info = personal_info_contract.get_info(
+        get_info = await personal_info_contract.get_info(
             setting_user["address"], default_value="test"
         )
 
@@ -281,7 +286,8 @@ class TestRegisterInfo:
 
     # <Normal_1>
     # not register
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -297,15 +303,18 @@ class TestRegisterInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_contract.register_info(setting_user["address"], register_data)
+        await personal_info_contract.register_info(
+            setting_user["address"], register_data
+        )
 
-        get_info = personal_info_contract.get_info(setting_user["address"])
+        get_info = await personal_info_contract.get_info(setting_user["address"])
 
         assert get_info == register_data
 
     # <Normal_2>
     # registered
-    def test_normal_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -330,7 +339,7 @@ class TestRegisterInfo:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -359,9 +368,9 @@ class TestRegisterInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_contract.register_info(setting_user["address"], update_data)
+        await personal_info_contract.register_info(setting_user["address"], update_data)
 
-        get_info = personal_info_contract.get_info(setting_user["address"])
+        get_info = await personal_info_contract.get_info(setting_user["address"])
 
         assert get_info == update_data
 
@@ -371,7 +380,8 @@ class TestRegisterInfo:
 
     # <Error_1>
     # SendTransactionError(Timeout)
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -388,17 +398,18 @@ class TestRegisterInfo:
             "tax_category": 10,
         }
         with mock.patch(
-            "web3.eth.Eth.wait_for_transaction_receipt",
+            "web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             MagicMock(side_effect=TimeExhausted()),
         ):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.register_info(
+                await personal_info_contract.register_info(
                     setting_user["address"], register_data
                 )
 
     # <Error_2>
     # SendTransactionError(Other Error)
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -415,17 +426,18 @@ class TestRegisterInfo:
             "tax_category": 10,
         }
         with mock.patch(
-            "web3.eth.Eth.wait_for_transaction_receipt",
+            "web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             MagicMock(side_effect=TypeError()),
         ):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.register_info(
+                await personal_info_contract.register_info(
                     setting_user["address"], register_data
                 )
 
     # <Error_3>
     # Transaction REVERT
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         # Transaction REVERT would not occur in PersonalInfo_register
         pass
 
@@ -436,7 +448,8 @@ class TestModifyInfo:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -461,7 +474,7 @@ class TestModifyInfo:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -490,9 +503,9 @@ class TestModifyInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_contract.modify_info(setting_user["address"], update_data)
+        await personal_info_contract.modify_info(setting_user["address"], update_data)
 
-        get_info = personal_info_contract.get_info(setting_user["address"])
+        get_info = await personal_info_contract.get_info(setting_user["address"])
 
         assert get_info == update_data
 
@@ -502,7 +515,8 @@ class TestModifyInfo:
 
     # <Error_1>
     # SendTransactionError(Timeout)
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -527,7 +541,7 @@ class TestModifyInfo:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -557,15 +571,18 @@ class TestModifyInfo:
             "tax_category": 10,
         }
         with mock.patch(
-            "web3.eth.Eth.wait_for_transaction_receipt",
+            "web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             MagicMock(side_effect=TimeExhausted()),
         ):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.modify_info(setting_user["address"], update_data)
+                await personal_info_contract.modify_info(
+                    setting_user["address"], update_data
+                )
 
     # <Error_2>
     # SendTransactionError(Other Error)
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -590,7 +607,7 @@ class TestModifyInfo:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -620,15 +637,18 @@ class TestModifyInfo:
             "tax_category": 10,
         }
         with mock.patch(
-            "web3.eth.Eth.wait_for_transaction_receipt",
+            "web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             MagicMock(side_effect=TypeError()),
         ):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.modify_info(setting_user["address"], update_data)
+                await personal_info_contract.modify_info(
+                    setting_user["address"], update_data
+                )
 
     # <Error_3>
     # Transaction REVERT(not registered)
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -652,12 +672,14 @@ class TestModifyInfo:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
+            "web3.eth.async_eth.AsyncEth.call",
             MagicMock(side_effect=ContractLogicError("execution reverted")),
         )
         # test IbetSecurityTokenEscrow.approve_transfer
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            personal_info_contract.modify_info(setting_user["address"], update_data)
+            await personal_info_contract.modify_info(
+                setting_user["address"], update_data
+            )
 
         assert exc_info.value.args[0] == "execution reverted"
 
@@ -668,7 +690,8 @@ class TestGetRegisterEvent:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -695,7 +718,7 @@ class TestGetRegisterEvent:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -715,7 +738,7 @@ class TestGetRegisterEvent:
 
         block_number_after = web3.eth.block_number
 
-        events = personal_info_contract.get_register_event(
+        events = await personal_info_contract.get_register_event(
             block_number_before, block_number_after
         )
 
@@ -730,7 +753,8 @@ class TestGetModifyEvent:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
@@ -755,7 +779,7 @@ class TestGetModifyEvent:
             cipher.encrypt(json.dumps(data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(
+        tx = await contract.functions.register(
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -790,7 +814,7 @@ class TestGetModifyEvent:
             cipher.encrypt(json.dumps(update_data).encode("utf-8"))
         )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.modify(
+        tx = await contract.functions.modify(
             setting_user["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -809,7 +833,7 @@ class TestGetModifyEvent:
 
         block_number_after = web3.eth.block_number
 
-        events = personal_info_contract.get_modify_event(
+        events = await personal_info_contract.get_modify_event(
             block_number_before, block_number_after
         )
 

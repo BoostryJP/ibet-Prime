@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from unittest import mock
 
@@ -54,6 +55,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
 
@@ -90,6 +93,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         )
         additional_issue_upload1.processed = False
         db.add(additional_issue_upload1)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -181,6 +186,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         )
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -297,6 +304,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
@@ -398,6 +407,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         )
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": False}
@@ -507,6 +518,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         req_param = {"limit": 2, "offset": 2}
         resp = client.get(self.base_url.format(token_address), params=req_param)
@@ -607,6 +620,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         req_param = {"sort_order": 0}
         resp = client.get(self.base_url.format(token_address), params=req_param)
@@ -672,6 +687,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": "invalid_value"}

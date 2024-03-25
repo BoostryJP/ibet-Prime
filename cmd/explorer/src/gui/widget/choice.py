@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.widgets import Label, ListItem, ListView

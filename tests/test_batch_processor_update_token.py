@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime, timezone
 from unittest.mock import ANY, call, patch
 
@@ -57,7 +58,8 @@ class TestProcessor:
 
     # <Normal_1>
     # Issuing(IbetShare, IbetStraightBond)
-    def test_normal_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -75,7 +77,9 @@ class TestProcessor:
 
         _token_1 = Token()
         _token_1.type = TokenType.IBET_SHARE.value
-        _token_1.tx_hash = "tx_hash_1"
+        _token_1.tx_hash = (
+            "0x0000000000000000000000000000000000000000000000000000000000000001"
+        )
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
@@ -113,7 +117,9 @@ class TestProcessor:
 
         _token_2 = Token()
         _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
-        _token_2.tx_hash = "tx_hash_2"
+        _token_2.tx_hash = (
+            "0x0000000000000000000000000000000000000000000000000000000000000002"
+        )
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
@@ -189,11 +195,11 @@ class TestProcessor:
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None,
         ) as TokenListContract_register, patch(
-            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value=mock_block,
         ) as ContractUtils_get_block_by_transaction_hash:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
@@ -253,8 +259,12 @@ class TestProcessor:
 
             ContractUtils_get_block_by_transaction_hash.assert_has_calls(
                 [
-                    call("tx_hash_1"),
-                    call("tx_hash_2"),
+                    call(
+                        "0x0000000000000000000000000000000000000000000000000000000000000001"
+                    ),
+                    call(
+                        "0x0000000000000000000000000000000000000000000000000000000000000002"
+                    ),
                 ]
             )
 
@@ -280,14 +290,20 @@ class TestProcessor:
 
             _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
             _utxo = _utxo_list[0]
-            assert _utxo.transaction_hash == "tx_hash_1"
+            assert (
+                _utxo.transaction_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
             assert _utxo.account_address == _issuer_address
             assert _utxo.token_address == _token_address_1
             assert _utxo.amount == 10000
             assert _utxo.block_number == 12345
             assert _utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
             _utxo = _utxo_list[1]
-            assert _utxo.transaction_hash == "tx_hash_2"
+            assert (
+                _utxo.transaction_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000002"
+            )
             assert _utxo.account_address == _issuer_address
             assert _utxo.token_address == _token_address_2
             assert _utxo.amount == 2000
@@ -323,7 +339,8 @@ class TestProcessor:
 
     # <Error_1>
     # Issuing: Account does not exist
-    def test_error_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -440,7 +457,7 @@ class TestProcessor:
         db.commit()
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # assertion(DB)
         _idx_position_list = db.scalars(
@@ -539,7 +556,8 @@ class TestProcessor:
 
     # <Error_2>
     # Issuing: Fail to get the private key
-    def test_error_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -656,7 +674,7 @@ class TestProcessor:
         db.commit()
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # assertion(DB)
         _idx_position_list = db.scalars(
@@ -755,7 +773,8 @@ class TestProcessor:
 
     # <Error_3>
     # Issuing: Send transaction error(token update)
-    def test_error_3(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -879,7 +898,7 @@ class TestProcessor:
             side_effect=SendTransactionError(),
         ) as IbetStraightBondContract_update:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # assertion(DB)
             _idx_position_list = db.scalars(
@@ -978,7 +997,8 @@ class TestProcessor:
 
     # <Error_4>
     # Issuing: Send transaction error(TokenList register)
-    def test_error_4(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1105,7 +1125,7 @@ class TestProcessor:
             side_effect=SendTransactionError(),
         ) as TokenListContract_register:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(

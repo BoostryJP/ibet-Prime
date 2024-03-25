@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from fastapi import FastAPI, Request
@@ -35,6 +36,7 @@ from app.routers import (
     common,
     e2e_messaging,
     file,
+    freeze_log,
     ledger,
     notification,
     position,
@@ -60,7 +62,7 @@ tags_metadata = [
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="23.12.0",
+    version="24.3.0",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -102,6 +104,7 @@ app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
 app.include_router(bc_explorer.router)
+app.include_router(freeze_log.router)
 
 
 ###############################################################

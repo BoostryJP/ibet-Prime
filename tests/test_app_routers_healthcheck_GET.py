@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 from unittest import mock
 from unittest.mock import MagicMock
@@ -38,11 +39,14 @@ class TestAppRoutersHealthcheckGET:
         _node.priority = 0
         _node.is_synced = False
         db.add(_node)
+
         _node = Node()
         _node.endpoint_uri = "http://test2"
         _node.priority = 1
         _node.is_synced = True
         db.add(_node)
+
+        db.commit()
 
         # request target api
         resp = client.get(self.apiurl)
@@ -76,11 +80,14 @@ class TestAppRoutersHealthcheckGET:
         _node.priority = 0
         _node.is_synced = False
         db.add(_node)
+
         _node = Node()
         _node.endpoint_uri = "http://test2"
         _node.priority = 1
         _node.is_synced = False
         db.add(_node)
+
+        db.commit()
 
         # request target api
         resp = client.get(self.apiurl)
@@ -101,12 +108,11 @@ class TestAppRoutersHealthcheckGET:
     def test_error_2(self, client, db):
         # request target api
         with mock.patch(
-            "sqlalchemy.orm.session.Session.connection",
+            "sqlalchemy.ext.asyncio.AsyncSession.connection",
             MagicMock(side_effect=Exception()),
         ):
             resp = client.get(self.apiurl)
 
-        print(resp.json())
         # assertion
         assert resp.status_code == 503
         assert resp.json() == {

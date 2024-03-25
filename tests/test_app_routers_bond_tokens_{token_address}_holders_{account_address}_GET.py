@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from app.model.db import (
@@ -77,6 +78,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "tax_category": 10,
         }
         db.add(idx_personal_info_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -156,6 +159,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "tax_category": 10,
         }
         db.add(idx_personal_info_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -257,6 +262,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         }
         db.add(idx_personal_info_1)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
@@ -316,6 +323,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.pending_transfer = 5
         idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -386,10 +395,12 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -483,6 +494,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         account.issuer_address = _issuer_address
         db.add(account)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
@@ -518,6 +531,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         resp = client.get(

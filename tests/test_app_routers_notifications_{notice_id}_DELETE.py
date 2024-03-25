@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from sqlalchemy import select
@@ -88,6 +89,8 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
             "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/03
         db.add(_notification_4)
+
+        db.commit()
 
         # request target API
         resp = client.delete(

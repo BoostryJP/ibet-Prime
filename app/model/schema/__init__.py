@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from .account import (
     AccountAuthTokenRequest,
     AccountAuthTokenResponse,
@@ -45,6 +46,8 @@ from .bulk_transfer import (
     BulkTransferResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
+    IbetShareBulkTransferRequest,
+    IbetStraightBondBulkTransferRequest,
 )
 from .e2e_messaging import (
     E2EMessagingAccountChangeEOAPasswordRequest,
@@ -61,7 +64,18 @@ from .file import (
     ListAllFilesResponse,
     UploadFileRequest,
 )
-from .holder import HolderCountResponse, HolderResponse
+from .freeze_log import (
+    CreateFreezeLogAccountRequest,
+    FreezeLogAccountChangeEOAPasswordRequest,
+    FreezeLogAccountResponse,
+    ListAllFreezeLogAccountResponse,
+    RecordNewFreezeLogRequest,
+    RecordNewFreezeLogResponse,
+    RetrieveFreezeLogQuery,
+    RetrieveFreezeLogResponse,
+    UpdateFreezeLogRequest,
+)
+from .holder import HolderCountResponse, HolderResponse, HoldersResponse
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
 from .ledger import (
@@ -79,6 +93,7 @@ from .personal_info import (
     BatchRegisterPersonalInfoResult,
     BatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
+    ListAllPersonalInfoBatchRegistrationUploadQuery,
     ListBatchRegisterPersonalInfoUploadResponse,
     RegisterPersonalInfoRequest,
 )
@@ -111,9 +126,15 @@ from .token import (
     IbetStraightBondResponse,
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
+    ListAdditionalIssuanceHistoryQuery,
+    ListAllAdditionalIssueUploadQuery,
+    ListAllHoldersQuery,
+    ListAllHoldersSortItem,
+    ListAllRedeemUploadQuery,
     ListAllTokenLockEventsQuery,
     ListAllTokenLockEventsResponse,
     ListAllTokenLockEventsSortItem,
+    ListRedeemHistoryQuery,
     ListTokenHistorySortItem,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
@@ -129,6 +150,7 @@ from .token_holders import (
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
+    ListTransferApprovalHistoryQuery,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     TransferApprovalHistoryResponse,

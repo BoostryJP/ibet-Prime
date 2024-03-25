@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 from unittest import mock
 from unittest.mock import MagicMock
@@ -24,7 +25,7 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.types import RPCEndpoint
@@ -67,12 +68,13 @@ class TestProcessor:
 
     # Normal_1
     # Skip process: from_block > latest_block
-    def test_normal_1(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, processor, db, caplog):
         before_block_number = web3.eth.block_number
         self.set_block_number(db, before_block_number)
 
         # Execute batch processing
-        processor.process()
+        await processor.process()
 
         # Assertion
         indexed_block = db.scalars(
@@ -94,7 +96,8 @@ class TestProcessor:
 
     # Normal_2
     # BlockData: Empty block is generated
-    def test_normal_2(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, processor, db, caplog):
         before_block_number = web3.eth.block_number
         self.set_block_number(db, before_block_number)
 
@@ -102,7 +105,7 @@ class TestProcessor:
         web3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Execute batch processing
-        processor.process()
+        await processor.process()
         after_block_number = web3.eth.block_number
 
         # Assertion: Data
@@ -134,7 +137,8 @@ class TestProcessor:
 
     # Normal_3_1
     # TxData: Contract deployment
-    def test_normal_3_1(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, processor, db, caplog):
         deployer = config_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
@@ -159,7 +163,7 @@ class TestProcessor:
         )
 
         # Execute batch processing
-        processor.process()
+        await processor.process()
         after_block_number = web3.eth.block_number
 
         # Assertion
@@ -185,7 +189,8 @@ class TestProcessor:
 
     # Normal_3_2
     # TxData: Transaction
-    def test_normal_3_2(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, processor, db, caplog):
         deployer = config_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
@@ -217,7 +222,7 @@ class TestProcessor:
         )
 
         # Execute batch processing
-        processor.process()
+        await processor.process()
         after_block_number = web3.eth.block_number
 
         # Assertion
@@ -260,16 +265,17 @@ class TestProcessor:
     ###########################################################################
 
     # Error_1: ServiceUnavailable
-    def test_error_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, processor, db):
         before_block_number = web3.eth.block_number
         self.set_block_number(db, before_block_number)
 
         # Execute batch processing
         with mock.patch(
-            "web3.providers.rpc.HTTPProvider.make_request",
+            "web3.providers.async_rpc.AsyncHTTPProvider.make_request",
             MagicMock(side_effect=ServiceUnavailableError()),
         ), pytest.raises(ServiceUnavailableError):
-            processor.process()
+            await processor.process()
 
         # Assertion
         indexed_block = db.scalars(
@@ -286,7 +292,8 @@ class TestProcessor:
         assert len(tx_data) == 0
 
     # Error_2: SQLAlchemyError
-    def test_error_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, processor, db):
         before_block_number = web3.eth.block_number
         self.set_block_number(db, before_block_number)
 
@@ -295,9 +302,9 @@ class TestProcessor:
 
         # Execute batch processing
         with mock.patch.object(
-            Session, "commit", side_effect=SQLAlchemyError()
+            AsyncSession, "commit", side_effect=SQLAlchemyError()
         ), pytest.raises(SQLAlchemyError):
-            processor.process()
+            await processor.process()
 
         # Assertion
         indexed_block = db.scalars(

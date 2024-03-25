@@ -16,10 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 from enum import Enum, StrEnum
 
-from sqlalchemy import JSON, DateTime, Integer, String
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -55,6 +56,8 @@ class Token(Base):
     abi: Mapped[dict] = mapped_column(JSON, nullable=False)
     # token processing status (pending:0, succeeded:1, failed:2)
     token_status: Mapped[int | None] = mapped_column(Integer, default=1)
+    # initial position synced
+    initial_position_synced: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
 
 class TokenAttrUpdate(Base):

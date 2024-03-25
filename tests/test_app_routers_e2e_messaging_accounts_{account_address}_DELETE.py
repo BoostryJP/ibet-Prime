@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import time
 from datetime import datetime
 
@@ -62,6 +63,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         _rsa_key.block_timestamp = datetime.utcnow()
         db.add(_rsa_key)
         time.sleep(1)
+
+        db.commit()
 
         # request target api
         resp = client.delete(

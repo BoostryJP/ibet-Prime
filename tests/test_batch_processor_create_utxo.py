@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import json
 import time
 from unittest import mock
@@ -43,8 +44,9 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     TransferParams as IbetStraightBondTransferParams,
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import UTXO, Token, TokenType, TokenVersion, UTXOBlockNumber
+from app.model.db import UTXO, Account, Token, TokenType, TokenVersion, UTXOBlockNumber
 from app.utils.contract_utils import ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
@@ -63,7 +65,7 @@ def processor(db):
     return Processor()
 
 
-def deploy_bond_token_contract(
+async def deploy_bond_token_contract(
     address,
     private_key,
     personal_info_contract_address=None,
@@ -83,8 +85,8 @@ def deploy_bond_token_contract(
         "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
-    contract_address, _, _ = bond_contrat.create(arguments, address, private_key)
-    bond_contrat.update(
+    contract_address, _, _ = await bond_contrat.create(arguments, address, private_key)
+    await bond_contrat.update(
         IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
@@ -97,7 +99,7 @@ def deploy_bond_token_contract(
     return contract_address
 
 
-def deploy_share_token_contract(address, private_key):
+async def deploy_share_token_contract(address, private_key):
     arguments = [
         "token.name",
         "token.symbol",
@@ -110,8 +112,10 @@ def deploy_share_token_contract(address, private_key):
         30,
     ]
     share_contract = IbetShareContract()
-    contract_address, _, _ = share_contract.create(arguments, address, private_key)
-    share_contract.update(
+    contract_address, _, _ = await share_contract.create(
+        arguments, address, private_key
+    )
+    await share_contract.update(
         IbetShareUpdateParams(transferable=True), address, private_key
     )
 
@@ -127,7 +131,8 @@ class TestProcessor:
     # Execute Batch Run 1st: No Event
     # Execute Batch Run 2nd: Executed Transfer Event
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_1(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -139,7 +144,9 @@ class TestProcessor:
         user_address_2 = user_3["address"]
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -149,7 +156,7 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(
+        token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
@@ -161,25 +168,31 @@ class TestProcessor:
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Execute batch(Run 1st)
         # Assume: Skip processing
         latest_block = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # assertion
-        _utox_list = db.scalars(select(UTXO)).all()
-        assert len(_utox_list) == 0
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_list = db.scalars(select(UTXO)).all()
+        assert len(_utxo_list) == 0
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
 
         # Execute Transfer Event
         # Share:issuer -> user1
         _transfer_1 = IbetShareTransferParams(
             from_address=issuer_address, to_address=user_address_1, amount=70
         )
-        IbetShareContract(token_address_2).transfer(
+        await IbetShareContract(token_address_2).transfer(
             _transfer_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -188,7 +201,7 @@ class TestProcessor:
         _transfer_2 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_1, amount=40
         )
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -197,7 +210,7 @@ class TestProcessor:
         _transfer_3 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_2, amount=20
         )
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer_3, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -206,53 +219,53 @@ class TestProcessor:
         _transfer_4 = IbetShareTransferParams(
             from_address=user_address_1, to_address=user_address_2, amount=10
         )
-        IbetShareContract(token_address_2).transfer(
+        await IbetShareContract(token_address_2).transfer(
             _transfer_4, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Execute batch(Run 2nd)
         # Assume: Create UTXO
-        processor.process()
+        await processor.process()
 
         # assertion
         db.rollback()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         # 1.Bond token:issuer -> user1 (tx2)
         # 2.Bond token:issuer -> user2 (tx3)
         # 3.Share token:issuer -> user1 (tx1)
         # 4.Share token:user1 -> issuer (tx4)
-        assert len(_utox_list) == 4
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 40
-        assert _utox.block_number > _utox_list[2].block_number
-        assert _utox.block_timestamp > _utox_list[2].block_timestamp
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
-        assert _utox.block_number > _utox_list[0].block_number
-        assert _utox.block_timestamp > _utox_list[0].block_timestamp
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 60  # spend to user2(70 - 10)
-        assert _utox.block_number is not None
-        assert _utox.block_timestamp is not None
-        _utox = _utox_list[3]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 10
-        assert _utox.block_number > _utox_list[1].block_number
-        assert _utox.block_timestamp > _utox_list[1].block_timestamp
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == _utox_list[3].block_number
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 40
+        assert _utxo.block_number > _utxo_list[2].block_number
+        assert _utxo.block_timestamp > _utxo_list[2].block_timestamp
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        assert _utxo.block_number > _utxo_list[0].block_number
+        assert _utxo.block_timestamp > _utxo_list[0].block_timestamp
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 60  # spend to user2(70 - 10)
+        assert _utxo.block_number is not None
+        assert _utxo.block_timestamp is not None
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 10
+        assert _utxo.block_number > _utxo_list[1].block_number
+        assert _utxo.block_timestamp > _utxo_list[1].block_timestamp
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == _utxo_list[3].block_number
 
         mock_func.assert_has_calls(
             [
@@ -265,7 +278,8 @@ class TestProcessor:
     # Over max block lot
     @mock.patch("batch.processor_create_utxo.create_ledger")
     @mock.patch("batch.processor_create_utxo.CREATE_UTXO_BLOCK_LOT_MAX_SIZE", 5)
-    def test_normal_2(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -277,7 +291,9 @@ class TestProcessor:
         user_address_2 = user_3["address"]
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -292,83 +308,90 @@ class TestProcessor:
         _utxo_block_number.latest_block_number = latest_block_number
         db.add(_utxo_block_number)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Transfer event 6 times
         _transfer = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_1, amount=60
         )
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _transfer = IbetStraightBondTransferParams(
             from_address=user_address_1, to_address=user_address_2, amount=10
         )
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # Assertion
         _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utxo_block_number.latest_block_number == latest_block_number + 5
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 5
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
-        assert _utox.block_number == latest_block_number + 1
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 2
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 3
-        _utox = _utox_list[3]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 4
-        _utox = _utox_list[4]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 5
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 5
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        assert _utxo.block_number == latest_block_number + 1
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 2
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 3
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 4
+        _utxo = _utxo_list[4]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 5
 
     # <Normal_3>
     # bulk transfer(same transaction-hash)
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_3(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -386,7 +409,9 @@ class TestProcessor:
         )
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -396,6 +421,12 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         token_contract = ContractUtils.get_contract("IbetStraightBond", token_address_1)
@@ -404,7 +435,7 @@ class TestProcessor:
         personal_contract_address, _, _ = ContractUtils.deploy_contract(
             "PersonalInfo", [], issuer_address, issuer_private_key
         )
-        IbetStraightBondContract(token_address_1).update(
+        await IbetStraightBondContract(token_address_1).update(
             IbetStraightBondUpdateParams(
                 personal_info_contract_address=personal_contract_address
             ),
@@ -447,26 +478,27 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # Assertion
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 2
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 50
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 2
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 50
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
 
     # <Normal_4>
     # to Exchange transfer only
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_4(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -474,7 +506,9 @@ class TestProcessor:
         )
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -483,6 +517,12 @@ class TestProcessor:
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
@@ -508,7 +548,7 @@ class TestProcessor:
         update_data = IbetStraightBondUpdateParams(
             tradable_exchange_contract_address=exchange_address
         )
-        IbetStraightBondContract(token_address_1).update(
+        await IbetStraightBondContract(token_address_1).update(
             update_data, issuer_address, issuer_private_key
         )
 
@@ -517,23 +557,24 @@ class TestProcessor:
         _transfer_1 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=exchange_address, amount=100
         )
-        IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).transfer(
             _transfer_1, issuer_address, issuer_private_key
         )
 
         # Execute batch
         # Assume: Not Create UTXO and Ledger
-        processor.process()
+        await processor.process()
 
         # assertion
-        _utox_list = db.scalars(select(UTXO)).all()
-        assert len(_utox_list) == 0
+        _utxo_list = db.scalars(select(UTXO)).all()
+        assert len(_utxo_list) == 0
         mock_func.assert_not_called()
 
     # <Normal_5>
     # Holder Changed
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_5(
+    @pytest.mark.asyncio
+    async def test_normal_5(
         self, mock_func, processor, db, personal_info_contract, ibet_exchange_contract
     ):
         user_1 = config_eth_account("user1")
@@ -553,7 +594,7 @@ class TestProcessor:
         )
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(
+        token_address_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract_address=personal_info_contract.address,
@@ -632,7 +673,7 @@ class TestProcessor:
         )
 
         # prepare other data
-        other_token_address = deploy_bond_token_contract(
+        other_token_address = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract_address=personal_info_contract.address,
@@ -682,46 +723,54 @@ class TestProcessor:
             [latest_order_id, latest_agreement_id],
         )
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Execute batch
         # Assume: Not Create UTXO and Ledger
-        processor.process()
+        await processor.process()
 
         # assertion
         db.rollback()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
 
-        assert len(_utox_list) == 3
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 0
-        assert _utox.block_number < _utox_list[1].block_number
-        assert _utox.block_timestamp <= _utox_list[1].block_timestamp
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number < _utox_list[2].block_number
-        assert _utox.block_timestamp <= _utox_list[2].block_timestamp
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
+        assert len(_utxo_list) == 3
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        assert _utxo.block_number < _utxo_list[1].block_number
+        assert _utxo.block_timestamp <= _utxo_list[1].block_timestamp
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number < _utxo_list[2].block_number
+        assert _utxo.block_timestamp <= _utxo_list[2].block_timestamp
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
 
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number >= _utox_list[1].block_number
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number >= _utxo_list[1].block_number
 
         mock_func.assert_has_calls([call(token_address=token_address_1, db=ANY)])
 
     # <Normal_6>
     # Additional Issue
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_6(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_6(self, mock_func, processor, db):
+
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -733,7 +782,9 @@ class TestProcessor:
         user_address_2 = user_3["address"]
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -743,7 +794,7 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(
+        token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
@@ -754,6 +805,12 @@ class TestProcessor:
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
@@ -762,7 +819,7 @@ class TestProcessor:
         _additional_issue_1 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=70
         )
-        IbetShareContract(token_address_1).additional_issue(
+        await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -771,36 +828,37 @@ class TestProcessor:
         _additional_issue_2 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=80
         )
-        IbetStraightBondContract(token_address_2).additional_issue(
+        await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # assertion
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 2
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 70
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 80
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 2
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 70
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 80
 
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_7>
     # Redeem
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_7(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_7(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -812,7 +870,9 @@ class TestProcessor:
         user_address_2 = user_3["address"]
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -822,7 +882,7 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(
+        token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
@@ -834,6 +894,12 @@ class TestProcessor:
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Execute Issue Event
@@ -841,14 +907,14 @@ class TestProcessor:
         _additional_issue_1 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=10
         )
-        IbetShareContract(token_address_1).additional_issue(
+        await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _additional_issue_2 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=20
         )
-        IbetShareContract(token_address_1).additional_issue(
+        await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -857,47 +923,47 @@ class TestProcessor:
         _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=30
         )
-        IbetStraightBondContract(token_address_2).additional_issue(
+        await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_3, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=40
         )
-        IbetStraightBondContract(token_address_2).additional_issue(
+        await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_4, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Before execute
-        processor.process()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 4
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 30
-        _utox = _utox_list[3]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 40
+        await processor.process()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 30
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 40
 
         # Execute Redeem Event
         # Share
         _redeem_1 = IbetShareRedeemParams(account_address=user_address_1, amount=20)
-        IbetShareContract(token_address_1).redeem(
+        await IbetShareContract(token_address_1).redeem(
             _redeem_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -906,43 +972,44 @@ class TestProcessor:
         _redeem_2 = IbetStraightBondRedeemParams(
             account_address=user_address_2, amount=40
         )
-        IbetStraightBondContract(token_address_2).redeem(
+        await IbetStraightBondContract(token_address_2).redeem(
             _redeem_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # assertion
         db.rollback()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 4
-        _utox = _utox_list[0]
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 0
-        _utox = _utox_list[1]
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        _utox = _utox_list[2]
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 0
-        _utox = _utox_list[3]
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 30
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[1]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        _utxo = _utxo_list[2]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[3]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 30
 
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_8_1>
     # Unlock(account_address!=recipient_address)
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_8_1(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_8_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -962,7 +1029,9 @@ class TestProcessor:
         lock_address = user_4["address"]
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -972,7 +1041,7 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(
+        token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
@@ -984,6 +1053,12 @@ class TestProcessor:
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Execute Issue Event
@@ -991,14 +1066,14 @@ class TestProcessor:
         _additional_issue_1 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=10
         )
-        IbetShareContract(token_address_1).additional_issue(
+        await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _additional_issue_2 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=20
         )
-        IbetShareContract(token_address_1).additional_issue(
+        await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -1007,20 +1082,20 @@ class TestProcessor:
         _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=30
         )
-        IbetStraightBondContract(token_address_2).additional_issue(
+        await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_3, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=40
         )
-        IbetStraightBondContract(token_address_2).additional_issue(
+        await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_4, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Before execute
-        processor.process()
+        await processor.process()
         _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
@@ -1049,7 +1124,9 @@ class TestProcessor:
         _lock_1 = IbetShareLockParams(
             lock_address=lock_address, value=5, data=json.dumps({})
         )
-        IbetShareContract(token_address_1).lock(_lock_1, user_address_1, user_pk_1)
+        await IbetShareContract(token_address_1).lock(
+            _lock_1, user_address_1, user_pk_1
+        )
         time.sleep(1)
 
         _unlock_1 = IbetShareForceUnlockParams(
@@ -1059,7 +1136,7 @@ class TestProcessor:
             value=5,
             data=json.dumps({}),
         )
-        IbetShareContract(token_address_1).force_unlock(
+        await IbetShareContract(token_address_1).force_unlock(
             _unlock_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -1068,7 +1145,7 @@ class TestProcessor:
         _lock_2 = IbetStraightBondLockParams(
             lock_address=lock_address, value=10, data=json.dumps({})
         )
-        IbetStraightBondContract(token_address_2).lock(
+        await IbetStraightBondContract(token_address_2).lock(
             _lock_2, user_address_2, user_pk_2
         )
         time.sleep(1)
@@ -1080,14 +1157,14 @@ class TestProcessor:
             value=10,
             data=json.dumps({}),
         )
-        IbetStraightBondContract(token_address_2).force_unlock(
+        await IbetStraightBondContract(token_address_2).force_unlock(
             _unlock_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # assertion
         db.rollback()
@@ -1124,7 +1201,8 @@ class TestProcessor:
     # <Normal_8_2>
     # Unlock(account_address==recipient_address)
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_8_2(self, mock_func, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_8_2(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1144,7 +1222,9 @@ class TestProcessor:
         lock_address = user_4["address"]
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -1154,7 +1234,7 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(
+        token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
@@ -1166,6 +1246,12 @@ class TestProcessor:
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Execute Issue Event
@@ -1173,14 +1259,14 @@ class TestProcessor:
         _additional_issue_1 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=10
         )
-        IbetShareContract(token_address_1).additional_issue(
+        await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _additional_issue_2 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=20
         )
-        IbetShareContract(token_address_1).additional_issue(
+        await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -1189,20 +1275,20 @@ class TestProcessor:
         _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=30
         )
-        IbetStraightBondContract(token_address_2).additional_issue(
+        await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_3, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=40
         )
-        IbetStraightBondContract(token_address_2).additional_issue(
+        await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_4, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Before execute
-        processor.process()
+        await processor.process()
         _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
@@ -1231,7 +1317,9 @@ class TestProcessor:
         _lock_1 = IbetShareLockParams(
             lock_address=lock_address, value=5, data=json.dumps({})
         )
-        IbetShareContract(token_address_1).lock(_lock_1, user_address_1, user_pk_1)
+        await IbetShareContract(token_address_1).lock(
+            _lock_1, user_address_1, user_pk_1
+        )
         time.sleep(1)
 
         _unlock_1 = IbetShareForceUnlockParams(
@@ -1241,7 +1329,7 @@ class TestProcessor:
             value=5,
             data=json.dumps({}),
         )
-        IbetShareContract(token_address_1).force_unlock(
+        await IbetShareContract(token_address_1).force_unlock(
             _unlock_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -1250,7 +1338,7 @@ class TestProcessor:
         _lock_2 = IbetStraightBondLockParams(
             lock_address=lock_address, value=10, data=json.dumps({})
         )
-        IbetStraightBondContract(token_address_2).lock(
+        await IbetStraightBondContract(token_address_2).lock(
             _lock_2, user_address_2, user_pk_2
         )
         time.sleep(1)
@@ -1262,14 +1350,14 @@ class TestProcessor:
             value=10,
             data=json.dumps({}),
         )
-        IbetStraightBondContract(token_address_2).force_unlock(
+        await IbetStraightBondContract(token_address_2).force_unlock(
             _unlock_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # assertion
         db.rollback()
@@ -1295,13 +1383,152 @@ class TestProcessor:
         _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
+    # <Normal_9>
+    # Transfer & Additional Issue & Redeem
+    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @pytest.mark.asyncio
+    async def test_normal_9(self, mock_func, processor, db):
+
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+
+        # prepare data
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
+        db.add(_token_1)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _utxo = UTXO()
+        _utxo.transaction_hash = "deploy"
+        _utxo.account_address = issuer_address
+        _utxo.token_address = token_address_1
+        _utxo.amount = 100
+        _utxo.block_number = web3.eth.block_number
+        _utxo.block_timestamp = None
+        db.add(_utxo)
+
+        db.commit()
+        await processor.process()
+
+        # Execute Issue Event
+        # Bond
+        _additional_issue_1 = IbetStraightBondAdditionalIssueParams(
+            account_address=issuer_address, amount=1000000000000
+        )
+        await IbetStraightBondContract(token_address_1).additional_issue(
+            _additional_issue_1, issuer_address, issuer_private_key
+        )
+
+        # Share:issuer -> user1
+        _transfer_1 = IbetStraightBondTransferParams(
+            from_address=issuer_address, to_address=user_address_1, amount=90
+        )
+        await IbetStraightBondContract(token_address_1).transfer(
+            _transfer_1, issuer_address, issuer_private_key
+        )
+        # Share:issuer -> user2
+        _transfer_3 = IbetStraightBondTransferParams(
+            from_address=issuer_address, to_address=user_address_2, amount=1000000000000
+        )
+        await IbetStraightBondContract(token_address_1).transfer(
+            _transfer_3, issuer_address, issuer_private_key
+        )
+
+        # Bond
+        _redeem_1 = IbetStraightBondRedeemParams(
+            account_address=user_address_2, amount=1000000000000
+        )
+        await IbetStraightBondContract(token_address_1).redeem(
+            _redeem_1, issuer_address, issuer_private_key
+        )
+
+        _redeem_2 = IbetStraightBondRedeemParams(
+            account_address=issuer_address, amount=10
+        )
+        await IbetStraightBondContract(token_address_1).redeem(
+            _redeem_2, issuer_address, issuer_private_key
+        )
+
+        _redeem_3 = IbetStraightBondRedeemParams(
+            account_address=user_address_1, amount=90
+        )
+        await IbetStraightBondContract(token_address_1).redeem(
+            _redeem_3, issuer_address, issuer_private_key
+        )
+
+        # Execute batch
+        latest_block = web3.eth.block_number
+        await processor.process()
+
+        # assertion
+        _utxo_list = db.scalars(
+            select(UTXO)
+            .where(UTXO.account_address == issuer_address)
+            .order_by(UTXO.created)
+        ).all()
+        assert len(_utxo_list) == 2
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+
+        _utxo_list = db.scalars(
+            select(UTXO)
+            .where(UTXO.account_address == user_address_1)
+            .order_by(UTXO.created)
+        ).all()
+        assert len(_utxo_list) == 1
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+
+        _utxo_list = db.scalars(
+            select(UTXO)
+            .where(UTXO.account_address == user_address_2)
+            .order_by(UTXO.created)
+        ).all()
+        assert len(_utxo_list) == 1
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
+
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
     # Web3 Error
-    def test_error_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1309,7 +1536,9 @@ class TestProcessor:
         )
 
         # prepare data
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -1327,9 +1556,9 @@ class TestProcessor:
             "web3.eth.Eth.uninstall_filter",
             MagicMock(side_effect=Exception("mock test")),
         ) as web3_mock:
-            processor.process()
+            await processor.process()
 
-        _utox_list = db.scalars(select(UTXO)).all()
-        assert len(_utox_list) == 0
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_list = db.scalars(select(UTXO)).all()
+        assert len(_utxo_list) == 0
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block

@@ -5,6 +5,7 @@ Revises: fedec7fb783a
 Create Date: 2023-08-07 17:22:33.511682
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import delete

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from app.model.db import Ledger, Token, TokenType, TokenVersion
@@ -64,6 +65,8 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
             "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
         db.add(_ledger_2)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -127,6 +130,8 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
             "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
         db.add(_ledger_2)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -205,6 +210,8 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
             "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/03
         db.add(_ledger_4)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -345,6 +352,8 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(

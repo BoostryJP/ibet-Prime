@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from src.gui.screen.base import TuiScreen
 from src.gui.widget.block_list_table import BlockListTable
 from src.gui.widget.traceback import TracebackWidget
