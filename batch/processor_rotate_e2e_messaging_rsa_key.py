@@ -16,24 +16,22 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
+
+import asyncio
 import sys
 import time
 from datetime import datetime
 from typing import Sequence
 
+import uvloop
 from Crypto import Random
 from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import create_engine, desc, select
+from sqlalchemy import desc, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
-
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import (
     ContractRevertError,
     SendTransactionError,
@@ -41,14 +39,11 @@ from app.exceptions import (
 )
 from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import Web3Wrapper
-from config import (
-    DATABASE_URL,
-    E2E_MESSAGING_CONTRACT_ADDRESS,
-    ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL,
-)
+from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import batch_log
+from config import E2E_MESSAGING_CONTRACT_ADDRESS, ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL
 
 """
 [PROCESSOR-Rotate-E2E-Messaging-RSA-Key]
@@ -59,62 +54,65 @@ Processor for key rotation for encrypted E2E messaging on the blockchain
 process_name = "PROCESSOR-Rotate-E2E-Messaging-RSA-Key"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3Wrapper()
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+web3 = AsyncWeb3Wrapper()
 
 
 class Processor:
     def __init__(self):
-        self.e2e_messaging_contract = ContractUtils.get_contract(
+        self.e2e_messaging_contract = AsyncContractUtils.get_contract(
             contract_name="E2EMessaging",
             contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
         )
 
-    def process(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def process(self):
+        db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
             base_time = int(time.time())
-            e2e_messaging_account_list = self.__get_e2e_messaging_account_list(
+            e2e_messaging_account_list = await self.__get_e2e_messaging_account_list(
                 db_session=db_session
             )
             for _e2e_messaging_account in e2e_messaging_account_list:
-                self.__auto_generate_rsa_key(
+                await self.__auto_generate_rsa_key(
                     db_session=db_session,
                     base_time=base_time,
                     e2e_messaging_account=_e2e_messaging_account,
                 )
-                self.__rotate_rsa_key(
+                await self.__rotate_rsa_key(
                     db_session=db_session, e2e_messaging_account=_e2e_messaging_account
                 )
-                db_session.commit()
+                await db_session.commit()
         finally:
-            db_session.close()
+            await db_session.close()
 
-    def __get_e2e_messaging_account_list(self, db_session: Session):
-        e2e_messaging_account_list: Sequence[E2EMessagingAccount] = db_session.scalars(
-            select(E2EMessagingAccount)
-            .where(E2EMessagingAccount.is_deleted == False)
-            .order_by(E2EMessagingAccount.account_address)
+    @staticmethod
+    async def __get_e2e_messaging_account_list(db_session: AsyncSession):
+        e2e_messaging_account_list: Sequence[E2EMessagingAccount] = (
+            await db_session.scalars(
+                select(E2EMessagingAccount)
+                .where(E2EMessagingAccount.is_deleted == False)
+                .order_by(E2EMessagingAccount.account_address)
+            )
         ).all()
         return e2e_messaging_account_list
 
-    def __auto_generate_rsa_key(
-        self,
-        db_session: Session,
+    @staticmethod
+    async def __auto_generate_rsa_key(
+        db_session: AsyncSession,
         base_time: int,
         e2e_messaging_account: E2EMessagingAccount,
     ):
         if e2e_messaging_account.rsa_key_generate_interval > 0:
             # Get latest RSA key
-            _account_rsa_key: E2EMessagingAccountRsaKey | None = db_session.scalars(
-                select(E2EMessagingAccountRsaKey)
-                .where(
-                    E2EMessagingAccountRsaKey.account_address
-                    == e2e_messaging_account.account_address
+            _account_rsa_key: E2EMessagingAccountRsaKey | None = (
+                await db_session.scalars(
+                    select(E2EMessagingAccountRsaKey)
+                    .where(
+                        E2EMessagingAccountRsaKey.account_address
+                        == e2e_messaging_account.account_address
+                    )
+                    .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+                    .limit(1)
                 )
-                .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-                .limit(1)
             ).first()
 
             latest_time = int(_account_rsa_key.block_timestamp.timestamp())
@@ -146,7 +144,7 @@ class Processor:
                 )
                 return
             try:
-                tx_hash, _ = E2EMessaging(
+                tx_hash, _ = await E2EMessaging(
                     E2E_MESSAGING_CONTRACT_ADDRESS
                 ).set_public_key(
                     public_key=rsa_public_key,
@@ -169,7 +167,9 @@ class Processor:
                 return
 
             # Register RSA key to DB
-            block = ContractUtils.get_block_by_transaction_hash(tx_hash=tx_hash)
+            block = await AsyncContractUtils.get_block_by_transaction_hash(
+                tx_hash=tx_hash
+            )
             _account_rsa_key = E2EMessagingAccountRsaKey()
             _account_rsa_key.transaction_hash = tx_hash
             _account_rsa_key.account_address = e2e_messaging_account.account_address
@@ -181,34 +181,37 @@ class Processor:
             )
             db_session.add(_account_rsa_key)
 
-    def __rotate_rsa_key(
-        self, db_session: Session, e2e_messaging_account: E2EMessagingAccount
+    @staticmethod
+    async def __rotate_rsa_key(
+        db_session: AsyncSession, e2e_messaging_account: E2EMessagingAccount
     ):
         if e2e_messaging_account.rsa_generation > 0:
             # Delete RSA key that exceeds the number of generations
             _account_rsa_key_over_generation_list: Sequence[
                 E2EMessagingAccountRsaKey
-            ] = db_session.scalars(
-                select(E2EMessagingAccountRsaKey)
-                .where(
-                    E2EMessagingAccountRsaKey.account_address
-                    == e2e_messaging_account.account_address
+            ] = (
+                await db_session.scalars(
+                    select(E2EMessagingAccountRsaKey)
+                    .where(
+                        E2EMessagingAccountRsaKey.account_address
+                        == e2e_messaging_account.account_address
+                    )
+                    .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+                    .offset(e2e_messaging_account.rsa_generation)
                 )
-                .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-                .offset(e2e_messaging_account.rsa_generation)
             ).all()
             for _account_rsa_key in _account_rsa_key_over_generation_list:
-                db_session.delete(_account_rsa_key)
+                await db_session.delete(_account_rsa_key)
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         start_time = time.time()
         try:
-            processor.process()
+            await processor.process()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -217,8 +220,13 @@ def main():
             LOG.error(ex)
 
         elapsed_time = time.time() - start_time
-        time.sleep(max(ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL - elapsed_time, 0))
+        await asyncio.sleep(
+            max(ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL - elapsed_time, 0)
+        )
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        uvloop.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

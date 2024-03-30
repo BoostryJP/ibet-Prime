@@ -61,8 +61,10 @@ class TestRegisterTokenList:
     ###########################################################################
     # Normal Case
     ###########################################################################
+
     # <Normal_1> token_template is IbetShare
-    def test_normal_1(self, db, contract_list):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -83,11 +85,11 @@ class TestRegisterTokenList:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_token_address, abi, tx_hash = share_contract.create(
+        share_token_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
-        TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+        await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
             token_address=share_token_address,
             token_template=TokenType.IBET_SHARE.value,
             tx_from=issuer_address,
@@ -115,11 +117,11 @@ class TestRegisterTokenList:
             "リターン内容",
             "発行目的",
         ]
-        bond_token_address, abi, tx_hash = IbetStraightBondContract().create(
+        bond_token_address, abi, tx_hash = await IbetStraightBondContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
-        TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+        await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
             token_address=bond_token_address,
             token_template=TokenType.IBET_STRAIGHT_BOND.value,
             tx_from=issuer_address,
@@ -148,8 +150,10 @@ class TestRegisterTokenList:
     ###########################################################################
     # Error Case
     ###########################################################################
+
     # <Error_1> Invalid argument: token_address
-    def test_error_1(self, db, contract_list):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -158,7 +162,7 @@ class TestRegisterTokenList:
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+            await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address="dummy_token_address",
                 token_template=TokenType.IBET_SHARE.value,
                 tx_from=issuer_address,
@@ -167,7 +171,8 @@ class TestRegisterTokenList:
         assert isinstance(exc_info.value.args[0], ValidationError)
 
     # <Error_2> Invalid argument: token_list_address
-    def test_error_2(self, db, contract_list):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -176,7 +181,7 @@ class TestRegisterTokenList:
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract("dummy_token_list_address").register(
+            await TokenListContract("dummy_token_list_address").register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_STRAIGHT_BOND.value,
                 tx_from=issuer_address,
@@ -185,7 +190,8 @@ class TestRegisterTokenList:
         assert isinstance(exc_info.value.args[0], ValueError)
 
     # <Error_3> Invalid argument: account_address
-    def test_error_3(self, db, contract_list):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -194,7 +200,7 @@ class TestRegisterTokenList:
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+            await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE.value,
                 tx_from=issuer_address[:-1],
@@ -203,12 +209,13 @@ class TestRegisterTokenList:
         assert isinstance(exc_info.value.args[0], InvalidAddress)
 
     # <Error_4> Invalid argument: private_key
-    def test_error_4(self, db, contract_list):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+            await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE.value,
                 tx_from=issuer_address,
@@ -217,7 +224,8 @@ class TestRegisterTokenList:
         assert isinstance(exc_info.value.args[0], Error)
 
     # <Error_5> SendTransactionError : ContractUtils
-    def test_error_5(self, db, contract_list):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -227,14 +235,14 @@ class TestRegisterTokenList:
 
         # mock
         ContractUtils_send_transaction = patch(
-            target="app.utils.contract_utils.ContractUtils.send_transaction",
+            target="app.utils.contract_utils.AsyncContractUtils.send_transaction",
             side_effect=SendTransactionError(),
         )
 
         # execute the function
         with ContractUtils_send_transaction:
             with pytest.raises(SendTransactionError):
-                TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+                await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                     token_address=ZERO_ADDRESS,
                     token_template=TokenType.IBET_SHARE.value,
                     tx_from=issuer_address,
@@ -242,7 +250,8 @@ class TestRegisterTokenList:
                 )
 
     # <Error_6> Transaction REVERT(token address is zero)
-    def test_error_6(self, db, contract_list):
+    @pytest.mark.asyncio
+    async def test_error_6(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -255,13 +264,13 @@ class TestRegisterTokenList:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
+            "web3.eth.async_eth.AsyncEth.call",
             MagicMock(side_effect=ContractLogicError("execution reverted: 100001")),
         )
 
         # execute the function
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+            await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE.value,
                 tx_from=issuer_address,

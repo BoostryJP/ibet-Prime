@@ -16,16 +16,19 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import math
 from decimal import Decimal
 from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
-from web3 import Web3
+
+from app.model import EthereumAddress
 
 from .ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
     ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
+    BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
@@ -47,8 +50,8 @@ class UpdateParams(BaseModel):
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
     is_redeemed: Optional[bool] = None
-    tradable_exchange_contract_address: Optional[str] = None
-    personal_info_contract_address: Optional[str] = None
+    tradable_exchange_contract_address: Optional[EthereumAddress] = None
+    personal_info_contract_address: Optional[EthereumAddress] = None
     contact_information: Optional[str] = None
     privacy_policy: Optional[str] = None
     transfer_approval_required: Optional[bool] = None
@@ -83,24 +86,12 @@ class UpdateParams(BaseModel):
             )
         return v
 
-    @field_validator("tradable_exchange_contract_address")
-    @classmethod
-    def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError(
-                "tradable_exchange_contract_address is not a valid address"
-            )
-        return v
-
-    @field_validator("personal_info_contract_address")
-    @classmethod
-    def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
 
 class TransferParams(IbetSecurityTokenTransferParams):
+    pass
+
+
+class BulkTransferParams(IbetSecurityTokenBulkTransferParams):
     pass
 
 

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import time
 from datetime import datetime
 
@@ -59,6 +60,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
         _rsa_key.block_timestamp = datetime.utcnow()
         db.add(_rsa_key)
         time.sleep(1)
+
+        db.commit()
 
         # request target api
         req_param = {
@@ -113,6 +116,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
         _rsa_key.block_timestamp = datetime.utcnow()
         db.add(_rsa_key)
         time.sleep(1)
+
+        db.commit()
 
         # request target api
         req_param = {}

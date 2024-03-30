@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from typing import TYPE_CHECKING, cast
 
 from textual.widget import Widget

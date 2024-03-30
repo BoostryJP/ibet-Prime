@@ -16,10 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from unittest import mock
 from unittest.mock import MagicMock
 
+import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from web3 import Web3
@@ -46,7 +48,7 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-def deploy_bond_token_contract(
+async def deploy_bond_token_contract(
     address,
     private_key,
 ):
@@ -64,7 +66,7 @@ def deploy_bond_token_contract(
         "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
+    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
@@ -79,7 +81,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
     ###########################################################################
 
     # <Normal_1_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -89,7 +92,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_bond_token_contract(_issuer_address, issuer_private_key)
+        token_contract = await deploy_bond_token_contract(
+            _issuer_address, issuer_private_key
+        )
         _token_address = token_contract.address
 
         # prepare data
@@ -141,7 +146,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         )
 
         # assertion
-        assert resp.status_code == 200, resp.json()
+        assert resp.status_code == 200
         assert resp.json() is None
 
         token_attr_update = db.scalars(
@@ -212,7 +217,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
     # <Normal_1_2>
     # Empty str set to currency code
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -222,7 +228,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_bond_token_contract(_issuer_address, issuer_private_key)
+        token_contract = await deploy_bond_token_contract(
+            _issuer_address, issuer_private_key
+        )
         _token_address = token_contract.address
 
         # prepare data
@@ -345,7 +353,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
     # <Normal_2>
     # No request parameters
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -355,7 +364,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_bond_token_contract(_issuer_address, issuer_private_key)
+        token_contract = await deploy_bond_token_contract(
+            _issuer_address, issuer_private_key
+        )
         _token_address = token_contract.address
 
         # prepare data
@@ -373,6 +384,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {}
@@ -401,7 +414,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
     # <Normal_3>
     # Authorization by auth token
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -411,7 +425,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             _issuer_address,
             issuer_private_key,
         )
@@ -438,6 +452,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -711,8 +727,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
                     "ctx": {"error": {}},
                     "input": "invalid_address",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "Value error, tradable_exchange_contract_address is not a "
-                    "valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 }
             ],
@@ -739,8 +754,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
                     "ctx": {"error": {}},
                     "input": "invalid_address",
                     "loc": ["body", "personal_info_contract_address"],
-                    "msg": "Value error, personal_info_contract_address is not a "
-                    "valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 }
             ],
@@ -1291,6 +1305,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
@@ -1337,6 +1353,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {}
         resp = client.post(
@@ -1382,6 +1400,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {}

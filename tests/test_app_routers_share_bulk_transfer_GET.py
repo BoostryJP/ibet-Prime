@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 import pytest
@@ -79,6 +80,8 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.test_url,
@@ -92,6 +95,7 @@ class TestAppRoutersShareBulkTransferGET:
                 "issuer_address": self.upload_issuer_list[1]["address"],
                 "token_type": TokenType.IBET_SHARE.value,
                 "upload_id": self.upload_id_list[1],
+                "transaction_compression": False,
                 "status": 1,
                 "created": pytz.timezone("UTC")
                 .localize(utc_now)
@@ -116,6 +120,8 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.test_url)
 
@@ -128,6 +134,7 @@ class TestAppRoutersShareBulkTransferGET:
                     "issuer_address": self.upload_issuer_list[i]["address"],
                     "token_type": TokenType.IBET_SHARE.value,
                     "upload_id": self.upload_id_list[i],
+                    "transaction_compression": False,
                     "status": i,
                     "created": pytz.timezone("UTC")
                     .localize(utc_now)

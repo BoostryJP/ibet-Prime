@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from app.model.db import Account, AccountRsaStatus
 from tests.account_config import config_eth_account
 
@@ -41,6 +42,7 @@ class TestAppRoutersAccountsGET:
         account.keyfile = _admin_keyfile
         account.rsa_status = AccountRsaStatus.UNSET.value
         db.add(account)
+        db.commit()
 
         resp = client.get(self.apiurl)
 
@@ -69,6 +71,7 @@ class TestAppRoutersAccountsGET:
         account.rsa_public_key = _admin_rsa_public_key
         account.rsa_status = AccountRsaStatus.CHANGING.value
         db.add(account)
+        db.commit()
 
         resp = client.get(self.apiurl)
 

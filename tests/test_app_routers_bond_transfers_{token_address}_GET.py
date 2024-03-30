@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from pytz import timezone
@@ -82,6 +83,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -187,6 +190,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -310,6 +315,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -424,6 +431,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address), params={"data": "unlo"}
@@ -515,6 +524,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -702,6 +713,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -860,6 +873,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1020,6 +1035,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -1160,6 +1177,8 @@ class TestAppRoutersBondTransfersGET:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
 
@@ -1213,11 +1232,11 @@ class TestAppRoutersBondTransfersGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"ge": 0},
-                    "input": "-1",
+                    "ctx": {"expected": "0 or 1"},
+                    "input": -1,
                     "loc": ["query", "sort_order"],
-                    "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "msg": "Input should be 0 or 1",
+                    "type": "enum",
                 }
             ],
         }
@@ -1237,11 +1256,11 @@ class TestAppRoutersBondTransfersGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"le": 1},
-                    "input": "2",
+                    "ctx": {"expected": "0 or 1"},
+                    "input": 2,
                     "loc": ["query", "sort_order"],
-                    "msg": "Input should be less than or equal to 1",
-                    "type": "less_than_equal",
+                    "msg": "Input should be 0 or 1",
+                    "type": "enum",
                 }
             ],
         }

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from rich.panel import Panel
@@ -126,9 +127,11 @@ class BlockListSummaryPanel(TuiStatic):
         content.add_row(
             self._spinner if self.loading else "",
             f"{self.only_block_filter}",
-            f"{self.loaded_time.strftime('%Y/%m/%d %H:%M:%S')}"
-            if self.loaded_time is not None
-            else "",
+            (
+                f"{self.loaded_time.strftime('%Y/%m/%d %H:%M:%S')}"
+                if self.loaded_time is not None
+                else ""
+            ),
         )
 
         style = "none"

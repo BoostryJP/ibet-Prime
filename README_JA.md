@@ -1,13 +1,15 @@
+<p align="center">
+  <img width="33%" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
+</p>
+
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-23.12-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.3-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
 [English](./README.md) | 日本語
-
-<img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
 **ibet-Prime は ibet network 向けの証券トークン管理システムです。**
 
@@ -29,7 +31,7 @@
 
 ## コントラクトのバージョン
 
-* ibet-SmartContract: バージョン 22.12.0
+* ibet-SmartContract: 最新バージョンのコントラクトの仕様をサポートしています。
 * [詳細](./contracts/contract_version.md)を参照ください。
 
 ## セットアップ

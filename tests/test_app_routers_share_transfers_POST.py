@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
@@ -66,6 +67,8 @@ class TestAppRoutersShareTransfersPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # mock
         IbetShareContract_mock.side_effect = [None]
@@ -140,6 +143,8 @@ class TestAppRoutersShareTransfersPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetShareContract_mock.side_effect = [None]
 
@@ -205,21 +210,21 @@ class TestAppRoutersShareTransfersPOST:
                     "ctx": {"error": {}},
                     "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "token_address"],
-                    "msg": "Value error, token_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 },
                 {
                     "ctx": {"error": {}},
                     "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "from_address"],
-                    "msg": "Value error, from_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 },
                 {
                     "ctx": {"error": {}},
                     "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "to_address"],
-                    "msg": "Value error, to_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 },
                 {
@@ -441,6 +446,8 @@ class TestAppRoutersShareTransfersPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "token_address": _token_address,
@@ -485,6 +492,8 @@ class TestAppRoutersShareTransfersPOST:
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -540,6 +549,8 @@ class TestAppRoutersShareTransfersPOST:
         token.token_status = 0
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -598,6 +609,8 @@ class TestAppRoutersShareTransfersPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {

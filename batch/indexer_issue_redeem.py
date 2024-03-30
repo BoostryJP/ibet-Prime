@@ -16,54 +16,51 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
+
+import asyncio
 import sys
-import time
 from datetime import datetime
 from typing import Sequence
 
+import uvloop
 from eth_utils import to_checksum_address
-from sqlalchemy import and_, create_engine, select
+from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-from web3.eth import Contract
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import AsyncContract
 
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
-
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
+    Account,
     IDXIssueRedeem,
     IDXIssueRedeemBlockNumber,
     IDXIssueRedeemEventType,
     Token,
 )
-from app.utils.contract_utils import ContractUtils
-from app.utils.web3_utils import Web3Wrapper
-from config import DATABASE_URL, INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL
+from app.utils.contract_utils import AsyncContractUtils
+from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import batch_log
+from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL
 
 process_name = "INDEXER-Issue-Redeem"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3Wrapper()
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+web3 = AsyncWeb3Wrapper()
 
 
 class Processor:
     def __init__(self):
-        self.token_list: dict[str, Contract] = {}
+        self.token_list: dict[str, AsyncContract] = {}
 
-    def sync_new_logs(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def sync_new_logs(self):
+        db_session = BatchAsyncSessionLocal()
         try:
-            self.__get_token_list(db_session=db_session)
+            await self.__get_token_list(db_session=db_session)
 
             # Get from_block_number and to_block_number for contract event filter
-            latest_block = web3.eth.block_number
-            _from_block = self.__get_idx_issue_redeem_block_number(
+            latest_block = await web3.eth.block_number
+            _from_block = await self.__get_idx_issue_redeem_block_number(
                 db_session=db_session
             )
             _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
@@ -77,39 +74,49 @@ class Processor:
             # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
             if latest_block > _to_block:
                 while _to_block < latest_block:
-                    self.__sync_all(
+                    await self.__sync_all(
                         db_session=db_session,
                         block_from=_from_block + 1,
                         block_to=_to_block,
                     )
                     _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
                     _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
             else:
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
 
-            self.__set_idx_transfer_block_number(
+            await self.__set_idx_transfer_block_number(
                 db_session=db_session, block_number=latest_block
             )
-            db_session.commit()
+            await db_session.commit()
         finally:
-            db_session.close()
+            await db_session.close()
         LOG.info("Sync job has been completed")
 
-    def __get_token_list(self, db_session: Session):
+    async def __get_token_list(self, db_session: AsyncSession):
         issued_token_address_list: tuple[str, ...] = tuple(
             [
                 record[0]
-                for record in db_session.execute(
-                    select(Token.token_address).where(Token.token_status == 1)
+                for record in (
+                    await db_session.execute(
+                        select(Token.token_address)
+                        .join(
+                            Account,
+                            and_(
+                                Account.issuer_address == Token.issuer_address,
+                                Account.is_deleted == False,
+                            ),
+                        )
+                        .where(Token.token_status == 1)
+                    )
                 )
                 .tuples()
                 .all()
@@ -124,11 +131,13 @@ class Processor:
             # If there are no tokens to load newly, skip process
             return
 
-        load_required_token_list: Sequence[Token] = db_session.scalars(
-            select(Token).where(
-                and_(
-                    Token.token_status == 1,
-                    Token.token_address.in_(load_required_address_list),
+        load_required_token_list: Sequence[Token] = (
+            await db_session.scalars(
+                select(Token).where(
+                    and_(
+                        Token.token_status == 1,
+                        Token.token_address.in_(load_required_address_list),
+                    )
                 )
             )
         ).all()
@@ -138,31 +147,39 @@ class Processor:
             )
             self.token_list[load_required_token.token_address] = token_contract
 
-    def __get_idx_issue_redeem_block_number(self, db_session: Session):
-        _idx_transfer_block_number = db_session.scalars(
-            select(IDXIssueRedeemBlockNumber).limit(1)
+    @staticmethod
+    async def __get_idx_issue_redeem_block_number(db_session: AsyncSession):
+        _idx_transfer_block_number = (
+            await db_session.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
         if _idx_transfer_block_number is None:
             return 0
         else:
             return _idx_transfer_block_number.latest_block_number
 
-    def __set_idx_transfer_block_number(self, db_session: Session, block_number: int):
-        _idx_transfer_block_number = db_session.scalars(
-            select(IDXIssueRedeemBlockNumber).limit(1)
+    @staticmethod
+    async def __set_idx_transfer_block_number(
+        db_session: AsyncSession, block_number: int
+    ):
+        _idx_transfer_block_number = (
+            await db_session.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
         if _idx_transfer_block_number is None:
             _idx_transfer_block_number = IDXIssueRedeemBlockNumber()
 
         _idx_transfer_block_number.latest_block_number = block_number
-        db_session.merge(_idx_transfer_block_number)
+        await db_session.merge(_idx_transfer_block_number)
 
-    def __sync_all(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_all(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         LOG.info(f"Syncing from={block_from}, to={block_to}")
-        self.__sync_issue(db_session, block_from, block_to)
-        self.__sync_redeem(db_session, block_from, block_to)
+        await self.__sync_issue(db_session, block_from, block_to)
+        await self.__sync_redeem(db_session, block_from, block_to)
 
-    def __sync_issue(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_issue(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize "Issue" events
 
         :param db_session: database session
@@ -172,7 +189,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="Issue",
                     block_from=block_from,
@@ -182,12 +199,12 @@ class Processor:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
                     block_timestamp = datetime.utcfromtimestamp(
-                        web3.eth.get_block(event["blockNumber"])["timestamp"]
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
                     )
                     if args["amount"] > sys.maxsize:
                         pass
                     else:
-                        self.__insert_index(
+                        await self.__insert_index(
                             db_session=db_session,
                             event_type=IDXIssueRedeemEventType.ISSUE.value,
                             transaction_hash=transaction_hash,
@@ -200,7 +217,9 @@ class Processor:
             except Exception:
                 LOG.exception("An exception occurred during event synchronization")
 
-    def __sync_redeem(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_redeem(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize "Redeem" events
 
         :param db_session: database session
@@ -210,7 +229,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="Redeem",
                     block_from=block_from,
@@ -220,12 +239,12 @@ class Processor:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
                     block_timestamp = datetime.utcfromtimestamp(
-                        web3.eth.get_block(event["blockNumber"])["timestamp"]
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
                     )
                     if args["amount"] > sys.maxsize:
                         pass
                     else:
-                        self.__insert_index(
+                        await self.__insert_index(
                             db_session=db_session,
                             event_type=IDXIssueRedeemEventType.REDEEM.value,
                             transaction_hash=transaction_hash,
@@ -239,8 +258,8 @@ class Processor:
                 LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
-    def __insert_index(
-        db_session: Session,
+    async def __insert_index(
+        db_session: AsyncSession,
         event_type: str,
         transaction_hash: str,
         token_address: str,
@@ -261,13 +280,13 @@ class Processor:
         LOG.debug(f"IssueRedeem: transaction_hash={transaction_hash}")
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         try:
-            processor.sync_new_logs()
+            await processor.sync_new_logs()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -275,8 +294,11 @@ def main():
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
-        time.sleep(INDEXER_SYNC_INTERVAL)
+        await asyncio.sleep(INDEXER_SYNC_INTERVAL)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        uvloop.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

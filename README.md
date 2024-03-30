@@ -1,13 +1,15 @@
+<p align="center">
+  <img width="33%" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
+</p>
+
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-23.12-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.3-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
 English | [日本語](./README_JA.md)
-
-<img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
 **The ibet-Prime security token management system for ibet network.**
 
@@ -29,7 +31,7 @@ English | [日本語](./README_JA.md)
 
 ## Supported ibet smart contract version
 
-* ibet-SmartContract: version 22.12.0
+* ibet-SmartContract: Supports the latest version of contract specifications.
 * See [details](./contracts/contract_version.md).
 
 

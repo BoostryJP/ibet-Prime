@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import base64
 
 from app.model.db import UploadFile
@@ -54,6 +55,8 @@ abc def"""
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
         db.add(_upload_file)
+
+        db.commit()
 
         # request target api
         resp = client.get(
@@ -97,6 +100,8 @@ abc def"""
         _upload_file.label = "label_1"
         db.add(_upload_file)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(file_id="file_id_1"),
@@ -134,6 +139,8 @@ abc def"""
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
         db.add(_upload_file)
+
+        db.commit()
 
         # request target api
         resp = client.get(
@@ -218,6 +225,8 @@ abc def"""
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
         db.add(_upload_file)
+
+        db.commit()
 
         # request target API
         resp = client.get(

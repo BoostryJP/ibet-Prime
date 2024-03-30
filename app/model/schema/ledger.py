@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+import sys
 from datetime import datetime
 from typing import List, Optional
 
@@ -67,8 +69,8 @@ class CreateUpdateLedgerDetailsDataRequest(BaseModel):
     name: Optional[str] = Field(None, max_length=200)
     address: Optional[str] = Field(None, max_length=200)
     amount: Optional[int] = Field(None, ge=0, le=1_000_000_000_000)
-    price: Optional[int] = Field(None, ge=0, le=5_000_000_000)
-    balance: Optional[int] = Field(None, ge=0, le=1_000_000_000_000 * 5_000_000_000)
+    price: Optional[int] = Field(None, ge=0, le=1_000_000_000_000)
+    balance: Optional[int] = Field(None, ge=0, le=sys.maxsize)
     acquisition_date: Optional[str] = Field(
         None, min_length=10, max_length=10, description="YYYY/MM/DD"
     )

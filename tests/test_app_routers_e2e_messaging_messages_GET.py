@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import json
 from datetime import datetime
 
@@ -46,6 +47,8 @@ class TestAppRoutersE2EMessagingMessagesGET:
             _account = E2EMessagingAccount()
             _account.account_address = e2e_messaging["to_address"]
             db.add(_account)
+
+        db.commit()
 
     ###########################################################################
     # Normal Case

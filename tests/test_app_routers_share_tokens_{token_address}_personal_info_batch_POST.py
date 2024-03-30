@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from typing import Optional
 from unittest.mock import ANY
@@ -71,6 +72,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         personal_info = {
             "account_address": _test_account_address,
@@ -146,6 +149,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         personal_info = {
             "account_address": _test_account_address,
@@ -268,14 +273,6 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             details.append(
                 {
                     "input": None,
-                    "loc": ["body", i, "account_address"],
-                    "msg": "Input should be a valid string",
-                    "type": "string_type",
-                }
-            )
-            details.append(
-                {
-                    "input": None,
                     "loc": ["body", i, "key_manager"],
                     "msg": "Input should be a valid string",
                     "type": "string_type",
@@ -329,74 +326,74 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 0, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 1, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 2, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 3, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 4, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 5, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 6, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 7, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
+                    "type": "value_error",
                     "loc": ["body", 8, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "test",
-                    "loc": ["body", 9, "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
                     "type": "value_error",
+                    "loc": ["body", 9, "account_address"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "test",
+                    "ctx": {"error": {}},
                 },
             ],
         }
@@ -560,6 +557,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -609,6 +608,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -670,6 +671,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -729,6 +732,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.token_status = 1
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = []

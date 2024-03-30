@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime, timezone
 
 from pytz import timezone as tz
@@ -64,6 +65,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # test data
         datetime_now_utc = datetime.now(timezone.utc)  # utc
@@ -148,6 +151,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # test data
         datetime_now_jst = datetime.now(tz("Asia/Tokyo"))  # jst
@@ -358,6 +363,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # test data
         datetime_now_utc = datetime.now(timezone.utc)
         datetime_now_str = datetime_now_utc.isoformat()
@@ -398,6 +405,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # test data
         datetime_now_utc = datetime.now(timezone.utc)
@@ -454,25 +463,24 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
-                "ctx": {"error": "invalid character in year"},
-                "input": "this is not datetime format",
+                "type": "datetime_from_date_parsing",
                 "loc": ["body", "scheduled_datetime"],
-                "msg": "Input should be a valid datetime, invalid character in year",
-                "type": "datetime_parsing",
+                "msg": "Input should be a valid datetime or date, invalid character in year",
+                "input": "this is not datetime format",
+                "ctx": {"error": "invalid character in year"},
             },
             {
-                "ctx": {"expected": "'Update'"},
-                "input": "aUpdateb",
+                "type": "enum",
                 "loc": ["body", "event_type"],
                 "msg": "Input should be 'Update'",
-                "type": "enum",
+                "input": "aUpdateb",
+                "ctx": {"expected": "'Update'"},
             },
             {
-                "input": "must be integer, but string",
-                "loc": ["body", "data", "face_value"],
-                "msg": "Input should be a valid integer, unable to parse string as an "
-                "integer",
                 "type": "int_parsing",
+                "loc": ["body", "data", "face_value"],
+                "msg": "Input should be a valid integer, unable to parse string as an integer",
+                "input": "must be integer, but string",
             },
         ]
 
@@ -500,6 +508,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # test data
         datetime_now_utc = datetime.now(timezone.utc)  # utc

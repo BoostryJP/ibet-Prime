@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import configparser
 import os
 import sys
@@ -156,6 +157,7 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 TOKEN_LIST_CONTRACT_ADDRESS = os.environ.get("TOKEN_LIST_CONTRACT_ADDRESS")
 E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get("E2E_MESSAGING_CONTRACT_ADDRESS")
+FREEZE_LOG_CONTRACT_ADDRESS = os.environ.get("FREEZE_LOG_CONTRACT_ADDRESS")
 
 # Token data cache
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
@@ -164,7 +166,11 @@ TOKEN_CACHE_TTL = (
     if os.environ.get("TOKEN_CACHE_TTL")
     else 43200
 )
-
+TOKEN_CACHE_TTL_JITTER = (
+    int(os.environ.get("TOKEN_CACHE_TTL_JITTER"))
+    if os.environ.get("TOKEN_CACHE_TTL_JITTER")
+    else 21600
+)
 
 ####################################################
 # Batch settings

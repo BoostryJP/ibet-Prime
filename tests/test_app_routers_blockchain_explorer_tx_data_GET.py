@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 
 from fastapi.testclient import TestClient
@@ -322,18 +323,18 @@ class TestListTxData:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"error": {}},
-                    "input": "abcd",
-                    "loc": ["from_address"],
-                    "msg": "Value error, from_address is not a valid address",
                     "type": "value_error",
+                    "loc": ["query", "from_address"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "abcd",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "abcd",
-                    "loc": ["to_address"],
-                    "msg": "Value error, to_address is not a valid address",
                     "type": "value_error",
+                    "loc": ["query", "to_address"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "abcd",
+                    "ctx": {"error": {}},
                 },
             ],
         }

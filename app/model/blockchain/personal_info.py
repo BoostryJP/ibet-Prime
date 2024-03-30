@@ -20,22 +20,16 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import logging
-import os
-import sys
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from web3.contract import AsyncContract
 from web3.exceptions import TimeExhausted
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import Account
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
 from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
@@ -44,17 +38,18 @@ web3 = Web3Wrapper()
 
 
 class PersonalInfoContract:
-    """PersonalInfo contract model"""
+    """PersonalInfo contract"""
 
-    def __init__(self, db: Session, issuer_address: str, contract_address=None):
-        self.personal_info_contract = ContractUtils.get_contract(
+    personal_info_contract: AsyncContract
+    issuer: Account
+
+    def __init__(self, issuer: Account, contract_address=None):
+        self.personal_info_contract = AsyncContractUtils.get_contract(
             contract_name="PersonalInfo", contract_address=contract_address
         )
-        self.issuer = db.scalars(
-            select(Account).where(Account.issuer_address == issuer_address).limit(1)
-        ).first()
+        self.issuer = issuer
 
-    def get_info(self, account_address: str, default_value=None):
+    async def get_info(self, account_address: str, default_value=None):
         """Get personal information
 
         :param account_address: Token holder account address
@@ -75,7 +70,7 @@ class PersonalInfoContract:
         }
 
         # Get encrypted personal information
-        personal_info_state = ContractUtils.call_function(
+        personal_info_state = await AsyncContractUtils.call_function(
             contract=self.personal_info_contract,
             function_name="personal_info",
             args=(
@@ -134,7 +129,7 @@ class PersonalInfoContract:
                     logging.error(f"Failed to decrypt: {err}")
                     return personal_info  # default
 
-    def register_info(
+    async def register_info(
         self, account_address: str, data: dict, default_value=None
     ) -> str:
         """Register personal information
@@ -142,7 +137,7 @@ class PersonalInfoContract:
         :param account_address: Token holder account address
         :param data: Register data
         :param default_value: Default value for items for which no value is set. (If not specified: None)
-        :return: None
+        :return: tx_hash
         """
 
         # Set default value
@@ -170,7 +165,7 @@ class PersonalInfoContract:
             private_key = decode_keyfile_json(
                 raw_keyfile_json=self.issuer.keyfile, password=password.encode("utf-8")
             )
-            tx = self.personal_info_contract.functions.forceRegister(
+            tx = await self.personal_info_contract.functions.forceRegister(
                 account_address, ciphertext.decode("utf-8")
             ).build_transaction(
                 {
@@ -180,7 +175,7 @@ class PersonalInfoContract:
                     "gasPrice": 0,
                 }
             )
-            tx_hash, _ = ContractUtils.send_transaction(
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
         except ContractRevertError:
@@ -192,7 +187,7 @@ class PersonalInfoContract:
             raise SendTransactionError(err)
         return tx_hash
 
-    def modify_info(self, account_address: str, data: dict, default_value=None):
+    async def modify_info(self, account_address: str, data: dict, default_value=None):
         """Modify personal information
 
         :param account_address: Token holder account address
@@ -226,7 +221,7 @@ class PersonalInfoContract:
             private_key = decode_keyfile_json(
                 raw_keyfile_json=self.issuer.keyfile, password=password.encode("utf-8")
             )
-            tx = self.personal_info_contract.functions.modify(
+            tx = await self.personal_info_contract.functions.modify(
                 account_address, ciphertext.decode("utf-8")
             ).build_transaction(
                 {
@@ -236,7 +231,9 @@ class PersonalInfoContract:
                     "gasPrice": 0,
                 }
             )
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
@@ -245,14 +242,14 @@ class PersonalInfoContract:
             logging.exception(f"{err}")
             raise SendTransactionError(err)
 
-    def get_register_event(self, block_from, block_to):
+    async def get_register_event(self, block_from, block_to):
         """Get Register event
 
         :param block_from: block from
         :param block_to: block to
         :return: event entries
         """
-        events = ContractUtils.get_event_logs(
+        events = await AsyncContractUtils.get_event_logs(
             contract=self.personal_info_contract,
             event="Register",
             block_from=block_from,
@@ -260,14 +257,14 @@ class PersonalInfoContract:
         )
         return events
 
-    def get_modify_event(self, block_from, block_to):
+    async def get_modify_event(self, block_from, block_to):
         """Get Modify event
 
         :param block_from: block from
         :param block_to: block to
         :return: event entries
         """
-        events = ContractUtils.get_event_logs(
+        events = await AsyncContractUtils.get_event_logs(
             contract=self.personal_info_contract,
             event="Modify",
             block_from=block_from,

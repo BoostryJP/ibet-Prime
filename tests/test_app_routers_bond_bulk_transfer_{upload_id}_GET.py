@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
 from tests.account_config import config_eth_account
 
@@ -52,6 +53,7 @@ class TestAppRoutersBondBulkTransferGET:
     ###########################################################################
 
     # <Normal_1>
+    # Header: issuer-address is set
     def test_normal_1(self, client, db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
@@ -81,6 +83,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer.status = i
             db.add(bulk_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.test_url.format(self.upload_id_list[1]),
@@ -99,11 +103,14 @@ class TestAppRoutersBondBulkTransferGET:
                 "to_address": self.upload_issuer_list[2]["address"],
                 "amount": 11,
                 "status": 1,
+                "transaction_error_code": None,
+                "transaction_error_message": None,
             }
         ]
         assert resp.json() == assumed_response
 
     # <Normal_2>
+    # Header: issuer-address is not set
     def test_normal_2(self, client, db):
         for i in range(0, 3):
             # prepare data : BulkTransferUpload
@@ -126,6 +133,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer.status = i
             db.add(bulk_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.test_url.format(self.upload_id_list[0]),
@@ -143,6 +152,60 @@ class TestAppRoutersBondBulkTransferGET:
                 "to_address": self.upload_issuer_list[2]["address"],
                 "amount": 10,
                 "status": 0,
+                "transaction_error_code": None,
+                "transaction_error_message": None,
+            }
+        ]
+        assert resp.json() == assumed_response
+
+    # <Normal_3>
+    # Bulk transaction error record
+    def test_normal_3(self, client, db):
+        # prepare data : BulkTransferUpload
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = self.upload_issuer_list[0]["address"]
+        bulk_transfer_upload.upload_id = self.upload_id_list[0]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        bulk_transfer_upload.status = 2
+        db.add(bulk_transfer_upload)
+
+        # prepare data : BulkTransfer
+        bulk_transfer = BulkTransfer()
+        bulk_transfer.issuer_address = self.upload_issuer_list[0]["address"]
+        bulk_transfer.upload_id = self.upload_id_list[0]
+        bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        bulk_transfer.token_address = self.bulk_transfer_token
+        bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
+        bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
+        bulk_transfer.amount = 10
+        bulk_transfer.status = 2
+        bulk_transfer.transaction_error_code = 120601
+        bulk_transfer.transaction_error_message = (
+            "Transfer amount is greater than from address balance."
+        )
+        db.add(bulk_transfer)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.test_url.format(self.upload_id_list[0]),
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = [
+            {
+                "issuer_address": self.upload_issuer_list[0]["address"],
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "upload_id": self.upload_id_list[0],
+                "token_address": self.bulk_transfer_token,
+                "from_address": self.upload_issuer_list[1]["address"],
+                "to_address": self.upload_issuer_list[2]["address"],
+                "amount": 10,
+                "status": 2,
+                "transaction_error_code": 120601,
+                "transaction_error_message": "Transfer amount is greater than from address balance.",
             }
         ]
         assert resp.json() == assumed_response
@@ -218,6 +281,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
             db.add(bulk_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(

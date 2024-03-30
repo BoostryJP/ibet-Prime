@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 import re
 import secrets
@@ -33,7 +34,7 @@ from pytz import timezone
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 
-from app.database import DBSession
+from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
     AuthTokenAlreadyExistsError,
@@ -88,7 +89,7 @@ local_tz = timezone(TZ)
     response_model=AccountResponse,
     responses=get_routers_responses(422, InvalidParameterError),
 )
-def create_key(db: DBSession, data: AccountCreateKeyRequest):
+async def create_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
     """Create Keys"""
     # Check Password Policy
     eoa_password = (
@@ -126,7 +127,7 @@ def create_key(db: DBSession, data: AccountCreateKeyRequest):
     _tm.tx_from = addr
     db.add(_tm)
 
-    db.commit()
+    await db.commit()
 
     return json_response(
         {
@@ -140,12 +141,12 @@ def create_key(db: DBSession, data: AccountCreateKeyRequest):
 
 # GET: /accounts
 @router.get("/accounts", response_model=List[AccountResponse])
-def list_all_accounts(db: DBSession):
+async def list_all_accounts(db: DBAsyncSession):
     """List all accounts"""
 
     # Register key data to the DB
-    _accounts: Sequence[Account] = db.scalars(
-        select(Account).order_by(Account.issuer_address)
+    _accounts: Sequence[Account] = (
+        await db.scalars(select(Account).order_by(Account.issuer_address))
     ).all()
 
     account_list = []
@@ -168,11 +169,13 @@ def list_all_accounts(db: DBSession):
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-def retrieve_account(db: DBSession, issuer_address: str):
+async def retrieve_account(db: DBAsyncSession, issuer_address: str):
     """Retrieve an account"""
 
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
@@ -193,18 +196,20 @@ def retrieve_account(db: DBSession, issuer_address: str):
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-def delete_account(db: DBSession, issuer_address: str):
+async def delete_account(db: DBAsyncSession, issuer_address: str):
     """Logically delete an account"""
 
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
     _account.is_deleted = True
-    db.merge(_account)
-    db.commit()
+    await db.merge(_account)
+    await db.commit()
 
     return json_response(
         {
@@ -222,16 +227,18 @@ def delete_account(db: DBSession, issuer_address: str):
     response_model=AccountResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def generate_rsa_key(
-    db: DBSession,
+async def generate_rsa_key(
+    db: DBAsyncSession,
     issuer_address: str,
     data: AccountGenerateRsaKeyRequest,
 ):
     """Generate RSA key"""
 
     # Get Account
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
@@ -273,9 +280,9 @@ def generate_rsa_key(
     # Update data to the DB
     _account.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
     _account.rsa_status = rsa_status
-    db.merge(_account)
+    await db.merge(_account)
 
-    db.commit()
+    await db.commit()
 
     return json_response(
         {
@@ -293,16 +300,18 @@ def generate_rsa_key(
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def change_eoa_password(
-    db: DBSession,
+async def change_eoa_password(
+    db: DBAsyncSession,
     issuer_address: str,
     data: AccountChangeEOAPasswordRequest,
 ):
     """Change EOA Password"""
 
     # Get Account
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
@@ -340,9 +349,9 @@ def change_eoa_password(
     # Update data to the DB
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
-    db.merge(_account)
+    await db.merge(_account)
 
-    db.commit()
+    await db.commit()
 
     return
 
@@ -353,16 +362,18 @@ def change_eoa_password(
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def change_rsa_passphrase(
-    db: DBSession,
+async def change_rsa_passphrase(
+    db: DBAsyncSession,
     issuer_address: str,
     data: AccountChangeRSAPassphraseRequest,
 ):
     """Change RSA Passphrase"""
 
     # Get Account
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
@@ -396,9 +407,9 @@ def change_rsa_passphrase(
     # Update data to the DB
     _account.rsa_private_key = rsa_private_key
     _account.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
-    db.merge(_account)
+    await db.merge(_account)
 
-    db.commit()
+    await db.commit()
 
     return
 
@@ -411,8 +422,8 @@ def change_rsa_passphrase(
         422, 404, InvalidParameterError, AuthTokenAlreadyExistsError
     ),
 )
-def create_auth_token(
-    db: DBSession,
+async def create_auth_token(
+    db: DBAsyncSession,
     request: Request,
     data: AccountAuthTokenRequest,
     issuer_address: str,
@@ -430,7 +441,7 @@ def create_auth_token(
     )
 
     # Authentication
-    issuer_account, _ = check_auth(
+    issuer_account, _ = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -446,8 +457,10 @@ def create_auth_token(
     current_datetime_local = current_datetime_utc.astimezone(local_tz).isoformat()
 
     # Register auth token
-    auth_token: Optional[AuthToken] = db.scalars(
-        select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+    auth_token: Optional[AuthToken] = (
+        await db.scalars(
+            select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if auth_token is not None:
         # If a valid auth token already exists, return an error.
@@ -463,8 +476,8 @@ def create_auth_token(
         auth_token.auth_token = hashed_token
         auth_token.usage_start = current_datetime_utc
         auth_token.valid_duration = data.valid_duration
-        db.merge(auth_token)
-        db.commit()
+        await db.merge(auth_token)
+        await db.commit()
     else:
         try:
             auth_token = AuthToken()
@@ -473,7 +486,7 @@ def create_auth_token(
             auth_token.usage_start = current_datetime_utc
             auth_token.valid_duration = data.valid_duration
             db.add(auth_token)
-            db.commit()
+            await db.commit()
         except SAIntegrityError:
             # NOTE: Registration can be conflicting.
             raise AuthTokenAlreadyExistsError()
@@ -493,8 +506,8 @@ def create_auth_token(
     response_model=None,
     responses=get_routers_responses(422, 404, AuthorizationError),
 )
-def delete_auth_token(
-    db: DBSession,
+async def delete_auth_token(
+    db: DBAsyncSession,
     request: Request,
     issuer_address: str,
     eoa_password: Optional[str] = Header(None),
@@ -509,7 +522,7 @@ def delete_auth_token(
     )
 
     # Authentication
-    issuer_account, _ = check_auth(
+    issuer_account, _ = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -518,12 +531,14 @@ def delete_auth_token(
     )
 
     # Delete auto token
-    _auth_token: Optional[AuthToken] = db.scalars(
-        select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+    _auth_token: Optional[AuthToken] = (
+        await db.scalars(
+            select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _auth_token is None:
         raise HTTPException(status_code=404, detail="auth token does not exist")
 
-    db.delete(_auth_token)
-    db.commit()
+    await db.delete(_auth_token)
+    await db.commit()
     return

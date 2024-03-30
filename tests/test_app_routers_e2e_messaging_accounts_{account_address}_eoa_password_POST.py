@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 
@@ -35,7 +37,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, client, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -48,6 +51,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt(old_password)
         db.add(_account)
+
+        db.commit()
 
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt(old_password),
@@ -81,7 +86,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "return_amount_test",
             "purpose_test",
         ]
-        IbetStraightBondContract().create(
+        await IbetStraightBondContract().create(
             args=arguments, tx_from=user_address_1, private_key=private_key
         )
 
@@ -211,7 +216,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
 
     # <Error_3>
     # old password mismatch
-    def test_normal_3(self, client, db, e2e_messaging_contract):
+    def test_error_3(self, client, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -224,6 +229,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt(old_password)
         db.add(_account)
+
+        db.commit()
 
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt("passwordtest"),
@@ -242,7 +249,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
 
     # <Error_4>
     # Passphrase Policy Violation
-    def test_normal_4(self, client, db, e2e_messaging_contract):
+    def test_error_4(self, client, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -255,6 +262,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt(old_password)
         db.add(_account)
+
+        db.commit()
 
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt(old_password),
