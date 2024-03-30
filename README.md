@@ -1,3 +1,7 @@
+<p align="center">
+  <img width="33%" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
+</p>
+
 # ibet-Prime
 
 <p>
@@ -6,8 +10,6 @@
 </p>
 
 English | [日本語](./README_JA.md)
-
-<img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
 **The ibet-Prime security token management system for ibet network.**
 
