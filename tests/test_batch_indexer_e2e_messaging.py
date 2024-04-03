@@ -30,6 +30,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
+from web3.types import RPCEndpoint
 
 import batch.indexer_e2e_messaging as indexer_e2e_messaging
 from app.model.blockchain import E2EMessaging
@@ -194,6 +195,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         sending_tx_hash, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
@@ -287,6 +293,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
+
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         sending_tx_hash, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
@@ -300,6 +312,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
         sending_block_timestamp = datetime.utcfromtimestamp(sending_block["timestamp"])
 
+        print(sending_block["number"])
+        print(sending_block_timestamp)
+        time.sleep(1)
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
@@ -308,6 +323,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
         _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
         db.add(_e2e_account_rsa_key)
+        print(_e2e_account_rsa_key.block_timestamp)
         time.sleep(1)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -401,6 +417,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str_1 = json.dumps(message)
+
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         sending_tx_hash_1, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
