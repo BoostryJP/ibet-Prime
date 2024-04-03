@@ -442,6 +442,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _type_2 = "test_type2"
         message = ["テスト太郎2", "東京都2"]
         message_message_str_2 = json.dumps(message)
+
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         sending_tx_hash_2, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
@@ -460,6 +466,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message(user3 -> user1)
         _type_3 = "test_type3"
         message_message_str_3 = "テスト太郎1,東京都1"
+
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         sending_tx_hash_3, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
@@ -478,6 +490,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
         message_message_str_4 = "a" * 5000
+
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         sending_tx_hash_4, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
@@ -583,6 +601,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
+
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         await E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_3,  # not target
             _type,
@@ -1076,6 +1100,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
+
+        # Set next block timestamp because the timestamp hardhat holds is incorrect
+        web3._get_web3(5).provider.make_request(
+            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
+        )
+
         await E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_1,
             _type,
