@@ -26,7 +26,7 @@ English | [日本語](./README_JA.md)
 - [PostgreSQL](https://www.postgresql.org/) - version 15
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
-  - We use [ganache](https://github.com/trufflesuite/ganache) for local development and unit testing, and we use the latest version.
+  - We use [hardhat network](https://hardhat.org/hardhat-network/) for local development and unit testing, and we use the latest version.
 
 
 ## Supported ibet smart contract version
@@ -58,6 +58,11 @@ $ poetry install --no-root --only main -E ibet-explorer
 ### Install pre-commit hook
 ```bash
 $ poetry run pre-commit install
+```
+
+### Install hardhat
+```bash
+$ npm install
 ```
 
 ### Setting environment variables

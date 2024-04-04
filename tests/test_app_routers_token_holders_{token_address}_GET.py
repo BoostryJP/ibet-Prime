@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
+from datetime import datetime
 from unittest import mock
 
 from app.model.db import (
@@ -414,6 +415,7 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
         token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
+        token_holder_list1.created = datetime(2024, 1, 2, 3, 4, 51)
         db.add(token_holder_list1)
 
         token_holder_list2 = TokenHoldersList()
@@ -421,6 +423,7 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
         token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
+        token_holder_list2.created = datetime(2024, 1, 2, 3, 4, 52)
         db.add(token_holder_list2)
 
         token_holder_list3 = TokenHoldersList()
@@ -428,6 +431,7 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list3.list_id = str(uuid.uuid4())
         token_holder_list3.block_number = 300
         token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
+        token_holder_list3.created = datetime(2024, 1, 2, 3, 4, 53)
         db.add(token_holder_list3)
 
         token_holder_list4 = TokenHoldersList()
@@ -435,6 +439,7 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list4.list_id = str(uuid.uuid4())
         token_holder_list4.block_number = 400
         token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
+        token_holder_list4.created = datetime(2024, 1, 2, 3, 4, 54)
         db.add(token_holder_list4)
 
         token_holder_list5 = TokenHoldersList()
@@ -442,6 +447,7 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
         token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
+        token_holder_list5.created = datetime(2024, 1, 2, 3, 4, 55)
         db.add(token_holder_list5)
 
         db.commit()
