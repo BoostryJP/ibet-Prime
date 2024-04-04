@@ -20,7 +20,6 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import os
-import time
 from datetime import datetime
 
 import pytest
@@ -30,7 +29,6 @@ from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
-from web3.types import RPCEndpoint
 
 import batch.indexer_e2e_messaging as indexer_e2e_messaging
 from app.model.blockchain import E2EMessaging
@@ -176,18 +174,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         _type = "test_type"
         message = {
@@ -195,10 +181,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
 
         sending_tx_hash, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
@@ -212,6 +194,19 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         )
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
         sending_block_timestamp = datetime.utcfromtimestamp(sending_block["timestamp"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
+        )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -256,36 +251,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = "test1"
-        _e2e_account_rsa_key.rsa_public_key = "test1"
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = "test2"
-        _e2e_account_rsa_key.rsa_public_key = "test2"
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
         # Send Message
         _type = "test_type"
         message = {
@@ -293,11 +258,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
 
         sending_tx_hash, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
@@ -312,19 +272,49 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
         sending_block_timestamp = datetime.utcfromtimestamp(sending_block["timestamp"])
 
-        print(sending_block["number"])
-        print(sending_block_timestamp)
-        time.sleep(1)
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = "test1"
+        _e2e_account_rsa_key.rsa_public_key = "test1"
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 3
+        )
+        db.add(_e2e_account_rsa_key)
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = "test2"
+        _e2e_account_rsa_key.rsa_public_key = "test2"
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 2
+        )
+        db.add(_e2e_account_rsa_key)
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
+        )
+        db.add(_e2e_account_rsa_key)
+
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = "test3"
         _e2e_account_rsa_key.rsa_public_key = "test3"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] + 1
+        )
         db.add(_e2e_account_rsa_key)
-        print(_e2e_account_rsa_key.block_timestamp)
-        time.sleep(1)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -332,10 +322,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test4"
         _e2e_account_rsa_key.rsa_public_key = "test4"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] + 2
+        )
         db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
         db.commit()
 
         # Run target process
@@ -382,33 +372,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_2
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
-
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_2
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
 
         # Send Message(user3 -> user1)
         _type_1 = "test_type1"
@@ -417,11 +385,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str_1 = json.dumps(message)
-
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
 
         sending_tx_hash_1, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
@@ -433,20 +396,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+        sending_block_1 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
         sending_block_timestamp_1 = datetime.utcfromtimestamp(
-            sending_block["timestamp"]
+            sending_block_1["timestamp"]
         )
 
         # Send Message(user3 -> user2)
         _type_2 = "test_type2"
         message = ["テスト太郎2", "東京都2"]
         message_message_str_2 = json.dumps(message)
-
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
 
         sending_tx_hash_2, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
@@ -458,19 +416,14 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+        sending_block_2 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
         sending_block_timestamp_2 = datetime.utcfromtimestamp(
-            sending_block["timestamp"]
+            sending_block_2["timestamp"]
         )
 
         # Send Message(user3 -> user1)
         _type_3 = "test_type3"
         message_message_str_3 = "テスト太郎1,東京都1"
-
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
 
         sending_tx_hash_3, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
@@ -482,19 +435,14 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+        sending_block_3 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
         sending_block_timestamp_3 = datetime.utcfromtimestamp(
-            sending_block["timestamp"]
+            sending_block_3["timestamp"]
         )
 
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
         message_message_str_4 = "a" * 5000
-
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
 
         sending_tx_hash_4, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
@@ -506,10 +454,34 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+        sending_block_4 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
         sending_block_timestamp_4 = datetime.utcfromtimestamp(
-            sending_block["timestamp"]
+            sending_block_4["timestamp"]
         )
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block_1["timestamp"] - 2
+        )
+        db.add(_e2e_account_rsa_key)
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_2
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block_1["timestamp"] - 1
+        )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -582,18 +554,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         _type = "test_type"
         message = {
@@ -602,12 +562,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         }
         message_message_str = json.dumps(message)
 
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
-
-        await E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_3,  # not target
             _type,
             message_message_str,
@@ -615,6 +572,20 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_2,
             user_private_key_2,
         )
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
+        )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -654,23 +625,25 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
+        # Send Message
+        message = "test"
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
+        )
         db.add(_e2e_account_rsa_key)
-        time.sleep(1)
 
         db.commit()
-
-        # Send Message
-        message = "test"
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
-        )
 
         # Run target process
         block_number = web3.eth.block_number
@@ -706,18 +679,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
@@ -737,9 +698,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 }
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -775,27 +750,29 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         message = json.dumps(
             {
                 "type": "test_type",
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -831,18 +808,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
@@ -860,9 +825,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -898,18 +877,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
@@ -926,9 +893,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 },
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -964,16 +945,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
         db.commit()
 
         # Send Message
@@ -989,9 +960,21 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 },
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1027,18 +1010,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
@@ -1056,9 +1027,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1101,12 +1086,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         }
         message_message_str = json.dumps(message)
 
-        # Set next block timestamp because the timestamp hardhat holds is incorrect
-        web3._get_web3(5).provider.make_request(
-            RPCEndpoint("evm_setNextBlockTimestamp"), [int(time.time())]
-        )
-
-        await E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_1,
             _type,
             message_message_str,
@@ -1114,7 +1096,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_2,
             user_private_key_2,
         )
-        time.sleep(1)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -1122,8 +1104,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = (
-            datetime.utcnow()
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] + 1
         )  # Registry after send message
         db.add(_e2e_account_rsa_key)
 
@@ -1163,18 +1145,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
@@ -1189,9 +1159,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": "cipher_key", "message": encrypted_message},
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1227,18 +1211,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
@@ -1254,9 +1226,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1292,18 +1278,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         random_func = Random.new().read
         rsa = RSA.generate(4096, random_func)
@@ -1324,9 +1298,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1362,18 +1350,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         rsa_key = RSA.import_key(self.rsa_public_key)
@@ -1385,9 +1361,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": "test_message"},
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1423,18 +1413,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account.is_deleted = False
         db.add(_e2e_account)
 
-        # Prepare data : E2EMessagingAccountRsaKey
-        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
-        _e2e_account_rsa_key.account_address = user_address_1
-        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
-        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
-        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()
-        db.add(_e2e_account_rsa_key)
-        time.sleep(1)
-
-        db.commit()
-
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
@@ -1453,9 +1431,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        await E2EMessaging(e2e_messaging_contract.address).send_message(
-            user_address_1, message, user_address_2, user_private_key_2
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(user_address_1, message, user_address_2, user_private_key_2)
+        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
+        _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
+        _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
+        _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
+        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+            sending_block["timestamp"] - 1
         )
+        db.add(_e2e_account_rsa_key)
+
+        db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
