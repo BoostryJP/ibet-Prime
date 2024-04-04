@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 import random
 import string
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import ANY, patch
 
 import pytest
@@ -93,9 +93,7 @@ class TestAppRoutersBondTokensPOST:
             target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
-                "timestamp": datetime(
-                    2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
-                ).timestamp(),
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
             },
         )
 
@@ -224,9 +222,7 @@ class TestAppRoutersBondTokensPOST:
             target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
-                "timestamp": datetime(
-                    2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
-                ).timestamp(),
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
             },
         )
 
@@ -367,9 +363,7 @@ class TestAppRoutersBondTokensPOST:
             target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
-                "timestamp": datetime(
-                    2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
-                ).timestamp(),
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
             },
         )
 

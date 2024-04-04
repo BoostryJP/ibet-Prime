@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from Crypto import Random
@@ -193,7 +193,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_2,
         )
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp = datetime.utcfromtimestamp(sending_block["timestamp"])
+        sending_block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -201,9 +203,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -270,7 +272,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_2,
         )
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp = datetime.utcfromtimestamp(sending_block["timestamp"])
+        sending_block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -278,9 +282,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test1"
         _e2e_account_rsa_key.rsa_public_key = "test1"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 3
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 3, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -289,9 +293,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test2"
         _e2e_account_rsa_key.rsa_public_key = "test2"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 2
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 2, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -300,9 +304,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -311,9 +315,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test3"
         _e2e_account_rsa_key.rsa_public_key = "test3"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] + 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] + 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -322,9 +326,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test4"
         _e2e_account_rsa_key.rsa_public_key = "test4"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] + 2
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] + 2, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
         db.commit()
 
@@ -397,9 +401,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block_1 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_1 = datetime.utcfromtimestamp(
-            sending_block_1["timestamp"]
-        )
+        sending_block_timestamp_1 = datetime.fromtimestamp(
+            sending_block_1["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         # Send Message(user3 -> user2)
         _type_2 = "test_type2"
@@ -417,9 +421,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block_2 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_2 = datetime.utcfromtimestamp(
-            sending_block_2["timestamp"]
-        )
+        sending_block_timestamp_2 = datetime.fromtimestamp(
+            sending_block_2["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         # Send Message(user3 -> user1)
         _type_3 = "test_type3"
@@ -436,9 +440,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block_3 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_3 = datetime.utcfromtimestamp(
-            sending_block_3["timestamp"]
-        )
+        sending_block_timestamp_3 = datetime.fromtimestamp(
+            sending_block_3["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
@@ -455,9 +459,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block_4 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_4 = datetime.utcfromtimestamp(
-            sending_block_4["timestamp"]
-        )
+        sending_block_timestamp_4 = datetime.fromtimestamp(
+            sending_block_4["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -465,9 +469,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block_1["timestamp"] - 2
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block_1["timestamp"] - 2, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -476,9 +480,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block_1["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block_1["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -580,9 +584,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -638,9 +642,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -709,9 +713,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -767,9 +771,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -836,9 +840,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -904,9 +908,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -971,9 +975,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         # Run target process
@@ -1038,9 +1042,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -1104,8 +1108,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] + 1
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] + 1, UTC
+        ).replace(
+            tzinfo=None
         )  # Registry after send message
         db.add(_e2e_account_rsa_key)
 
@@ -1170,9 +1176,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -1237,9 +1243,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -1309,9 +1315,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -1372,9 +1378,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -1442,9 +1448,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-            sending_block["timestamp"] - 1
-        )
+        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
+            sending_block["timestamp"] - 1, UTC
+        ).replace(tzinfo=None)
         db.add(_e2e_account_rsa_key)
 
         db.commit()

@@ -18,10 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
-import time
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest import mock
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
@@ -238,7 +237,7 @@ class TestProcessor:
 
         db.commit()
 
-        before_cache_time = datetime.utcnow()
+        before_cache_time = datetime.now(UTC).replace(tzinfo=None)
 
         sleep_mock = AsyncMock()
         sleep_mock.return_value = 0

@@ -18,9 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
-from pytz import timezone
+import pytz
 
 from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
 from config import TZ
@@ -30,7 +30,7 @@ from tests.account_config import config_eth_account
 class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
     # target API endpoint
     base_url = "/bond/tokens/{}/scheduled_events/{}"
-    local_tz = timezone(TZ)
+    local_tz = pytz.timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -45,9 +45,9 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         _token_address = "token_address_test"
 
         # prepare data
-        datetime_now_utc = datetime.utcnow()
+        datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
         datetime_now_str = (
-            timezone("UTC")
+            pytz.timezone("UTC")
             .localize(datetime_now_utc)
             .astimezone(self.local_tz)
             .isoformat()
@@ -113,9 +113,9 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         _token_address = "token_address_test"
 
         # prepare data
-        datetime_now_utc = datetime.utcnow()
+        datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
         datetime_now_str = (
-            timezone("UTC")
+            pytz.timezone("UTC")
             .localize(datetime_now_utc)
             .astimezone(self.local_tz)
             .isoformat()

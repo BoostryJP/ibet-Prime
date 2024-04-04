@@ -18,9 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
-from pytz import timezone
+import pytz
 
 from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
 from config import TZ
@@ -30,7 +30,7 @@ from tests.account_config import config_eth_account
 class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
     # target API endpoint
     base_url = "/share/tokens/{}/scheduled_events"
-    local_tz = timezone(TZ)
+    local_tz = pytz.timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -45,9 +45,9 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
         _token_address = "token_address_test"
 
         # prepare data
-        datetime_now_utc = datetime.utcnow()
+        datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
         datetime_now_str = (
-            timezone("UTC")
+            pytz.timezone("UTC")
             .localize(datetime_now_utc)
             .astimezone(self.local_tz)
             .isoformat()
@@ -117,9 +117,9 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         # prepare data
         datetime_list = []
-        datetime_utc = datetime.utcnow() + timedelta(hours=1)
+        datetime_utc = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)
         datetime_list.append(datetime_utc)
-        datetime_utc = datetime.utcnow()
+        datetime_utc = datetime.now(UTC).replace(tzinfo=None)
         datetime_list.append(datetime_utc)
 
         uuid_list = [str(uuid.uuid4()), str(uuid.uuid4())]
@@ -167,14 +167,14 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
                 "scheduled_event_id": uuid_list[0],
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE.value,
-                "scheduled_datetime": timezone("UTC")
+                "scheduled_datetime": pytz.timezone("UTC")
                 .localize(datetime_list[0])
                 .astimezone(self.local_tz)
                 .isoformat(),
                 "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
-                "created": timezone("UTC")
+                "created": pytz.timezone("UTC")
                 .localize(datetime_list[0])
                 .astimezone(self.local_tz)
                 .isoformat(),
@@ -183,14 +183,14 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
                 "scheduled_event_id": uuid_list[1],
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE.value,
-                "scheduled_datetime": timezone("UTC")
+                "scheduled_datetime": pytz.timezone("UTC")
                 .localize(datetime_list[1])
                 .astimezone(self.local_tz)
                 .isoformat(),
                 "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
-                "created": timezone("UTC")
+                "created": pytz.timezone("UTC")
                 .localize(datetime_list[1])
                 .astimezone(self.local_tz)
                 .isoformat(),

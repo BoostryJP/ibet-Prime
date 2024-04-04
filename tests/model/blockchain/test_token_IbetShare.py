@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import time
 from binascii import Error
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest import mock
 from unittest.mock import ANY, AsyncMock, patch
 
@@ -386,10 +386,10 @@ class TestGet:
         token_cache = TokenCache()
         token_cache.token_address = contract_address
         token_cache.attributes = token_attr
-        token_cache.cached_datetime = datetime.utcnow()
-        token_cache.expiration_datetime = datetime.utcnow() + timedelta(
-            seconds=TOKEN_CACHE_TTL
-        )
+        token_cache.cached_datetime = datetime.now(UTC).replace(tzinfo=None)
+        token_cache.expiration_datetime = datetime.now(UTC).replace(
+            tzinfo=None
+        ) + timedelta(seconds=TOKEN_CACHE_TTL)
         db.add(token_cache)
         db.commit()
 
@@ -482,17 +482,17 @@ class TestGet:
         token_cache = TokenCache()
         token_cache.token_address = contract_address
         token_cache.attributes = token_attr
-        token_cache.cached_datetime = datetime.utcnow()
-        token_cache.expiration_datetime = datetime.utcnow() + timedelta(
-            seconds=TOKEN_CACHE_TTL
-        )
+        token_cache.cached_datetime = datetime.now(UTC).replace(tzinfo=None)
+        token_cache.expiration_datetime = datetime.now(UTC).replace(
+            tzinfo=None
+        ) + timedelta(seconds=TOKEN_CACHE_TTL)
         db.add(token_cache)
         db.commit()
 
         # updated token attribute
         _token_attr_update = TokenAttrUpdate()
         _token_attr_update.token_address = contract_address
-        _token_attr_update.updated_datetime = datetime.utcnow()
+        _token_attr_update.updated_datetime = datetime.now(UTC).replace(tzinfo=None)
         db.add(_token_attr_update)
         db.commit()
 
@@ -594,7 +594,7 @@ class TestUpdate:
         # update
         _data = {}
         _add_data = UpdateParams(**_data)
-        pre_datetime = datetime.utcnow()
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.update(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
@@ -669,7 +669,7 @@ class TestUpdate:
             "memo": "memo_test",
         }
         _add_data = UpdateParams(**_data)
-        pre_datetime = datetime.utcnow()
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.update(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
@@ -1776,7 +1776,7 @@ class TestAdditionalIssue:
         # additional issue
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = AdditionalIssueParams(**_data)
-        pre_datetime = datetime.utcnow()
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.additional_issue(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
@@ -2054,7 +2054,7 @@ class TestAdditionalIssue:
         # additional issue
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = AdditionalIssueParams(**_data)
-        pre_datetime = datetime.utcnow()
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
         # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
@@ -2109,7 +2109,7 @@ class TestRedeem:
         # redeem
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = RedeemParams(**_data)
-        pre_datetime = datetime.utcnow()
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.redeem(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
@@ -2381,7 +2381,7 @@ class TestRedeem:
         # redeem
         _data = {"account_address": issuer_address, "amount": 100_000_000}
         _add_data = RedeemParams(**_data)
-        pre_datetime = datetime.utcnow()
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
         # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
@@ -2502,7 +2502,7 @@ class TestCheckAttrUpdate:
     # not exists
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        before_datetime = datetime.utcnow()
+        before_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # Test
         share_contract = IbetShareContract(self.token_address)
@@ -2515,9 +2515,9 @@ class TestCheckAttrUpdate:
     # prev data exists
     @pytest.mark.asyncio
     async def test_normal_2(self, async_db):
-        before_datetime = datetime.utcnow()
+        before_datetime = datetime.now(UTC).replace(tzinfo=None)
         time.sleep(1)
-        after_datetime = datetime.utcnow()
+        after_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # prepare data
         _update = TokenAttrUpdate()
@@ -2537,9 +2537,9 @@ class TestCheckAttrUpdate:
     # next data exists
     @pytest.mark.asyncio
     async def test_normal_3(self, async_db):
-        before_datetime = datetime.utcnow()
+        before_datetime = datetime.now(UTC).replace(tzinfo=None)
         time.sleep(1)
-        after_datetime = datetime.utcnow()
+        after_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # prepare data
         _update = TokenAttrUpdate()
@@ -2589,7 +2589,7 @@ class TestRecordAttrUpdate:
         # prepare data
         _update = TokenAttrUpdate()
         _update.token_address = self.token_address
-        _update.updated_datetime = datetime.utcnow()
+        _update.updated_datetime = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_update)
         await async_db.commit()
 

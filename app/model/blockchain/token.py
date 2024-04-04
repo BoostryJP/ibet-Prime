@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from random import randint
 from typing import List, TypeVar
@@ -113,15 +113,17 @@ class IbetStandardTokenInterface:
     async def record_attr_update(self, db_session: AsyncSession):
         _token_attr_update = TokenAttrUpdate()
         _token_attr_update.token_address = self.token_address
-        _token_attr_update.updated_datetime = datetime.utcnow()
+        _token_attr_update.updated_datetime = datetime.now(UTC).replace(tzinfo=None)
         db_session.add(_token_attr_update)
 
     async def create_cache(self, db_session: AsyncSession):
         token_cache = TokenCache()
         token_cache.token_address = self.token_address
         token_cache.attributes = self.__dict__
-        token_cache.cached_datetime = datetime.utcnow()
-        token_cache.expiration_datetime = datetime.utcnow() + timedelta(
+        token_cache.cached_datetime = datetime.now(UTC).replace(tzinfo=None)
+        token_cache.expiration_datetime = datetime.now(UTC).replace(
+            tzinfo=None
+        ) + timedelta(
             seconds=randint(
                 TOKEN_CACHE_TTL - TOKEN_CACHE_TTL_JITTER,
                 TOKEN_CACHE_TTL + TOKEN_CACHE_TTL_JITTER,
@@ -513,7 +515,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     )
                     if (
                         is_updated is False
-                        and token_cache.expiration_datetime > datetime.utcnow()
+                        and token_cache.expiration_datetime
+                        > datetime.now(UTC).replace(tzinfo=None)
                     ):
                         # Get data from cache
                         for k, v in token_cache.attributes.items():
@@ -1122,7 +1125,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     )
                     if (
                         is_updated is False
-                        and token_cache.expiration_datetime > datetime.utcnow()
+                        and token_cache.expiration_datetime
+                        > datetime.now(UTC).replace(tzinfo=None)
                     ):
                         # Get data from cache
                         for k, v in token_cache.attributes.items():

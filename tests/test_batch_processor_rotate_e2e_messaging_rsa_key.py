@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest import mock
 from unittest.mock import ANY, call
 
@@ -104,7 +104,7 @@ class TestProcessor:
         _rsa_key_1.rsa_private_key = "rsa_private_key_1"
         _rsa_key_1.rsa_public_key = "rsa_public_key_1"
         _rsa_key_1.rsa_passphrase = "rsa_passphrase_1"
-        _rsa_key_1.block_timestamp = datetime.utcnow()
+        _rsa_key_1.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key_1)
 
         db.commit()
@@ -149,7 +149,7 @@ class TestProcessor:
         _rsa_key_1.rsa_private_key = "rsa_private_key_1"
         _rsa_key_1.rsa_public_key = "rsa_public_key_1"
         _rsa_key_1.rsa_passphrase = "rsa_passphrase_1"
-        _rsa_key_1.block_timestamp = datetime.utcnow()
+        _rsa_key_1.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key_1)
 
         db.commit()
@@ -199,7 +199,7 @@ class TestProcessor:
         _account.rsa_generation = 2
         db.add(_account)
 
-        datetime_now = datetime.utcnow()
+        datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _rsa_key_1_1 = E2EMessagingAccountRsaKey()
@@ -270,13 +270,13 @@ class TestProcessor:
                 {
                     "number": 12345,
                     "timestamp": datetime(
-                        2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                        2099, 4, 27, 12, 34, 56, tzinfo=UTC
                     ).timestamp(),
                 },
                 {
                     "number": 12350,
                     "timestamp": datetime(
-                        2099, 4, 27, 12, 34, 59, tzinfo=timezone.utc
+                        2099, 4, 27, 12, 34, 59, tzinfo=UTC
                     ).timestamp(),
                 },
             ],
@@ -380,7 +380,7 @@ class TestProcessor:
         _account.rsa_generation = 2
         db.add(_account)
 
-        datetime_now = datetime.utcnow()
+        datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _rsa_key = E2EMessagingAccountRsaKey()
@@ -425,7 +425,7 @@ class TestProcessor:
         _account.rsa_generation = 2
         db.add(_account)
 
-        datetime_now = datetime.utcnow()
+        datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _rsa_key = E2EMessagingAccountRsaKey()
@@ -491,7 +491,7 @@ class TestProcessor:
         _account.rsa_generation = 2
         db.add(_account)
 
-        datetime_now = datetime.utcnow()
+        datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _rsa_key = E2EMessagingAccountRsaKey()

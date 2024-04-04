@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
@@ -62,7 +62,7 @@ tags_metadata = [
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="24.6.0",
+    version="24.6",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -74,7 +74,7 @@ app = FastAPI(
 
 @app.middleware("http")
 async def api_call_handler(request: Request, call_next):
-    request_start_time = datetime.utcnow()
+    request_start_time = datetime.now(UTC).replace(tzinfo=None)
     response = await call_next(request)
     output_access_log(request, response, request_start_time)
     return response

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import patch
 
@@ -296,7 +296,9 @@ class TestProcessor:
         assert event_0.target_address == issuer_address
         assert event_0.amount == 40
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert event_0.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         idx_block_number = db.scalars(
             select(IDXIssueRedeemBlockNumber).limit(1)
@@ -370,7 +372,9 @@ class TestProcessor:
         assert event_0.target_address == issuer_address
         assert event_0.amount == 40
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert event_0.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         idx_block_number = db.scalars(
             select(IDXIssueRedeemBlockNumber).limit(1)
@@ -444,7 +448,9 @@ class TestProcessor:
         assert event_0.target_address == issuer_address
         assert event_0.amount == 10
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert event_0.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         idx_block_number = db.scalars(
             select(IDXIssueRedeemBlockNumber).limit(1)
@@ -518,7 +524,9 @@ class TestProcessor:
         assert event_0.target_address == issuer_address
         assert event_0.amount == 10
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert event_0.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         idx_block_number = db.scalars(
             select(IDXIssueRedeemBlockNumber).limit(1)
@@ -604,7 +612,9 @@ class TestProcessor:
         assert event_0.target_address == issuer_address
         assert event_0.amount == 10
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert event_0.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         event_1 = event_list[1]
         assert event_1.id == 2
@@ -615,7 +625,9 @@ class TestProcessor:
         assert event_1.target_address == issuer_address
         assert event_1.amount == 20
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert event_1.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert event_1.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         idx_block_number = db.scalars(
             select(IDXIssueRedeemBlockNumber).limit(1)

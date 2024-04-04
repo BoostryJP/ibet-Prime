@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import logging
 import sys
 import urllib
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import Request, Response
 
@@ -108,7 +108,9 @@ def output_access_log(req: Request, res: Response, request_start_time: datetime)
         method = req.scope.get("method", "")
         http_version = req.scope.get("http_version", "")
         status_code = res.status_code
-        response_time = (datetime.utcnow() - request_start_time).total_seconds()
+        response_time = (
+            datetime.now(UTC).replace(tzinfo=None) - request_start_time
+        ).total_seconds()
         access_msg = ACCESS_FORMAT % (
             method,
             url,

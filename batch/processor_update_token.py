@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -211,9 +211,9 @@ class Processor:
                         _utxo.token_address = _update_token.token_address
                         _utxo.amount = _update_token.arguments.get("total_supply")
                         _utxo.block_number = block["number"]
-                        _utxo.block_timestamp = datetime.utcfromtimestamp(
-                            block["timestamp"]
-                        )
+                        _utxo.block_timestamp = datetime.fromtimestamp(
+                            block["timestamp"], UTC
+                        ).replace(tzinfo=None)
                         db_session.add(_utxo)
 
                     await self.__sink_on_finish_update_process(

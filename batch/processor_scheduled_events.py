@@ -21,7 +21,7 @@ import asyncio
 import sys
 import time
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime, timezone
 from typing import List, Optional, Sequence, Set
 
 import uvloop
@@ -78,7 +78,7 @@ class Processor:
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
-            process_start_time = datetime.utcnow()
+            process_start_time = datetime.now(UTC).replace(tzinfo=None)
             while True:
                 events_list = await self.__get_events_of_one_issuer(
                     db_session=db_session, filter_time=process_start_time
