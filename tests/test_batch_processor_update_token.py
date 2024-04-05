@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import ANY, call, patch
 
 import pytest
@@ -181,9 +181,7 @@ class TestProcessor:
 
         mock_block = {
             "number": 12345,
-            "timestamp": datetime(
-                2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
-            ).timestamp(),
+            "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
         }
         with patch(
             target="app.model.blockchain.token.IbetShareContract.update",

@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -198,9 +198,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                    )
+                    block_timestamp = datetime.fromtimestamp(
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
+                        UTC,
+                    ).replace(tzinfo=None)
                     if args["amount"] > sys.maxsize:
                         pass
                     else:
@@ -238,9 +239,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                    )
+                    block_timestamp = datetime.fromtimestamp(
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
+                        UTC,
+                    ).replace(tzinfo=None)
                     if args["amount"] > sys.maxsize:
                         pass
                     else:

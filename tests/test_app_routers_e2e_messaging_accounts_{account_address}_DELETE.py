@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
@@ -46,21 +46,21 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_2"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 

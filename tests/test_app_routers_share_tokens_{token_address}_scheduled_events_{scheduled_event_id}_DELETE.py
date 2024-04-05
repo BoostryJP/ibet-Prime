@@ -18,9 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
-from pytz import timezone
+import pytz
 from sqlalchemy import select
 
 from app.model.db import Account, ScheduledEvents, ScheduledEventType, TokenType
@@ -32,7 +32,7 @@ from tests.account_config import config_eth_account
 class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
     # target API endpoint
     base_url = "/share/tokens/{}/scheduled_events/{}"
-    local_tz = timezone(TZ)
+    local_tz = pytz.timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -52,9 +52,9 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
-        datetime_now_utc = datetime.utcnow()
+        datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
         datetime_now_str = (
-            timezone("UTC")
+            pytz.timezone("UTC")
             .localize(datetime_now_utc)
             .astimezone(self.local_tz)
             .isoformat()

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
@@ -56,7 +56,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
@@ -90,7 +90,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
@@ -110,7 +110,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000002"
         _rsa_key.rsa_public_key = "rsa_public_key_2_1"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
@@ -121,21 +121,21 @@ class TestAppRoutersE2EMessagingAccountsGET:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_1"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_2"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_3"
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 

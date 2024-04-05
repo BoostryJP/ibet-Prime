@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime, timezone
 from typing import Sequence
 
 import pytz
@@ -107,7 +107,9 @@ async def create_ledger(token_address: str, db: AsyncSession):
         ledger_details.append(details)
 
     created_ymd = (
-        utc_tz.localize(datetime.utcnow()).astimezone(local_tz).strftime("%Y/%m/%d")
+        utc_tz.localize(datetime.now(UTC).replace(tzinfo=None))
+        .astimezone(local_tz)
+        .strftime("%Y/%m/%d")
     )
     # NOTE: Merge with template with ledger GET API
     ledger = {

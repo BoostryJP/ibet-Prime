@@ -18,13 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List, Optional, Sequence
 
+import pytz
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
-from pytz import timezone
 from sqlalchemy import (
     String,
     and_,
@@ -168,8 +168,8 @@ router = APIRouter(
 )
 
 LOG = log.get_logger()
-local_tz = timezone(config.TZ)
-utc_tz = timezone("UTC")
+local_tz = pytz.timezone(config.TZ)
+utc_tz = pytz.timezone("UTC")
 
 
 # POST: /bond/tokens
@@ -312,7 +312,9 @@ async def issue_token(
         _utxo.token_address = contract_address
         _utxo.amount = token.total_supply
         _utxo.block_number = block["number"]
-        _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
+        _utxo.block_timestamp = datetime.fromtimestamp(block["timestamp"], UTC).replace(
+            tzinfo=None
+        )
         db.add(_utxo)
 
         token_status = 1  # succeeded
@@ -389,7 +391,7 @@ async def list_all_tokens(
         bond_token = (
             await IbetStraightBondContract(token.token_address).get()
         ).__dict__
-        issue_datetime_utc = timezone("UTC").localize(token.created)
+        issue_datetime_utc = pytz.timezone("UTC").localize(token.created)
         bond_token["issue_datetime"] = issue_datetime_utc.astimezone(
             local_tz
         ).isoformat()
@@ -430,7 +432,7 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
 
     # Get contract data
     bond_token = (await IbetStraightBondContract(token_address).get()).__dict__
-    issue_datetime_utc = timezone("UTC").localize(_token.created)
+    issue_datetime_utc = pytz.timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
     bond_token["contract_version"] = _token.version
@@ -680,7 +682,7 @@ async def list_additional_issuance_history(
 
     history = []
     for _event in _events:
-        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(_event.block_timestamp)
         history.append(
             {
                 "transaction_hash": _event.transaction_hash,
@@ -836,7 +838,7 @@ async def list_all_additional_issue_upload(
 
     uploads = []
     for _upload in _upload_list:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -1096,7 +1098,7 @@ async def list_redeem_history(
 
     history = []
     for _event in _events:
-        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(_event.block_timestamp)
         history.append(
             {
                 "transaction_hash": _event.transaction_hash,
@@ -1253,7 +1255,7 @@ async def list_all_redeem_upload(
 
     uploads = []
     for _upload in _upload_list:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -1489,10 +1491,10 @@ async def list_all_scheduled_events(
 
     token_events = []
     for _token_event in _token_events:
-        scheduled_datetime_utc = timezone("UTC").localize(
+        scheduled_datetime_utc = pytz.timezone("UTC").localize(
             _token_event.scheduled_datetime
         )
-        created_utc = timezone("UTC").localize(_token_event.created)
+        created_utc = pytz.timezone("UTC").localize(_token_event.created)
         token_events.append(
             {
                 "scheduled_event_id": _token_event.event_id,
@@ -1626,8 +1628,10 @@ async def retrieve_token_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
 
-    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
-    created_utc = timezone("UTC").localize(_token_event.created)
+    scheduled_datetime_utc = pytz.timezone("UTC").localize(
+        _token_event.scheduled_datetime
+    )
+    created_utc = pytz.timezone("UTC").localize(_token_event.created)
     return json_response(
         {
             "scheduled_event_id": _token_event.event_id,
@@ -1694,8 +1698,10 @@ async def delete_scheduled_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
 
-    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
-    created_utc = timezone("UTC").localize(_token_event.created)
+    scheduled_datetime_utc = pytz.timezone("UTC").localize(
+        _token_event.scheduled_datetime
+    )
+    created_utc = pytz.timezone("UTC").localize(_token_event.created)
     rtn = {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
@@ -2319,7 +2325,7 @@ async def list_all_personal_info_batch_registration_uploads(
 
     uploads = []
     for _upload in _upload_list:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -2419,7 +2425,7 @@ async def batch_register_personal_info(
         {
             "batch_id": batch_id,
             "status": batch.status,
-            "created": timezone("UTC")
+            "created": pytz.timezone("UTC")
             .localize(batch.created)
             .astimezone(local_tz)
             .isoformat(),
@@ -2644,7 +2650,7 @@ async def list_all_lock_events_by_bond(
     for lock_event in lock_events:
         token: Token = lock_event.Token
         bond_contract = await IbetStraightBondContract(token.token_address).get()
-        block_timestamp_utc = timezone("UTC").localize(lock_event.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(lock_event.block_timestamp)
         resp_data.append(
             {
                 "category": lock_event.category,
@@ -2838,7 +2844,7 @@ async def list_transfer_history(
 
     transfer_history = []
     for _transfer, _from_address_personal_info, _to_address_personal_info in _transfers:
-        block_timestamp_utc = timezone("UTC").localize(_transfer.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(_transfer.block_timestamp)
         transfer_history.append(
             {
                 "transaction_hash": _transfer.transaction_hash,
@@ -3216,12 +3222,12 @@ async def list_token_transfer_approval_history(
         else:
             issuer_cancelable = True
 
-        application_datetime_utc = timezone("UTC").localize(
+        application_datetime_utc = pytz.timezone("UTC").localize(
             _transfer_approval.application_datetime
         )
         application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
 
-        application_blocktimestamp_utc = timezone("UTC").localize(
+        application_blocktimestamp_utc = pytz.timezone("UTC").localize(
             _transfer_approval.application_blocktimestamp
         )
         application_blocktimestamp = application_blocktimestamp_utc.astimezone(
@@ -3229,7 +3235,7 @@ async def list_token_transfer_approval_history(
         ).isoformat()
 
         if _transfer_approval.approval_datetime is not None:
-            approval_datetime_utc = timezone("UTC").localize(
+            approval_datetime_utc = pytz.timezone("UTC").localize(
                 _transfer_approval.approval_datetime
             )
             approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
@@ -3237,7 +3243,7 @@ async def list_token_transfer_approval_history(
             approval_datetime = None
 
         if _transfer_approval.approval_blocktimestamp is not None:
-            approval_blocktimestamp_utc = timezone("UTC").localize(
+            approval_blocktimestamp_utc = pytz.timezone("UTC").localize(
                 _transfer_approval.approval_blocktimestamp
             )
             approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(
@@ -3247,7 +3253,7 @@ async def list_token_transfer_approval_history(
             approval_blocktimestamp = None
 
         if _transfer_approval.cancellation_blocktimestamp is not None:
-            cancellation_blocktimestamp_utc = timezone("UTC").localize(
+            cancellation_blocktimestamp_utc = pytz.timezone("UTC").localize(
                 _transfer_approval.cancellation_blocktimestamp
             )
             cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
@@ -3470,7 +3476,7 @@ async def update_transfer_approval(
     #    a cancelTransfer is performed immediately.
     #  - CANCEL -> cancelTransfer
     try:
-        now = str(datetime.utcnow().timestamp())
+        now = str(datetime.now(UTC).replace(tzinfo=None).timestamp())
         if data.operation_type == UpdateTransferApprovalOperationType.APPROVE:
             if _transfer_approval.exchange_address == config.ZERO_ADDRESS:
                 _data = {
@@ -3657,12 +3663,12 @@ async def retrieve_transfer_approval_history(
     else:
         issuer_cancelable = True
 
-    application_datetime_utc = timezone("UTC").localize(
+    application_datetime_utc = pytz.timezone("UTC").localize(
         _transfer_approval.application_datetime
     )
     application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
 
-    application_blocktimestamp_utc = timezone("UTC").localize(
+    application_blocktimestamp_utc = pytz.timezone("UTC").localize(
         _transfer_approval.application_blocktimestamp
     )
     application_blocktimestamp = application_blocktimestamp_utc.astimezone(
@@ -3670,7 +3676,7 @@ async def retrieve_transfer_approval_history(
     ).isoformat()
 
     if _transfer_approval.approval_datetime is not None:
-        approval_datetime_utc = timezone("UTC").localize(
+        approval_datetime_utc = pytz.timezone("UTC").localize(
             _transfer_approval.approval_datetime
         )
         approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
@@ -3678,7 +3684,7 @@ async def retrieve_transfer_approval_history(
         approval_datetime = None
 
     if _transfer_approval.approval_blocktimestamp is not None:
-        approval_blocktimestamp_utc = timezone("UTC").localize(
+        approval_blocktimestamp_utc = pytz.timezone("UTC").localize(
             _transfer_approval.approval_blocktimestamp
         )
         approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(
@@ -3688,7 +3694,7 @@ async def retrieve_transfer_approval_history(
         approval_blocktimestamp = None
 
     if _transfer_approval.cancellation_blocktimestamp is not None:
-        cancellation_blocktimestamp_utc = timezone("UTC").localize(
+        cancellation_blocktimestamp_utc = pytz.timezone("UTC").localize(
             _transfer_approval.cancellation_blocktimestamp
         )
         cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
@@ -3923,7 +3929,7 @@ async def list_bulk_transfer_upload(
 
     uploads = []
     for _upload in _uploads:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "issuer_address": _upload.issuer_address,

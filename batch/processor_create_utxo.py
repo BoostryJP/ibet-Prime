@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -298,8 +298,10 @@ class Processor:
 
                 transaction_hash = event["transaction_hash"]
                 block_number = event["block_number"]
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(block_number))["timestamp"]
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(block_number))["timestamp"], UTC
+                ).replace(
+                    tzinfo=None
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
@@ -370,8 +372,10 @@ class Processor:
 
                 transaction_hash = event["transactionHash"].hex()
                 block_number = event["blockNumber"]
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(block_number))["timestamp"]
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(block_number))["timestamp"], UTC
+                ).replace(
+                    tzinfo=None
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
@@ -430,8 +434,10 @@ class Processor:
 
                 transaction_hash = event["transactionHash"].hex()
                 block_number = event["blockNumber"]
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(block_number))["timestamp"]
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(block_number))["timestamp"], UTC
+                ).replace(
+                    tzinfo=None
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:

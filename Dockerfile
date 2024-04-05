@@ -52,8 +52,8 @@ RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~apl/.bash_profile \
 # install python
 USER apl
 RUN . ~/.bash_profile \
- && pyenv install 3.11.2 \
- && pyenv global 3.11.2 \
+ && pyenv install 3.12.2 \
+ && pyenv global 3.12.2 \
  && pip install --upgrade pip setuptools
 
 # install poetry

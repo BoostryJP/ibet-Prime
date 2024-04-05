@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import patch
 from uuid import UUID
@@ -364,10 +364,9 @@ class TestProcessor:
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancellation_blocktimestamp is None
@@ -501,16 +500,14 @@ class TestProcessor:
         assert _transfer_approval.to_address == issuer_address
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block_2["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block_2["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
-        assert (
-            _transfer_approval.cancellation_blocktimestamp
-            == datetime.utcfromtimestamp(block_3["timestamp"])
-        )
+        assert _transfer_approval.cancellation_blocktimestamp == datetime.fromtimestamp(
+            block_3["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
@@ -641,16 +638,14 @@ class TestProcessor:
         assert _transfer_approval.to_address == issuer_address
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block_2["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block_2["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
-        assert (
-            _transfer_approval.cancellation_blocktimestamp
-            == datetime.utcfromtimestamp(block_3["timestamp"])
-        )
+        assert _transfer_approval.cancellation_blocktimestamp == datetime.fromtimestamp(
+            block_3["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
@@ -751,7 +746,7 @@ class TestProcessor:
         block_1 = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # ApproveTransfer from issuer
-        now = datetime.utcnow()
+        now = datetime.now(UTC).replace(tzinfo=None)
         tx = token_contract_1.functions.approveTransfer(
             0, str(now.timestamp())
         ).build_transaction(
@@ -781,15 +776,14 @@ class TestProcessor:
         assert _transfer_approval.to_address == issuer_address
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block_1["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block_1["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime == now
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(
-            block_2["timestamp"]
-        )
+        assert _transfer_approval.approval_blocktimestamp == datetime.fromtimestamp(
+            block_2["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.cancellation_blocktimestamp is None
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
@@ -894,7 +888,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # ApplyForTransfer
-        now = datetime.utcnow()
+        now = datetime.now(UTC).replace(tzinfo=None)
         tx = ibet_security_token_escrow_contract.functions.createEscrow(
             token_address_1,
             user_address_2,
@@ -932,10 +926,9 @@ class TestProcessor:
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime == now
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancellation_blocktimestamp is None
@@ -1099,16 +1092,14 @@ class TestProcessor:
         assert _transfer_approval.to_address == user_address_2
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block_1["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block_1["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
-        assert (
-            _transfer_approval.cancellation_blocktimestamp
-            == datetime.utcfromtimestamp(block_2["timestamp"])
-        )
+        assert _transfer_approval.cancellation_blocktimestamp == datetime.fromtimestamp(
+            block_2["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
@@ -1258,10 +1249,9 @@ class TestProcessor:
         assert _transfer_approval.to_address == user_address_2
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block_1["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block_1["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancellation_blocktimestamp is None
@@ -1427,14 +1417,13 @@ class TestProcessor:
         assert _transfer_approval.to_address == user_address_2
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert (
-            _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block["timestamp"])
-        )
+        assert _transfer_approval.application_blocktimestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.approval_datetime is None
-        assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(
-            block_2["timestamp"]
-        )
+        assert _transfer_approval.approval_blocktimestamp == datetime.fromtimestamp(
+            block_2["timestamp"], UTC
+        ).replace(tzinfo=None)
         assert _transfer_approval.cancellation_blocktimestamp is None
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True

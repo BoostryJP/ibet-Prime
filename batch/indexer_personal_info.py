@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -203,7 +203,9 @@ class Processor:
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
                         block = await web3.eth.get_block(event["blockNumber"])
-                        timestamp = datetime.utcfromtimestamp(block["timestamp"])
+                        timestamp = datetime.fromtimestamp(
+                            block["timestamp"], UTC
+                        ).replace(tzinfo=None)
                         decrypted_personal_info = (
                             await _personal_info_contract.get_info(
                                 account_address=account_address, default_value=None
@@ -234,7 +236,9 @@ class Processor:
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
                         block = await web3.eth.get_block(event["blockNumber"])
-                        timestamp = datetime.utcfromtimestamp(block["timestamp"])
+                        timestamp = datetime.fromtimestamp(
+                            block["timestamp"], UTC
+                        ).replace(tzinfo=None)
                         decrypted_personal_info = (
                             await _personal_info_contract.get_info(
                                 account_address=account_address, default_value=None

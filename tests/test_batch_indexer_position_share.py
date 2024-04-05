@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest import mock
 from unittest.mock import patch
 
@@ -48,7 +48,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import AsyncContractUtils, ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_position_share import LOG, Processor, main
@@ -4151,10 +4151,10 @@ class TestProcessor:
         token_cache = TokenCache()
         token_cache.token_address = token_address_1
         token_cache.attributes = token_attr
-        token_cache.cached_datetime = datetime.utcnow()
-        token_cache.expiration_datetime = datetime.utcnow() + timedelta(
-            seconds=TOKEN_CACHE_TTL
-        )
+        token_cache.cached_datetime = datetime.now(UTC).replace(tzinfo=None)
+        token_cache.expiration_datetime = datetime.now(UTC).replace(
+            tzinfo=None
+        ) + timedelta(seconds=TOKEN_CACHE_TTL)
         db.add(token_cache)
 
         db.commit()

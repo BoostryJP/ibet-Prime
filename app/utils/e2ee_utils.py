@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import base64
 import binascii
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import boto3
 from Crypto.Cipher import PKCS1_OAEP
@@ -118,7 +118,9 @@ class E2EEUtils:
             )
 
         # Use Cache
-        if E2EEUtils.cache.get("expiration_datetime") > datetime.utcnow():
+        if E2EEUtils.cache.get("expiration_datetime") > datetime.now(UTC).replace(
+            tzinfo=None
+        ):
             return E2EEUtils.cache
 
         # Get Private Key
@@ -148,7 +150,8 @@ class E2EEUtils:
                 "private_key": private_key,
                 "public_key": public_key,
                 "encrypted_length": encrypted_length,
-                "expiration_datetime": datetime.utcnow() + timedelta(hours=1),
+                "expiration_datetime": datetime.now(UTC).replace(tzinfo=None)
+                + timedelta(hours=1),
             }
         )
 

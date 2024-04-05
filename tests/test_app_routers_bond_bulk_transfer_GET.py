@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 import pytz
@@ -70,7 +70,7 @@ class TestAppRoutersBondBulkTransferGET:
             db.add(account)
 
         # prepare data : BulkTransferUpload
-        utc_now = datetime.utcnow()
+        utc_now = datetime.now(UTC).replace(tzinfo=None)
         for i in range(0, 3):
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
@@ -110,7 +110,7 @@ class TestAppRoutersBondBulkTransferGET:
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
     def test_normal_2(self, client, db):
         # prepare data : BulkTransferUpload
-        utc_now = datetime.utcnow()
+        utc_now = datetime.now(UTC).replace(tzinfo=None)
         for i in range(0, 3):
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]

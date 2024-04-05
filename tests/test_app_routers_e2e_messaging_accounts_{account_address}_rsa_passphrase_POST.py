@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
@@ -122,7 +122,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _rsa_key.account_address = user_address_1
         _rsa_key.rsa_private_key = "rsa_private_key_1_1"
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt("password_1")
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
@@ -130,7 +130,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _rsa_key.account_address = user_address_1
         _rsa_key.rsa_private_key = "rsa_private_key_1_2"
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt("password_2")
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
@@ -138,7 +138,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _rsa_key.account_address = user_address_1
         _rsa_key.rsa_private_key = self.rsa_private_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt(old_passphrase)
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
         time.sleep(1)
 
@@ -359,7 +359,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _rsa_key.account_address = user_address_1
         _rsa_key.rsa_private_key = self.rsa_private_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt(old_passphrase)
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
 
         db.commit()
@@ -400,7 +400,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _rsa_key.account_address = user_address_1
         _rsa_key.rsa_private_key = self.rsa_private_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt(old_passphrase)
-        _rsa_key.block_timestamp = datetime.utcnow()
+        _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_rsa_key)
 
         db.commit()

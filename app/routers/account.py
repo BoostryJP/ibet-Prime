@@ -20,17 +20,17 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import List, Optional, Sequence
 
 import boto3
 import eth_keyfile
+import pytz
 from coincurve import PublicKey
 from Crypto.PublicKey import RSA
 from eth_utils import keccak, to_checksum_address
 from fastapi import APIRouter, Header, Request
 from fastapi.exceptions import HTTPException
-from pytz import timezone
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 
@@ -80,7 +80,7 @@ from config import (
 
 router = APIRouter(tags=["account"])
 
-local_tz = timezone(TZ)
+local_tz = pytz.timezone(TZ)
 
 
 # POST: /accounts
@@ -453,7 +453,9 @@ async def create_auth_token(
     hashed_token = hashlib.sha256(new_token.encode()).hexdigest()
 
     # Get current datetime
-    current_datetime_utc = timezone("UTC").localize(datetime.utcnow())
+    current_datetime_utc = pytz.timezone("UTC").localize(
+        datetime.now(UTC).replace(tzinfo=None)
+    )
     current_datetime_local = current_datetime_utc.astimezone(local_tz).isoformat()
 
     # Register auth token
@@ -470,7 +472,7 @@ async def create_auth_token(
             expiration_datetime = auth_token.usage_start + timedelta(
                 seconds=auth_token.valid_duration
             )
-            if datetime.utcnow() <= expiration_datetime:
+            if datetime.now(UTC).replace(tzinfo=None) <= expiration_datetime:
                 raise AuthTokenAlreadyExistsError()
         # Update auth token
         auth_token.auth_token = hashed_token

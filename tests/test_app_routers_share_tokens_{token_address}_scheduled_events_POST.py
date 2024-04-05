@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pytz import timezone as tz
 from sqlalchemy import and_, select
@@ -69,7 +69,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         db.commit()
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)  # utc
+        datetime_now_utc = datetime.now(UTC)  # utc
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {
             "cancellation_date": "20221231",
@@ -198,7 +198,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE.value
         assert _scheduled_event.scheduled_datetime == datetime_now_jst.astimezone(
-            timezone.utc
+            UTC
         ).replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
@@ -216,7 +216,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         _token_address = "token_address_test"
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -261,7 +261,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         _token_address = "token_address_test"
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {"is_canceled": False}
 
@@ -302,7 +302,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         _token_address = "token_address_test"
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -354,7 +354,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         db.commit()
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -397,7 +397,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         db.commit()
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -501,7 +501,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         db.commit()
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 

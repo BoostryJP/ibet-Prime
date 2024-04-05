@@ -18,12 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
-from pytz import timezone
 from sqlalchemy import select
 
 import config
@@ -48,8 +47,6 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
-
-local_tz = timezone(config.TZ)
 
 
 class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
@@ -168,7 +165,10 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {"application_id": 100, "data": str(datetime.utcnow().timestamp())}
+        _expected = {
+            "application_id": 100,
+            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+        }
 
         mock_transfer.assert_called_once_with(
             data=ApproveTransferParams(**_expected),
@@ -303,7 +303,10 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {"escrow_id": 100, "data": str(datetime.utcnow().timestamp())}
+        _expected = {
+            "escrow_id": 100,
+            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+        }
 
         mock_transfer.assert_called_once_with(
             data=EscrowApproveTransferParams(**_expected),
@@ -437,7 +440,10 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {"application_id": 100, "data": str(datetime.utcnow().timestamp())}
+        _expected = {
+            "application_id": 100,
+            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+        }
 
         mock_transfer.assert_called_once_with(
             data=CancelTransferParams(**_expected),
@@ -576,7 +582,10 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {"application_id": 100, "data": str(datetime.utcnow().timestamp())}
+        _expected = {
+            "application_id": 100,
+            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+        }
 
         mock_transfer.assert_called_once_with(
             data=ApproveTransferParams(**_expected),

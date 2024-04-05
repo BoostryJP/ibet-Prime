@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import ANY, AsyncMock
 
@@ -80,7 +80,7 @@ class TestAppRoutersBondLockEvents:
         _lock.account_address = self.account_address_1
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
-        _lock.block_timestamp = datetime.utcnow()
+        _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_lock)
 
         _lock = IDXLock()
@@ -92,7 +92,7 @@ class TestAppRoutersBondLockEvents:
         _lock.account_address = self.account_address_2
         _lock.value = 1
         _lock.data = {"message": "locked_2"}
-        _lock.block_timestamp = datetime.utcnow()
+        _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_lock)
 
         _unlock = IDXUnlock()
@@ -105,7 +105,7 @@ class TestAppRoutersBondLockEvents:
         _unlock.recipient_address = self.other_account_address_1
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
-        _unlock.block_timestamp = datetime.utcnow()
+        _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_unlock)
 
         _unlock = IDXUnlock()
@@ -118,7 +118,7 @@ class TestAppRoutersBondLockEvents:
         _unlock.recipient_address = self.other_account_address_2
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_2"}
-        _unlock.block_timestamp = datetime.utcnow()
+        _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         db.add(_unlock)
 
         db.commit()

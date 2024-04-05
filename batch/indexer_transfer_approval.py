@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Optional, Sequence
 
 import uvloop
@@ -665,17 +665,17 @@ class Processor:
             transfer_approval.amount = amount
             try:
                 transfer_approval.application_datetime = datetime.fromtimestamp(
-                    float(optional_data_applicant), tz=timezone.utc
+                    float(optional_data_applicant), tz=UTC
                 )
             except ValueError:
                 transfer_approval.application_datetime = None
             transfer_approval.application_blocktimestamp = datetime.fromtimestamp(
-                block_timestamp, tz=timezone.utc
+                block_timestamp, tz=UTC
             )
         elif event_type == "Cancel":
             if transfer_approval is not None:
                 transfer_approval.cancellation_blocktimestamp = datetime.fromtimestamp(
-                    block_timestamp, tz=timezone.utc
+                    block_timestamp, tz=UTC
                 )
                 transfer_approval.cancelled = True
         elif event_type == "EscrowFinish":
@@ -685,12 +685,12 @@ class Processor:
             if transfer_approval is not None:
                 try:
                     transfer_approval.approval_datetime = datetime.fromtimestamp(
-                        float(optional_data_approver), tz=timezone.utc
+                        float(optional_data_approver), tz=UTC
                     )
                 except ValueError:
                     transfer_approval.approval_datetime = None
                 transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
-                    block_timestamp, tz=timezone.utc
+                    block_timestamp, tz=UTC
                 )
                 transfer_approval.transfer_approved = True
         await db_session.merge(transfer_approval)

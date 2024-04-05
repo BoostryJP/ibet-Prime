@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import base64
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
@@ -70,7 +70,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
                 {
                     "number": 12345,
                     "timestamp": datetime(
-                        2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                        2099, 4, 27, 12, 34, 56, tzinfo=UTC
                     ).timestamp(),
                 },
             ],
@@ -172,7 +172,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
                 {
                     "number": 12345,
                     "timestamp": datetime(
-                        2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                        2099, 4, 27, 12, 34, 56, tzinfo=UTC
                     ).timestamp(),
                 },
             ],

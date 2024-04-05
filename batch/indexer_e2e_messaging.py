@@ -22,7 +22,7 @@ import base64
 import json
 import sys
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 import uvloop
 from Crypto.Cipher import AES, PKCS1_OAEP
@@ -173,13 +173,15 @@ class Processor:
             )
             for event in events:
                 transaction_hash = event["transactionHash"].hex()
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                )
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(event["blockNumber"]))["timestamp"], UTC
+                ).replace(tzinfo=None)
                 args = event["args"]
                 from_address = args["sender"]
                 to_address = args["receiver"]
-                send_timestamp = datetime.utcfromtimestamp(args["time"])
+                send_timestamp = datetime.fromtimestamp(args["time"], UTC).replace(
+                    tzinfo=None
+                )
                 text = args["text"]
 
                 # Check if the message receiver is owned accounts

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -76,11 +76,11 @@ class TestProcessor:
         db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_past_utc = datetime.now(timezone.utc) + timedelta(days=-1)
+        datetime_past_utc = datetime.now(UTC) + timedelta(days=-1)
         datetime_past_str = datetime_past_utc.isoformat()
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        datetime_pending_utc = datetime.now(timezone.utc) + timedelta(days=1)
+        datetime_pending_utc = datetime.now(UTC) + timedelta(days=1)
         datetime_pending_str = datetime_pending_utc.isoformat()
         update_data = {
             "face_value": 10000,
@@ -217,11 +217,11 @@ class TestProcessor:
         db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_past_utc = datetime.now(timezone.utc) + timedelta(days=-1)
+        datetime_past_utc = datetime.now(UTC) + timedelta(days=-1)
         datetime_past_str = datetime_past_utc.isoformat()
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        datetime_pending_utc = datetime.now(timezone.utc) + timedelta(days=1)
+        datetime_pending_utc = datetime.now(UTC) + timedelta(days=1)
         datetime_pending_str = datetime_pending_utc.isoformat()
 
         update_data = {
@@ -352,7 +352,7 @@ class TestProcessor:
         _token_address = "token_address_test"
 
         # prepare data : ScheduledEvents
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -408,7 +408,7 @@ class TestProcessor:
         db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -466,7 +466,7 @@ class TestProcessor:
         db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -535,7 +535,7 @@ class TestProcessor:
         db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_now_jtc = datetime.now(timezone.utc)
+        datetime_now_jtc = datetime.now(UTC)
         datetime_now_str = datetime_now_jtc.isoformat()
 
         update_data = {}
@@ -606,7 +606,7 @@ class TestProcessor:
         db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
@@ -686,7 +686,7 @@ class TestProcessor:
         db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_now_jtc = datetime.now(timezone.utc)
+        datetime_now_jtc = datetime.now(UTC)
         datetime_now_str = datetime_now_jtc.isoformat()
 
         update_data = {}

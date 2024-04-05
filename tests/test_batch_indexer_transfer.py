@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import patch
 
@@ -364,9 +364,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
@@ -378,9 +378,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _idx_transfer_block_number = db.scalars(
             select(IDXTransferBlockNumber).limit(1)
@@ -638,9 +638,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
@@ -652,9 +652,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -666,9 +666,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _transfer = _transfer_list[3]
         assert _transfer.id == 4
@@ -680,9 +680,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _idx_transfer_block_number = db.scalars(
             select(IDXTransferBlockNumber).limit(1)
@@ -828,9 +828,9 @@ class TestProcessor:
             assert _transfer.amount == value_list1[i]
             assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
             assert _transfer.data is None
-            assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-                block["timestamp"]
-            )
+            assert _transfer.block_timestamp == datetime.fromtimestamp(
+                block["timestamp"], UTC
+            ).replace(tzinfo=None)
 
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
         for i in range(0, 4):
@@ -843,9 +843,9 @@ class TestProcessor:
             assert _transfer.amount == value_list2[i]
             assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
             assert _transfer.data is None
-            assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-                block["timestamp"]
-            )
+            assert _transfer.block_timestamp == datetime.fromtimestamp(
+                block["timestamp"], UTC
+            ).replace(tzinfo=None)
 
         _idx_transfer_block_number = db.scalars(
             select(IDXTransferBlockNumber).limit(1)
@@ -970,9 +970,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
         assert _transfer.transaction_hash == tx_hash_2
@@ -983,9 +983,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -997,9 +997,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _transfer = _transfer_list[3]
         assert _transfer.id == 4
@@ -1011,9 +1011,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
-            block["timestamp"]
-        )
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _idx_transfer_block_number = db.scalars(
             select(IDXTransferBlockNumber).limit(1)
