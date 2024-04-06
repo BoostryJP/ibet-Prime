@@ -167,6 +167,7 @@ class IbetStandardTokenInterface:
 
 class IbetSecurityTokenInterface(IbetStandardTokenInterface):
     personal_info_contract_address: str
+    require_personal_info_registered: bool
     transferable: bool
     is_offering: bool
     transfer_approval_required: bool
@@ -554,6 +555,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                         contract, "personalInfoAddress", (), ZERO_ADDRESS
                     ),
                     AsyncContractUtils.call_function(
+                        contract, "requirePersonalInfoRegistered", (), True
+                    ),
+                    AsyncContractUtils.call_function(
                         contract, "transferable", (), False
                     ),
                     AsyncContractUtils.call_function(contract, "isOffering", (), False),
@@ -599,6 +603,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     self.privacy_policy,
                     self.status,
                     self.personal_info_contract_address,
+                    self.require_personal_info_registered,
                     self.transferable,
                     self.is_offering,
                     self.transfer_approval_required,
@@ -970,6 +975,28 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.require_personal_info_registered is not None:
+            tx = await contract.functions.setRequirePersonalInfoRegistered(
+                data.require_personal_info_registered
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
         if data.contact_information is not None:
             tx = await contract.functions.setContactInformation(
                 data.contact_information
@@ -1164,6 +1191,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                         contract, "personalInfoAddress", (), ZERO_ADDRESS
                     ),
                     AsyncContractUtils.call_function(
+                        contract, "requirePersonalInfoRegistered", (), True
+                    ),
+                    AsyncContractUtils.call_function(
                         contract, "transferable", (), False
                     ),
                     AsyncContractUtils.call_function(contract, "isOffering", (), False),
@@ -1193,6 +1223,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     self.privacy_policy,
                     self.status,
                     self.personal_info_contract_address,
+                    self.require_personal_info_registered,
                     self.transferable,
                     self.is_offering,
                     self.transfer_approval_required,
@@ -1257,6 +1288,28 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.personal_info_contract_address is not None:
             tx = await contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.require_personal_info_registered is not None:
+            tx = await contract.functions.setRequirePersonalInfoRegistered(
+                data.require_personal_info_registered
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,

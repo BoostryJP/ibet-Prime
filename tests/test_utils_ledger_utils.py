@@ -56,7 +56,7 @@ from app.model.db import (
 from app.utils import ledger_utils
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from config import CHAIN_ID, TX_GAS_LIMIT, TZ, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
+from config import TZ, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -64,7 +64,10 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 async def deploy_bond_token_contract(
-    address, private_key, personal_info_contract_address
+    issuer_address: str,
+    issuer_private_key: bytes,
+    personal_info_contract_address: str,
+    require_personal_info_registered: bool,
 ):
     arguments = [
         "token.name",
@@ -80,18 +83,23 @@ async def deploy_bond_token_contract(
         "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
-    contract_address, _, _ = await bond_contrat.create(arguments, address, private_key)
+    contract_address, _, _ = await bond_contrat.create(
+        arguments, issuer_address, issuer_private_key
+    )
 
     data = IbetStraightBondUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
-    data.face_value_currency = "JPY"
-    await bond_contrat.update(data, address, private_key)
+    data.require_personal_info_registered = require_personal_info_registered
+    await bond_contrat.update(data, issuer_address, issuer_private_key)
 
     return contract_address
 
 
 async def deploy_share_token_contract(
-    address, private_key, personal_info_contract_address
+    issuer_address: str,
+    issuer_private_key: bytes,
+    personal_info_contract_address: str,
+    require_personal_info_registered: bool,
 ):
     arguments = [
         "token.name",
@@ -106,44 +114,30 @@ async def deploy_share_token_contract(
     ]
     share_contract = IbetShareContract()
     contract_address, _, _ = await share_contract.create(
-        arguments, address, private_key
+        arguments, issuer_address, issuer_private_key
     )
 
     data = IbetShareUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
-    await share_contract.update(data, address, private_key)
+    data.require_personal_info_registered = require_personal_info_registered
+    await share_contract.update(data, issuer_address, issuer_private_key)
 
     return contract_address
 
 
-def deploy_personal_info_contract(address, private_key):
+def deploy_personal_info_contract(address: str, private_key: bytes):
     contract_address, _, _ = ContractUtils.deploy_contract(
         "PersonalInfo", [], address, private_key
     )
     return contract_address
 
 
-async def set_personal_info_contract(
-    db, contract_address, issuer_account: Account, sender_list
+async def register_personal_info(
+    contract_address: str, issuer_account: Account, investor_list: list
 ):
-    contract = ContractUtils.get_contract("PersonalInfo", contract_address)
-
-    for sender in sender_list:
-        tx = contract.functions.register(
-            issuer_account.issuer_address, ""
-        ).build_transaction(
-            {
-                "nonce": web3.eth.get_transaction_count(sender["address"]),
-                "chainId": CHAIN_ID,
-                "from": sender["address"],
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        ContractUtils.send_transaction(tx, sender["private_key"])
-
-        personal_info = PersonalInfoContract(issuer_account, contract_address)
-        await personal_info.modify_info(sender["address"], sender["data"])
+    personal_info = PersonalInfoContract(issuer_account, contract_address)
+    for investor in investor_list:
+        await personal_info.register_info(investor["address"], investor["data"])
 
 
 class TestCreateLedger:
@@ -151,10 +145,11 @@ class TestCreateLedger:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Share Token
+    # require_personal_info_registered: True
     @pytest.mark.asyncio
-    async def test_normal_1(self, db, async_db):
+    async def test_normal_1_1(self, db, async_db):
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -171,8 +166,7 @@ class TestCreateLedger:
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
-        # prepare data
-        # Account
+        # Prepare data: Issuer account settings
         _account = Account()
         _account.issuer_address = issuer_address
         _account.keyfile = issuer["keyfile_json"]
@@ -183,12 +177,11 @@ class TestCreateLedger:
         _account.rsa_status = AccountRsaStatus.SET.value
         db.add(_account)
 
-        # Token
+        # Prepare data: Personal info contract
         personal_info_contract_address = deploy_personal_info_contract(
             issuer_address, issuer_private_key
         )
-        await set_personal_info_contract(
-            db,
+        await register_personal_info(
             personal_info_contract_address,
             _account,
             [
@@ -210,19 +203,10 @@ class TestCreateLedger:
                 },
             ],
         )
-        token_address_1 = await deploy_share_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract_address
-        )
-        _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE.value
-        _token_1.tx_hash = ""
-        _token_1.issuer_address = issuer_address
-        _token_1.token_address = token_address_1
-        _token_1.abi = {}
-        _token_1.version = TokenVersion.V_22_12
-        db.add(_token_1)
 
-        # IDXPersonalInfo(only user_1)
+        # Prepare data: IDXPersonalInfo
+        # - Only user_1
+        # - user_2 information is obtained from contract data
         _idx_personal_info_1 = IDXPersonalInfo()
         _idx_personal_info_1.account_address = user_address_1
         _idx_personal_info_1.issuer_address = issuer_address
@@ -232,9 +216,25 @@ class TestCreateLedger:
         }
         db.add(_idx_personal_info_1)
 
-        # UTXO
-        # user_1: "2022/01/01" = 100 + 10, "2022/01/02" = 30 + 40
-        # user_2: "2022/01/01" = 200 + 20, "2022/01/02" = 40 + 2
+        # Prepare data: Token
+        token_address_1 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract_address,
+            require_personal_info_registered=True,
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_6
+        db.add(_token_1)
+
+        # Prepare data: UTXO
+        # - user_1: "2022/01/01" = 100 + 10, "2022/01/02" = 30 + 40
+        # - user_2: "2022/01/01" = 200 + 20, "2022/01/02" = 40 + 2
         _utxo_1 = UTXO()
         _utxo_1.transaction_hash = "tx1"
         _utxo_1.account_address = user_address_1
@@ -323,7 +323,7 @@ class TestCreateLedger:
         )  # JST 2022/01/02
         db.add(_utxo_8)
 
-        # Template
+        # Prepare data: Ledger template
         _template = LedgerTemplate()
         _template.token_address = token_address_1
         _template.issuer_address = issuer_address
@@ -364,7 +364,7 @@ class TestCreateLedger:
         ]
         db.add(_template)
 
-        # Template Details 1
+        # Prepare data: Ledger template details 1
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address_1
         _details_1.token_detail_type = "優先受益権"
@@ -387,14 +387,14 @@ class TestCreateLedger:
             },
             {
                 "test-item1": "test-value1",
-                "test-item2": {"test-itemA": {"test-itema": "test-value2Aa"}},
+                "test-item2": {"test-itemA": {"test-item": "test-value2Aa"}},
             },
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address_1
         db.add(_details_1)
 
-        # Template Details 2
+        # Prepare data: Ledger template details 2
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address_1
         _details_2.token_detail_type = "劣後受益権"
@@ -422,7 +422,6 @@ class TestCreateLedger:
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
-        # Details 2 Data
         _details_2_data_1 = LedgerDetailsData()
         _details_2_data_1.token_address = token_address_1
         _details_2_data_1.data_id = "data_id_2"
@@ -452,7 +451,7 @@ class TestCreateLedger:
         await async_db.commit()
         await async_db.close()
 
-        # assertion
+        # Assertion
         _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 1
         _notification = db.scalars(select(Notification).limit(1)).first()
@@ -555,10 +554,11 @@ class TestCreateLedger:
                         {
                             "test-item1": "test-value1",
                             "test-item2": {
-                                "test-itemA": {"test-itema": "test-value2Aa"}
+                                "test-itemA": {"test-item": "test-value2Aa"}
                             },
                         },
                     ],
+                    "some_personal_info_not_registered": False,
                 },
                 {
                     "token_detail_type": "劣後受益権",
@@ -602,6 +602,7 @@ class TestCreateLedger:
                             "f-d-test項目2": "d-test値2",
                         },
                     ],
+                    "some_personal_info_not_registered": False,
                 },
             ],
             "footers": [
@@ -624,10 +625,315 @@ class TestCreateLedger:
         }
         db.close()
 
-    # <Normal_2>
-    # Bond Token
+    # <Normal_1_2>
+    # Share Token
+    # require_personal_info_registered: False
+    #   - Perform searches only on indexed personal information.
+    #   - Even if personal information exists in the contract, it will not be referenced.
+    # No personal information indexed
+    # -> "some_personal_info_not_registered" = True
     @pytest.mark.asyncio
-    async def test_normal_2(self, db, async_db):
+    async def test_normal_1_2(self, db, async_db):
+        issuer = config_eth_account("user5")
+        issuer_address = issuer["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_1 = config_eth_account("user1")
+        user_address_1 = user_1["address"]
+        user_private_key_1 = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data: Issuer account settings
+        _account = Account()
+        _account.issuer_address = issuer_address
+        _account.keyfile = issuer["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_private_key = issuer["rsa_private_key"]
+        _account.rsa_public_key = issuer["rsa_public_key"]
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.SET.value
+        db.add(_account)
+
+        # Prepare data: Personal info contract
+        # - Registered data is not referenced
+        personal_info_contract_address = deploy_personal_info_contract(
+            issuer_address, issuer_private_key
+        )
+        await register_personal_info(
+            personal_info_contract_address,
+            _account,
+            [
+                {
+                    "address": user_address_1,
+                    "private_key": user_private_key_1,
+                    "data": {
+                        "name": "name_test_con_1",
+                        "address": "address_test_con_1",
+                    },
+                },
+            ],
+        )
+
+        # Prepare data: Token
+        token_address_1 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract_address,
+            require_personal_info_registered=False,
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_6
+        db.add(_token_1)
+
+        # Prepare data: UTXO
+        # - user_1: "2022/01/01" = 100 + 10, "2022/01/02" = 30 + 40
+        _utxo_1 = UTXO()
+        _utxo_1.transaction_hash = "tx1"
+        _utxo_1.account_address = user_address_1
+        _utxo_1.token_address = token_address_1
+        _utxo_1.amount = 100
+        _utxo_1.block_number = 1
+        _utxo_1.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
+        db.add(_utxo_1)
+
+        _utxo_2 = UTXO()
+        _utxo_2.transaction_hash = "tx2"
+        _utxo_2.account_address = user_address_1
+        _utxo_2.token_address = token_address_1
+        _utxo_2.amount = 10
+        _utxo_2.block_number = 2
+        _utxo_2.block_timestamp = datetime.strptime(
+            "2022/01/01 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
+        db.add(_utxo_2)
+
+        _utxo_3 = UTXO()
+        _utxo_3.transaction_hash = "tx3"
+        _utxo_3.account_address = user_address_1
+        _utxo_3.token_address = token_address_1
+        _utxo_3.amount = 30
+        _utxo_3.block_number = 3
+        _utxo_3.block_timestamp = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
+        db.add(_utxo_3)
+
+        _utxo_4 = UTXO()
+        _utxo_4.transaction_hash = "tx4"
+        _utxo_4.account_address = user_address_1
+        _utxo_4.token_address = token_address_1
+        _utxo_4.amount = 40
+        _utxo_4.block_number = 4
+        _utxo_4.block_timestamp = datetime.strptime(
+            "2022/01/02 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
+        db.add(_utxo_4)
+
+        # Prepare data: Ledger template
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = issuer_address
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
+                },
+                "テスト項目3": {
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                    "テスト項目B": "テスト値3B",
+                },
+            },
+        ]
+        _template.token_name = "受益権テスト"
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
+                },
+                "f-テスト項目3": {
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            },
+        ]
+        db.add(_template)
+
+        # Prepare data: Ledger template details 1
+        _details_1 = LedgerDetailsTemplate()
+        _details_1.token_address = token_address_1
+        _details_1.token_detail_type = "優先受益権"
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "test項目1": "test値1",
+                "test項目2": {
+                    "test項目A": "test値2A",
+                },
+            },
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "test-item1": "test-value1",
+                "test-item2": {"test-itemA": {"test-item": "test-value2Aa"}},
+            },
+        ]
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_source = token_address_1
+        db.add(_details_1)
+
+        db.commit()
+
+        # Execute
+        await ledger_utils.create_ledger(token_address_1, async_db)
+        await async_db.commit()
+        await async_db.close()
+
+        # Assertion
+        _notifications = db.scalars(select(Notification)).all()
+        assert len(_notifications) == 1
+
+        _notification = db.scalars(select(Notification).limit(1)).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == issuer_address
+        assert _notification.priority == 0
+        assert _notification.type == NotificationType.CREATE_LEDGER_INFO
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "token_address": token_address_1,
+            "token_type": TokenType.IBET_SHARE.value,
+            "ledger_id": 1,
+        }
+
+        _ledger = db.scalars(select(Ledger).limit(1)).first()
+        assert _ledger.id == 1
+        assert _ledger.token_address == token_address_1
+        assert _ledger.token_type == TokenType.IBET_SHARE.value
+        now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
+        assert _ledger.ledger == {
+            "created": now_ymd,
+            "token_name": "受益権テスト",
+            "currency": "",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "テスト項目1": "テスト値1",
+                    "テスト項目2": {
+                        "テスト項目A": "テスト値2A",
+                        "テスト項目B": "テスト値2B",
+                    },
+                    "テスト項目3": {
+                        "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                        "テスト項目B": "テスト値3B",
+                    },
+                },
+            ],
+            "details": [
+                {
+                    "token_detail_type": "優先受益権",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test項目1": "test値1",
+                            "test項目2": {
+                                "test項目A": "test値2A",
+                            },
+                        },
+                    ],
+                    "data": [
+                        {
+                            "account_address": user_address_1,
+                            "name": None,  # Not set
+                            "address": None,  # Not set
+                            "amount": 110,
+                            "price": 200,
+                            "balance": 110 * 200,
+                            "acquisition_date": "2022/01/01",
+                        },
+                        {
+                            "account_address": user_address_1,
+                            "name": None,  # Not set
+                            "address": None,  # Not set
+                            "amount": 70,
+                            "price": 200,
+                            "balance": 70 * 200,
+                            "acquisition_date": "2022/01/02",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test-item1": "test-value1",
+                            "test-item2": {
+                                "test-itemA": {"test-item": "test-value2Aa"}
+                            },
+                        },
+                    ],
+                    "some_personal_info_not_registered": True,
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-テスト項目1": "f-テスト値1",
+                    "f-テスト項目2": {
+                        "f-テスト項目A": "f-テスト値2A",
+                        "f-テスト項目B": "f-テスト値2B",
+                    },
+                    "f-テスト項目3": {
+                        "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                        "f-テスト項目B": "f-テスト値3B",
+                    },
+                },
+            ],
+        }
+        db.close()
+
+    # <Normal_2_1>
+    # Bond Token
+    # require_personal_info_registered: True
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, db, async_db):
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -644,8 +950,7 @@ class TestCreateLedger:
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
-        # prepare data
-        # Account
+        # Prepare data: Issuer account settings
         _account = Account()
         _account.issuer_address = issuer_address
         _account.keyfile = issuer["keyfile_json"]
@@ -656,12 +961,11 @@ class TestCreateLedger:
         _account.rsa_status = AccountRsaStatus.SET.value
         db.add(_account)
 
-        # Token
+        # Prepare data: Personal info contract
         personal_info_contract_address = deploy_personal_info_contract(
             issuer_address, issuer_private_key
         )
-        await set_personal_info_contract(
-            db,
+        await register_personal_info(
             personal_info_contract_address,
             _account,
             [
@@ -683,19 +987,10 @@ class TestCreateLedger:
                 },
             ],
         )
-        token_address_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract_address
-        )
-        _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        _token_1.tx_hash = ""
-        _token_1.issuer_address = issuer_address
-        _token_1.token_address = token_address_1
-        _token_1.abi = {}
-        _token_1.version = TokenVersion.V_23_12
-        db.add(_token_1)
 
-        # IDXPersonalInfo(only user_1)
+        # Prepare data: IDXPersonalInfo
+        # - Only user_1
+        # - user_2 information is obtained from contract data
         _idx_personal_info_1 = IDXPersonalInfo()
         _idx_personal_info_1.account_address = user_address_1
         _idx_personal_info_1.issuer_address = issuer_address
@@ -705,9 +1000,25 @@ class TestCreateLedger:
         }
         db.add(_idx_personal_info_1)
 
-        # UTXO
-        # user_1: "2022/01/01" = 100 + 10, "2022/01/02" = 30 + 40
-        # user_2: "2022/01/01" = 200 + 20, "2022/01/02" = 40 + 2
+        # Prepare data: Token
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract_address,
+            require_personal_info_registered=True,
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_6
+        db.add(_token_1)
+
+        # Prepare data: UTXO
+        # - user_1: "2022/01/01" = 100 + 10, "2022/01/02" = 30 + 40
+        # - user_2: "2022/01/01" = 200 + 20, "2022/01/02" = 40 + 2
         _utxo_1 = UTXO()
         _utxo_1.transaction_hash = "tx1"
         _utxo_1.account_address = user_address_1
@@ -796,9 +1107,7 @@ class TestCreateLedger:
         )  # JST 2022/01/02
         db.add(_utxo_8)
 
-        # Template
-
-        # Template
+        # Prepare data: Ledger template
         _template = LedgerTemplate()
         _template.token_address = token_address_1
         _template.issuer_address = issuer_address
@@ -839,7 +1148,7 @@ class TestCreateLedger:
         ]
         db.add(_template)
 
-        # Template Details 1
+        # Prepare data: Ledger template details 1
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address_1
         _details_1.token_detail_type = "優先受益権"
@@ -862,14 +1171,14 @@ class TestCreateLedger:
             },
             {
                 "test-item1": "test-value1",
-                "test-item2": {"test-itemA": {"test-itema": "test-value2Aa"}},
+                "test-item2": {"test-itemA": {"test-item": "test-value2Aa"}},
             },
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address_1
         db.add(_details_1)
 
-        # Template Details 2
+        # Prepare data: Ledger template details 2
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address_1
         _details_2.token_detail_type = "劣後受益権"
@@ -897,7 +1206,6 @@ class TestCreateLedger:
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
-        # Details 2 Data
         _details_2_data_1 = LedgerDetailsData()
         _details_2_data_1.token_address = token_address_1
         _details_2_data_1.data_id = "data_id_2"
@@ -927,7 +1235,7 @@ class TestCreateLedger:
         await async_db.commit()
         await async_db.close()
 
-        # assertion
+        # Assertion
         _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 1
         _notification = db.scalars(select(Notification).limit(1)).first()
@@ -1029,10 +1337,11 @@ class TestCreateLedger:
                         {
                             "test-item1": "test-value1",
                             "test-item2": {
-                                "test-itemA": {"test-itema": "test-value2Aa"}
+                                "test-itemA": {"test-item": "test-value2Aa"}
                             },
                         },
                     ],
+                    "some_personal_info_not_registered": False,
                 },
                 {
                     "token_detail_type": "劣後受益権",
@@ -1076,6 +1385,311 @@ class TestCreateLedger:
                             "f-d-test項目2": "d-test値2",
                         },
                     ],
+                    "some_personal_info_not_registered": False,
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-テスト項目1": "f-テスト値1",
+                    "f-テスト項目2": {
+                        "f-テスト項目A": "f-テスト値2A",
+                        "f-テスト項目B": "f-テスト値2B",
+                    },
+                    "f-テスト項目3": {
+                        "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                        "f-テスト項目B": "f-テスト値3B",
+                    },
+                },
+            ],
+        }
+        db.close()
+
+    # <Normal_2_2>
+    # Bond Token
+    # require_personal_info_registered: False
+    #   - Perform searches only on indexed personal information.
+    #   - Even if personal information exists in the contract, it will not be referenced.
+    # No personal information indexed
+    # -> "some_personal_info_not_registered" = True
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, db, async_db):
+        issuer = config_eth_account("user5")
+        issuer_address = issuer["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_1 = config_eth_account("user1")
+        user_address_1 = user_1["address"]
+        user_private_key_1 = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data: Issuer account settings
+        _account = Account()
+        _account.issuer_address = issuer_address
+        _account.keyfile = issuer["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_private_key = issuer["rsa_private_key"]
+        _account.rsa_public_key = issuer["rsa_public_key"]
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.SET.value
+        db.add(_account)
+
+        # Prepare data: Personal info contract
+        # - Registered data is not referenced
+        personal_info_contract_address = deploy_personal_info_contract(
+            issuer_address, issuer_private_key
+        )
+        await register_personal_info(
+            personal_info_contract_address,
+            _account,
+            [
+                {
+                    "address": user_address_1,
+                    "private_key": user_private_key_1,
+                    "data": {
+                        "name": "name_test_con_1",
+                        "address": "address_test_con_1",
+                    },
+                },
+            ],
+        )
+
+        # Prepare data: Token
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract_address,
+            require_personal_info_registered=False,
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_6
+        db.add(_token_1)
+
+        # Prepare data: UTXO
+        # - user_1: "2022/01/01" = 100 + 10, "2022/01/02" = 30 + 40
+        _utxo_1 = UTXO()
+        _utxo_1.transaction_hash = "tx1"
+        _utxo_1.account_address = user_address_1
+        _utxo_1.token_address = token_address_1
+        _utxo_1.amount = 100
+        _utxo_1.block_number = 1
+        _utxo_1.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
+        db.add(_utxo_1)
+
+        _utxo_2 = UTXO()
+        _utxo_2.transaction_hash = "tx2"
+        _utxo_2.account_address = user_address_1
+        _utxo_2.token_address = token_address_1
+        _utxo_2.amount = 10
+        _utxo_2.block_number = 2
+        _utxo_2.block_timestamp = datetime.strptime(
+            "2022/01/01 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
+        db.add(_utxo_2)
+
+        _utxo_3 = UTXO()
+        _utxo_3.transaction_hash = "tx3"
+        _utxo_3.account_address = user_address_1
+        _utxo_3.token_address = token_address_1
+        _utxo_3.amount = 30
+        _utxo_3.block_number = 3
+        _utxo_3.block_timestamp = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
+        db.add(_utxo_3)
+
+        _utxo_4 = UTXO()
+        _utxo_4.transaction_hash = "tx4"
+        _utxo_4.account_address = user_address_1
+        _utxo_4.token_address = token_address_1
+        _utxo_4.amount = 40
+        _utxo_4.block_number = 4
+        _utxo_4.block_timestamp = datetime.strptime(
+            "2022/01/02 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
+        db.add(_utxo_4)
+
+        # Prepare data: Ledger template
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = issuer_address
+        _template.token_name = "受益権テスト"
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
+                },
+                "テスト項目3": {
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                    "テスト項目B": "テスト値3B",
+                },
+            },
+        ]
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
+                },
+                "f-テスト項目3": {
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            },
+        ]
+        db.add(_template)
+
+        # Prepare data: Ledger template details 1
+        _details_1 = LedgerDetailsTemplate()
+        _details_1.token_address = token_address_1
+        _details_1.token_detail_type = "優先受益権"
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "test項目1": "test値1",
+                "test項目2": {
+                    "test項目A": "test値2A",
+                },
+            },
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "test-item1": "test-value1",
+                "test-item2": {"test-itemA": {"test-item": "test-value2Aa"}},
+            },
+        ]
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_source = token_address_1
+        db.add(_details_1)
+
+        db.commit()
+
+        # Execute
+        await ledger_utils.create_ledger(token_address_1, async_db)
+        await async_db.commit()
+        await async_db.close()
+
+        # Assertion
+        _notifications = db.scalars(select(Notification)).all()
+        assert len(_notifications) == 1
+
+        _notification = db.scalars(select(Notification).limit(1)).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == issuer_address
+        assert _notification.priority == 0
+        assert _notification.type == NotificationType.CREATE_LEDGER_INFO
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "token_address": token_address_1,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "ledger_id": 1,
+        }
+
+        _ledger = db.scalars(select(Ledger).limit(1)).first()
+        assert _ledger.id == 1
+        assert _ledger.token_address == token_address_1
+        assert _ledger.token_type == TokenType.IBET_STRAIGHT_BOND.value
+        now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
+        assert _ledger.ledger == {
+            "created": now_ymd,
+            "token_name": "受益権テスト",
+            "currency": "JPY",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "テスト項目1": "テスト値1",
+                    "テスト項目2": {
+                        "テスト項目A": "テスト値2A",
+                        "テスト項目B": "テスト値2B",
+                    },
+                    "テスト項目3": {
+                        "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                        "テスト項目B": "テスト値3B",
+                    },
+                },
+            ],
+            "details": [
+                {
+                    "token_detail_type": "優先受益権",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test項目1": "test値1",
+                            "test項目2": {
+                                "test項目A": "test値2A",
+                            },
+                        },
+                    ],
+                    "data": [
+                        {
+                            "account_address": user_address_1,
+                            "name": None,  # Not set
+                            "address": None,  # Not set
+                            "amount": 110,
+                            "price": 20,
+                            "balance": 110 * 20,
+                            "acquisition_date": "2022/01/01",
+                        },
+                        {
+                            "account_address": user_address_1,
+                            "name": None,  # Not set
+                            "address": None,  # Not set
+                            "amount": 70,
+                            "price": 20,
+                            "balance": 70 * 20,
+                            "acquisition_date": "2022/01/02",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test-item1": "test-value1",
+                            "test-item2": {
+                                "test-itemA": {"test-item": "test-value2Aa"}
+                            },
+                        },
+                    ],
+                    "some_personal_info_not_registered": True,
                 },
             ],
             "footers": [
@@ -1099,7 +1713,8 @@ class TestCreateLedger:
         db.close()
 
     # <Normal_3>
-    # SKIP: Not Exist Template
+    # Ledger template is not set
+    # -> Skip processing
     @pytest.mark.asyncio
     async def test_normal_3(self, db, async_db):
         issuer = config_eth_account("user5")
@@ -1108,10 +1723,12 @@ class TestCreateLedger:
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
 
-        # prepare data
-        # Token
+        # Prepare data: Token
         token_address_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ZERO_ADDRESS
+            issuer_address,
+            issuer_private_key,
+            ZERO_ADDRESS,
+            require_personal_info_registered=True,
         )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -1119,7 +1736,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_23_12
+        _token_1.version = TokenVersion.V_24_6
         db.add(_token_1)
         db.commit()
 
@@ -1128,7 +1745,7 @@ class TestCreateLedger:
         await async_db.commit()
         await async_db.close()
 
-        # assertion
+        # Assertion
         _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 0
         _ledger = db.scalars(select(Ledger).limit(1)).first()
@@ -1136,7 +1753,8 @@ class TestCreateLedger:
         db.close()
 
     # <Normal_4>
-    # SKIP: Other Token Type
+    # Not a token type to be processed
+    # -> Skip processing
     @pytest.mark.asyncio
     async def test_normal_4(self, db, async_db):
         issuer = config_eth_account("user5")
@@ -1145,18 +1763,20 @@ class TestCreateLedger:
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
 
-        # prepare data
-        # Token
+        # Prepare data: Token
         token_address_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ZERO_ADDRESS
+            issuer_address,
+            issuer_private_key,
+            ZERO_ADDRESS,
+            require_personal_info_registered=True,
         )
         _token_1 = Token()
-        _token_1.type = "IbetCoupon"
+        _token_1.type = "IbetCoupon"  # Not subject to processing
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_22_12
+        _token_1.version = TokenVersion.V_24_6
         db.add(_token_1)
 
         db.commit()

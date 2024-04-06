@@ -161,8 +161,8 @@ class TestGetInfo:
             "address": "test",
             "email": "test",
             "birth": "test",
-            "is_corporate": "test",
-            "tax_category": "test",
+            "is_corporate": None,
+            "tax_category": None,
         }
 
     ###########################################################################
@@ -230,8 +230,8 @@ class TestGetInfo:
             "address": "test",
             "email": "test",
             "birth": "test",
-            "is_corporate": "test",
-            "tax_category": "test",
+            "is_corporate": None,
+            "tax_category": None,
         }
 
     # <Error_2>
@@ -274,8 +274,8 @@ class TestGetInfo:
             "address": "test",
             "email": "test",
             "birth": "test",
-            "is_corporate": "test",
-            "tax_category": "test",
+            "is_corporate": None,
+            "tax_category": None,
         }
 
 

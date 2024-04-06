@@ -323,6 +323,7 @@ class TestGet:
         assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert bond_contract.status is True
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert bond_contract.require_personal_info_registered is True
         assert bond_contract.transferable is False
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
@@ -396,6 +397,7 @@ class TestGet:
             "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
             "status": False,
             "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
             "transferable": True,
             "is_offering": True,
             "transfer_approval_required": True,
@@ -457,6 +459,7 @@ class TestGet:
             bond_contract.personal_info_contract_address
             == "0x1234567890123456789012345678901234567891"
         )
+        assert bond_contract.require_personal_info_registered is True
         assert bond_contract.transferable is True
         assert bond_contract.is_offering is True
         assert bond_contract.transfer_approval_required is True
@@ -530,6 +533,7 @@ class TestGet:
             "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
             "status": False,
             "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": False,
             "transferable": True,
             "is_offering": True,
             "transfer_approval_required": True,
@@ -591,6 +595,7 @@ class TestGet:
         assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert bond_contract.status is True
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert bond_contract.require_personal_info_registered is True
         assert bond_contract.transferable is False
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
@@ -640,6 +645,7 @@ class TestGet:
         assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert bond_contract.status is True
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert bond_contract.require_personal_info_registered is True
         assert bond_contract.transferable is False
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
@@ -752,6 +758,7 @@ class TestUpdate:
         assert bond_contract.is_redeemed is False
         assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert bond_contract.require_personal_info_registered is True
         assert bond_contract.contact_information == ""
         assert bond_contract.privacy_policy == ""
         assert bond_contract.transfer_approval_required is False
@@ -808,6 +815,7 @@ class TestUpdate:
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",
+            "require_personal_info_registered": False,
             "contact_information": "contact info test",
             "privacy_policy": "privacy policy test",
             "transfer_approval_required": True,
@@ -854,6 +862,7 @@ class TestUpdate:
             bond_contract.personal_info_contract_address
             == "0x0000000000000000000000000000000000000002"
         )
+        assert bond_contract.require_personal_info_registered is False
         assert bond_contract.contact_information == "contact info test"
         assert bond_contract.privacy_policy == "privacy policy test"
         assert bond_contract.transfer_approval_required is True

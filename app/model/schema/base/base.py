@@ -30,10 +30,12 @@ from typing_extensions import Annotated
 class IbetStraightBondContractVersion(StrEnum):
     V_22_12 = "22_12"
     V_23_12 = "23_12"
+    V_24_6 = "24_6"
 
 
 class IbetShareContractVersion(StrEnum):
     V_22_12 = "22_12"
+    V_24_6 = "24_6"
 
 
 MMDD_constr = Annotated[

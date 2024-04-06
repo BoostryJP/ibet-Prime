@@ -50,6 +50,7 @@ from app.exceptions import (
     ContractRevertError,
     InvalidParameterError,
     OperationNotAllowedStateError,
+    OperationNotSupportedVersionError,
     SendTransactionError,
 )
 from app.model.blockchain import (
@@ -258,6 +259,7 @@ async def issue_token(
         "is_redeemed",
         "tradable_exchange_contract_address",
         "personal_info_contract_address",
+        "require_personal_info_registered",
         "contact_information",
         "privacy_policy",
         "transfer_approval_required",
@@ -327,7 +329,7 @@ async def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_23_12
+    _token.version = TokenVersion.V_24_6
     db.add(_token)
 
     # Register operation log
@@ -459,7 +461,7 @@ async def update_token(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
-    token: IbetStraightBondUpdate,
+    update_data: IbetStraightBondUpdate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
@@ -507,12 +509,30 @@ async def update_token(
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
 
+    # Verify that the token version supports the operation
+    if _token.version < TokenVersion.V_23_12:
+        if (
+            update_data.face_value_currency is not None
+            or update_data.interest_payment_currency is not None
+            or update_data.redemption_value_currency is not None
+            or update_data.base_fx_rate is not None
+        ):
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
+    if _token.version < TokenVersion.V_24_6:
+        if update_data.require_personal_info_registered is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
     # Send transaction
     try:
         token_contract = IbetStraightBondContract(token_address)
         original_contents = (await token_contract.get()).__dict__
         await token_contract.update(
-            data=UpdateParams(**token.model_dump()),
+            data=UpdateParams(**update_data.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
         )
@@ -524,7 +544,7 @@ async def update_token(
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
     operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
-    operation_log.arguments = token.model_dump(exclude_none=True)
+    operation_log.arguments = update_data.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
     operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
     db.add(operation_log)
@@ -1565,6 +1585,24 @@ async def schedule_new_update_event(
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Verify that the token version supports the operation
+    if _token.version < TokenVersion.V_23_12:
+        if (
+            event_data.data.face_value_currency is not None
+            or event_data.data.interest_payment_currency is not None
+            or event_data.data.redemption_value_currency is not None
+            or event_data.data.base_fx_rate is not None
+        ):
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
+    if _token.version < TokenVersion.V_24_6:
+        if event_data.data.require_personal_info_registered is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
 
     # Register an event
     _scheduled_event = ScheduledEvents()

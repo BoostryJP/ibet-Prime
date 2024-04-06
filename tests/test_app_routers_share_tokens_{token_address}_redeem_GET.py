@@ -74,7 +74,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_22_12
+        _token.version = TokenVersion.V_24_6
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -110,7 +110,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_22_12
+        _token.version = TokenVersion.V_24_6
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -191,7 +191,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_22_12
+        _token.version = TokenVersion.V_24_6
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -278,7 +278,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_22_12
+        _token.version = TokenVersion.V_24_6
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -365,7 +365,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_22_12
+        _token.version = TokenVersion.V_24_6
         db.add(_token)
 
         db.commit()

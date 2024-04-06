@@ -74,6 +74,7 @@ class IbetStraightBondCreate(BaseModel):
     is_offering: Optional[bool] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     image_url: Optional[list[str]] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
@@ -130,6 +131,7 @@ class IbetStraightBondUpdate(BaseModel):
     is_redeemed: Optional[bool] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
@@ -214,6 +216,7 @@ class IbetShareCreate(BaseModel):
     is_offering: Optional[bool] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
@@ -239,6 +242,7 @@ class IbetShareUpdate(BaseModel):
     dividends: Optional[float] = Field(default=None, ge=0.00, le=5_000_000_000.00)
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
@@ -515,6 +519,7 @@ class IbetStraightBondResponse(BaseModel):
     is_offering: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
+    require_personal_info_registered: bool
     contact_information: str
     privacy_policy: str
     issue_datetime: str
@@ -544,6 +549,7 @@ class IbetShareResponse(BaseModel):
     is_offering: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
+    require_personal_info_registered: bool
     contact_information: str
     privacy_policy: str
     issue_datetime: str

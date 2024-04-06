@@ -108,7 +108,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -121,6 +121,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "transferable": False,
             "status": False,
             "is_offering": False,
@@ -168,6 +169,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "memo": "",
             "name": "token.name",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
             "principal_value": 30,
             "privacy_policy": "",
             "status": True,
@@ -185,6 +187,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "transferable": False,
             "status": False,
             "is_offering": False,
@@ -229,7 +232,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -297,7 +300,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -310,6 +313,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "transferable": False,
             "status": False,
             "is_offering": False,
@@ -358,6 +362,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "memo": "",
             "name": "token.name",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
             "principal_value": 30,
             "privacy_policy": "",
             "status": True,
@@ -375,6 +380,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "transferable": False,
             "status": False,
             "is_offering": False,
@@ -419,7 +425,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -469,6 +475,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "memo": "",
             "name": "token.name",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
             "principal_value": 30,
             "privacy_policy": "",
             "status": True,
@@ -519,7 +526,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -569,6 +576,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "memo": "",
             "name": "token.name",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
             "principal_value": 30,
             "privacy_policy": "",
             "status": True,
@@ -1026,7 +1034,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -1152,7 +1160,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -1200,7 +1208,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -1221,4 +1229,51 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",
+        }
+
+    # <Error_17>
+    # OperationNotSupportedVersionError: v24.6
+    def test_error_17(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 1
+        token.version = TokenVersion.V_22_12
+        db.add(token)
+
+        db.commit()
+
+        # request target API
+        req_param = {
+            "require_personal_info_registered": False,
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
+            "detail": "the operation is not supported in 22_12",
         }

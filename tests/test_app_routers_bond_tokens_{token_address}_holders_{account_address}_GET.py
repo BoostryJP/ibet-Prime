@@ -60,7 +60,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         # prepare data: Personal Info
@@ -130,7 +130,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         # prepare data: Position
@@ -211,7 +211,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         # prepare data: Position
@@ -311,7 +311,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -373,7 +373,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -529,7 +529,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()

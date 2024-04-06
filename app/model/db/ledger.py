@@ -69,6 +69,7 @@ NOTE: Ledger.ledger's JSON structures
         }
       ],
       "footers": [],
+      "some_personal_info_not_registered": "boolean",
     },
   ],
   "footers": [],

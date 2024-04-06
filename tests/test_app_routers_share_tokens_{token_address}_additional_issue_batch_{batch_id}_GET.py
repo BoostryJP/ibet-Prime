@@ -71,7 +71,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -158,7 +158,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -245,7 +245,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -358,7 +358,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()

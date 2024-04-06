@@ -110,7 +110,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -131,6 +131,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
@@ -175,6 +176,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "privacy_policy": "",
             "status": True,
             "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
             "transferable": False,
             "is_offering": False,
             "transfer_approval_required": False,
@@ -208,6 +210,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
@@ -246,7 +249,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -267,6 +270,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
@@ -311,6 +315,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "privacy_policy": "",
             "status": True,
             "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
             "transferable": False,
             "is_offering": False,
             "transfer_approval_required": False,
@@ -344,6 +349,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
@@ -382,7 +388,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -450,7 +456,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -515,6 +521,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "privacy_policy": "",
             "status": True,
             "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
             "transferable": False,
             "is_offering": False,
             "transfer_approval_required": False,
@@ -1228,7 +1235,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         # mock
@@ -1350,7 +1357,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -1398,7 +1405,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -1419,4 +1426,98 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",
+        }
+
+    # <Error_12_1>
+    # OperationNotSupportedVersionError: v23.12
+    def test_error_12_1(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 1
+        token.version = TokenVersion.V_22_12
+        db.add(token)
+
+        db.commit()
+
+        # request target API
+        req_param = {
+            "base_fx_rate": 10.0,
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
+            "detail": "the operation is not supported in 22_12",
+        }
+
+    # <Error_12_2>
+    # OperationNotSupportedVersionError: v24.6
+    def test_error_12_2(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 1
+        token.version = TokenVersion.V_23_12
+        db.add(token)
+
+        db.commit()
+
+        # request target API
+        req_param = {
+            "require_personal_info_registered": True,
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
+            "detail": "the operation is not supported in 23_12",
         }

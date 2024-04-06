@@ -46,7 +46,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -87,6 +87,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         mock_token.personal_info_contract_address = (
             "0x1234567890aBcDFE1234567890abcDFE12345679"
         )
+        mock_token.require_personal_info_registered = True
         mock_token.interest_payment_date = [
             "interestPaymentDate1_test1",
             "interestPaymentDate2_test1",
@@ -147,13 +148,14 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "is_offering": False,
             "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "require_personal_info_registered": True,
             "contact_information": "contactInformation_test1",
             "privacy_policy": "privacyPolicy_test1",
             "issue_datetime": _issue_datetime,
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_23_12,
+            "contract_version": TokenVersion.V_24_6,
         }
 
         assert resp.status_code == 200
@@ -170,7 +172,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -211,6 +213,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         mock_token.personal_info_contract_address = (
             "0x1234567890aBcDFE1234567890abcDFE12345679"
         )
+        mock_token.require_personal_info_registered = True
         mock_token.interest_payment_date = [
             "interestPaymentDate1_test1",
             "interestPaymentDate2_test1",
@@ -271,13 +274,14 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "is_offering": False,
             "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "require_personal_info_registered": True,
             "contact_information": "contactInformation_test1",
             "privacy_policy": "privacyPolicy_test1",
             "issue_datetime": _issue_datetime,
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_23_12,
+            "contract_version": TokenVersion.V_24_6,
         }
 
         assert resp.status_code == 200
@@ -309,7 +313,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()

@@ -70,7 +70,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -147,7 +147,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -735,7 +735,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()
@@ -797,7 +797,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 1
-        token.version = TokenVersion.V_23_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()

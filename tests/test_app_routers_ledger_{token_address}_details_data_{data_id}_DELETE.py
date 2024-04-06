@@ -45,7 +45,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_23_12
+        _token.version = TokenVersion.V_24_6
         db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
@@ -196,7 +196,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_23_12
+        _token.version = TokenVersion.V_24_6
         db.add(_token)
 
         db.commit()

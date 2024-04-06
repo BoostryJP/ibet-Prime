@@ -317,6 +317,7 @@ class TestGet:
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.status is True
         assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.require_personal_info_registered is True
         assert share_contract.transferable is False
         assert share_contract.is_offering is False
         assert share_contract.transfer_approval_required is False
@@ -371,6 +372,7 @@ class TestGet:
             "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
             "status": False,
             "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
             "transferable": True,
             "is_offering": True,
             "transfer_approval_required": True,
@@ -413,6 +415,7 @@ class TestGet:
             share_contract.personal_info_contract_address
             == "0x1234567890123456789012345678901234567891"
         )
+        assert share_contract.require_personal_info_registered is True
         assert share_contract.transferable is True
         assert share_contract.is_offering is True
         assert share_contract.transfer_approval_required is True
@@ -467,6 +470,7 @@ class TestGet:
             "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
             "status": False,
             "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": False,
             "transferable": True,
             "is_offering": True,
             "transfer_approval_required": True,
@@ -510,6 +514,7 @@ class TestGet:
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.status is True
         assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.require_personal_info_registered is True
         assert share_contract.transferable is False
         assert share_contract.is_offering is False
         assert share_contract.transfer_approval_required is False
@@ -541,6 +546,7 @@ class TestGet:
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.status is True
         assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.require_personal_info_registered is True
         assert share_contract.transferable is False
         assert share_contract.is_offering is False
         assert share_contract.transfer_approval_required is False
@@ -607,6 +613,7 @@ class TestUpdate:
         assert share_contract.dividends == 0.0000000000001
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.require_personal_info_registered is True
         assert share_contract.transferable is False
         assert share_contract.status is True
         assert share_contract.is_offering is False
@@ -658,6 +665,7 @@ class TestUpdate:
             "dividends": 0.01,
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",
+            "require_personal_info_registered": False,
             "transferable": False,
             "status": False,
             "is_offering": True,
@@ -688,6 +696,7 @@ class TestUpdate:
             share_contract.personal_info_contract_address
             == "0x0000000000000000000000000000000000000002"
         )
+        assert share_contract.require_personal_info_registered is False
         assert share_contract.transferable is False
         assert share_contract.status is False
         assert share_contract.is_offering is True

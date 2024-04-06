@@ -46,7 +46,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
         db.commit()
 
@@ -80,6 +80,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.personal_info_contract_address = (
             "0x1234567890aBcDFE1234567890abcDFE12345679"
         )
+        mock_token.require_personal_info_registered = True
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
         mock_token.is_canceled = False
@@ -109,11 +110,12 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "transfer_approval_required": False,
             "is_offering": True,
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "require_personal_info_registered": True,
             "is_canceled": False,
             "issue_datetime": _issue_time,
             "token_status": 1,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_22_12,
+            "contract_version": TokenVersion.V_24_6,
         }
 
         assert resp.status_code == 200
@@ -130,7 +132,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
         db.commit()
 
@@ -164,6 +166,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.personal_info_contract_address = (
             "0x1234567890aBcDFE1234567890abcDFE12345679"
         )
+        mock_token.require_personal_info_registered = True
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
         mock_token.is_canceled = False
@@ -193,11 +196,12 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "transfer_approval_required": False,
             "is_offering": True,
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "require_personal_info_registered": True,
             "is_canceled": False,
             "issue_datetime": _issue_time,
             "token_status": 1,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_22_12,
+            "contract_version": TokenVersion.V_24_6,
         }
 
         assert resp.status_code == 200
@@ -229,7 +233,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
-        token.version = TokenVersion.V_22_12
+        token.version = TokenVersion.V_24_6
         db.add(token)
 
         db.commit()

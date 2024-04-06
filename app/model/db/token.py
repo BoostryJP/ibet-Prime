@@ -34,6 +34,7 @@ class TokenType(str, Enum):
 class TokenVersion(StrEnum):
     V_22_12 = "22_12"
     V_23_12 = "23_12"
+    V_24_6 = "24_6"
 
 
 class Token(Base):

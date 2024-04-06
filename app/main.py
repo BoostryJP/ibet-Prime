@@ -206,12 +206,24 @@ async def response_limit_exceeded_error_handler(
     )
 
 
-# 400:ResponseLimitExceededError
+# 400:Integer64bitLimitExceededError
 @app.exception_handler(Integer64bitLimitExceededError)
 async def response_limit_exceeded_error_handler(
     request: Request, exc: Integer64bitLimitExceededError
 ):
     meta = {"code": 5, "title": "Integer64bitLimitExceededError"}
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
+# 400:OperationNotSupportedVersionError
+@app.exception_handler(OperationNotSupportedVersionError)
+async def operation_not_supported_version_error_handler(
+    request: Request, exc: OperationNotSupportedVersionError
+):
+    meta = {"code": 6, "title": "OperationNotSupportedVersionError"}
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),

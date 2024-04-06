@@ -166,7 +166,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_23_12
+            assert token_1.version == TokenVersion.V_24_6
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
@@ -253,6 +253,7 @@ class TestAppRoutersBondTokensPOST:
                 "is_redeemed": True,  # update
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                "require_personal_info_registered": False,  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
@@ -306,7 +307,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
-            assert token_1.version == TokenVersion.V_23_12
+            assert token_1.version == TokenVersion.V_24_6
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position is None
@@ -436,7 +437,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_23_12
+            assert token_1.version == TokenVersion.V_24_6
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
