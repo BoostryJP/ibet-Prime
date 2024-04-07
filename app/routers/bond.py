@@ -455,6 +455,7 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
         InvalidParameterError,
         SendTransactionError,
         ContractRevertError,
+        OperationNotSupportedVersionError,
     ),
 )
 async def update_token(
@@ -1537,7 +1538,12 @@ async def list_all_scheduled_events(
     "/tokens/{token_address}/scheduled_events",
     response_model=ScheduledEventIdResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        422,
+        401,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+        OperationNotSupportedVersionError,
     ),
 )
 async def schedule_new_update_event(
