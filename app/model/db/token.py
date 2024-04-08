@@ -23,7 +23,7 @@ from enum import Enum, StrEnum
 from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, naive_utcnow
 
 
 class TokenType(str, Enum):
@@ -85,9 +85,9 @@ class TokenCache(Base):
     attributes: Mapped[dict] = mapped_column(JSON, nullable=False)
     # cached datetime
     cached_datetime: Mapped[datetime | None] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=naive_utcnow
     )
     # expiration datetime
     expiration_datetime: Mapped[datetime | None] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=naive_utcnow
     )

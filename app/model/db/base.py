@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import time
-from datetime import date as datetime_date, datetime
+from datetime import UTC, date as datetime_date, datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
@@ -26,12 +26,20 @@ from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 from app.database import get_db_schema
 
 
+def aware_utcnow():
+    return datetime.now(UTC)
+
+
+def naive_utcnow():
+    return aware_utcnow().replace(tzinfo=None)
+
+
 class BaseModel(object):
     # created datetime(UTC)
-    created: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    created: Mapped[datetime | None] = mapped_column(DateTime, default=naive_utcnow)
     # modified datetime(UTC)
     modified: Mapped[datetime | None] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=naive_utcnow, onupdate=naive_utcnow
     )
 
     @staticmethod
