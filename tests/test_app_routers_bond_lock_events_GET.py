@@ -56,7 +56,7 @@ class TestAppRoutersBondLockEvents:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = token_status
-        _token.version = TokenVersion.V_23_12
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Token
@@ -67,7 +67,7 @@ class TestAppRoutersBondLockEvents:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = token_status
-        _token.version = TokenVersion.V_23_12
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -207,7 +207,7 @@ class TestAppRoutersBondLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_23_12
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()

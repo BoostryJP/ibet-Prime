@@ -22,7 +22,7 @@ from datetime import datetime
 from sqlalchemy import JSON, BigInteger, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, naive_utcnow
 
 
 class Ledger(Base):
@@ -41,7 +41,7 @@ class Ledger(Base):
     # created datetime(UTC)
     # NOTE: Because Base's created column is subject to change in the data patch, define another column.
     ledger_created: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
+        DateTime, nullable=False, default=naive_utcnow
     )
 
 
@@ -69,6 +69,7 @@ NOTE: Ledger.ledger's JSON structures
         }
       ],
       "footers": [],
+      "some_personal_info_not_registered": "boolean",
     },
   ],
   "footers": [],
@@ -102,5 +103,5 @@ class LedgerDetailsData(Base):
     # created datetime(UTC)
     # NOTE: Because Base's created column is subject to change in the data patch, define another column.
     data_created: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
+        DateTime, nullable=False, default=naive_utcnow
     )

@@ -51,6 +51,7 @@ from app.exceptions import (
     ContractRevertError,
     InvalidParameterError,
     OperationNotAllowedStateError,
+    OperationNotSupportedVersionError,
     SendTransactionError,
 )
 from app.model.blockchain import (
@@ -246,6 +247,7 @@ async def issue_token(
     update_items = [
         "tradable_exchange_contract_address",
         "personal_info_contract_address",
+        "require_personal_info_registered",
         "transferable",
         "status",
         "is_offering",
@@ -319,7 +321,7 @@ async def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_22_12
+    _token.version = TokenVersion.V_24_06
     db.add(_token)
 
     # Register operation log
@@ -436,13 +438,14 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
         InvalidParameterError,
         SendTransactionError,
         ContractRevertError,
+        OperationNotSupportedVersionError,
     ),
 )
 async def update_token(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
-    token: IbetShareUpdate,
+    update_data: IbetShareUpdate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
@@ -490,12 +493,19 @@ async def update_token(
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
 
+    # Verify that the token version supports the operation
+    if _token.version < TokenVersion.V_24_06:
+        if update_data.require_personal_info_registered is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
     # Send transaction
     try:
         token_contract = IbetShareContract(token_address)
         original_contents = (await token_contract.get()).__dict__
         await token_contract.update(
-            data=UpdateParams(**token.model_dump()),
+            data=UpdateParams(**update_data.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
         )
@@ -507,7 +517,7 @@ async def update_token(
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
     operation_log.type = TokenType.IBET_SHARE.value
-    operation_log.arguments = token.model_dump(exclude_none=True)
+    operation_log.arguments = update_data.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
     operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
     db.add(operation_log)
@@ -1500,7 +1510,12 @@ async def list_all_scheduled_events(
     "/tokens/{token_address}/scheduled_events",
     response_model=ScheduledEventIdResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        422,
+        401,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+        OperationNotSupportedVersionError,
     ),
 )
 async def schedule_new_update_event(
@@ -1548,6 +1563,13 @@ async def schedule_new_update_event(
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Verify that the token version supports the operation
+    if _token.version < TokenVersion.V_24_06:
+        if event_data.data.require_personal_info_registered is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
 
     # Register an event
     _scheduled_event = ScheduledEvents()

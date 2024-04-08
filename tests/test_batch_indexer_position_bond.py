@@ -144,7 +144,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = "abi"
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_22_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -155,7 +155,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_23_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         db.commit()
@@ -205,7 +205,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -215,7 +215,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -226,7 +226,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         # Prepare data : BlockNumber
@@ -294,7 +294,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -304,7 +304,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -315,7 +315,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -402,7 +402,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -412,7 +412,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -423,7 +423,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -515,7 +515,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -525,7 +525,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -536,7 +536,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -619,7 +619,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -629,7 +629,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -640,7 +640,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -770,7 +770,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -780,7 +780,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -791,7 +791,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_22_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -913,7 +913,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -923,7 +923,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -934,7 +934,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -1119,7 +1119,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -1129,7 +1129,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -1140,7 +1140,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -1222,7 +1222,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -1232,7 +1232,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -1243,7 +1243,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -1329,7 +1329,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -1339,7 +1339,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -1350,7 +1350,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -1469,7 +1469,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -1479,7 +1479,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -1490,7 +1490,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -1619,7 +1619,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -1629,7 +1629,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -1640,7 +1640,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -1766,7 +1766,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -1923,7 +1923,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -2083,7 +2083,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -2243,7 +2243,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -2412,7 +2412,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -2571,7 +2571,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -2581,7 +2581,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -2592,7 +2592,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -2718,7 +2718,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -2876,7 +2876,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -3027,7 +3027,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -3037,7 +3037,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         # Prepare data : Token(processing token)
@@ -3048,7 +3048,7 @@ class TestProcessor:
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
-        token_3.version = TokenVersion.V_23_12
+        token_3.version = TokenVersion.V_24_06
         db.add(token_3)
 
         db.commit()
@@ -3190,7 +3190,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Prepare data : Token(share token)
@@ -3200,7 +3200,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_22_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         db.commit()
@@ -3394,7 +3394,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -3566,7 +3566,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -3722,7 +3722,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         # Issuer issues bond token.
@@ -3740,7 +3740,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_23_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         db.commit()
@@ -3960,7 +3960,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         db.commit()
@@ -4001,7 +4001,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_23_12
+        token_2.version = TokenVersion.V_24_06
         db.add(token_2)
 
         db.commit()
@@ -4056,7 +4056,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         token_1.initial_position_synced = True  # already synced
         db.add(token_1)
 
@@ -4110,7 +4110,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_23_12
+        token_1.version = TokenVersion.V_24_06
         db.add(token_1)
 
         token_attr = {

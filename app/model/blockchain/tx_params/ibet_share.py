@@ -44,6 +44,7 @@ class UpdateParams(BaseModel):
     dividends: Optional[float] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None

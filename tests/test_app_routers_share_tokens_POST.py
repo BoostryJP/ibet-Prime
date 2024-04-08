@@ -166,7 +166,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_22_12
+            assert token_1.version == TokenVersion.V_24_06
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
@@ -288,7 +288,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_22_12
+            assert token_1.version == TokenVersion.V_24_06
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
@@ -371,6 +371,7 @@ class TestAppRoutersShareTokensPOST:
                 "cancellation_date": "20221231",
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                "require_personal_info_registered": False,  # update
                 "transferable": False,  # update
                 "status": False,  # update
                 "is_offering": True,  # update
@@ -426,7 +427,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
-            assert token_1.version == TokenVersion.V_22_12
+            assert token_1.version == TokenVersion.V_24_06
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position is None
@@ -555,7 +556,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_22_12
+            assert token_1.version == TokenVersion.V_24_06
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"

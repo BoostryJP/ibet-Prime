@@ -22,7 +22,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, naive_utcnow
 
 
 class AuthToken(Base):
@@ -35,9 +35,7 @@ class AuthToken(Base):
     # authentication token (sha256 hashed)
     auth_token: Mapped[str | None] = mapped_column(String(64))
     # usage start
-    usage_start: Mapped[datetime | None] = mapped_column(
-        DateTime, default=datetime.utcnow
-    )
+    usage_start: Mapped[datetime | None] = mapped_column(DateTime, default=naive_utcnow)
     # valid duration (sec)
     # - 0: endless
     valid_duration: Mapped[int | None] = mapped_column(Integer, nullable=False)

@@ -84,7 +84,7 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_22_12
+            _token.version = TokenVersion.V_24_06
             db.add(_token)
 
         db.commit()
@@ -174,7 +174,7 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_22_12
+            _token.version = TokenVersion.V_24_06
             db.add(_token)
 
         db.commit()
@@ -257,7 +257,7 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.issuer_address = self.from_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_22_12
+            _token.version = TokenVersion.V_24_06
             db.add(_token)
 
         db.commit()
@@ -697,7 +697,7 @@ class TestAppRoutersShareBulkTransferPOST:
         _token.token_address = self.req_tokens[0]
         _token.abi = ""
         _token.token_status = 0
-        _token.version = TokenVersion.V_22_12
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -747,7 +747,7 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.issuer_address = self.from_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_22_12
+            _token.version = TokenVersion.V_24_06
             db.add(_token)
 
         db.commit()
@@ -805,7 +805,7 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.issuer_address = self.from_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_22_12
+            _token.version = TokenVersion.V_24_06
             db.add(_token)
 
         db.commit()
@@ -863,7 +863,7 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_22_12
+            _token.version = TokenVersion.V_24_06
             db.add(_token)
 
         db.commit()

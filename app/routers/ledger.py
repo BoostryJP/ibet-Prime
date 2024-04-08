@@ -30,6 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import DBAsyncSession
 from app.exceptions import Integer64bitLimitExceededError, InvalidParameterError
 from app.model.blockchain import (
+    ContractPersonalInfoType,
     IbetShareContract,
     IbetStraightBondContract,
     PersonalInfoContract,
@@ -249,18 +250,30 @@ async def retrieve_ledger_history(
             _details.token_detail_type for _details in _ibet_fin_details_list
         ]
         # Update PersonalInfo
+        some_personal_info_not_registered = False
         for details in resp["details"]:
             if details["token_detail_type"] in _ibet_fin_token_detail_type_list:
                 for data in details["data"]:
-                    personal_info = await __get_personal_info(
+                    personal_info, _pi_not_registered = await __get_personal_info(
                         token_address=token_address,
                         token_type=_token.type,
                         account_address=data["account_address"],
                         db=db,
                     )
-                    if personal_info is not None:
-                        data["name"] = personal_info.get("name", None)
-                        data["address"] = personal_info.get("address", None)
+                    data["name"] = personal_info.get("name", None)
+                    data["address"] = personal_info.get("address", None)
+                    if _pi_not_registered:
+                        some_personal_info_not_registered = True
+                if some_personal_info_not_registered:
+                    # If there is data for which personal information is not registered
+                    details["some_personal_info_not_registered"] = True
+    else:
+        # NOTE: Implementation for backward compatibility
+        #   In specifications prior to v24.6, the item "some_personal_info_not_registered" does not exist,
+        #   so data for which the item does not exist is overwritten with False.
+        for details in resp["details"]:
+            if details.get("some_personal_info_not_registered") is None:
+                details["some_personal_info_not_registered"] = False
 
     return json_response(resp)
 
@@ -878,52 +891,67 @@ async def delete_ledger_details_data(
 
 async def __get_personal_info(
     token_address: str, token_type: str, account_address: str, db: AsyncSession
-):
+) -> tuple[dict, bool]:
+    # NOTE:
+    # For tokens with require_personal_info_registered = False, search only indexed data.
+    # If indexed data does not exist, return the default value.
+
     token: Token | None = (
         await db.scalars(
             select(Token).where(Token.token_address == token_address).limit(1)
         )
     ).first()
     if token is None:
-        return None
-    else:
-        _idx_personal_info: IDXPersonalInfo | None = (
-            await db.scalars(
-                select(IDXPersonalInfo)
-                .where(
-                    and_(
-                        IDXPersonalInfo.account_address == account_address,
-                        IDXPersonalInfo.issuer_address == token.issuer_address,
-                    )
-                )
-                .limit(1)
-            )
-        ).first()
-        if _idx_personal_info is not None:
-            # Get personal info from DB
-            personal_info = _idx_personal_info.personal_info
-        else:
-            # Get issuer account
-            issuer_account = (
-                await db.scalars(
-                    select(Account)
-                    .where(Account.issuer_address == token.issuer_address)
-                    .limit(1)
-                )
-            ).first()
+        personal_info_not_registered = True
+        return ContractPersonalInfoType().model_dump(), personal_info_not_registered
 
-            # Get personal info from contract
-            token_contract = None
-            if token_type == TokenType.IBET_SHARE.value:
-                token_contract = await IbetShareContract(token_address).get()
-            elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                token_contract = await IbetStraightBondContract(token_address).get()
+    # Search indexed data
+    _idx_personal_info: IDXPersonalInfo | None = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == account_address,
+                    IDXPersonalInfo.issuer_address == token.issuer_address,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _idx_personal_info is not None:
+        # Get personal info from DB
+        personal_info_not_registered = False
+        return _idx_personal_info.personal_info, personal_info_not_registered
 
-            personal_info_contract = PersonalInfoContract(
-                issuer=issuer_account,
-                contract_address=token_contract.personal_info_contract_address,
-            )
-            personal_info = await personal_info_contract.get_info(
-                account_address=account_address, default_value=None
-            )
-        return personal_info
+    # Get token attributes
+    token_contract = None
+    if token_type == TokenType.IBET_SHARE.value:
+        token_contract = await IbetShareContract(token_address).get()
+    elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
+        token_contract = await IbetStraightBondContract(token_address).get()
+
+    if token_contract.require_personal_info_registered is False:
+        # Do not retrieve contract data and return the default value
+        personal_info = ContractPersonalInfoType().model_dump()
+        personal_info_not_registered = True
+        return personal_info, personal_info_not_registered
+
+    # Get issuer account
+    issuer_account = (
+        await db.scalars(
+            select(Account)
+            .where(Account.issuer_address == token.issuer_address)
+            .limit(1)
+        )
+    ).first()
+
+    # Retrieve personal info from contract storage
+    personal_info_contract = PersonalInfoContract(
+        issuer=issuer_account,
+        contract_address=token_contract.personal_info_contract_address,
+    )
+    personal_info = await personal_info_contract.get_info(
+        account_address=account_address, default_value=None
+    )
+    personal_info_not_registered = False
+    return personal_info, personal_info_not_registered
