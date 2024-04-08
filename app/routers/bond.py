@@ -329,7 +329,7 @@ async def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_24_6
+    _token.version = TokenVersion.V_24_06
     db.add(_token)
 
     # Register operation log
@@ -522,7 +522,7 @@ async def update_token(
                 f"the operation is not supported in {_token.version}"
             )
 
-    if _token.version < TokenVersion.V_24_6:
+    if _token.version < TokenVersion.V_24_06:
         if update_data.require_personal_info_registered is not None:
             raise OperationNotSupportedVersionError(
                 f"the operation is not supported in {_token.version}"
@@ -1604,7 +1604,7 @@ async def schedule_new_update_event(
                 f"the operation is not supported in {_token.version}"
             )
 
-    if _token.version < TokenVersion.V_24_6:
+    if _token.version < TokenVersion.V_24_06:
         if event_data.data.require_personal_info_registered is not None:
             raise OperationNotSupportedVersionError(
                 f"the operation is not supported in {_token.version}"

@@ -923,6 +923,19 @@ async def __get_personal_info(
         personal_info_not_registered = False
         return _idx_personal_info.personal_info, personal_info_not_registered
 
+    # Get token attributes
+    token_contract = None
+    if token_type == TokenType.IBET_SHARE.value:
+        token_contract = await IbetShareContract(token_address).get()
+    elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
+        token_contract = await IbetStraightBondContract(token_address).get()
+
+    if token_contract.require_personal_info_registered is False:
+        # Do not retrieve contract data and return the default value
+        personal_info = ContractPersonalInfoType().model_dump()
+        personal_info_not_registered = True
+        return personal_info, personal_info_not_registered
+
     # Get issuer account
     issuer_account = (
         await db.scalars(
@@ -932,27 +945,13 @@ async def __get_personal_info(
         )
     ).first()
 
-    # Get token attributes
-    token_contract = None
-    if token_type == TokenType.IBET_SHARE.value:
-        token_contract = await IbetShareContract(token_address).get()
-    elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
-        token_contract = await IbetStraightBondContract(token_address).get()
-
-    # Retrieve personal info
-    if token_contract.require_personal_info_registered is True:
-        # Retrieve from contract storage
-        personal_info_contract = PersonalInfoContract(
-            issuer=issuer_account,
-            contract_address=token_contract.personal_info_contract_address,
-        )
-        personal_info = await personal_info_contract.get_info(
-            account_address=account_address, default_value=None
-        )
-        personal_info_not_registered = False
-    else:
-        # Do not retrieve contract data and return the default value
-        personal_info = ContractPersonalInfoType().model_dump()
-        personal_info_not_registered = True
-
+    # Retrieve personal info from contract storage
+    personal_info_contract = PersonalInfoContract(
+        issuer=issuer_account,
+        contract_address=token_contract.personal_info_contract_address,
+    )
+    personal_info = await personal_info_contract.get_info(
+        account_address=account_address, default_value=None
+    )
+    personal_info_not_registered = False
     return personal_info, personal_info_not_registered

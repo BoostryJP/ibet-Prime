@@ -63,7 +63,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
@@ -150,7 +150,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
@@ -362,7 +362,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
@@ -508,7 +508,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()

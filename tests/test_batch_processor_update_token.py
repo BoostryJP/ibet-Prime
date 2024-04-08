@@ -84,7 +84,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -124,7 +124,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_6
+        _token_2.version = TokenVersion.V_24_06
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -361,7 +361,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -399,7 +399,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_6
+        _token_2.version = TokenVersion.V_24_06
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -578,7 +578,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -616,7 +616,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_6
+        _token_2.version = TokenVersion.V_24_06
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -795,7 +795,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -833,7 +833,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_6
+        _token_2.version = TokenVersion.V_24_06
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -1019,7 +1019,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -1057,7 +1057,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_6
+        _token_2.version = TokenVersion.V_24_06
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()

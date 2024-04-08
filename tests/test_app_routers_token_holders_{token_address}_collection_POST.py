@@ -64,7 +64,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -116,7 +116,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -184,7 +184,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -228,7 +228,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -266,7 +266,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -311,7 +311,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -355,7 +355,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token1.issuer_address = issuer_address
         _token1.token_address = token_address1
         _token1.abi = {}
-        _token1.version = TokenVersion.V_24_6
+        _token1.version = TokenVersion.V_24_06
         db.add(_token1)
 
         db.commit()
@@ -391,7 +391,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token2.issuer_address = issuer_address
         _token2.token_address = token_address2
         _token2.abi = {}
-        _token2.version = TokenVersion.V_24_6
+        _token2.version = TokenVersion.V_24_06
         db.add(_token2)
 
         db.commit()
@@ -432,7 +432,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -471,7 +471,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()

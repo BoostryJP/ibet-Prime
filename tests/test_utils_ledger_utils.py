@@ -229,7 +229,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -689,7 +689,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -1013,7 +1013,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -1472,7 +1472,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -1736,7 +1736,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
         db.commit()
 
@@ -1776,7 +1776,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_6
+        _token_1.version = TokenVersion.V_24_06
         db.add(_token_1)
 
         db.commit()

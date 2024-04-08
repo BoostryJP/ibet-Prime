@@ -61,7 +61,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
@@ -94,7 +94,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -153,7 +153,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -208,7 +208,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -263,7 +263,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -327,7 +327,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
@@ -370,7 +370,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address_2
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

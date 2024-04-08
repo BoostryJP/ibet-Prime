@@ -45,7 +45,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()
@@ -88,7 +88,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -188,7 +188,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -289,7 +289,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -360,7 +360,7 @@ class TestAppRoutersLockEvents:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = 2
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -431,7 +431,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         _token = Token()
@@ -440,7 +440,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -566,7 +566,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -653,7 +653,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         _token = Token()
@@ -662,7 +662,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -749,7 +749,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         _token = Token()
@@ -758,7 +758,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_SHARE.value  # share
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -844,7 +844,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -931,7 +931,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -1017,7 +1017,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -1104,7 +1104,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events
@@ -1257,7 +1257,7 @@ class TestAppRoutersLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: Lock events

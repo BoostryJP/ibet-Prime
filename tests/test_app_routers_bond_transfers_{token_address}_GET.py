@@ -68,7 +68,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXTransfer
@@ -144,7 +144,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -247,7 +247,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -363,7 +363,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -478,7 +478,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -645,7 +645,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -806,7 +806,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -967,7 +967,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -1174,7 +1174,7 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_24_6
+        _token.version = TokenVersion.V_24_06
         db.add(_token)
 
         db.commit()

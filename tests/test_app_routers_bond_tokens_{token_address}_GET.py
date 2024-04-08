@@ -46,7 +46,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
@@ -155,7 +155,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_24_6,
+            "contract_version": TokenVersion.V_24_06,
         }
 
         assert resp.status_code == 200
@@ -172,7 +172,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
@@ -281,7 +281,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_24_6,
+            "contract_version": TokenVersion.V_24_06,
         }
 
         assert resp.status_code == 200
@@ -313,7 +313,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
-        token.version = TokenVersion.V_24_6
+        token.version = TokenVersion.V_24_06
         db.add(token)
 
         db.commit()
