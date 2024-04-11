@@ -21,7 +21,7 @@ import time
 from datetime import UTC, date as datetime_date, datetime
 
 from sqlalchemy import DateTime
-from sqlalchemy.orm import Mapped, declarative_base, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.database import get_db_schema
 
@@ -34,7 +34,7 @@ def naive_utcnow():
     return aware_utcnow().replace(tzinfo=None)
 
 
-class BaseModel(object):
+class Base(DeclarativeBase):
     # created datetime(UTC)
     created: Mapped[datetime | None] = mapped_column(DateTime, default=naive_utcnow)
     # modified datetime(UTC)
@@ -49,8 +49,6 @@ class BaseModel(object):
         else:
             return None
 
-
-Base = declarative_base(cls=BaseModel)
 
 schema = get_db_schema()
 if schema is not None:

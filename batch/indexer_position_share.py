@@ -225,6 +225,7 @@ class Processor:
         await self.__sync_approve_transfer(db_session, block_from, block_to)
         await self.__sync_exchange(db_session, block_from, block_to)
         await self.__sync_escrow(db_session, block_from, block_to)
+        await self.__sync_dvp(db_session, block_from, block_to)
 
     async def __sync_issuer(self, db_session: AsyncSession):
         """Synchronize issuer position"""
@@ -928,6 +929,131 @@ class Processor:
                 # HolderChanged event
                 _event_list = await AsyncContractUtils.get_event_logs(
                     contract=escrow,
+                    event="HolderChanged",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+                for _event in _event_list:
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get("from", ZERO_ADDRESS),
+                        }
+                    )
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get("to", ZERO_ADDRESS),
+                        }
+                    )
+
+                # Make temporary list unique
+                account_list_tmp.sort(
+                    key=lambda x: (x["token_address"], x["account_address"])
+                )
+                account_list = []
+                for k, g in groupby(
+                    account_list_tmp,
+                    lambda x: (x["token_address"], x["account_address"]),
+                ):
+                    account_list.append(
+                        {"token_address": k[0], "account_address": k[1]}
+                    )
+
+                # Update position
+                for _account in account_list:
+                    token_address = _account["token_address"]
+                    account_address = _account["account_address"]
+                    (
+                        exchange_balance,
+                        exchange_commitment,
+                    ) = await self.__get_account_balance_exchange(
+                        exchange_address=exchange_address,
+                        token_address=token_address,
+                        account_address=account_address,
+                    )
+                    await self.__sink_on_position(
+                        db_session=db_session,
+                        token_address=token_address,
+                        account_address=account_address,
+                        exchange_balance=exchange_balance,
+                        exchange_commitment=exchange_commitment,
+                    )
+            except Exception as e:
+                raise e
+
+    async def __sync_dvp(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
+        """Sync Events from IbetSecurityTokenDVP
+
+        :param db_session: database session
+        :param block_from: From block
+        :param block_to: To block
+        :return: None
+        """
+        for exchange_address in self.exchange_address_list:
+            try:
+                delivery = AsyncContractUtils.get_contract(
+                    "IbetSecurityTokenDVP", exchange_address
+                )
+
+                account_list_tmp = []
+
+                # DeliveryCreated event
+                _event_list = await AsyncContractUtils.get_event_logs(
+                    contract=delivery,
+                    event="DeliveryCreated",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+                for _event in _event_list:
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get(
+                                "seller", ZERO_ADDRESS
+                            ),  # only seller has changed
+                        }
+                    )
+
+                # DeliveryCanceled event
+                _event_list = await AsyncContractUtils.get_event_logs(
+                    contract=delivery,
+                    event="DeliveryCanceled",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+                for _event in _event_list:
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get(
+                                "seller", ZERO_ADDRESS
+                            ),  # only seller has changed
+                        }
+                    )
+
+                # DeliveryAborted event
+                _event_list = await AsyncContractUtils.get_event_logs(
+                    contract=delivery,
+                    event="DeliveryAborted",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+                for _event in _event_list:
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get(
+                                "seller", ZERO_ADDRESS
+                            ),  # only seller has changed
+                        }
+                    )
+
+                # HolderChanged event
+                _event_list = await AsyncContractUtils.get_event_logs(
+                    contract=delivery,
                     event="HolderChanged",
                     block_from=block_from,
                     block_to=block_to,
