@@ -57,6 +57,7 @@ from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
+    IbetSecurityTokenDVPContractTestUtils as STDVPContractUtils,
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
     PersonalInfoContractTestUtils,
 )
@@ -2985,6 +2986,634 @@ class TestProcessor:
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 10
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _idx_position_share_block_number = db.scalars(
+            select(IDXPositionShareBlockNumber).limit(1)
+        ).first()
+        assert _idx_position_share_block_number.id == 1
+        assert _idx_position_share_block_number.latest_block_number == block_number
+
+    # <Normal_2_11_1>
+    # Single Token
+    # Single event logs
+    # - IbetSecurityTokenDVP: DeliveryCreated
+    @pytest.mark.asyncio
+    async def test_normal_2_11_1(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_dvp_contract,
+    ):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Prepare data : Token
+        token_contract_1 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            ibet_security_token_dvp_contract.address,
+        )
+        token_address_1 = token_contract_1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_SHARE.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract_1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_06
+        db.add(token_1)
+
+        # Prepare data : Token(bond token)
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.token_address = "test1"
+        token_2.issuer_address = issuer_address
+        token_2.abi = "abi"
+        token_2.tx_hash = "tx_hash"
+        token_2.version = TokenVersion.V_24_06
+        db.add(token_2)
+
+        # Prepare data : Token(processing token)
+        token_3 = Token()
+        token_3.type = TokenType.IBET_SHARE.value
+        token_3.token_address = "test1"
+        token_3.issuer_address = issuer_address
+        token_3.abi = "abi"
+        token_3.tx_hash = "tx_hash"
+        token_3.token_status = 0
+        token_3.version = TokenVersion.V_24_06
+        db.add(token_3)
+
+        db.commit()
+
+        # Deposit
+        tx = token_contract_1.functions.transferFrom(
+            issuer_address, ibet_security_token_dvp_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # Before run(consume accumulated events)
+        await processor.sync_new_logs()
+        _position_list = db.scalars(select(IDXPosition)).all()
+        assert len(_position_list) == 1
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == issuer_address)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == issuer_address
+        assert _position.balance == 100 - 40
+        assert _position.exchange_balance == 40
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+
+        # EscrowCreated
+        tx = ibet_security_token_dvp_contract.functions.createDelivery(
+            token_contract_1.address, user_address_1, 30, issuer_address, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # Run target process
+        block_number = web3.eth.block_number
+        await processor.sync_new_logs()
+
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
+        # Assertion
+        _position_list = db.scalars(select(IDXPosition)).all()
+        assert len(_position_list) == 1
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == issuer_address)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == issuer_address
+        assert _position.balance == 100 - 40
+        assert _position.exchange_balance == 40 - 30
+        assert _position.exchange_commitment == 30
+        assert _position.pending_transfer == 0
+        _idx_position_share_block_number = db.scalars(
+            select(IDXPositionShareBlockNumber).limit(1)
+        ).first()
+        assert _idx_position_share_block_number.id == 1
+        assert _idx_position_share_block_number.latest_block_number == block_number
+
+    # <Normal_2_11_2>
+    # Single Token
+    # Single event logs
+    # - IbetSecurityTokenDVP: DeliveryCanceled
+    @pytest.mark.asyncio
+    async def test_normal_2_11_2(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_dvp_contract,
+    ):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Issuer issues share token.
+        token_contract = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_SHARE.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_06
+        db.add(token_1)
+
+        db.commit()
+
+        # Before run(consume accumulated events)
+        await processor.sync_new_logs()
+
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_1,
+            user_pk_1,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_2,
+            user_pk_2,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, ""],
+        )
+
+        STContractUtils.transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_1, 30],
+        )
+        STContractUtils.transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_2, 10],
+        )
+
+        # CreateDelivery & CancelDelivery
+        STContractUtils.transfer(
+            token_contract.address,
+            user_address_1,
+            user_pk_1,
+            [ibet_security_token_dvp_contract.address, 30],
+        )
+
+        STDVPContractUtils.create_delivery(
+            ibet_security_token_dvp_contract.address,
+            user_address_1,
+            user_pk_1,
+            [token_contract.address, user_address_2, 10, issuer_address, ""],
+        )
+        latest_delivery_id = STDVPContractUtils.get_latest_delivery_id(
+            ibet_security_token_dvp_contract.address
+        )
+        STDVPContractUtils.cancel_delivery(
+            ibet_security_token_dvp_contract.address,
+            user_address_1,
+            user_pk_1,
+            [latest_delivery_id],
+        )
+
+        # Run target process
+        block_number = web3.eth.block_number
+        await processor.sync_new_logs()
+
+        # Assertion
+        _position_list = db.scalars(select(IDXPosition)).all()
+        assert len(_position_list) == 3
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == issuer_address)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == issuer_address
+        assert _position.balance == 100 - 30 - 10
+        assert _position.exchange_balance == 0
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == user_address_1)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == user_address_1
+        assert _position.balance == 0
+        assert _position.exchange_balance == 30
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == user_address_2)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == user_address_2
+        assert _position.balance == 10
+        assert _position.exchange_balance == 0
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _idx_position_share_block_number = db.scalars(
+            select(IDXPositionShareBlockNumber).limit(1)
+        ).first()
+        assert _idx_position_share_block_number.id == 1
+        assert _idx_position_share_block_number.latest_block_number == block_number
+
+    # <Normal_2_11_3>
+    # Single Token
+    # Single event logs
+    # - IbetSecurityTokenDVP: DeliveryFinished
+    @pytest.mark.asyncio
+    async def test_normal_2_11_3(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_dvp_contract,
+    ):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Issuer issues share token.
+        token_contract = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_SHARE.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_06
+        db.add(token_1)
+
+        db.commit()
+
+        # Before run(consume accumulated events)
+        await processor.sync_new_logs()
+
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_1,
+            user_pk_1,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_2,
+            user_pk_2,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, ""],
+        )
+
+        STContractUtils.transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_1, 30],
+        )
+        STContractUtils.transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_2, 10],
+        )
+
+        # CreateEscrow & CancelEscrow
+        STContractUtils.transfer(
+            token_contract.address,
+            user_address_1,
+            user_pk_1,
+            [ibet_security_token_dvp_contract.address, 30],
+        )
+
+        STDVPContractUtils.create_delivery(
+            ibet_security_token_dvp_contract.address,
+            user_address_1,
+            user_pk_1,
+            [token_contract.address, user_address_2, 10, issuer_address, ""],
+        )
+        latest_delivery_id = STDVPContractUtils.get_latest_delivery_id(
+            ibet_security_token_dvp_contract.address
+        )
+        STDVPContractUtils.confirm_delivery(
+            ibet_security_token_dvp_contract.address,
+            user_address_2,
+            user_pk_2,
+            [latest_delivery_id],
+        )
+        STDVPContractUtils.finish_delivery(
+            ibet_security_token_dvp_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [latest_delivery_id],
+        )
+        # Run target process
+        block_number = web3.eth.block_number
+        await processor.sync_new_logs()
+
+        # Assertion
+        _position_list = db.scalars(select(IDXPosition)).all()
+        assert len(_position_list) == 3
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == issuer_address)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == issuer_address
+        assert _position.balance == 100 - 30 - 10
+        assert _position.exchange_balance == 0
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == user_address_1)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == user_address_1
+        assert _position.balance == 0
+        assert _position.exchange_balance == 20
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == user_address_2)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == user_address_2
+        assert _position.balance == 10
+        assert _position.exchange_balance == 10
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _idx_position_share_block_number = db.scalars(
+            select(IDXPositionShareBlockNumber).limit(1)
+        ).first()
+        assert _idx_position_share_block_number.id == 1
+        assert _idx_position_share_block_number.latest_block_number == block_number
+
+    # <Normal_2_11_4>
+    # Single Token
+    # Single event logs
+    # - IbetSecurityTokenDVP: DeliveryAborted
+    @pytest.mark.asyncio
+    async def test_normal_2_11_4(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_dvp_contract,
+    ):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Issuer issues share token.
+        token_contract = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_SHARE.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_06
+        db.add(token_1)
+
+        db.commit()
+
+        # Before run(consume accumulated events)
+        await processor.sync_new_logs()
+
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_1,
+            user_pk_1,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_2,
+            user_pk_2,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, ""],
+        )
+
+        STContractUtils.transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_1, 30],
+        )
+        STContractUtils.transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_2, 10],
+        )
+
+        # CreateDelivery & CancelDelivery
+        STContractUtils.transfer(
+            token_contract.address,
+            user_address_1,
+            user_pk_1,
+            [ibet_security_token_dvp_contract.address, 30],
+        )
+
+        STDVPContractUtils.create_delivery(
+            ibet_security_token_dvp_contract.address,
+            user_address_1,
+            user_pk_1,
+            [token_contract.address, user_address_2, 10, issuer_address, ""],
+        )
+        latest_delivery_id = STDVPContractUtils.get_latest_delivery_id(
+            ibet_security_token_dvp_contract.address
+        )
+        STDVPContractUtils.confirm_delivery(
+            ibet_security_token_dvp_contract.address,
+            user_address_2,
+            user_pk_2,
+            [latest_delivery_id],
+        )
+        STDVPContractUtils.abort_delivery(
+            ibet_security_token_dvp_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [latest_delivery_id],
+        )
+
+        # Run target process
+        block_number = web3.eth.block_number
+        await processor.sync_new_logs()
+
+        # Assertion
+        _position_list = db.scalars(select(IDXPosition)).all()
+        assert len(_position_list) == 3
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == issuer_address)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == issuer_address
+        assert _position.balance == 100 - 30 - 10
+        assert _position.exchange_balance == 0
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == user_address_1)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == user_address_1
+        assert _position.balance == 0
+        assert _position.exchange_balance == 30
+        assert _position.exchange_commitment == 0
+        assert _position.pending_transfer == 0
+        _position = db.scalars(
+            select(IDXPosition)
+            .where(IDXPosition.account_address == user_address_2)
+            .limit(1)
+        ).first()
+        assert _position.token_address == token_address_1
+        assert _position.account_address == user_address_2
+        assert _position.balance == 10
+        assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
         _idx_position_share_block_number = db.scalars(
