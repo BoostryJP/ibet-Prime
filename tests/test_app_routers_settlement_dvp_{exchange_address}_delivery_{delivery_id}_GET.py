@@ -20,18 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import UTC, datetime
 
 from app.model.db import (
-    Account,
-    BatchIssueRedeem,
-    BatchIssueRedeemProcessingCategory,
-    BatchIssueRedeemUpload,
     DeliveryStatus,
     IDXDelivery,
-    IDXPersonalInfo,
-    Token,
-    TokenType,
-    TokenVersion,
 )
-from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 

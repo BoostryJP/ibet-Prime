@@ -19,14 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import hashlib
-import json
-from unittest import mock
-from unittest.mock import ANY, MagicMock
 
 import pytest
 from eth_keyfile import decode_keyfile_json
 
-from app.exceptions import SendTransactionError
 from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
