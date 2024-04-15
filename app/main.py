@@ -40,6 +40,7 @@ from app.routers import (
     ledger,
     notification,
     position,
+    settlement,
     share,
     token_holders,
 )
@@ -105,6 +106,7 @@ app.include_router(share.router)
 app.include_router(token_holders.router)
 app.include_router(bc_explorer.router)
 app.include_router(freeze_log.router)
+app.include_router(settlement.router)
 
 
 ###############################################################
