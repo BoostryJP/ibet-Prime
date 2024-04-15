@@ -20,6 +20,12 @@ SPDX-License-Identifier: Apache-2.0
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
+from app.model.blockchain.tx_params.ibet_security_token_dvp import (
+    AbortDeliveryParams,
+    CancelDeliveryParams,
+    CreateDeliveryParams,
+    FinishDeliveryParams,
+)
 from app.model.blockchain.tx_params.ibet_security_token_escrow import (
     ApproveTransferParams,
 )
@@ -81,6 +87,123 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
         try:
             tx = await self.exchange_contract.functions.approveTransfer(
                 data.escrow_id, data.data
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+
+class IbetSecurityTokenDVP(IbetExchangeInterface):
+    """IbetSecurityTokenDVP contract"""
+
+    def __init__(self, contract_address: str):
+        super().__init__(
+            contract_address=contract_address, contract_name="IbetSecurityTokenDVP"
+        )
+
+    async def create_delivery(
+        self, data: CreateDeliveryParams, tx_from: str, private_key: bytes
+    ):
+        """Create Delivery"""
+        try:
+            tx = await self.exchange_contract.functions.createDelivery(
+                data.token_address,
+                data.buyer_address,
+                data.amount,
+                data.agent_address,
+                data.data,
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def cancel_delivery(
+        self, data: CancelDeliveryParams, tx_from: str, private_key: bytes
+    ):
+        """Cancel Delivery"""
+        try:
+            tx = await self.exchange_contract.functions.cancelDelivery(
+                data.delivery_id
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def finish_delivery(
+        self, data: FinishDeliveryParams, tx_from: str, private_key: bytes
+    ):
+        """Finish Delivery"""
+        try:
+            tx = await self.exchange_contract.functions.finishDelivery(
+                data.delivery_id
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def abort_delivery(
+        self, data: AbortDeliveryParams, tx_from: str, private_key: bytes
+    ):
+        """Abort Delivery"""
+        try:
+            tx = await self.exchange_contract.functions.abortDelivery(
+                data.delivery_id
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,

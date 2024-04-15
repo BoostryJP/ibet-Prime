@@ -31,6 +31,7 @@ from .batch_register_personal_info import (
     BatchRegisterPersonalInfoUploadStatus,
 )
 from .bulk_transfer import BulkTransfer, BulkTransferUpload
+from .dvp_agent_account import DVPAgentAccount
 from .e2e_messaging_account import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from .freeze_log_account import FreezeLogAccount
 from .idx_block_data import IDXBlockData, IDXBlockDataBlockNumber
