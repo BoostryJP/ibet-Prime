@@ -436,17 +436,6 @@ async def create_dvp_delivery(
         raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
     )
 
-    # Search for agent account
-    agent_account: DVPAgentAccount | None = (
-        await db.scalars(
-            select(DVPAgentAccount)
-            .where(DVPAgentAccount.account_address == data.agent_address)
-            .limit(1)
-        )
-    ).first()
-    if agent_account is None:
-        raise HTTPException(status_code=404, detail="agent account is not exists")
-
     # Create delivery
     dvp_contract = IbetSecurityTokenDVP(contract_address=exchange_address)
     try:

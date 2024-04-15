@@ -20,12 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import hashlib
 import json
-from unittest import mock
-from unittest.mock import ANY, MagicMock
 
 from eth_keyfile import decode_keyfile_json
 
-from app.exceptions import SendTransactionError
 from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
@@ -33,7 +30,6 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 from app.model.db import (
     Account,
     AuthToken,
-    DVPAgentAccount,
     Token,
     TokenType,
     TokenVersion,
@@ -116,12 +112,6 @@ class TestCreateDVPDeliveriesPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
-
-        dvp_agent_account = DVPAgentAccount()
-        dvp_agent_account.account_address = agent_address
-        dvp_agent_account.keyfile = user_3["keyfile_json"]
-        dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(dvp_agent_account)
 
         token_contract_1 = asyncio.run(
             deploy_bond_token_contract(
@@ -206,12 +196,6 @@ class TestCreateDVPDeliveriesPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
-
-        dvp_agent_account = DVPAgentAccount()
-        dvp_agent_account.account_address = agent_address
-        dvp_agent_account.keyfile = user_3["keyfile_json"]
-        dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(dvp_agent_account)
 
         token_contract_1 = asyncio.run(
             deploy_bond_token_contract(
@@ -669,53 +653,8 @@ class TestCreateDVPDeliveriesPOST:
         }
 
     # <Error_9>
-    # DVP agent account not found
-    def test_error_9(self, client, db, ibet_security_token_dvp_contract):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        _keyfile = user_1["keyfile_json"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
-
-        # prepare data
-        account = Account()
-        account.issuer_address = issuer_address
-        account.keyfile = _keyfile
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        db.commit()
-
-        # request target API
-        req_param = {
-            "token_address": "0x0000000000000000000000000000000000000000",
-            "buyer_address": "0x0000000000000000000000000000000000000000",
-            "amount": 1,
-            "agent_address": "0x0000000000000000000000000000000000000000",
-            "data": json.dumps({}),
-        }
-
-        resp = client.post(
-            self.base_url.format(
-                exchange_address=ibet_security_token_dvp_contract.address
-            ),
-            json=req_param,
-            headers={
-                "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password"),
-            },
-        )
-
-        assert resp.status_code == 404
-        assert resp.json() == {
-            "meta": {"code": 1, "title": "NotFound"},
-            "detail": "agent account is not exists",
-        }
-
-    # <Error_10>
     # Send Transaction Error
-    def test_error_10(
+    def test_error_9(
         self, client, db, ibet_security_token_dvp_contract, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
@@ -741,12 +680,6 @@ class TestCreateDVPDeliveriesPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
-
-        dvp_agent_account = DVPAgentAccount()
-        dvp_agent_account.account_address = agent_address
-        dvp_agent_account.keyfile = user_3["keyfile_json"]
-        dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(dvp_agent_account)
 
         token_contract_1 = asyncio.run(
             deploy_bond_token_contract(
