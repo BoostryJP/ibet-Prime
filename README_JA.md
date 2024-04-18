@@ -53,7 +53,7 @@
 
 以下のコマンドで Python パッケージをインストールします。
 ```bash
-$ poetry install --no-root --only main -E ibet-explorer
+$ poetry install --no-root --only main --all-extras
 ```
 
 ### pre-commit hookのインストール

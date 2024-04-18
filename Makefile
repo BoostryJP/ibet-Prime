@@ -1,7 +1,7 @@
 .PHONY: isort black test run
 
 install:
-	poetry install --no-root -E ibet-explorer
+	poetry install --no-root --all-extras
 	poetry run pre-commit install
 
 update:

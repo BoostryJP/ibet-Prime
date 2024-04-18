@@ -5,14 +5,14 @@ description = "ibet-Prime Settlement CLI"
 authors = ["BOOSTRY Co., Ltd. <dev@boostry.co.jp>"]
 readme = "README.md"
 packages = [
-    { include = "src" },
+    { include = "../settlement" },
 ]
 
 [tool.poetry.dependencies]
 python = "3.12.2"
 
 [tool.poetry.scripts]
-ibet-explorer = "src.main:app"
+settlement-cli = "settlement.src.main:app"
 
 [tool.mypy]
 python_version = "3.12"
