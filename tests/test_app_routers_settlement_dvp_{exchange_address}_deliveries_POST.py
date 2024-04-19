@@ -27,13 +27,7 @@ from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import (
-    Account,
-    AuthToken,
-    Token,
-    TokenType,
-    TokenVersion,
-)
+from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from config import CHAIN_ID, TX_GAS_LIMIT

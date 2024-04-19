@@ -19,10 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 
-from app.model.db import (
-    DeliveryStatus,
-    IDXDelivery,
-)
+from app.model.db import DeliveryStatus, IDXDelivery
 from tests.account_config import config_eth_account
 
 

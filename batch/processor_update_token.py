@@ -272,53 +272,57 @@ class Processor:
         if trigger == "Issue":
             # NOTE: Items set at the time of issue do not need to be updated.
             if token_type == TokenType.IBET_SHARE.value:
-                update_data = {
-                    "tradable_exchange_contract_address": arguments.get(
+                return IbetShareUpdateParams(
+                    tradable_exchange_contract_address=arguments.get(
                         "tradable_exchange_contract_address"
                     ),
-                    "personal_info_contract_address": arguments.get(
+                    personal_info_contract_address=arguments.get(
                         "personal_info_contract_address"
                     ),
-                    "transferable": arguments.get("transferable"),
-                    "status": arguments.get("status"),
-                    "is_offering": arguments.get("is_offering"),
-                    "contact_information": arguments.get("contact_information"),
-                    "privacy_policy": arguments.get("privacy_policy"),
-                    "transfer_approval_required": arguments.get(
+                    require_personal_info_registered=arguments.get(
+                        "require_personal_info_registered"
+                    ),
+                    transferable=arguments.get("transferable"),
+                    status=arguments.get("status"),
+                    is_offering=arguments.get("is_offering"),
+                    contact_information=arguments.get("contact_information"),
+                    privacy_policy=arguments.get("privacy_policy"),
+                    transfer_approval_required=arguments.get(
                         "transfer_approval_required"
                     ),
-                    "is_canceled": arguments.get("is_canceled"),
-                }
-                return IbetShareUpdateParams(**update_data)
+                    is_canceled=arguments.get("is_canceled"),
+                )
             elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                update_data = {
-                    "face_value_currency": arguments.get("face_value_currency"),
-                    "redemption_value_currency": arguments.get(
+                return IbetStraightBondUpdateParams(
+                    face_value_currency=arguments.get("face_value_currency"),
+                    redemption_value_currency=arguments.get(
                         "redemption_value_currency"
                     ),
-                    "interest_rate": arguments.get("interest_rate"),
-                    "interest_payment_date": arguments.get("interest_payment_date"),
-                    "interest_payment_currency": arguments.get(
+                    interest_rate=arguments.get("interest_rate"),
+                    interest_payment_date=arguments.get("interest_payment_date"),
+                    interest_payment_currency=arguments.get(
                         "interest_payment_currency"
                     ),
-                    "base_fx_rate": arguments.get("base_fx_rate"),
-                    "transferable": arguments.get("transferable"),
-                    "status": arguments.get("status"),
-                    "is_offering": arguments.get("is_offering"),
-                    "is_redeemed": arguments.get("is_redeemed"),
-                    "tradable_exchange_contract_address": arguments.get(
+                    base_fx_rate=arguments.get("base_fx_rate"),
+                    transferable=arguments.get("transferable"),
+                    status=arguments.get("status"),
+                    is_offering=arguments.get("is_offering"),
+                    is_redeemed=arguments.get("is_redeemed"),
+                    tradable_exchange_contract_address=arguments.get(
                         "tradable_exchange_contract_address"
                     ),
-                    "personal_info_contract_address": arguments.get(
+                    personal_info_contract_address=arguments.get(
                         "personal_info_contract_address"
                     ),
-                    "contact_information": arguments.get("contact_information"),
-                    "privacy_policy": arguments.get("privacy_policy"),
-                    "transfer_approval_required": arguments.get(
+                    require_personal_info_registered=arguments.get(
+                        "require_personal_info_registered"
+                    ),
+                    contact_information=arguments.get("contact_information"),
+                    privacy_policy=arguments.get("privacy_policy"),
+                    transfer_approval_required=arguments.get(
                         "transfer_approval_required"
                     ),
-                }
-                return IbetStraightBondUpdateParams(**update_data)
+                )
         return
 
     @staticmethod

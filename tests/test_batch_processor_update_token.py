@@ -102,6 +102,7 @@ class TestProcessor:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+            "require_personal_info_registered": False,  # update
             "transferable": False,  # update
             "status": False,  # update
             "is_offering": True,  # update
@@ -149,6 +150,7 @@ class TestProcessor:
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+            "require_personal_info_registered": False,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -208,6 +210,7 @@ class TestProcessor:
                     dividends=None,
                     tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
+                    require_personal_info_registered=False,
                     transferable=False,
                     status=False,
                     is_offering=True,
@@ -230,6 +233,7 @@ class TestProcessor:
                     is_redeemed=True,
                     tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
+                    require_personal_info_registered=False,
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
