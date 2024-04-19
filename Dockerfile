@@ -58,7 +58,7 @@ RUN . ~/.bash_profile \
 
 # install poetry
 RUN . ~/.bash_profile \
- && python -m pip install poetry==1.7.1
+ && python -m pip install poetry==1.8.2
 RUN . ~/.bash_profile \
  && poetry config virtualenvs.create false
 
@@ -88,10 +88,10 @@ COPY pyproject.toml /app/ibet-Prime/pyproject.toml
 COPY poetry.lock /app/ibet-Prime/poetry.lock
 RUN . ~/.bash_profile \
  && cd /app/ibet-Prime \
- && poetry install --only main --no-root -E ibet-explorer \
+ && poetry install --only main --no-root --all-extras \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/poetry.lock
-ENV PYTHONPATH /app/ibet-Prime
+ENV PYTHONPATH /app/ibet-Prime:/app/ibet-Prime/cmd
 
 # command deploy
 USER apl

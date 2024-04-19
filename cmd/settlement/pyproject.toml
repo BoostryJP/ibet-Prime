@@ -1,18 +1,18 @@
 [tool.poetry]
-name = "ibet-prime-explorer"
+name = "ibet-prime-settlement"
 version = "0.1.0"
-description = "ibet-Prime Terminal UI for Block Chain Explorer"
+description = "ibet-Prime Settlement CLI"
 authors = ["BOOSTRY Co., Ltd. <dev@boostry.co.jp>"]
 readme = "README.md"
 packages = [
-    { include = "../explorer" },
+    { include = "../settlement" },
 ]
 
 [tool.poetry.dependencies]
 python = "3.12.2"
 
 [tool.poetry.scripts]
-ibet-explorer = "explorer.src.main:app"
+settlement-cli = "settlement.src.main:app"
 
 [tool.mypy]
 python_version = "3.12"

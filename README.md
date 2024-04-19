@@ -52,7 +52,7 @@ English | [日本語](./README_JA.md)
 
 Install python packages with:
 ```bash
-$ poetry install --no-root --only main -E ibet-explorer
+$ poetry install --no-root --only main --all-extras
 ```
 
 ### Install pre-commit hook
