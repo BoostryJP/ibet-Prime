@@ -291,6 +291,21 @@ async def __get_personal_info(
     # For tokens with require_personal_info_registered = False, search only indexed data.
     # If indexed data does not exist, return the default value.
 
+    # Issuer cannot have any personal info
+    if account_address == token_contract.issuer_address:
+        personal_info_not_registered = False
+        return (
+            ContractPersonalInfoType(
+                key_manager=None,
+                name=None,
+                address=None,
+                postal_code=None,
+                email=None,
+                birth=None,
+            ).model_dump(),
+            personal_info_not_registered,
+        )
+
     # Search indexed data
     _idx_personal_info: IDXPersonalInfo | None = (
         await db.scalars(
@@ -304,7 +319,10 @@ async def __get_personal_info(
             .limit(1)
         )
     ).first()
-    if _idx_personal_info is not None:
+    if (
+        _idx_personal_info is not None
+        and any(_idx_personal_info.personal_info.values()) is not False
+    ):
         # Get personal info from DB
         personal_info_not_registered = False
         return _idx_personal_info.personal_info, personal_info_not_registered
@@ -315,7 +333,10 @@ async def __get_personal_info(
         personal_info = await personal_info_contract.get_info(
             account_address, default_value=None
         )
-        personal_info_not_registered = False
+        if any(personal_info.values()) is False:
+            personal_info_not_registered = True
+        else:
+            personal_info_not_registered = False
     else:
         # Do not retrieve contract data and return the default value
         personal_info = ContractPersonalInfoType().model_dump()
