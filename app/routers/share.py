@@ -2776,10 +2776,10 @@ async def transfer_ownership(
 async def list_transfer_history(
     db: DBAsyncSession,
     token_address: str,
-    request_query: ListTransferHistoryQuery = Depends(),
+    query: ListTransferHistoryQuery = Depends(),
 ):
     """List token transfer history"""
-    # Get token
+    # Check if the token has been issued
     _token: Token | None = (
         await db.scalars(
             select(Token)
@@ -2820,33 +2820,71 @@ async def list_transfer_history(
         )
         .where(IDXTransfer.token_address == token_address)
     )
-
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if request_query.source_event is not None:
-        stmt = stmt.where(IDXTransfer.source_event == request_query.source_event)
-    if request_query.data is not None:
+    # Filter
+    if query.block_timestamp_from is not None:
         stmt = stmt.where(
-            cast(IDXTransfer.data, String).like("%" + request_query.data + "%")
+            IDXTransfer.block_timestamp
+            >= local_tz.localize(query.block_timestamp_from).astimezone(UTC)
         )
-
+    if query.block_timestamp_to is not None:
+        stmt = stmt.where(
+            IDXTransfer.block_timestamp
+            <= local_tz.localize(query.block_timestamp_to).astimezone(UTC)
+        )
+    if query.from_address is not None:
+        stmt = stmt.where(IDXTransfer.from_address == query.from_address)
+    if query.to_address is not None:
+        stmt = stmt.where(IDXTransfer.to_address == query.to_address)
+    if query.from_address_name:
+        stmt = stmt.where(
+            cast(from_address_personal_info._personal_info["name"], String).like(
+                "%" + query.from_address_name + "%"
+            )
+        )
+    if query.to_address_name:
+        stmt = stmt.where(
+            cast(to_address_personal_info._personal_info["name"], String).like(
+                "%" + query.to_address_name + "%"
+            )
+        )
+    if query.amount is not None and query.amount_operator is not None:
+        match query.amount_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(IDXTransfer.amount == query.amount)
+            case ValueOperator.GTE:
+                stmt = stmt.where(IDXTransfer.amount >= query.amount)
+            case ValueOperator.LTE:
+                stmt = stmt.where(IDXTransfer.amount <= query.amount)
+    if query.source_event is not None:
+        stmt = stmt.where(IDXTransfer.source_event == query.source_event)
+    if query.data is not None:
+        stmt = stmt.where(cast(IDXTransfer.data, String).like("%" + query.data + "%"))
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    sort_attr = getattr(IDXTransfer, request_query.sort_item.value, None)
-    if request_query.sort_order == 0:  # ASC
+    match query.sort_item:
+        case ListTransferHistorySortItem.FROM_ADDRESS_NAME:
+            sort_attr = cast(from_address_personal_info._personal_info["name"], String)
+        case ListTransferHistorySortItem.TO_ADDRESS_NAME:
+            sort_attr = cast(to_address_personal_info._personal_info["name"], String)
+        case _:
+            sort_attr = getattr(IDXTransfer, query.sort_item.value, None)
+
+    if query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if request_query.sort_item != ListTransferHistorySortItem.BLOCK_TIMESTAMP:
+    if query.sort_item != ListTransferHistorySortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXTransfer.block_timestamp))
 
     # Pagination
-    if request_query.limit is not None:
-        stmt = stmt.limit(request_query.limit)
-    if request_query.offset is not None:
-        stmt = stmt.offset(request_query.offset)
+    if query.limit is not None:
+        stmt = stmt.limit(query.limit)
+    if query.offset is not None:
+        stmt = stmt.offset(query.offset)
 
     _transfers: Sequence[
         tuple[IDXTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
@@ -2882,8 +2920,8 @@ async def list_transfer_history(
         {
             "result_set": {
                 "count": count,
-                "offset": request_query.offset,
-                "limit": request_query.limit,
+                "offset": query.offset,
+                "limit": query.limit,
                 "total": total,
             },
             "transfer_history": transfer_history,

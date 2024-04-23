@@ -17,14 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import datetime
 from enum import Enum, IntEnum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, Field, NonNegativeInt, conint
+from pydantic import BaseModel, Field, NonNegativeInt
 from pydantic.dataclasses import dataclass
 
 from app.model.schema.base import ResultSet, SortOrder
+from app.model.schema.base.base import ValueOperator
 
 from .personal_info import PersonalInfo
 
@@ -54,11 +56,38 @@ class ListTransferHistorySortItem(str, Enum):
     BLOCK_TIMESTAMP = "block_timestamp"
     FROM_ADDRESS = "from_address"
     TO_ADDRESS = "to_address"
+    FROM_ADDRESS_NAME = "from_address_name"
+    TO_ADDRESS_NAME = "to_address_name"
     AMOUNT = "amount"
 
 
 @dataclass
 class ListTransferHistoryQuery:
+    block_timestamp_from: Annotated[
+        Optional[datetime], Query(description="block timestamp (From)")
+    ] = None
+    block_timestamp_to: Annotated[
+        Optional[datetime], Query(descriptio0n="block timestamp (To)")
+    ] = None
+    from_address: Annotated[
+        Optional[str], Query(description="transfer source address")
+    ] = None
+    to_address: Annotated[
+        Optional[str], Query(description="transfer destination address")
+    ] = None
+    from_address_name: Annotated[
+        Optional[str], Query(description="name of transfer source address")
+    ] = None
+    to_address_name: Annotated[
+        Optional[str], Query(description="name of transfer destination address")
+    ] = None
+    amount: Annotated[Optional[int], Query(description="transfer amount")] = None
+    amount_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="value filter condition(0: equal, 1: greater than, 2: less than)",
+        ),
+    ] = ValueOperator.EQUAL
     source_event: Annotated[
         Optional[TransferSourceEventType], Query(description="source event of transfer")
     ] = None
