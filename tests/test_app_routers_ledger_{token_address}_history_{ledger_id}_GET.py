@@ -1871,10 +1871,11 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             ],
         }
 
-    # <Normal_5>
+    # <Normal_5_1>
     # `some_personal_info_not_registered` is not set in ledger data
     # Test backward compatibility for specifications earlier than v24.6
-    def test_normal_5(self, client, db):
+    # latest_flg != 1
+    def test_normal_5_1(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2009,6 +2010,274 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 "latest_flg": 0,
             },
         )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "currency": "JPY",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                },
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"test1": "a", "test2": "b"},
+                    ],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02",
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"f-test1": "a", "f-test2": "b"},
+                    ],
+                    "some_personal_info_not_registered": False,
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"test1-1": "a", "test2-1": "b"},
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2020/01/01",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 20,
+                            "price": 30,
+                            "balance": 600,
+                            "acquisition_date": "2020/01/02",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"f-test1-1": "a", "f-test2-1": "b"},
+                    ],
+                    "some_personal_info_not_registered": False,
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                },
+            ],
+        }
+
+    # <Normal_5_2>
+    # `some_personal_info_not_registered` is not set in ledger data
+    # Test backward compatibility for specifications earlier than v24.6
+    # latest_flg == 1
+    def test_normal_5_2(self, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
+        account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
+        personal_info_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_23_12
+        db.add(_token)
+
+        _ledger_1 = Ledger()
+        _ledger_1.token_address = token_address
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.ledger = {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "currency": "JPY",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                },
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"test1": "a", "test2": "b"},
+                    ],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02",
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"f-test1": "a", "f-test2": "b"},
+                    ],
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"test1-1": "a", "test2-1": "b"},
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2020/01/01",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 20,
+                            "price": 30,
+                            "balance": 600,
+                            "acquisition_date": "2020/01/02",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"f-test1-1": "a", "f-test2-1": "b"},
+                    ],
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                },
+            ],
+        }
+        _ledger_1.ledger_created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
+        db.add(_ledger_1)
+
+        _idx_personal_info_1 = (
+            IDXPersonalInfo()
+        )  # Note: account_address_1 has personal information in DB
+        _idx_personal_info_1.account_address = account_address_1
+        _idx_personal_info_1.issuer_address = issuer_address
+        _idx_personal_info_1.personal_info = {
+            "name": "name_db_1",
+            "address": "address_db_1",
+        }
+        db.add(_idx_personal_info_1)
+
+        db.commit()
+
+        # Mock
+        token = IbetStraightBondContract()
+        token.personal_info_contract_address = personal_info_contract_address
+        token.issuer_address = issuer_address
+        token.require_personal_info_registered = False
+        token_get_mock = mock.patch(
+            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+        )
+
+        # request target API
+        with token_get_mock:
+            resp = client.get(
+                self.base_url.format(token_address=token_address, ledger_id=1),
+                params={
+                    "latest_flg": 1,
+                },
+            )
 
         # assertion
         assert resp.status_code == 200

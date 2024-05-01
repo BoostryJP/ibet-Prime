@@ -264,9 +264,9 @@ async def retrieve_ledger_history(
                     data["address"] = personal_info.get("address", None)
                     if _pi_not_registered:
                         some_personal_info_not_registered = True
-                if some_personal_info_not_registered:
-                    # If there is data for which personal information is not registered
-                    details["some_personal_info_not_registered"] = True
+            details["some_personal_info_not_registered"] = (
+                some_personal_info_not_registered
+            )
     else:
         # NOTE: Implementation for backward compatibility
         #   In specifications prior to v24.6, the item "some_personal_info_not_registered" does not exist,
