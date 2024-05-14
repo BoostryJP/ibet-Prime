@@ -27,7 +27,7 @@ from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic.dataclasses import dataclass
 
-from app.model import EthereumAddress
+from app.model import EthereumAddress, ValidatedDatetimeStr
 
 from .base import (
     CURRENCY_str,
@@ -468,10 +468,10 @@ class ListTokenOperationLogHistoryQuery:
         Optional[TokenUpdateOperationCategory], Query(description="Trigger of change")
     ] = None
     created_from: Annotated[
-        Optional[datetime], Query(description="Created datetime filter(From)")
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
     ] = None
     created_to: Annotated[
-        Optional[datetime], Query(description="Created datetime filter(To)")
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (To)")
     ] = None
     sort_item: Annotated[ListTokenHistorySortItem, Query(description="Sort item")] = (
         ListTokenHistorySortItem.created

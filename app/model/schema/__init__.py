@@ -158,6 +158,8 @@ from .token_holders import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse,
+    ListTokenHoldersPersonalInfoHistoryQuery,
+    ListTokenHoldersPersonalInfoHistoryResponse,
     ListTokenHoldersPersonalInfoQuery,
     ListTokenHoldersPersonalInfoResponse,
     RetrieveTokenHoldersListResponse,

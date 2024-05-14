@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
@@ -28,6 +29,11 @@ from app.model import EthereumAddress
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
 
 from .base import ResultSet, SortOrder
+
+
+class PersonalInfoEventType(StrEnum):
+    REGISTER = "register"
+    MODIFY = "modify"
 
 
 class PersonalInfo(BaseModel):
@@ -58,6 +64,17 @@ class PersonalInfoIndex(BaseModel):
 
     id: int = Field(...)
     account_address: str = Field(...)
+    personal_info: PersonalInfo = Field(...)
+    created: datetime
+    modified: datetime
+
+
+class PersonalInfoHistory(BaseModel):
+    """Personal Information History schema"""
+
+    id: int = Field(...)
+    account_address: str = Field(...)
+    event_type: PersonalInfoEventType = Field(...)
     personal_info: PersonalInfo = Field(...)
     created: datetime
 

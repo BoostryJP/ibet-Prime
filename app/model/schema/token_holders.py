@@ -18,29 +18,87 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
+from enum import StrEnum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
+from pydantic.dataclasses import dataclass
 
+from app.model import EthereumAddress, ValidatedDatetimeStr
 from app.model.db import TokenHolderBatchStatus
 from app.model.schema.base import ResultSet, SortOrder
-from app.model.schema.personal_info import PersonalInfoIndex
+from app.model.schema.personal_info import (
+    PersonalInfoEventType,
+    PersonalInfoHistory,
+    PersonalInfoIndex,
+)
 
 
 ############################
 # REQUEST
 ############################
-class ListTokenHoldersPersonalInfoQuery(BaseModel):
+class ListTokenHoldersPersonalInfoSortItem(StrEnum):
+    account_address = "account_address"
+    created = "created"
+    modified = "modified"
+
+
+@dataclass
+class ListTokenHoldersPersonalInfoQuery:
+    created_from: Annotated[
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
+    ] = None
+    created_to: Annotated[
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (To)")
+    ] = None
+    modified_from: Annotated[
+        Optional[ValidatedDatetimeStr], Query(description="modified datetime (From)")
+    ] = None
+    modified_to: Annotated[
+        Optional[ValidatedDatetimeStr], Query(description="modified datetime (To)")
+    ] = None
+
+    sort_item: Annotated[
+        ListTokenHoldersPersonalInfoSortItem, Query(description="sort item")
+    ] = ListTokenHoldersPersonalInfoSortItem.created
+    sort_order: Annotated[
+        Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
+    ] = SortOrder.ASC
+
     offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
         None
     )
     limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
         None
     )
+
+
+@dataclass
+class ListTokenHoldersPersonalInfoHistoryQuery:
+    account_address: Annotated[Optional[str], Query(description="account address")] = (
+        None
+    )
+    event_type: Annotated[
+        Optional[PersonalInfoEventType], Query(description="event type")
+    ] = None
+    created_from: Annotated[
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
+    ] = None
+    created_to: Annotated[
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (To)")
+    ] = None
+
     sort_order: Annotated[
-        Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
+        Optional[SortOrder], Query(description="sort order (0: ASC, 1: DESC)")
     ] = SortOrder.ASC
+
+    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
+        None
+    )
+    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
+        None
+    )
 
 
 class CreateTokenHoldersListRequest(BaseModel):
@@ -77,6 +135,13 @@ class ListTokenHoldersPersonalInfoResponse(BaseModel):
 
     result_set: ResultSet
     personal_info: List[PersonalInfoIndex]
+
+
+class ListTokenHoldersPersonalInfoHistoryResponse(BaseModel):
+    """List All Token Holders PersonalInfo Histories (Response)"""
+
+    result_set: ResultSet
+    personal_info: List[PersonalInfoHistory]
 
 
 class CreateTokenHoldersListResponse(BaseModel):

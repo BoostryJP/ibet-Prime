@@ -17,11 +17,20 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import datetime
+from enum import StrEnum
+
+import pytz
 from sqlalchemy import JSON, BigInteger, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 
+import config
+
 from .base import Base
+
+local_tz = pytz.timezone(config.TZ)
+utc_tz = pytz.timezone("UTC")
 
 
 class IDXPersonalInfo(Base):
@@ -75,13 +84,19 @@ class IDXPersonalInfo(Base):
             "tax_category": personal_info_dict.get("tax_category", None),
         }
 
+    @staticmethod
+    def localize_datetime(_datetime: datetime) -> datetime | None:
+        if _datetime is None:
+            return None
+        return utc_tz.localize(_datetime).astimezone(local_tz)
+
     def json(self):
         return {
             "id": self.id,
             "account_address": self.account_address,
-            "issuer_address": self.issuer_address,
             "personal_info": self.personal_info,
-            "created": self.created,
+            "created": self.localize_datetime(self.created),
+            "modified": self.localize_datetime(self.modified),
         }
 
 
@@ -93,3 +108,41 @@ class IDXPersonalInfoBlockNumber(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
     latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
+
+
+class PersonalInfoEventType(StrEnum):
+    REGISTER = "register"
+    MODIFY = "modify"
+
+
+class IDXPersonalInfoHistory(Base):
+    """Indexed personal information histories"""
+
+    __tablename__ = "idx_personal_info_history"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # account address
+    account_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    # issuer address
+    issuer_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    # event type
+    event_type: Mapped[PersonalInfoEventType] = mapped_column(
+        String(10), index=True, nullable=False
+    )
+    # personal information
+    personal_info = mapped_column(JSON, nullable=False)
+
+    @staticmethod
+    def localize_datetime(_datetime: datetime) -> datetime | None:
+        if _datetime is None:
+            return None
+        return utc_tz.localize(_datetime).astimezone(local_tz)
+
+    def json(self):
+        return {
+            "id": self.id,
+            "account_address": self.account_address,
+            "event_type": self.event_type,
+            "personal_info": self.personal_info,
+            "created": self.localize_datetime(self.created),
+        }
