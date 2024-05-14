@@ -25,7 +25,7 @@ from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 from pydantic.dataclasses import dataclass
 
-from app.model import EthereumAddress, ValidatedDatetimeStr
+from app.model import ValidatedDatetimeStr
 from app.model.db import TokenHolderBatchStatus
 from app.model.schema.base import ResultSet, SortOrder
 from app.model.schema.personal_info import (
@@ -46,6 +46,9 @@ class ListTokenHoldersPersonalInfoSortItem(StrEnum):
 
 @dataclass
 class ListTokenHoldersPersonalInfoQuery:
+    account_address: Annotated[Optional[str], Query(description="account address")] = (
+        None
+    )
     created_from: Annotated[
         Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
     ] = None

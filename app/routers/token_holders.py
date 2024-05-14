@@ -86,6 +86,8 @@ async def list_all_token_holders_personal_info(
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Filter
+    if get_query.account_address:
+        stmt = stmt.where(IDXPersonalInfo.account_address == get_query.account_address)
     if get_query.created_from:
         _created_from = datetime.strptime(
             get_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
