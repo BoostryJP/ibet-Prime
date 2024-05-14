@@ -608,9 +608,9 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Update Token Bond Tokens  Token Address  Post
   /bond/tokens/{token_address}/history:
     get:
@@ -652,22 +652,20 @@ paths:
           schema:
             anyOf:
               - type: string
-                format: date-time
               - type: 'null'
-            description: Created datetime filter(From)
+            description: created datetime (From)
             title: Created From
-          description: Created datetime filter(From)
+          description: created datetime (From)
         - name: created_to
           in: query
           required: false
           schema:
             anyOf:
               - type: string
-                format: date-time
               - type: 'null'
-            description: Created datetime filter(To)
+            description: created datetime (To)
             title: Created To
-          description: Created datetime filter(To)
+          description: created datetime (To)
         - name: sort_item
           in: query
           required: false
@@ -885,8 +883,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Additional Issue Bond Tokens  Token Address  Additional
                   Issue Post
   /bond/tokens/{token_address}/additional_issue/batch:
@@ -1245,8 +1243,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Redeem Token Bond Tokens  Token Address  Redeem
                   Post
   /bond/tokens/{token_address}/redeem/batch:
@@ -1558,8 +1556,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Schedule New Update Event Bond Tokens  Token Address  Scheduled
                   Events Post
   /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
@@ -2042,8 +2040,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Register Holder Personal Info Bond Tokens  Token
                   Address  Personal Info Post
   /bond/tokens/{token_address}/personal_info/batch:
@@ -2454,8 +2452,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Transfer Ownership Bond Transfers Post
   /bond/transfers/{token_address}:
     get:
@@ -2877,10 +2875,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                 title: Response 400 Update Transfer Approval Bond Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -3128,8 +3126,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Create Account E2E Messaging Accounts Post
   /e2e_messaging/accounts/{account_address}:
     get:
@@ -4536,8 +4534,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Force Unlock Positions  Account Address  Force
                   Unlock Post
   /positions/{account_address}/{token_address}:
@@ -4799,9 +4797,9 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Update Token Share Tokens  Token Address  Post
   /share/tokens/{token_address}/history:
     get:
@@ -4843,22 +4841,20 @@ paths:
           schema:
             anyOf:
               - type: string
-                format: date-time
               - type: 'null'
-            description: Created datetime filter(From)
+            description: created datetime (From)
             title: Created From
-          description: Created datetime filter(From)
+          description: created datetime (From)
         - name: created_to
           in: query
           required: false
           schema:
             anyOf:
               - type: string
-                format: date-time
               - type: 'null'
-            description: Created datetime filter(To)
+            description: created datetime (To)
             title: Created To
-          description: Created datetime filter(To)
+          description: created datetime (To)
         - name: sort_item
           in: query
           required: false
@@ -5076,8 +5072,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Additional Issue Share Tokens  Token Address  Additional
                   Issue Post
   /share/tokens/{token_address}/additional_issue/batch:
@@ -5436,8 +5432,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Redeem Token Share Tokens  Token Address  Redeem
                   Post
   /share/tokens/{token_address}/redeem/batch:
@@ -5749,8 +5745,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Schedule New Update Event Share Tokens  Token
                   Address  Scheduled Events Post
   /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
@@ -6233,8 +6229,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Register Holder Personal Info Share Tokens  Token
                   Address  Personal Info Post
   /share/tokens/{token_address}/personal_info/batch:
@@ -6645,8 +6641,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Transfer Ownership Share Transfers Post
   /share/transfers/{token_address}:
     get:
@@ -7069,10 +7065,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                 title: Response 400 Update Transfer Approval Share Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -7277,8 +7273,79 @@ paths:
       summary: List All Token Holders Personal Info
       description: Lists the personal information of all registered holders linked
         to the token issuer
-      operationId: list_all_token_holders_personal_info_token_holders_personal_info_get
+      operationId: ListTokenHoldersPersonalInfo
       parameters:
+        - name: account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: account address
+            title: Account Address
+          description: account address
+        - name: created_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: created datetime (From)
+            title: Created From
+          description: created datetime (From)
+        - name: created_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: created datetime (To)
+            title: Created To
+          description: created datetime (To)
+        - name: modified_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: modified datetime (From)
+            title: Modified From
+          description: modified datetime (From)
+        - name: modified_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: modified datetime (To)
+            title: Modified To
+          description: modified datetime (To)
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ListTokenHoldersPersonalInfoSortItem'
+            description: sort item
+            default: created
+            title: Sort Item
+          description: sort item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'sort order(0: ASC, 1: DESC)'
+            default: 0
+            title: Sort Order
+          description: 'sort order(0: ASC, 1: DESC)'
         - name: offset
           in: query
           required: false
@@ -7287,7 +7354,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
+            description: start position
             title: Offset
+          description: start position
         - name: limit
           in: query
           required: false
@@ -7296,16 +7365,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
+            description: number of set
             title: Limit
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/SortOrder'
-              - type: 'null'
-            default: 0
-            title: Sort Order
+          description: number of set
         - name: issuer-address
           in: header
           required: true
@@ -7319,6 +7381,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListTokenHoldersPersonalInfoResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /token/holders/personal_info/history:
+    get:
+      tags:
+        - token_common
+      summary: List All Token Holders Personal Info History
+      description: List personal information historical data
+      operationId: ListTokenHoldersPersonalInfoHistory
+      parameters:
+        - name: account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: account address
+            title: Account Address
+          description: account address
+        - name: event_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/PersonalInfoEventType'
+              - type: 'null'
+            description: event type
+            title: Event Type
+          description: event type
+        - name: created_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: created datetime (From)
+            title: Created From
+          description: created datetime (From)
+        - name: created_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: created datetime (To)
+            title: Created To
+          description: created datetime (To)
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'sort order (0: ASC, 1: DESC)'
+            default: 0
+            title: Sort Order
+          description: 'sort order (0: ASC, 1: DESC)'
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: start position
+            title: Offset
+          description: start position
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: number of set
+            title: Limit
+          description: number of set
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTokenHoldersPersonalInfoHistoryResponse'
         '422':
           description: Validation Error
           content:
@@ -7887,8 +8049,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Recordnewfreezelog
   /freeze_log/logs/{log_index}:
     post:
@@ -7933,8 +8095,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Updatefreezelog
     get:
       tags:
@@ -8298,8 +8460,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Createdvpdelivery
   /settlement/dvp/{exchange_address}/delivery/{delivery_id}:
     get:
@@ -8425,8 +8587,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Updatedvpdelivery
 components:
   schemas:
@@ -11762,6 +11924,21 @@ components:
         - operation_category
       title: ListTokenHistorySortItem
       description: Sort item of token history
+    ListTokenHoldersPersonalInfoHistoryResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        personal_info:
+          items:
+            $ref: '#/components/schemas/PersonalInfoHistory'
+          type: array
+          title: Personal Info
+      type: object
+      required:
+        - result_set
+        - personal_info
+      title: ListTokenHoldersPersonalInfoHistoryResponse
+      description: List All Token Holders PersonalInfo Histories (Response)
     ListTokenHoldersPersonalInfoResponse:
       properties:
         result_set:
@@ -11777,6 +11954,13 @@ components:
         - personal_info
       title: ListTokenHoldersPersonalInfoResponse
       description: List All Token Holders PersonalInfo (Response)
+    ListTokenHoldersPersonalInfoSortItem:
+      type: string
+      enum:
+        - account_address
+        - created
+        - modified
+      title: ListTokenHoldersPersonalInfoSortItem
     ListTokenOperationLogHistoryResponse:
       properties:
         result_set:
@@ -12125,6 +12309,37 @@ components:
         - is_corporate
         - tax_category
       title: PersonalInfo
+    PersonalInfoEventType:
+      type: string
+      enum:
+        - register
+        - modify
+      title: PersonalInfoEventType
+    PersonalInfoHistory:
+      properties:
+        id:
+          type: integer
+          title: Id
+        account_address:
+          type: string
+          title: Account Address
+        event_type:
+          $ref: '#/components/schemas/PersonalInfoEventType'
+        personal_info:
+          $ref: '#/components/schemas/PersonalInfo'
+        created:
+          type: string
+          format: date-time
+          title: Created
+      type: object
+      required:
+        - id
+        - account_address
+        - event_type
+        - personal_info
+        - created
+      title: PersonalInfoHistory
+      description: Personal Information History schema
     PersonalInfoIndex:
       properties:
         id:
@@ -12139,12 +12354,17 @@ components:
           type: string
           format: date-time
           title: Created
+        modified:
+          type: string
+          format: date-time
+          title: Modified
       type: object
       required:
         - id
         - account_address
         - personal_info
         - created
+        - modified
       title: PersonalInfoIndex
       description: Personal Information Index schema
     Position:

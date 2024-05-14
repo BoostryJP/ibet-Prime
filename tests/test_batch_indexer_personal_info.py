@@ -41,6 +41,8 @@ from app.model.db import (
     Account,
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber,
+    IDXPersonalInfoHistory,
+    PersonalInfoEventType,
     Token,
     TokenType,
     TokenVersion,
@@ -165,11 +167,15 @@ class TestProcessor:
         # Assertion
         _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 0
+
         _idx_personal_info_block_number = db.scalars(
             select(IDXPersonalInfoBlockNumber).limit(1)
         ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
+
+        _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
+        assert len(_personal_info_history_list) == 0
 
     # <Normal_1_2>
     # Single Token
@@ -234,11 +240,15 @@ class TestProcessor:
         # Assertion
         _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 0
+
         _idx_personal_info_block_number = db.scalars(
             select(IDXPersonalInfoBlockNumber).limit(1)
         ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
+
+        _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
+        assert len(_personal_info_history_list) == 0
 
     # <Normal_2_1>
     # Single Token
@@ -334,6 +344,16 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
+
+        _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
+        assert len(_personal_info_history_list) == 1
+        _personal_info_history = _personal_info_history_list[0]
+        assert _personal_info_history.id == 1
+        assert _personal_info_history.account_address == user_address_1
+        assert _personal_info_history.event_type == PersonalInfoEventType.REGISTER
+        assert _personal_info_history.issuer_address == issuer_address
+        assert _personal_info_history.personal_info == personal_info_1
+
         _idx_personal_info_block_number = db.scalars(
             select(IDXPersonalInfoBlockNumber).limit(1)
         ).first()
@@ -474,6 +494,22 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
+
+        _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
+        assert len(_personal_info_history_list) == 2
+        _personal_info_history_1 = _personal_info_history_list[0]
+        assert _personal_info_history_1.id == 1
+        assert _personal_info_history_1.account_address == user_address_1
+        assert _personal_info_history_1.event_type == PersonalInfoEventType.REGISTER
+        assert _personal_info_history_1.issuer_address == issuer_address
+        assert _personal_info_history_1.personal_info == personal_info_1
+        _personal_info_history_2 = _personal_info_history_list[1]
+        assert _personal_info_history_2.id == 2
+        assert _personal_info_history_2.account_address == user_address_1
+        assert _personal_info_history_2.event_type == PersonalInfoEventType.MODIFY
+        assert _personal_info_history_2.issuer_address == issuer_address
+        assert _personal_info_history_2.personal_info == personal_info_2
+
         _idx_personal_info_block_number = db.scalars(
             select(IDXPersonalInfoBlockNumber).limit(1)
         ).first()
@@ -614,6 +650,24 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
+
+        _personal_info_history_list = db.scalars(
+            select(IDXPersonalInfoHistory).order_by(IDXPersonalInfoHistory.id)
+        ).all()
+        assert len(_personal_info_history_list) == 2
+        _personal_info_history_1 = _personal_info_history_list[0]
+        assert _personal_info_history_1.id == 1
+        assert _personal_info_history_1.account_address == user_address_1
+        assert _personal_info_history_1.event_type == PersonalInfoEventType.REGISTER
+        assert _personal_info_history_1.issuer_address == issuer_address
+        assert _personal_info_history_1.personal_info == personal_info_1
+        _personal_info_history_2 = _personal_info_history_list[1]
+        assert _personal_info_history_2.id == 2
+        assert _personal_info_history_2.account_address == user_address_1
+        assert _personal_info_history_2.event_type == PersonalInfoEventType.MODIFY
+        assert _personal_info_history_2.issuer_address == issuer_address
+        assert _personal_info_history_2.personal_info == personal_info_2
+
         _idx_personal_info_block_number = db.scalars(
             select(IDXPersonalInfoBlockNumber).limit(1)
         ).first()
@@ -662,6 +716,18 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_3
+
+        _personal_info_history_list = db.scalars(
+            select(IDXPersonalInfoHistory).order_by(IDXPersonalInfoHistory.id)
+        ).all()
+        assert len(_personal_info_history_list) == 3
+        _personal_info_history = _personal_info_history_list[2]
+        assert _personal_info_history.id == 3
+        assert _personal_info_history.account_address == user_address_1
+        assert _personal_info_history.event_type == PersonalInfoEventType.MODIFY
+        assert _personal_info_history.issuer_address == issuer_address
+        assert _personal_info_history.personal_info == personal_info_3
+
         _idx_personal_info_block_number = db.scalars(
             select(IDXPersonalInfoBlockNumber).limit(1)
         ).first()
@@ -842,6 +908,20 @@ class TestProcessor:
             assert _personal_info.issuer_address == stored_address_order[i]
             assert (
                 _personal_info.personal_info
+                == personal_info_dict[stored_address_order[i]]
+            )
+
+        _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
+        assert len(_personal_info_history_list) == 2
+
+        for i in range(2):
+            _personal_info_history = _personal_info_history_list[i]
+            assert _personal_info_history.id == i + 1
+            assert _personal_info_history.account_address == stored_address_order[i]
+            assert _personal_info_history.event_type == PersonalInfoEventType.REGISTER
+            assert _personal_info_history.issuer_address == stored_address_order[i]
+            assert (
+                _personal_info_history.personal_info
                 == personal_info_dict[stored_address_order[i]]
             )
 

@@ -627,7 +627,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         resp = client.get(
             self.base_url.format(_token_address),
             params={
-                "created_from": str(datetime(2023, 5, 3, 8, 0, 0)),
+                "created_from": "2023-05-03 08:00:00",
             },
         )
 
@@ -649,13 +649,13 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                     "original_contents": {},
                     "modified_contents": {"memo": "20230504"},
                     "operation_category": TokenUpdateOperationCategory.UPDATE.value,
-                    "created": ANY,
+                    "created": "2023-05-04T09:00:00+09:00",
                 },
                 {
                     "original_contents": {},
                     "modified_contents": {"memo": "20230503"},
                     "operation_category": TokenUpdateOperationCategory.UPDATE.value,
-                    "created": ANY,
+                    "created": "2023-05-03T09:00:00+09:00",
                 },
             ],
         }
@@ -732,7 +732,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         resp = client.get(
             self.base_url.format(_token_address),
             params={
-                "created_to": str(datetime(2023, 5, 2, 0, 0, 0)),
+                "created_to": "2023-05-02 00:00:00",
             },
         )
 
@@ -750,7 +750,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                     "original_contents": None,
                     "modified_contents": create_param,
                     "operation_category": TokenUpdateOperationCategory.ISSUE.value,
-                    "created": ANY,
+                    "created": "2023-05-01T09:00:00+09:00",
                 },
             ],
         }

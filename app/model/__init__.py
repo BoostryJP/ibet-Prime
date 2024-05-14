@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import datetime
 from typing import Annotated, Any
 
 from pydantic import WrapValidator
@@ -37,3 +38,28 @@ def ethereum_address_validator(
 
 
 EthereumAddress = Annotated[str, WrapValidator(ethereum_address_validator)]
+
+
+def datetime_string_validator(
+    value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
+):
+    """Validate string datetime format
+
+    - %Y/%m/%d %H:%M:%S
+    """
+    if value is not None:
+        datetime_format = "%Y-%m-%d %H:%M:%S"
+
+        if not isinstance(value, str):
+            raise ValueError(f"value must be of string datetime format")
+
+        try:
+            converted = datetime.strptime(value, datetime_format)
+            if value != converted.strftime(datetime_format):
+                raise ValueError(f"value must be string datetime format")
+        except ValueError:
+            raise ValueError(f"value must be of string datetime format")
+    return value
+
+
+ValidatedDatetimeStr = Annotated[str, WrapValidator(datetime_string_validator)]

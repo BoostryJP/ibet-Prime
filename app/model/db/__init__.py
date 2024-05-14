@@ -44,7 +44,12 @@ from .idx_issue_redeem import (
     IDXIssueRedeemSortItem,
 )
 from .idx_lock_unlock import IDXLock, IDXUnlock
-from .idx_personal_info import IDXPersonalInfo, IDXPersonalInfoBlockNumber
+from .idx_personal_info import (
+    IDXPersonalInfo,
+    IDXPersonalInfoBlockNumber,
+    IDXPersonalInfoHistory,
+    PersonalInfoEventType,
+)
 from .idx_position import (
     IDXLockedPosition,
     IDXPosition,

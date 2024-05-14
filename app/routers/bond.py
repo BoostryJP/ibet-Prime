@@ -586,14 +586,20 @@ async def list_bond_operation_log_history(
             )
         )
     if request_query.created_from:
+        _created_from = datetime.strptime(
+            request_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            >= local_tz.localize(request_query.created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz)
         )
     if request_query.created_to:
+        _created_to = datetime.strptime(
+            request_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            <= local_tz.localize(request_query.created_to).astimezone(utc_tz)
+            <= local_tz.localize(_created_to).astimezone(utc_tz)
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
