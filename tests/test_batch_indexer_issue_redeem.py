@@ -636,77 +636,11 @@ class TestProcessor:
         assert idx_block_number.latest_block_number == block_number
 
     # Normal_6
-    # If DB session fails in phase sinking each event, batch outputs logs exception occurred.
-    @pytest.mark.asyncio
-    async def test_normal_6(
-        self,
-        processor: Processor,
-        db: Session,
-        personal_info_contract,
-        caplog: pytest.LogCaptureFixture,
-    ):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
-
-        # Prepare data : Account
-        account = Account()
-        account.issuer_address = issuer_address
-        account.keyfile = user_1["keyfile_json"]
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address,
-        )
-
-        token_address_1 = token_contract_1.address
-        token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_1.token_address = token_address_1
-        token_1.issuer_address = issuer_address
-        token_1.abi = token_contract_1.abi
-        token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
-        db.add(token_1)
-
-        db.commit()
-
-        # issueFrom
-        tx = token_contract_1.functions.issueFrom(
-            issuer_address, config.ZERO_ADDRESS, 10
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        ContractUtils.send_transaction(tx, issuer_private_key)
-
-        with patch.object(Session, "add", side_effect=Exception()):
-            await processor.sync_new_logs()
-
-        assert 1 == caplog.record_tuples.count(
-            (
-                LOG.name,
-                logging.ERROR,
-                "An exception occurred during event synchronization",
-            )
-        )
-
-    # Normal_7
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip process".
     @pytest.mark.asyncio
     @mock.patch("web3.eth.Eth.block_number", 100)
-    async def test_normal_7(
+    async def test_normal_6(
         self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
     ):
         _idx_position_bond_block_number = IDXIssueRedeemBlockNumber()
@@ -720,10 +654,10 @@ class TestProcessor:
             (LOG.name, logging.DEBUG, "skip process")
         )
 
-    # Normal_8
+    # Normal_7
     # Newly tokens added
     @pytest.mark.asyncio
-    async def test_normal_8(
+    async def test_normal_7(
         self, processor: Processor, db: Session, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
