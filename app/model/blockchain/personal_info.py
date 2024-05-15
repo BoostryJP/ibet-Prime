@@ -60,6 +60,7 @@ class PersonalInfoContract:
             contract_name="PersonalInfo", contract_address=contract_address
         )
         self.issuer = issuer
+        self.cipher = None
 
     async def get_info(self, account_address: str, default_value=None):
         """Get personal information from contract storage
@@ -93,9 +94,10 @@ class PersonalInfoContract:
         else:
             # Get issuer's RSA private key
             try:
-                passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
-                key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
-                cipher = PKCS1_OAEP.new(key)
+                if self.cipher is None:
+                    passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
+                    key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
+                    self.cipher = PKCS1_OAEP.new(key)
             except Exception as err:
                 logging.error(f"Cannot open the private key: {err}")
                 return ContractPersonalInfoType(
@@ -106,7 +108,7 @@ class PersonalInfoContract:
                     email=default_value,
                     birth=default_value,
                 ).model_dump()
-            if cipher is not None:
+            if self.cipher is not None:
                 try:
                     ciphertext = base64.decodebytes(encrypted_info.encode("utf-8"))
                     # NOTE:
@@ -117,7 +119,7 @@ class PersonalInfoContract:
                     if len(ciphertext) == 1279:
                         hex_fixed = "00" + ciphertext.hex()
                         ciphertext = base64.b16decode(hex_fixed.upper())
-                    decrypted_info = json.loads(cipher.decrypt(ciphertext))
+                    decrypted_info = json.loads(self.cipher.decrypt(ciphertext))
 
                     return ContractPersonalInfoType(
                         key_manager=decrypted_info.get("key_manager", default_value),

@@ -284,7 +284,7 @@ class Processor:
                             notice_code=0,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_token_cancel_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -326,7 +326,7 @@ class Processor:
                         notice_code=1,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_token_approve_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -369,7 +369,7 @@ class Processor:
                         notice_code=2,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_apply_for_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -417,7 +417,7 @@ class Processor:
                             notice_code=0,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_cancel_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -459,7 +459,7 @@ class Processor:
                         notice_code=1,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_escrow_finished(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -500,7 +500,7 @@ class Processor:
                         notice_code=3,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_approve_transfer(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -541,7 +541,7 @@ class Processor:
                         notice_code=2,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __register_notification(
         self,

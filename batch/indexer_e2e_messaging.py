@@ -213,7 +213,7 @@ class Processor:
                     block_timestamp=block_timestamp,
                 )
         except Exception as e:
-            LOG.error(e)
+            raise
 
     @staticmethod
     async def __get_e2e_messaging_account(db_session: AsyncSession, to_address: str):

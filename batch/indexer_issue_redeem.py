@@ -216,7 +216,7 @@ class Processor:
                             block_timestamp=block_timestamp,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_redeem(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -257,7 +257,7 @@ class Processor:
                             block_timestamp=block_timestamp,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     @staticmethod
     async def __insert_index(
