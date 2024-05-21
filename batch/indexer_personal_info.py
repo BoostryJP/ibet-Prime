@@ -223,7 +223,7 @@ class Processor:
                         )
                         await db_session.commit()
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_personal_info_modify(
         self, db_session: AsyncSession, block_from, block_to
@@ -257,7 +257,7 @@ class Processor:
                         )
                         await db_session.commit()
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     @staticmethod
     async def __sink_on_personal_info(
