@@ -425,7 +425,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
             "detail": [
                 {
                     "ctx": {"expected": "0 or 1"},
-                    "input": -1,
+                    "input": "-1",
                     "loc": ["query", "sort_order"],
                     "msg": "Input should be 0 or 1",
                     "type": "enum",
@@ -449,7 +449,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
             "detail": [
                 {
                     "ctx": {"expected": "0 or 1"},
-                    "input": 2,
+                    "input": "2",
                     "loc": ["query", "sort_order"],
                     "msg": "Input should be 0 or 1",
                     "type": "enum",

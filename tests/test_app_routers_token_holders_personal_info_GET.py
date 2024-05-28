@@ -1108,7 +1108,7 @@ class TestListTokenHoldersPersonalInfo:
                     "type": "enum",
                     "loc": ["query", "sort_order"],
                     "msg": "Input should be 0 or 1",
-                    "input": 2,
+                    "input": "2",
                     "ctx": {"expected": "0 or 1"},
                 },
             ],

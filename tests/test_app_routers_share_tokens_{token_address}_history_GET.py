@@ -1142,39 +1142,37 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"expected": "'Issue' or 'Update'"},
-                    "input": "test",
+                    "type": "enum",
                     "loc": ["query", "operation_category"],
                     "msg": "Input should be 'Issue' or 'Update'",
-                    "type": "enum",
+                    "input": "test",
+                    "ctx": {"expected": "'Issue' or 'Update'"},
                 },
                 {
-                    "ctx": {"expected": "'created' or 'operation_category'"},
-                    "input": "test",
+                    "type": "enum",
                     "loc": ["query", "sort_item"],
                     "msg": "Input should be 'created' or 'operation_category'",
+                    "input": "test",
+                    "ctx": {"expected": "'created' or 'operation_category'"},
+                },
+                {
                     "type": "enum",
-                },
-                {
-                    "input": "test",
                     "loc": ["query", "sort_order"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
-                    "type": "int_parsing",
+                    "msg": "Input should be 0 or 1",
+                    "input": "test",
+                    "ctx": {"expected": "0 or 1"},
                 },
                 {
-                    "input": "test",
+                    "type": "int_parsing",
                     "loc": ["query", "offset"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
-                    "type": "int_parsing",
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
                 },
                 {
-                    "input": "test",
-                    "loc": ["query", "limit"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
                     "type": "int_parsing",
+                    "loc": ["query", "limit"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
                 },
             ],
         }
