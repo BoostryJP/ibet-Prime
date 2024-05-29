@@ -4132,25 +4132,23 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "input": "a",
+                    "type": "enum",
                     "loc": ["query", "status", 0],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
-                    "type": "int_parsing",
+                    "msg": "Input should be 0, 1, 2 or 3",
+                    "input": "a",
+                    "ctx": {"expected": "0, 1, 2 or 3"},
                 },
                 {
-                    "input": "c",
+                    "type": "int_parsing",
                     "loc": ["query", "offset"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
-                    "type": "int_parsing",
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "c",
                 },
                 {
-                    "input": "d",
-                    "loc": ["query", "limit"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
                     "type": "int_parsing",
+                    "loc": ["query", "limit"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "d",
                 },
             ],
         }
@@ -4175,7 +4173,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             "detail": [
                 {
                     "ctx": {"expected": "0, 1, 2 or 3"},
-                    "input": -1,
+                    "input": "-1",
                     "loc": ["query", "status", 0],
                     "msg": "Input should be 0, 1, 2 or 3",
                     "type": "enum",
@@ -4203,7 +4201,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             "detail": [
                 {
                     "ctx": {"expected": "0, 1, 2 or 3"},
-                    "input": 4,
+                    "input": "4",
                     "loc": ["query", "status", 0],
                     "msg": "Input should be 0, 1, 2 or 3",
                     "type": "enum",

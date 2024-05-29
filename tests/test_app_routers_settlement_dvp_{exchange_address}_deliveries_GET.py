@@ -2520,32 +2520,29 @@ class TestListAllDVPDeliveries:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "input": "invalid_value",
-                    "loc": ["query", "valid"],
-                    "msg": "Input should be a valid boolean, unable to interpret "
-                    "input",
                     "type": "bool_parsing",
-                },
-                {
+                    "loc": ["query", "valid"],
+                    "msg": "Input should be a valid boolean, unable to interpret input",
                     "input": "invalid_value",
+                },
+                {
+                    "type": "enum",
                     "loc": ["query", "status"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
-                    "type": "int_parsing",
+                    "msg": "Input should be 0, 1, 2, 3 or 4",
+                    "input": "invalid_value",
+                    "ctx": {"expected": "0, 1, 2, 3 or 4"},
                 },
                 {
-                    "input": "test",
+                    "type": "int_parsing",
                     "loc": ["query", "offset"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
-                    "type": "int_parsing",
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
                 },
                 {
-                    "input": "test",
-                    "loc": ["query", "limit"],
-                    "msg": "Input should be a valid integer, unable to parse string "
-                    "as an integer",
                     "type": "int_parsing",
+                    "loc": ["query", "limit"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
                 },
             ],
         }
