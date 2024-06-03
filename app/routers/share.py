@@ -797,11 +797,6 @@ async def list_all_additional_issue_upload(
     get_query: ListAllAdditionalIssueUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
-    processed = get_query.processed
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -816,22 +811,22 @@ async def list_all_additional_issue_upload(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if processed is not None:
-        stmt = stmt.where(BatchIssueRedeemUpload.processed == processed)
+    if get_query.processed is not None:
+        stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(BatchIssueRedeemUpload.created)
     else:  # DESC
         stmt = stmt.order_by(desc(BatchIssueRedeemUpload.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
 
@@ -852,8 +847,8 @@ async def list_all_additional_issue_upload(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
             "total": total,
         },
         "uploads": uploads,
@@ -1043,11 +1038,6 @@ async def list_redeem_history(
     get_query: ListRedeemHistoryQuery = Depends(),
 ):
     """List redemption history"""
-    sort_item = get_query.sort_item
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1078,20 +1068,20 @@ async def list_redeem_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
-    if sort_order == 0:  # ASC
+    sort_attr = getattr(IDXIssueRedeem, get_query.sort_item.value, None)
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+    if get_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
@@ -1113,8 +1103,8 @@ async def list_redeem_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "history": history,
@@ -1213,10 +1203,6 @@ async def list_all_redeem_upload(
     get_query: ListAllRedeemUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
-    processed = get_query.processed
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
 
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
@@ -1233,22 +1219,22 @@ async def list_all_redeem_upload(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if processed is not None:
-        stmt = stmt.where(BatchIssueRedeemUpload.processed == processed)
+    if get_query.processed is not None:
+        stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(BatchIssueRedeemUpload.created)
     else:  # DESC
         stmt = stmt.order_by(desc(BatchIssueRedeemUpload.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
 
@@ -1269,8 +1255,8 @@ async def list_all_redeem_upload(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
             "total": total,
         },
         "uploads": uploads,
@@ -1744,21 +1730,6 @@ async def list_all_holders(
     issuer_address: str = Header(...),
 ):
     """List all share token holders"""
-    include_former_holder = get_query.include_former_holder
-    balance = get_query.balance
-    balance_operator = get_query.balance_operator
-    pending_transfer = get_query.pending_transfer
-    pending_transfer_operator = get_query.pending_transfer_operator
-    locked = get_query.locked
-    locked_operator = get_query.locked_operator
-    account_address = get_query.account_address
-    holder_name = get_query.holder_name
-    key_manager = get_query.key_manager
-    sort_item = get_query.sort_item
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -1825,7 +1796,7 @@ async def list_all_holders(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if not include_former_holder:
+    if not get_query.include_former_holder:
         stmt = stmt.where(
             or_(
                 IDXPosition.balance != 0,
@@ -1836,75 +1807,109 @@ async def list_all_holders(
             )
         )
 
-    if balance is not None and balance_operator is not None:
-        match balance_operator:
+    if get_query.balance is not None and get_query.balance_operator is not None:
+        match get_query.balance_operator:
             case ValueOperator.EQUAL:
-                stmt = stmt.where(IDXPosition.balance == balance)
+                stmt = stmt.where(IDXPosition.balance == get_query.balance)
             case ValueOperator.GTE:
-                stmt = stmt.where(IDXPosition.balance >= balance)
+                stmt = stmt.where(IDXPosition.balance >= get_query.balance)
             case ValueOperator.LTE:
-                stmt = stmt.where(IDXPosition.balance <= balance)
+                stmt = stmt.where(IDXPosition.balance <= get_query.balance)
 
-    if pending_transfer is not None and pending_transfer_operator is not None:
-        match pending_transfer_operator:
+    if (
+        get_query.pending_transfer is not None
+        and get_query.pending_transfer_operator is not None
+    ):
+        match get_query.pending_transfer_operator:
             case ValueOperator.EQUAL:
-                stmt = stmt.where(IDXPosition.pending_transfer == pending_transfer)
+                stmt = stmt.where(
+                    IDXPosition.pending_transfer == get_query.pending_transfer
+                )
             case ValueOperator.GTE:
-                stmt = stmt.where(IDXPosition.pending_transfer >= pending_transfer)
+                stmt = stmt.where(
+                    IDXPosition.pending_transfer >= get_query.pending_transfer
+                )
             case ValueOperator.LTE:
-                stmt = stmt.where(IDXPosition.pending_transfer <= pending_transfer)
+                stmt = stmt.where(
+                    IDXPosition.pending_transfer <= get_query.pending_transfer
+                )
 
-    if locked is not None and locked_operator is not None:
-        match locked_operator:
+    if get_query.locked is not None and get_query.locked_operator is not None:
+        match get_query.locked_operator:
             case ValueOperator.EQUAL:
-                stmt = stmt.having(locked_value == locked)
+                stmt = stmt.having(locked_value == get_query.locked)
             case ValueOperator.GTE:
-                stmt = stmt.having(locked_value >= locked)
+                stmt = stmt.having(locked_value >= get_query.locked)
             case ValueOperator.LTE:
-                stmt = stmt.having(locked_value <= locked)
+                stmt = stmt.having(locked_value <= get_query.locked)
 
-    if account_address is not None:
-        stmt = stmt.where(IDXPosition.account_address.like("%" + account_address + "%"))
+    if (
+        get_query.balance_and_pending_transfer is not None
+        and get_query.balance_and_pending_transfer_operator is not None
+    ):
+        match get_query.balance_and_pending_transfer_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(
+                    IDXPosition.balance + IDXPosition.pending_transfer
+                    == get_query.balance_and_pending_transfer
+                )
+            case ValueOperator.GTE:
+                stmt = stmt.where(
+                    IDXPosition.balance + IDXPosition.pending_transfer
+                    >= get_query.balance_and_pending_transfer
+                )
+            case ValueOperator.LTE:
+                stmt = stmt.where(
+                    IDXPosition.balance + IDXPosition.pending_transfer
+                    <= get_query.balance_and_pending_transfer
+                )
 
-    if holder_name is not None:
+    if get_query.account_address is not None:
+        stmt = stmt.where(
+            IDXPosition.account_address.like("%" + get_query.account_address + "%")
+        )
+
+    if get_query.holder_name is not None:
         stmt = stmt.where(
             IDXPersonalInfo._personal_info["name"]
             .as_string()
-            .like("%" + holder_name + "%")
+            .like("%" + get_query.holder_name + "%")
         )
 
-    if key_manager is not None:
+    if get_query.key_manager is not None:
         stmt = stmt.where(
             IDXPersonalInfo._personal_info["key_manager"]
             .as_string()
-            .like("%" + key_manager + "%")
+            .like("%" + get_query.key_manager + "%")
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_item == ListAllHoldersSortItem.holder_name:
+    if get_query.sort_item == ListAllHoldersSortItem.holder_name:
         sort_attr = IDXPersonalInfo._personal_info["name"].as_string()
-    elif sort_item == ListAllHoldersSortItem.key_manager:
+    elif get_query.sort_item == ListAllHoldersSortItem.key_manager:
         sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
-    elif sort_item == ListAllHoldersSortItem.locked:
+    elif get_query.sort_item == ListAllHoldersSortItem.locked:
         sort_attr = locked_value
+    elif get_query.sort_item == ListAllHoldersSortItem.balance_and_pending_transfer:
+        sort_attr = IDXPosition.balance + IDXPosition.pending_transfer
     else:
-        sort_attr = getattr(IDXPosition, sort_item)
+        sort_attr = getattr(IDXPosition, get_query.sort_item)
 
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(asc(sort_attr))
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != ListAllHoldersSortItem.created:
+    if get_query.sort_item != ListAllHoldersSortItem.created:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(asc(IDXPosition.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _holders: Sequence[
         tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
@@ -1957,8 +1962,8 @@ async def list_all_holders(
             "result_set": {
                 "count": count,
                 "total": total,
-                "limit": limit,
-                "offset": offset,
+                "limit": get_query.limit,
+                "offset": get_query.offset,
             },
             "holders": holders,
         }
@@ -2282,11 +2287,6 @@ async def list_all_personal_info_batch_registration_uploads(
     get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
 ):
     """List all personal information batch registration uploads"""
-    status = get_query.status
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Verify that the token is issued by the issuer_address
     _token: Token | None = (
         await db.scalars(
@@ -2314,22 +2314,22 @@ async def list_all_personal_info_batch_registration_uploads(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if status is not None:
-        stmt = stmt.where(BatchRegisterPersonalInfoUpload.status == status)
+    if get_query.status is not None:
+        stmt = stmt.where(BatchRegisterPersonalInfoUpload.status == get_query.status)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(BatchRegisterPersonalInfoUpload.created)
     else:  # DESC
         stmt = stmt.order_by(desc(BatchRegisterPersonalInfoUpload.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
         await db.scalars(stmt)
@@ -2350,8 +2350,8 @@ async def list_all_personal_info_batch_registration_uploads(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "uploads": uploads,
@@ -3082,14 +3082,6 @@ async def list_token_transfer_approval_history(
     get_query: ListTransferApprovalHistoryQuery = Depends(),
 ):
     """List token transfer approval history"""
-    from_address = get_query.from_address
-    to_address = get_query.to_address
-    status = get_query.status
-    sort_item = get_query.sort_item
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -3206,33 +3198,33 @@ async def list_token_transfer_approval_history(
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
-    if from_address is not None:
-        stmt = stmt.where(subquery.from_address == from_address)
-    if to_address is not None:
-        stmt = stmt.where(subquery.to_address == to_address)
-    if status is not None:
-        stmt = stmt.where(literal_column("status").in_(status))
+    if get_query.from_address is not None:
+        stmt = stmt.where(subquery.from_address == get_query.from_address)
+    if get_query.to_address is not None:
+        stmt = stmt.where(subquery.to_address == get_query.to_address)
+    if get_query.status is not None:
+        stmt = stmt.where(literal_column("status").in_(get_query.status))
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_item != IDXTransferApprovalsSortItem.STATUS:
-        sort_attr = getattr(subquery, sort_item, None)
+    if get_query.sort_item != IDXTransferApprovalsSortItem.STATUS:
+        sort_attr = getattr(subquery, get_query.sort_item, None)
     else:
         sort_attr = literal_column("status")
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != IDXTransferApprovalsSortItem.ID:
+    if get_query.sort_item != IDXTransferApprovalsSortItem.ID:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(subquery.id))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _transfer_approvals: Sequence[
         tuple[
@@ -3360,8 +3352,8 @@ async def list_token_transfer_approval_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "transfer_approval_history": transfer_approval_history,

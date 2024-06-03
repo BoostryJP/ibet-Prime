@@ -363,6 +363,7 @@ class ListAllHoldersSortItem(StrEnum):
     balance = "balance"
     pending_transfer = "pending_transfer"
     locked = "locked"
+    balance_and_pending_transfer = "balance_and_pending_transfer"
     key_manager = "key_manager"
     holder_name = "holder_name"
 
@@ -393,6 +394,16 @@ class ListAllHoldersQuery:
         Optional[ValueOperator],
         Query(
             description="search condition of locked amount(0:equal, 1:greater than or equal, 2:less than or equal）",
+        ),
+    ] = ValueOperator.EQUAL
+    balance_and_pending_transfer: Annotated[
+        Optional[int],
+        Query(description="number of balance plus pending transfer amount"),
+    ] = None
+    balance_and_pending_transfer_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="search condition of balance plus pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
         ),
     ] = ValueOperator.EQUAL
     account_address: Annotated[

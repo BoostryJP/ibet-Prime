@@ -348,8 +348,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/AuthTokenAlreadyExistsErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/AuthTokenAlreadyExistsErrorResponse'
                 title: Response 400 Create Auth Token Accounts  Issuer Address  Auth
                   Token Post
     delete:
@@ -607,10 +607,10 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Update Token Bond Tokens  Token Address  Post
   /bond/tokens/{token_address}/history:
     get:
@@ -882,9 +882,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Additional Issue Bond Tokens  Token Address  Additional
                   Issue Post
   /bond/tokens/{token_address}/additional_issue/batch:
@@ -1242,9 +1242,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Redeem Token Bond Tokens  Token Address  Redeem
                   Post
   /bond/tokens/{token_address}/redeem/batch:
@@ -1556,8 +1556,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                 title: Response 400 Schedule New Update Event Bond Tokens  Token Address  Scheduled
                   Events Post
   /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
@@ -1763,6 +1763,29 @@ paths:
             title: Locked Operator
           description: search condition of locked amount(0:equal, 1:greater than or
             equal, 2:less than or equal）
+        - name: balance_and_pending_transfer
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: number of balance plus pending transfer amount
+            title: Balance And Pending Transfer
+          description: number of balance plus pending transfer amount
+        - name: balance_and_pending_transfer_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: search condition of balance plus pending transfer(0:equal,
+              1:greater than or equal, 2:less than or equal）
+            default: 0
+            title: Balance And Pending Transfer Operator
+          description: search condition of balance plus pending transfer(0:equal,
+            1:greater than or equal, 2:less than or equal）
         - name: account_address
           in: query
           required: false
@@ -2039,9 +2062,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Register Holder Personal Info Bond Tokens  Token
                   Address  Personal Info Post
   /bond/tokens/{token_address}/personal_info/batch:
@@ -2451,9 +2474,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Transfer Ownership Bond Transfers Post
   /bond/transfers/{token_address}:
     get:
@@ -2875,10 +2898,10 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                 title: Response 400 Update Transfer Approval Bond Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -3125,9 +3148,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Create Account E2E Messaging Accounts Post
   /e2e_messaging/accounts/{account_address}:
     get:
@@ -3706,8 +3729,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Integer64bitLimitExceededErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/Integer64bitLimitExceededErrorResponse'
                 title: Response 400 Retrieve Ledger History Ledger  Token Address  History  Ledger
                   Id  Get
   /ledger/{token_address}/template:
@@ -4533,9 +4556,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Force Unlock Positions  Account Address  Force
                   Unlock Post
   /positions/{account_address}/{token_address}:
@@ -4796,10 +4819,10 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Update Token Share Tokens  Token Address  Post
   /share/tokens/{token_address}/history:
     get:
@@ -5071,9 +5094,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Additional Issue Share Tokens  Token Address  Additional
                   Issue Post
   /share/tokens/{token_address}/additional_issue/batch:
@@ -5431,9 +5454,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Redeem Token Share Tokens  Token Address  Redeem
                   Post
   /share/tokens/{token_address}/redeem/batch:
@@ -5745,8 +5768,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                 title: Response 400 Schedule New Update Event Share Tokens  Token
                   Address  Scheduled Events Post
   /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
@@ -5952,6 +5975,29 @@ paths:
             title: Locked Operator
           description: search condition of locked amount(0:equal, 1:greater than or
             equal, 2:less than or equal）
+        - name: balance_and_pending_transfer
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: number of balance plus pending transfer amount
+            title: Balance And Pending Transfer
+          description: number of balance plus pending transfer amount
+        - name: balance_and_pending_transfer_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: search condition of balance plus pending transfer(0:equal,
+              1:greater than or equal, 2:less than or equal）
+            default: 0
+            title: Balance And Pending Transfer Operator
+          description: search condition of balance plus pending transfer(0:equal,
+            1:greater than or equal, 2:less than or equal）
         - name: account_address
           in: query
           required: false
@@ -6228,9 +6274,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Register Holder Personal Info Share Tokens  Token
                   Address  Personal Info Post
   /share/tokens/{token_address}/personal_info/batch:
@@ -6640,9 +6686,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Transfer Ownership Share Transfers Post
   /share/transfers/{token_address}:
     get:
@@ -7065,10 +7111,10 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                 title: Response 400 Update Transfer Approval Share Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -8049,8 +8095,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Recordnewfreezelog
   /freeze_log/logs/{log_index}:
     post:
@@ -8095,8 +8141,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatefreezelog
     get:
       tags:
@@ -8460,8 +8506,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Createdvpdelivery
   /settlement/dvp/{exchange_address}/delivery/{delivery_id}:
     get:
@@ -8587,14 +8633,17 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatedvpdelivery
 components:
   schemas:
     AbortDVPDeliveryRequest:
       properties:
         operation_type:
+          type: string
+          enum:
+            - Abort
           const: Abort
           title: Operation Type
         account_address:
@@ -8726,6 +8775,9 @@ components:
         2:CHANGING
         3:SET
     AuthTokenAlreadyExistsErrorCode:
+      type: integer
+      enum:
+        - 3
       const: 3
       title: AuthTokenAlreadyExistsErrorCode
     AuthTokenAlreadyExistsErrorMetainfo:
@@ -8758,6 +8810,9 @@ components:
         - detail
       title: AuthTokenAlreadyExistsErrorResponse
     AuthorizationErrorCode:
+      type: integer
+      enum:
+        - 1
       const: 1
       title: AuthorizationErrorCode
     AuthorizationErrorMetainfo:
@@ -8839,6 +8894,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - BatchIssueProcessed
           const: BatchIssueProcessed
           title: Notice Type
         metainfo:
@@ -8945,6 +9003,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - BatchRegisterPersonalInfoError
           const: BatchRegisterPersonalInfoError
           title: Notice Type
         metainfo:
@@ -9243,6 +9304,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - BulkTransferError
           const: BulkTransferError
           title: Notice Type
         metainfo:
@@ -9367,6 +9431,9 @@ components:
     CancelDVPDeliveryRequest:
       properties:
         operation_type:
+          type: string
+          enum:
+            - Cancel
           const: Cancel
           title: Operation Type
       type: object
@@ -9668,6 +9735,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - CreateLedgerInfo
           const: CreateLedgerInfo
           title: Notice Type
         metainfo:
@@ -10245,6 +10315,9 @@ components:
     FinishDVPDeliveryRequest:
       properties:
         operation_type:
+          type: string
+          enum:
+            - Finish
           const: Finish
           title: Operation Type
         account_address:
@@ -10524,21 +10597,30 @@ components:
           anyOf:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Dividend Record Date
         dividend_payment_date:
           anyOf:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Dividend Payment Date
         cancellation_date:
           anyOf:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Cancellation Date
         transferable:
@@ -10769,21 +10851,30 @@ components:
           anyOf:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Cancellation Date
         dividend_record_date:
           anyOf:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Dividend Record Date
         dividend_payment_date:
           anyOf:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Dividend Payment Date
         dividends:
@@ -11287,7 +11378,10 @@ components:
             - type: string
               maxLength: 3
               minLength: 3
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Interest Payment Currency
         redemption_value:
@@ -11302,7 +11396,10 @@ components:
             - type: string
               maxLength: 3
               minLength: 3
-            - const: ''
+            - type: string
+              enum:
+                - ''
+              const: ''
             - type: 'null'
           title: Redemption Value Currency
         base_fx_rate:
@@ -11373,6 +11470,9 @@ components:
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)
     Integer64bitLimitExceededErrorCode:
+      type: integer
+      enum:
+        - 5
       const: 5
       title: Integer64bitLimitExceededErrorCode
     Integer64bitLimitExceededErrorMetainfo:
@@ -11405,6 +11505,9 @@ components:
         - detail
       title: Integer64bitLimitExceededErrorResponse
     InvalidParameterErrorCode:
+      type: integer
+      enum:
+        - 1
       const: 1
       title: InvalidParameterErrorCode
     InvalidParameterErrorMetainfo:
@@ -11476,6 +11579,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - IssueError
           const: IssueError
           title: Notice Type
         metainfo:
@@ -11742,6 +11848,7 @@ components:
         - balance
         - pending_transfer
         - locked
+        - balance_and_pending_transfer
         - key_manager
         - holder_name
       title: ListAllHoldersSortItem
@@ -12126,6 +12233,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - LockInfo
           const: LockInfo
           title: Notice Type
         metainfo:
@@ -12190,6 +12300,9 @@ components:
       title: NotificationsListResponse
       description: Notifications List schema (Response)
     OperationNotAllowedStateErrorCode:
+      type: integer
+      enum:
+        - 101
       const: 101
       title: OperationNotAllowedStateErrorCode
     OperationNotAllowedStateErrorMetainfo:
@@ -12224,6 +12337,9 @@ components:
       description: Error returned when server-side data is not ready to process the
         request
     OperationNotSupportedVersionErrorCode:
+      type: integer
+      enum:
+        - 6
       const: 6
       title: OperationNotSupportedVersionErrorCode
     OperationNotSupportedVersionErrorMetainfo:
@@ -12510,6 +12626,9 @@ components:
       title: RegisterPersonalInfoRequest
       description: Register Personal Information schema (REQUEST)
     ResponseLimitExceededErrorCode:
+      type: integer
+      enum:
+        - 4
       const: 4
       title: ResponseLimitExceededErrorCode
     ResponseLimitExceededErrorMetainfo:
@@ -12906,6 +13025,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - ScheduleEventError
           const: ScheduleEventError
           title: Notice Type
         metainfo:
@@ -12969,9 +13091,14 @@ components:
       description: scheduled event (Response)
     ScheduledEventType:
       type: string
+      enum:
+        - Update
       const: Update
       title: ScheduledEventType
     SendTransactionErrorCode:
+      type: integer
+      enum:
+        - 2
       const: 2
       title: SendTransactionErrorCode
     SendTransactionErrorMetainfo:
@@ -13004,6 +13131,9 @@ components:
         - detail
       title: SendTransactionErrorResponse
     ServiceUnavailableErrorCode:
+      type: integer
+      enum:
+        - 1
       const: 1
       title: ServiceUnavailableErrorCode
     ServiceUnavailableErrorMetainfo:
@@ -13176,6 +13306,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - TransferApprovalInfo
           const: TransferApprovalInfo
           title: Notice Type
         metainfo:
@@ -13677,6 +13810,9 @@ components:
           type: string
           title: Created
         notice_type:
+          type: string
+          enum:
+            - UnlockInfo
           const: UnlockInfo
           title: Notice Type
         metainfo:
