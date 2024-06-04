@@ -348,8 +348,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/AuthTokenAlreadyExistsErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Create Auth Token Accounts  Issuer Address  Auth
                   Token Post
     delete:
@@ -467,8 +467,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                 title: Response 400 Issue Token Bond Tokens Post
     get:
       tags:
@@ -607,10 +607,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                 title: Response 400 Update Token Bond Tokens  Token Address  Post
   /bond/tokens/{token_address}/history:
     get:
@@ -882,9 +882,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Additional Issue Bond Tokens  Token Address  Additional
                   Issue Post
   /bond/tokens/{token_address}/additional_issue/batch:
@@ -1242,9 +1242,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeem Token Bond Tokens  Token Address  Redeem
                   Post
   /bond/tokens/{token_address}/redeem/batch:
@@ -1556,8 +1556,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Schedule New Update Event Bond Tokens  Token Address  Scheduled
                   Events Post
   /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
@@ -2062,9 +2062,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Register Holder Personal Info Bond Tokens  Token
                   Address  Personal Info Post
   /bond/tokens/{token_address}/personal_info/batch:
@@ -2474,9 +2474,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transfer Ownership Bond Transfers Post
   /bond/transfers/{token_address}:
     get:
@@ -2899,9 +2899,9 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Update Transfer Approval Bond Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -3148,9 +3148,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Create Account E2E Messaging Accounts Post
   /e2e_messaging/accounts/{account_address}:
     get:
@@ -3729,8 +3729,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/Integer64bitLimitExceededErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Retrieve Ledger History Ledger  Token Address  History  Ledger
                   Id  Get
   /ledger/{token_address}/template:
@@ -4556,9 +4556,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Force Unlock Positions  Account Address  Force
                   Unlock Post
   /positions/{account_address}/{token_address}:
@@ -4680,8 +4680,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                 title: Response 400 Issue Token Share Tokens Post
     get:
       tags:
@@ -4819,10 +4819,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                 title: Response 400 Update Token Share Tokens  Token Address  Post
   /share/tokens/{token_address}/history:
     get:
@@ -5094,9 +5094,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Additional Issue Share Tokens  Token Address  Additional
                   Issue Post
   /share/tokens/{token_address}/additional_issue/batch:
@@ -5454,9 +5454,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeem Token Share Tokens  Token Address  Redeem
                   Post
   /share/tokens/{token_address}/redeem/batch:
@@ -5768,8 +5768,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Schedule New Update Event Share Tokens  Token
                   Address  Scheduled Events Post
   /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
@@ -6274,9 +6274,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Register Holder Personal Info Share Tokens  Token
                   Address  Personal Info Post
   /share/tokens/{token_address}/personal_info/batch:
@@ -6686,9 +6686,9 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transfer Ownership Share Transfers Post
   /share/transfers/{token_address}:
     get:
@@ -7112,9 +7112,9 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Update Transfer Approval Share Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -7461,6 +7461,26 @@ paths:
             description: event type
             title: Event Type
           description: event type
+        - name: block_timestamp_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: block timestamp datetime (From)
+            title: Block Timestamp From
+          description: block timestamp datetime (From)
+        - name: block_timestamp_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: block timestamp datetime (To)
+            title: Block Timestamp To
+          description: block timestamp datetime (To)
         - name: created_from
           in: query
           required: false
@@ -8095,8 +8115,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Recordnewfreezelog
   /freeze_log/logs/{log_index}:
     post:
@@ -8141,8 +8161,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Updatefreezelog
     get:
       tags:
@@ -8506,8 +8526,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Createdvpdelivery
   /settlement/dvp/{exchange_address}/delivery/{delivery_id}:
     get:
@@ -8633,8 +8653,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Updatedvpdelivery
 components:
   schemas:
@@ -12443,6 +12463,10 @@ components:
           $ref: '#/components/schemas/PersonalInfoEventType'
         personal_info:
           $ref: '#/components/schemas/PersonalInfo'
+        block_timestamp:
+          type: string
+          format: date-time
+          title: Block Timestamp
         created:
           type: string
           format: date-time
@@ -12453,6 +12477,7 @@ components:
         - account_address
         - event_type
         - personal_info
+        - block_timestamp
         - created
       title: PersonalInfoHistory
       description: Personal Information History schema
