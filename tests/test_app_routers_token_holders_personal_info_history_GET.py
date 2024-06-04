@@ -71,6 +71,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-12 23:59:59"
         history.created = "2024-05-13 00:00:00"
         db.add(history)
 
@@ -88,6 +89,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-13 23:59:59"
         history.created = "2024-05-14 00:00:00"
         db.add(history)
 
@@ -105,6 +107,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-13 23:59:59"
         history.created = "2024-05-14 00:00:00"
         db.add(history)
 
@@ -136,6 +139,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-13T08:59:59+09:00",
                     "created": "2024-05-13T09:00:00+09:00",
                 },
                 {
@@ -152,6 +156,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T08:59:59+09:00",
                     "created": "2024-05-14T09:00:00+09:00",
                 },
             ],
@@ -176,6 +181,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-12 23:59:59"
         history.created = "2024-05-13 00:00:00"
         db.add(history)
 
@@ -193,6 +199,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-13 23:59:59"
         history.created = "2024-05-14 00:00:00"
         db.add(history)
 
@@ -210,6 +217,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-13 23:59:59"
         history.created = "2024-05-14 00:00:00"
         db.add(history)
 
@@ -242,6 +250,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-13T08:59:59+09:00",
                     "created": "2024-05-13T09:00:00+09:00",
                 },
                 {
@@ -258,6 +267,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T08:59:59+09:00",
                     "created": "2024-05-14T09:00:00+09:00",
                 },
             ],
@@ -282,6 +292,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-12 23:59:59"
         history.created = "2024-05-13 00:00:00"
         db.add(history)
 
@@ -299,6 +310,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:00"
         history.created = "2024-05-14 00:00:01"
         db.add(history)
 
@@ -316,6 +328,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:01"
         history.created = "2024-05-14 00:00:02"
         db.add(history)
 
@@ -350,6 +363,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T09:00:00+09:00",
                     "created": "2024-05-14T09:00:01+09:00",
                 },
             ],
@@ -374,6 +388,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-12 23:59:59"
         history.created = "2024-05-13 00:00:00"
         db.add(history)
 
@@ -391,6 +406,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:00"
         history.created = "2024-05-14 00:00:01"
         db.add(history)
 
@@ -408,6 +424,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:01"
         history.created = "2024-05-14 00:00:02"
         db.add(history)
 
@@ -443,15 +460,16 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T09:00:00+09:00",
                     "created": "2024-05-14T09:00:01+09:00",
                 },
             ],
         }
 
-    # <Normal_4>
+    # <Normal_3_4>
     # Multiple records
-    # Sort: created, DESC
-    def test_normal_4(self, client, db):
+    # Search filter: block_timestamp_from, block_timestamp_to
+    def test_normal_3_4(self, client, db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -467,7 +485,8 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.created = "2024-05-14 00:00:00"
+        history.block_timestamp = "2024-05-12 23:59:59"
+        history.created = "2024-05-13 00:00:00"
         db.add(history)
 
         history = IDXPersonalInfoHistory()
@@ -484,6 +503,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:00"
         history.created = "2024-05-14 00:00:01"
         db.add(history)
 
@@ -501,6 +521,104 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:01"
+        history.created = "2024-05-14 00:00:02"
+        db.add(history)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.url,
+            headers={
+                "issuer-address": self.test_issuer_address_1,
+            },
+            params={
+                "block_timestamp_from": "2024-05-14 09:00:00",
+                "block_timestamp_to": "2024-05-14 09:00:00",
+            },
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 3},
+            "personal_info": [
+                {
+                    "id": 2,
+                    "account_address": self.test_account_address_1,
+                    "event_type": "modify",
+                    "personal_info": {
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "address": "address_test2",
+                        "email": "email_test2",
+                        "birth": "birth_test2",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "block_timestamp": "2024-05-14T09:00:00+09:00",
+                    "created": "2024-05-14T09:00:01+09:00",
+                },
+            ],
+        }
+
+    # <Normal_4>
+    # Multiple records
+    # Sort: block_timestamp, DESC
+    def test_normal_4(self, client, db):
+        # Prepare data
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_1
+        history.event_type = PersonalInfoEventType.REGISTER
+        history.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        history.block_timestamp = "2024-05-13 23:59:59"
+        history.created = "2024-05-14 00:00:00"
+        db.add(history)
+
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_1
+        history.event_type = PersonalInfoEventType.MODIFY
+        history.personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        history.block_timestamp = "2024-05-14 00:00:00"
+        history.created = "2024-05-14 00:00:01"
+        db.add(history)
+
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_1
+        history.event_type = PersonalInfoEventType.REGISTER
+        history.personal_info = {
+            "key_manager": "key_manager_test3",
+            "name": "name_test3",
+            "postal_code": "postal_code_test3",
+            "address": "address_test3",
+            "email": "email_test3",
+            "birth": "birth_test3",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        history.block_timestamp = "2024-05-14 00:00:01"
         history.created = "2024-05-14 00:00:02"
         db.add(history)
 
@@ -535,6 +653,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T09:00:01+09:00",
                     "created": "2024-05-14T09:00:02+09:00",
                 },
                 {
@@ -551,6 +670,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T09:00:00+09:00",
                     "created": "2024-05-14T09:00:01+09:00",
                 },
                 {
@@ -567,6 +687,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T08:59:59+09:00",
                     "created": "2024-05-14T09:00:00+09:00",
                 },
             ],
@@ -591,6 +712,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-12 23:59:59"
         history.created = "2024-05-14 00:00:00"
         db.add(history)
 
@@ -608,6 +730,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:00"
         history.created = "2024-05-14 00:00:01"
         db.add(history)
 
@@ -625,6 +748,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
+        history.block_timestamp = "2024-05-14 00:00:01"
         history.created = "2024-05-14 00:00:02"
         db.add(history)
 
@@ -657,6 +781,7 @@ class TestListTokenHoldersPersonalInfoHistory:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "block_timestamp": "2024-05-14T09:00:00+09:00",
                     "created": "2024-05-14T09:00:01+09:00",
                 },
             ],

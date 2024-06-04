@@ -85,6 +85,14 @@ class ListTokenHoldersPersonalInfoHistoryQuery:
     event_type: Annotated[
         Optional[PersonalInfoEventType], Query(description="event type")
     ] = None
+    block_timestamp_from: Annotated[
+        Optional[ValidatedDatetimeStr],
+        Query(description="block timestamp datetime (From)"),
+    ] = None
+    block_timestamp_to: Annotated[
+        Optional[ValidatedDatetimeStr],
+        Query(description="block timestamp datetime (To)"),
+    ] = None
     created_from: Annotated[
         Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
     ] = None

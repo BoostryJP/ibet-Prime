@@ -76,6 +76,7 @@ class PersonalInfoHistory(BaseModel):
     account_address: str = Field(...)
     event_type: PersonalInfoEventType = Field(...)
     personal_info: PersonalInfo = Field(...)
+    block_timestamp: datetime = Field(...)
     created: datetime
 
 
