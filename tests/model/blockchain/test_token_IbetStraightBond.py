@@ -1125,7 +1125,7 @@ class TestUpdate:
         # mock
         Web3_send_raw_transaction = patch(
             target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
-            side_effect=TransactionNotFound,
+            side_effect=TransactionNotFound(message=""),
         )
 
         # update
@@ -1497,7 +1497,7 @@ class TestTransfer:
         # mock
         Web3_send_raw_transaction = patch(
             target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
-            side_effect=TransactionNotFound,
+            side_effect=TransactionNotFound(message=""),
         )
 
         # transfer
@@ -1977,7 +1977,7 @@ class TestBulkTransfer:
         # mock
         Web3_send_raw_transaction = patch(
             target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
-            side_effect=TransactionNotFound,
+            side_effect=TransactionNotFound(message=""),
         )
 
         # bulk transfer
@@ -2266,7 +2266,7 @@ class TestAdditionalIssue:
         # mock
         Web3_send_raw_transaction = patch(
             target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
-            side_effect=TransactionNotFound,
+            side_effect=TransactionNotFound(message=""),
         )
 
         # additional issue
@@ -2611,7 +2611,7 @@ class TestRedeem:
         # mock
         Web3_send_raw_transaction = patch(
             target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
-            side_effect=TransactionNotFound,
+            side_effect=TransactionNotFound(message=""),
         )
 
         # redeem
@@ -3924,7 +3924,7 @@ class TestLock:
         # mock
         Web3_send_raw_transaction = patch(
             target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
-            side_effect=TransactionNotFound,
+            side_effect=TransactionNotFound(message=""),
         )
 
         # lock
@@ -4402,7 +4402,7 @@ class TestForceUnlock:
         # mock
         Web3_send_raw_transaction = patch(
             target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
-            side_effect=TransactionNotFound,
+            side_effect=TransactionNotFound(message=""),
         )
 
         # forceUnlock

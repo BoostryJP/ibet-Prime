@@ -27,7 +27,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 from web3.types import RPCEndpoint
 
 from app.exceptions import ServiceUnavailableError
@@ -39,7 +39,7 @@ from tests.account_config import config_eth_account
 from tests.utils.contract_utils import IbetStandardTokenUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
@@ -272,7 +272,7 @@ class TestProcessor:
 
         # Execute batch processing
         with mock.patch(
-            "web3.providers.async_rpc.AsyncHTTPProvider.make_request",
+            "web3.providers.rpc.async_rpc.AsyncHTTPProvider.make_request",
             MagicMock(side_effect=ServiceUnavailableError()),
         ), pytest.raises(ServiceUnavailableError):
             await processor.process()

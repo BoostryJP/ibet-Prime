@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.model.blockchain import IbetExchangeInterface, IbetStraightBondContract
 from app.utils.contract_utils import ContractUtils
@@ -28,7 +28,7 @@ from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 def deploy_escrow_contract():
