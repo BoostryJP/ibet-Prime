@@ -304,7 +304,7 @@ class Processor:
                         {
                             "event": _event["event"],
                             "args": dict(_event["args"]),
-                            "transaction_hash": _event["transactionHash"].hex(),
+                            "transaction_hash": _event["transactionHash"].to_0x_hex(),
                             "block_number": _event["blockNumber"],
                             "log_index": _event["logIndex"],
                         }
@@ -322,7 +322,7 @@ class Processor:
                     {
                         "event": _event["event"],
                         "args": dict(_event["args"]),
-                        "transaction_hash": _event["transactionHash"].hex(),
+                        "transaction_hash": _event["transactionHash"].to_0x_hex(),
                         "block_number": _event["blockNumber"],
                         "log_index": _event["logIndex"],
                     }
@@ -340,9 +340,9 @@ class Processor:
                 amount = int(args.get("value"))
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if (await web3.eth.get_code(from_account)).hex() != "0x" or (
+                if (await web3.eth.get_code(from_account)).to_0x_hex() != "0x" or (
                     await web3.eth.get_code(to_account)
-                ).hex() != "0x":
+                ).to_0x_hex() != "0x":
                     continue
 
                 if amount is not None and amount <= sys.maxsize:

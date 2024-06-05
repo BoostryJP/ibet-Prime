@@ -172,7 +172,7 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 block_timestamp = datetime.fromtimestamp(
                     (await web3.eth.get_block(event["blockNumber"]))["timestamp"], UTC
                 ).replace(tzinfo=None)

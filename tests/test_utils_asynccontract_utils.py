@@ -26,7 +26,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.exceptions import ContractLogicError, Web3Exception
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
@@ -35,7 +35,7 @@ from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -276,7 +276,7 @@ class TestSendTransaction:
             transaction=tx, private_key=self.private_key
         )
 
-        assert rtn_tx_hash == rtn_receipt["transactionHash"].hex()
+        assert rtn_tx_hash == rtn_receipt["transactionHash"].to_0x_hex()
         assert rtn_receipt["status"] == 1
         assert rtn_receipt["to"] is None
         assert rtn_receipt["from"] == self.test_account["address"]
@@ -454,7 +454,7 @@ class TestGetBlockByTransactionHash:
         )
 
         # Send Transaction
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction.hex())
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction.to_0x_hex())
         tx_receipt = web3.eth.wait_for_transaction_receipt(
             transaction_hash=tx_hash, timeout=10
         )

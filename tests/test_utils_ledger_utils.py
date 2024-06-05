@@ -24,7 +24,7 @@ import pytz
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.model.blockchain import (
     IbetShareContract,
@@ -60,7 +60,7 @@ from config import TZ, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 async def deploy_bond_token_contract(

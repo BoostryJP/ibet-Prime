@@ -68,23 +68,25 @@ class Processor:
                 # Synchronize block data
                 block_model = IDXBlockData()
                 block_model.number = block_data.get("number")
-                block_model.parent_hash = block_data.get("parentHash").hex()
-                block_model.sha3_uncles = block_data.get("sha3Uncles").hex()
+                block_model.parent_hash = block_data.get("parentHash").to_0x_hex()
+                block_model.sha3_uncles = block_data.get("sha3Uncles").to_0x_hex()
                 block_model.miner = block_data.get("miner")
-                block_model.state_root = block_data.get("stateRoot").hex()
-                block_model.transactions_root = block_data.get("transactionsRoot").hex()
-                block_model.receipts_root = block_data.get("receiptsRoot").hex()
-                block_model.logs_bloom = block_data.get("logsBloom").hex()
+                block_model.state_root = block_data.get("stateRoot").to_0x_hex()
+                block_model.transactions_root = block_data.get(
+                    "transactionsRoot"
+                ).to_0x_hex()
+                block_model.receipts_root = block_data.get("receiptsRoot").to_0x_hex()
+                block_model.logs_bloom = block_data.get("logsBloom").to_0x_hex()
                 block_model.difficulty = block_data.get("difficulty")
                 block_model.gas_limit = block_data.get("gasLimit")
                 block_model.gas_used = block_data.get("gasUsed")
                 block_model.timestamp = block_data.get("timestamp")
                 block_model.proof_of_authority_data = block_data.get(
                     "proofOfAuthorityData"
-                ).hex()
-                block_model.mix_hash = block_data.get("mixHash").hex()
-                block_model.nonce = block_data.get("nonce").hex()
-                block_model.hash = block_data.get("hash").hex()
+                ).to_0x_hex()
+                block_model.mix_hash = block_data.get("mixHash").to_0x_hex()
+                block_model.nonce = block_data.get("nonce").to_0x_hex()
+                block_model.hash = block_data.get("hash").to_0x_hex()
                 block_model.size = block_data.get("size")
 
                 transactions: Sequence[TxData] = block_data.get("transactions")
@@ -92,8 +94,8 @@ class Processor:
                 for transaction in transactions:
                     # Synchronize tx data
                     tx_model = IDXTxData()
-                    tx_model.hash = transaction.get("hash").hex()
-                    tx_model.block_hash = transaction.get("blockHash").hex()
+                    tx_model.hash = transaction.get("hash").to_0x_hex()
+                    tx_model.block_hash = transaction.get("blockHash").to_0x_hex()
                     tx_model.block_number = transaction.get("blockNumber")
                     tx_model.transaction_index = transaction.get("transactionIndex")
                     tx_model.from_address = to_checksum_address(transaction.get("from"))
@@ -102,14 +104,14 @@ class Processor:
                         if transaction.get("to")
                         else None
                     )
-                    tx_model.input = transaction.get("input").hex()
+                    tx_model.input = transaction.get("input").to_0x_hex()
                     tx_model.gas = transaction.get("gas")
                     tx_model.gas_price = transaction.get("gasPrice")
                     tx_model.value = transaction.get("value")
                     tx_model.nonce = transaction.get("nonce")
                     local_session.add(tx_model)
 
-                    transaction_hash_list.append(transaction.get("hash").hex())
+                    transaction_hash_list.append(transaction.get("hash").to_0x_hex())
 
                 block_model.transactions = transaction_hash_list
                 local_session.add(block_model)

@@ -318,7 +318,7 @@ class Processor:
                         args.get("from", ZERO_ADDRESS),
                         args.get("to", ZERO_ADDRESS),
                     ]:
-                        if (await web3.eth.get_code(account)).hex() == "0x":
+                        if (await web3.eth.get_code(account)).to_0x_hex() == "0x":
                             (
                                 balance,
                                 pending_transfer,
@@ -372,7 +372,7 @@ class Processor:
                         # Index Lock event
                         await self.__insert_lock_idx(
                             db_session=db_session,
-                            transaction_hash=event["transactionHash"].hex(),
+                            transaction_hash=event["transactionHash"].to_0x_hex(),
                             msg_sender=msg_sender,
                             block_number=event["blockNumber"],
                             token_address=token.address,
@@ -480,7 +480,7 @@ class Processor:
                         # Index Unlock event
                         await self.__insert_unlock_idx(
                             db_session=db_session,
-                            transaction_hash=event["transactionHash"].hex(),
+                            transaction_hash=event["transactionHash"].to_0x_hex(),
                             msg_sender=msg_sender,
                             block_number=event["blockNumber"],
                             token_address=token.address,

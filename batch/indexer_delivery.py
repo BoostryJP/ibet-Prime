@@ -279,7 +279,7 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 args = event["args"]
                 amount = args.get("amount", 0)
                 if amount > sys.maxsize:  # suppress overflow
@@ -324,7 +324,7 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 args = event["args"]
                 amount = args.get("amount", 0)
                 if amount > sys.maxsize:  # suppress overflow
@@ -368,7 +368,7 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 args = event["args"]
                 amount = args.get("amount", 0)
                 if amount > sys.maxsize:  # suppress overflow
@@ -412,7 +412,7 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 args = event["args"]
                 amount = args.get("amount", 0)
                 if amount > sys.maxsize:  # suppress overflow
@@ -456,7 +456,7 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 args = event["args"]
                 amount = args.get("amount", 0)
                 if amount > sys.maxsize:  # suppress overflow

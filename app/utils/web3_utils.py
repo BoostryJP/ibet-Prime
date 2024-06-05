@@ -30,10 +30,10 @@ from requests.exceptions import ConnectionError, HTTPError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-from web3 import AsyncWeb3, Web3
+from web3 import AsyncHTTPProvider, AsyncWeb3, HTTPProvider, Web3
 from web3.eth import AsyncEth
 from web3.geth import AsyncGeth
-from web3.middleware import async_geth_poa_middleware, geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 from web3.net import AsyncNet
 from web3.types import RPCEndpoint, RPCResponse
 
@@ -77,7 +77,7 @@ class Web3Wrapper:
             web3 = Web3(
                 FailOverHTTPProvider(request_kwargs={"timeout": request_timeout})
             )
-            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
             thread_local.web3 = web3
 
         return web3
@@ -115,13 +115,13 @@ class AsyncWeb3Wrapper:
             async_web3 = AsyncWeb3(
                 AsyncFailOverHTTPProvider(request_kwargs={"timeout": request_timeout})
             )
-            async_web3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
+            async_web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
             thread_local.async_web3 = async_web3
 
         return async_web3
 
 
-class FailOverHTTPProvider(Web3.HTTPProvider):
+class FailOverHTTPProvider(HTTPProvider):
     fail_over_mode = False  # If False, use only the default(primary) provider
 
     def __init__(self, *args, **kwargs):
@@ -180,7 +180,7 @@ class FailOverHTTPProvider(Web3.HTTPProvider):
         FailOverHTTPProvider.fail_over_mode = use_fail_over
 
 
-class AsyncFailOverHTTPProvider(Web3.AsyncHTTPProvider):
+class AsyncFailOverHTTPProvider(AsyncHTTPProvider):
     fail_over_mode = False  # If False, use only the default(primary) provider
 
     def __init__(self, *args, **kwargs):

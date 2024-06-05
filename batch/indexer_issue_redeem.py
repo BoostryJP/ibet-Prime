@@ -197,7 +197,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].hex()
+                    transaction_hash = event["transactionHash"].to_0x_hex()
                     block_timestamp = datetime.fromtimestamp(
                         (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
                         UTC,
@@ -238,7 +238,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].hex()
+                    transaction_hash = event["transactionHash"].to_0x_hex()
                     block_timestamp = datetime.fromtimestamp(
                         (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
                         UTC,

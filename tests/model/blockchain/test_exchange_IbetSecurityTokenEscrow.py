@@ -24,7 +24,7 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.exceptions import ContractLogicError, TimeExhausted
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetSecurityTokenEscrow, IbetStraightBondContract
@@ -36,7 +36,7 @@ from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 def deploy_security_token_escrow_contract():
