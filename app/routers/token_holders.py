@@ -184,6 +184,22 @@ async def list_all_token_holders_personal_info_history(
         )
     if get_query.event_type is not None:
         stmt = stmt.where(IDXPersonalInfoHistory.event_type == get_query.event_type)
+    if get_query.block_timestamp_from:
+        _block_timestamp_from = datetime.strptime(
+            get_query.block_timestamp_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfoHistory.block_timestamp
+            >= local_tz.localize(_block_timestamp_from).astimezone(utc_tz)
+        )
+    if get_query.block_timestamp_to:
+        _block_timestamp_to = datetime.strptime(
+            get_query.block_timestamp_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfoHistory.block_timestamp
+            <= local_tz.localize(_block_timestamp_to).astimezone(utc_tz)
+        )
     if get_query.created_from:
         _created_from = datetime.strptime(
             get_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
@@ -205,9 +221,9 @@ async def list_all_token_holders_personal_info_history(
 
     # Sort
     if get_query.sort_order == 0:
-        stmt = stmt.order_by(IDXPersonalInfoHistory.created)
+        stmt = stmt.order_by(IDXPersonalInfoHistory.block_timestamp)
     else:
-        stmt = stmt.order_by(desc(IDXPersonalInfoHistory.created))
+        stmt = stmt.order_by(desc(IDXPersonalInfoHistory.block_timestamp))
 
     # Pagination
     if get_query.limit is not None:

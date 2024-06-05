@@ -21,7 +21,7 @@ from datetime import datetime
 from enum import StrEnum
 
 import pytz
-from sqlalchemy import JSON, BigInteger, String
+from sqlalchemy import JSON, BigInteger, DateTime, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -131,6 +131,8 @@ class IDXPersonalInfoHistory(Base):
     )
     # personal information
     personal_info = mapped_column(JSON, nullable=False)
+    # block timestamp
+    block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
 
     @staticmethod
     def localize_datetime(_datetime: datetime) -> datetime | None:
@@ -144,5 +146,6 @@ class IDXPersonalInfoHistory(Base):
             "account_address": self.account_address,
             "event_type": self.event_type,
             "personal_info": self.personal_info,
+            "block_timestamp": self.localize_datetime(self.block_timestamp),
             "created": self.localize_datetime(self.created),
         }

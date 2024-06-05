@@ -306,6 +306,7 @@ class Processor:
         _personal_info_history.issuer_address = issuer_address
         _personal_info_history.event_type = event_type
         _personal_info_history.personal_info = _personal_info.personal_info
+        _personal_info_history.block_timestamp = timestamp
         db_session.add(_personal_info_history)
 
 
