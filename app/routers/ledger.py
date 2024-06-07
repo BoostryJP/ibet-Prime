@@ -948,28 +948,31 @@ async def __get_personal_info(
     elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
         token_contract = await IbetStraightBondContract(token_address).get()
 
-    if token_contract.require_personal_info_registered is False:
+    if token_contract.require_personal_info_registered is True:
+        # Get issuer account
+        issuer_account = (
+            await db.scalars(
+                select(Account)
+                .where(Account.issuer_address == token.issuer_address)
+                .limit(1)
+            )
+        ).first()
+
+        # Retrieve personal info from contract storage
+        personal_info_contract = PersonalInfoContract(
+            issuer=issuer_account,
+            contract_address=token_contract.personal_info_contract_address,
+        )
+        personal_info = await personal_info_contract.get_info(
+            account_address=account_address, default_value=None
+        )
+        if any(personal_info.values()) is False:
+            personal_info_not_registered = True
+        else:
+            personal_info_not_registered = False
+    else:
         # Do not retrieve contract data and return the default value
         personal_info = ContractPersonalInfoType().model_dump()
         personal_info_not_registered = True
-        return personal_info, personal_info_not_registered
 
-    # Get issuer account
-    issuer_account = (
-        await db.scalars(
-            select(Account)
-            .where(Account.issuer_address == token.issuer_address)
-            .limit(1)
-        )
-    ).first()
-
-    # Retrieve personal info from contract storage
-    personal_info_contract = PersonalInfoContract(
-        issuer=issuer_account,
-        contract_address=token_contract.personal_info_contract_address,
-    )
-    personal_info = await personal_info_contract.get_info(
-        account_address=account_address, default_value=None
-    )
-    personal_info_not_registered = False
     return personal_info, personal_info_not_registered
