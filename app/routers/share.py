@@ -2845,15 +2845,15 @@ async def list_transfer_history(
         stmt = stmt.where(IDXTransfer.to_address == query.to_address)
     if query.from_address_name:
         stmt = stmt.where(
-            cast(from_address_personal_info._personal_info["name"], String).like(
-                "%" + query.from_address_name + "%"
-            )
+            from_address_personal_info._personal_info["name"]
+            .as_string()
+            .like("%" + query.from_address_name + "%")
         )
     if query.to_address_name:
         stmt = stmt.where(
-            cast(to_address_personal_info._personal_info["name"], String).like(
-                "%" + query.to_address_name + "%"
-            )
+            to_address_personal_info._personal_info["name"]
+            .as_string()
+            .like("%" + query.to_address_name + "%")
         )
     if query.amount is not None and query.amount_operator is not None:
         match query.amount_operator:
@@ -2872,9 +2872,9 @@ async def list_transfer_history(
     # Sort
     match query.sort_item:
         case ListTransferHistorySortItem.FROM_ADDRESS_NAME:
-            sort_attr = cast(from_address_personal_info._personal_info["name"], String)
+            sort_attr = from_address_personal_info._personal_info["name"].as_string()
         case ListTransferHistorySortItem.TO_ADDRESS_NAME:
-            sort_attr = cast(to_address_personal_info._personal_info["name"], String)
+            sort_attr = to_address_personal_info._personal_info["name"].as_string()
         case _:
             sort_attr = getattr(IDXTransfer, query.sort_item.value, None)
 

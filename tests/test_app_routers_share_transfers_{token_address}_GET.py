@@ -157,7 +157,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_from.issuer_address = self.test_issuer_address
         _personal_info_from._personal_info = {
             "key_manager": "key_manager_test1",
-            "name": "name_test1",
+            "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
@@ -172,7 +172,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_to.issuer_address = self.test_issuer_address
         _personal_info_to._personal_info = {
             "key_manager": "key_manager_test2",
-            "name": "name_test2",
+            "name": "テスト太郎2",
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
@@ -217,7 +217,7 @@ class TestAppRoutersShareTransfersGET:
                         "email": "email_test1",
                         "is_corporate": False,
                         "key_manager": "key_manager_test1",
-                        "name": "name_test1",
+                        "name": "テスト太郎1",
                         "postal_code": "postal_code_test1",
                         "tax_category": 10,
                     },
@@ -228,7 +228,7 @@ class TestAppRoutersShareTransfersGET:
                         "email": "email_test2",
                         "is_corporate": False,
                         "key_manager": "key_manager_test2",
-                        "name": "name_test2",
+                        "name": "テスト太郎2",
                         "postal_code": "postal_code_test2",
                         "tax_category": 10,
                     },
@@ -611,7 +611,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_from.issuer_address = self.test_issuer_address
         _personal_info_from._personal_info = {
             "key_manager": "key_manager_test1",
-            "name": "name_test1",
+            "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
@@ -626,7 +626,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_to.issuer_address = self.test_issuer_address
         _personal_info_to._personal_info = {
             "key_manager": "key_manager_test2",
-            "name": "name_test2",
+            "name": "テスト太郎2",
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
@@ -641,7 +641,7 @@ class TestAppRoutersShareTransfersGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={"from_address_name": "name_test1"},  # test_from_address_1's name
+            params={"from_address_name": "テスト太郎1"},  # test_from_address_1's name
         )
 
         # assertion
@@ -655,7 +655,7 @@ class TestAppRoutersShareTransfersGET:
                     "from_address": self.test_from_address_1,
                     "from_address_personal_information": {
                         "key_manager": "key_manager_test1",
-                        "name": "name_test1",
+                        "name": "テスト太郎1",
                         "postal_code": "postal_code_test1",
                         "address": "address_test1",
                         "email": "email_test1",
@@ -716,7 +716,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_from.issuer_address = self.test_issuer_address
         _personal_info_from._personal_info = {
             "key_manager": "key_manager_test1",
-            "name": "name_test1",
+            "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
@@ -731,7 +731,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_to.issuer_address = self.test_issuer_address
         _personal_info_to._personal_info = {
             "key_manager": "key_manager_test2",
-            "name": "name_test2",
+            "name": "テスト太郎2",
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
@@ -746,7 +746,7 @@ class TestAppRoutersShareTransfersGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={"to_address_name": "name_test1"},  # test_from_address_1's name
+            params={"to_address_name": "テスト太郎1"},  # test_from_address_1's name
         )
 
         # assertion
@@ -762,7 +762,7 @@ class TestAppRoutersShareTransfersGET:
                     "to_address": self.test_to_address_1,
                     "to_address_personal_information": {
                         "key_manager": "key_manager_test1",
-                        "name": "name_test1",
+                        "name": "テスト太郎1",
                         "postal_code": "postal_code_test1",
                         "address": "address_test1",
                         "email": "email_test1",
@@ -1512,7 +1512,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_from.issuer_address = self.test_issuer_address
         _personal_info_from._personal_info = {
             "key_manager": "key_manager_test1",
-            "name": "name_test1",
+            "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
@@ -1527,7 +1527,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_to.issuer_address = self.test_issuer_address
         _personal_info_to._personal_info = {
             "key_manager": "key_manager_test2",
-            "name": "name_test2",
+            "name": "テスト太郎2",
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
@@ -1563,7 +1563,7 @@ class TestAppRoutersShareTransfersGET:
                         "email": "email_test2",
                         "is_corporate": False,
                         "key_manager": "key_manager_test2",
-                        "name": "name_test2",
+                        "name": "テスト太郎2",
                         "postal_code": "postal_code_test2",
                         "tax_category": 10,
                     },
@@ -1584,7 +1584,7 @@ class TestAppRoutersShareTransfersGET:
                         "email": "email_test1",
                         "is_corporate": False,
                         "key_manager": "key_manager_test1",
-                        "name": "name_test1",
+                        "name": "テスト太郎1",
                         "postal_code": "postal_code_test1",
                         "tax_category": 10,
                     },
@@ -1641,7 +1641,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_from.issuer_address = self.test_issuer_address
         _personal_info_from._personal_info = {
             "key_manager": "key_manager_test1",
-            "name": "name_test1",
+            "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
@@ -1656,7 +1656,7 @@ class TestAppRoutersShareTransfersGET:
         _personal_info_to.issuer_address = self.test_issuer_address
         _personal_info_to._personal_info = {
             "key_manager": "key_manager_test2",
-            "name": "name_test2",
+            "name": "テスト太郎2",
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
@@ -1694,7 +1694,7 @@ class TestAppRoutersShareTransfersGET:
                         "email": "email_test2",
                         "is_corporate": False,
                         "key_manager": "key_manager_test2",
-                        "name": "name_test2",
+                        "name": "テスト太郎2",
                         "postal_code": "postal_code_test2",
                         "tax_category": 10,
                     },
@@ -1715,7 +1715,7 @@ class TestAppRoutersShareTransfersGET:
                         "email": "email_test1",
                         "is_corporate": False,
                         "key_manager": "key_manager_test1",
-                        "name": "name_test1",
+                        "name": "テスト太郎1",
                         "postal_code": "postal_code_test1",
                         "tax_category": 10,
                     },
