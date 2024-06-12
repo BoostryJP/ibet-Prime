@@ -49,7 +49,7 @@ from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_token_holders import LOG, Processor, main
 from config import ZERO_ADDRESS
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import (
+from tests.contract_utils import (
     IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,

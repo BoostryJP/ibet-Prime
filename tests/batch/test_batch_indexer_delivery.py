@@ -54,7 +54,7 @@ from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_delivery import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import (
+from tests.contract_utils import (
     IbetSecurityTokenContractTestUtils as STContractUtils,
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
     PersonalInfoContractTestUtils,

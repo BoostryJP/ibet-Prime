@@ -50,7 +50,7 @@ from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import (
+from tests.contract_utils import (
     IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
     PersonalInfoContractTestUtils,

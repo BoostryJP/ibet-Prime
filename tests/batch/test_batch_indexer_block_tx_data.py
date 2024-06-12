@@ -36,7 +36,7 @@ from batch import indexer_block_tx_data
 from batch.indexer_block_tx_data import LOG
 from config import CHAIN_ID, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import IbetStandardTokenUtils
+from tests.contract_utils import IbetStandardTokenUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)

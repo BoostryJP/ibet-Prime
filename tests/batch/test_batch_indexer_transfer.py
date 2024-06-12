@@ -53,7 +53,7 @@ from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_transfer import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import PersonalInfoContractTestUtils
+from tests.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3Wrapper()
 async_web3 = AsyncWeb3Wrapper()
