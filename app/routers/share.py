@@ -42,6 +42,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.orm import aliased
+from sqlalchemy.sql.functions import coalesce
 
 import config
 from app import log
@@ -1837,11 +1838,11 @@ async def list_all_holders(
     if get_query.locked is not None and get_query.locked_operator is not None:
         match get_query.locked_operator:
             case ValueOperator.EQUAL:
-                stmt = stmt.having(locked_value == get_query.locked)
+                stmt = stmt.having(coalesce(locked_value, 0) == get_query.locked)
             case ValueOperator.GTE:
-                stmt = stmt.having(locked_value >= get_query.locked)
+                stmt = stmt.having(coalesce(locked_value, 0) >= get_query.locked)
             case ValueOperator.LTE:
-                stmt = stmt.having(locked_value <= get_query.locked)
+                stmt = stmt.having(coalesce(locked_value, 0) <= get_query.locked)
 
     if (
         get_query.balance_and_pending_transfer is not None
@@ -1911,6 +1912,7 @@ async def list_all_holders(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
+    print(stmt.compile(compile_kwargs={"literal_binds": True}))
     _holders: Sequence[
         tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
     ] = ((await db.execute(stmt)).tuples().all())

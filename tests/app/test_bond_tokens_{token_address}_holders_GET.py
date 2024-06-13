@@ -2353,6 +2353,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
         _account_address_2 = "0x3F198534Bbe3B2a197d3B317d41392F348EAC707"
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
+        _account_address_4 = "0x1CBd3b2770909D4e10f157cABC84C7264073C9Ec"
 
         account = Account()
         account.issuer_address = _issuer_address
@@ -2500,6 +2501,17 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         }
         db.add(idx_personal_info_3)
 
+        # prepare data: account_address_4
+        idx_position_4 = IDXPosition()
+        idx_position_4.token_address = _token_address
+        idx_position_4.account_address = _account_address_4
+        idx_position_4.balance = 99
+        idx_position_4.exchange_balance = 99
+        idx_position_4.exchange_commitment = 99
+        idx_position_4.pending_transfer = 99
+        idx_position_4.modified = datetime(2023, 10, 24, 3, 0, 0)
+        db.add(idx_position_4)
+
         db.commit()
 
         # request target API
@@ -2512,7 +2524,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {"count": 2, "total": 3, "offset": None, "limit": None},
+            "result_set": {"count": 3, "limit": None, "offset": None, "total": 4},
             "holders": [
                 {
                     "account_address": _account_address_1,
@@ -2551,6 +2563,25 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
                     "pending_transfer": 10,
                     "locked": 20,
                     "modified": "2023-10-24T02:20:00",
+                },
+                {
+                    "account_address": _account_address_4,
+                    "pending_transfer": 99,
+                    "personal_information": {
+                        "address": None,
+                        "birth": None,
+                        "email": None,
+                        "is_corporate": None,
+                        "key_manager": None,
+                        "name": None,
+                        "postal_code": None,
+                        "tax_category": None,
+                    },
+                    "balance": 99,
+                    "exchange_balance": 99,
+                    "exchange_commitment": 99,
+                    "locked": 0,
+                    "modified": "2023-10-24T03:00:00",
                 },
             ],
         }
