@@ -52,7 +52,7 @@ from app.model.db import TokenAttrUpdate, TokenCache
 from app.utils.contract_utils import ContractUtils
 from config import TOKEN_CACHE_TTL, ZERO_ADDRESS
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import (
+from tests.contract_utils import (
     IbetSecurityTokenContractTestUtils,
     PersonalInfoContractTestUtils,
 )
