@@ -1912,7 +1912,6 @@ async def list_all_holders(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    print(stmt.compile(compile_kwargs={"literal_binds": True}))
     _holders: Sequence[
         tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
     ] = ((await db.execute(stmt)).tuples().all())
