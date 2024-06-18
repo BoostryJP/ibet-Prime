@@ -92,7 +92,6 @@ class TestAppRoutersHealthcheckGET:
         # request target api
         resp = client.get(self.apiurl)
 
-        print(resp.json())
         # assertion
         assert resp.status_code == 503
         assert resp.json() == {
