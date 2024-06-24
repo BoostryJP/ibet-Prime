@@ -34,6 +34,9 @@ AUTH_LOG.propagate = False
 ACCESS_LOG = logging.getLogger("issuer_api_access")
 ACCESS_LOG.propagate = False
 
+logging.getLogger("web3.manager.RequestManager").propagate = False
+logging.getLogger("web3.manager.RequestManager").addHandler(logging.NullHandler())
+
 INFO_FORMAT = "[%(asctime)s] {}[%(process)d] [%(levelname)s] %(message)s"
 DEBUG_FORMAT = "[%(asctime)s] {}[%(process)d] [%(levelname)s] %(message)s [in %(pathname)s:%(lineno)d]"
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %z"
