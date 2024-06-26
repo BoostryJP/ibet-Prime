@@ -60,7 +60,8 @@ RUN . ~/.bash_profile \
 RUN . ~/.bash_profile \
  && python -m pip install poetry==1.8.2
 RUN . ~/.bash_profile \
- && poetry config virtualenvs.create false
+ && poetry config virtualenvs.create false \
+ && poetry config installer.max-workers 1
 
 # install python packages
 USER root
