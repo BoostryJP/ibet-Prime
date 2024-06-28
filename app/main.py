@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
@@ -40,6 +40,7 @@ from app.routers import (
     ledger,
     notification,
     position,
+    settlement,
     share,
     token_holders,
 )
@@ -62,7 +63,7 @@ tags_metadata = [
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="24.3.0",
+    version="24.6",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -74,7 +75,7 @@ app = FastAPI(
 
 @app.middleware("http")
 async def api_call_handler(request: Request, call_next):
-    request_start_time = datetime.utcnow()
+    request_start_time = datetime.now(UTC).replace(tzinfo=None)
     response = await call_next(request)
     output_access_log(request, response, request_start_time)
     return response
@@ -105,6 +106,7 @@ app.include_router(share.router)
 app.include_router(token_holders.router)
 app.include_router(bc_explorer.router)
 app.include_router(freeze_log.router)
+app.include_router(settlement.router)
 
 
 ###############################################################
@@ -206,12 +208,24 @@ async def response_limit_exceeded_error_handler(
     )
 
 
-# 400:ResponseLimitExceededError
+# 400:Integer64bitLimitExceededError
 @app.exception_handler(Integer64bitLimitExceededError)
 async def response_limit_exceeded_error_handler(
     request: Request, exc: Integer64bitLimitExceededError
 ):
     meta = {"code": 5, "title": "Integer64bitLimitExceededError"}
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
+# 400:OperationNotSupportedVersionError
+@app.exception_handler(OperationNotSupportedVersionError)
+async def operation_not_supported_version_error_handler(
+    request: Request, exc: OperationNotSupportedVersionError
+):
+    meta = {"code": 6, "title": "OperationNotSupportedVersionError"}
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),

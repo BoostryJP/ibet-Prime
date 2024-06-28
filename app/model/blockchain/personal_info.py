@@ -24,6 +24,7 @@ import logging
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
+from pydantic import BaseModel
 from web3.contract import AsyncContract
 from web3.exceptions import TimeExhausted
 
@@ -37,6 +38,17 @@ from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 web3 = Web3Wrapper()
 
 
+class ContractPersonalInfoType(BaseModel):
+    key_manager: str | None = None
+    name: str | None = None
+    address: str | None = None
+    postal_code: str | None = None
+    email: str | None = None
+    birth: str | None = None
+    is_corporate: bool | None = None
+    tax_category: int | None = None
+
+
 class PersonalInfoContract:
     """PersonalInfo contract"""
 
@@ -48,26 +60,15 @@ class PersonalInfoContract:
             contract_name="PersonalInfo", contract_address=contract_address
         )
         self.issuer = issuer
+        self.cipher = None
 
     async def get_info(self, account_address: str, default_value=None):
-        """Get personal information
+        """Get personal information from contract storage
 
         :param account_address: Token holder account address
         :param default_value: Default value for items for which no value is set. (If not specified: None)
         :return: Personal info
         """
-
-        # Set default value
-        personal_info = {
-            "key_manager": default_value,
-            "name": default_value,
-            "postal_code": default_value,
-            "address": default_value,
-            "email": default_value,
-            "birth": default_value,
-            "is_corporate": default_value,
-            "tax_category": default_value,
-        }
 
         # Get encrypted personal information
         personal_info_state = await AsyncContractUtils.call_function(
@@ -82,18 +83,32 @@ class PersonalInfoContract:
         encrypted_info = personal_info_state[2]
 
         if encrypted_info == "":
-            return personal_info  # default
+            return ContractPersonalInfoType(
+                key_manager=default_value,
+                name=default_value,
+                address=default_value,
+                postal_code=default_value,
+                email=default_value,
+                birth=default_value,
+            ).model_dump()
         else:
             # Get issuer's RSA private key
             try:
-                passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
-                key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
-                cipher = PKCS1_OAEP.new(key)
+                if self.cipher is None:
+                    passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
+                    key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
+                    self.cipher = PKCS1_OAEP.new(key)
             except Exception as err:
                 logging.error(f"Cannot open the private key: {err}")
-                return personal_info  # default
-
-            if cipher is not None:
+                return ContractPersonalInfoType(
+                    key_manager=default_value,
+                    name=default_value,
+                    address=default_value,
+                    postal_code=default_value,
+                    email=default_value,
+                    birth=default_value,
+                ).model_dump()
+            if self.cipher is not None:
                 try:
                     ciphertext = base64.decodebytes(encrypted_info.encode("utf-8"))
                     # NOTE:
@@ -104,30 +119,28 @@ class PersonalInfoContract:
                     if len(ciphertext) == 1279:
                         hex_fixed = "00" + ciphertext.hex()
                         ciphertext = base64.b16decode(hex_fixed.upper())
-                    decrypted_info = json.loads(cipher.decrypt(ciphertext))
+                    decrypted_info = json.loads(self.cipher.decrypt(ciphertext))
 
-                    personal_info["key_manager"] = decrypted_info.get(
-                        "key_manager", default_value
-                    )
-                    personal_info["name"] = decrypted_info.get("name", default_value)
-                    personal_info["address"] = decrypted_info.get(
-                        "address", default_value
-                    )
-                    personal_info["postal_code"] = decrypted_info.get(
-                        "postal_code", default_value
-                    )
-                    personal_info["email"] = decrypted_info.get("email", default_value)
-                    personal_info["birth"] = decrypted_info.get("birth", default_value)
-                    personal_info["is_corporate"] = decrypted_info.get(
-                        "is_corporate", default_value
-                    )
-                    personal_info["tax_category"] = decrypted_info.get(
-                        "tax_category", default_value
-                    )
-                    return personal_info
+                    return ContractPersonalInfoType(
+                        key_manager=decrypted_info.get("key_manager", default_value),
+                        name=decrypted_info.get("name", default_value),
+                        address=decrypted_info.get("address", default_value),
+                        postal_code=decrypted_info.get("postal_code", default_value),
+                        email=decrypted_info.get("email", default_value),
+                        birth=decrypted_info.get("birth", default_value),
+                        is_corporate=decrypted_info.get("is_corporate", None),
+                        tax_category=decrypted_info.get("tax_category", None),
+                    ).model_dump()
                 except Exception as err:
                     logging.error(f"Failed to decrypt: {err}")
-                    return personal_info  # default
+                    return ContractPersonalInfoType(
+                        key_manager=default_value,
+                        name=default_value,
+                        address=default_value,
+                        postal_code=default_value,
+                        email=default_value,
+                        birth=default_value,
+                    ).model_dump()
 
     async def register_info(
         self, account_address: str, data: dict, default_value=None

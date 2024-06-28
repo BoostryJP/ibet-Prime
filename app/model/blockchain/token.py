@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from random import randint
 from typing import List, TypeVar
@@ -113,15 +113,17 @@ class IbetStandardTokenInterface:
     async def record_attr_update(self, db_session: AsyncSession):
         _token_attr_update = TokenAttrUpdate()
         _token_attr_update.token_address = self.token_address
-        _token_attr_update.updated_datetime = datetime.utcnow()
+        _token_attr_update.updated_datetime = datetime.now(UTC).replace(tzinfo=None)
         db_session.add(_token_attr_update)
 
     async def create_cache(self, db_session: AsyncSession):
         token_cache = TokenCache()
         token_cache.token_address = self.token_address
         token_cache.attributes = self.__dict__
-        token_cache.cached_datetime = datetime.utcnow()
-        token_cache.expiration_datetime = datetime.utcnow() + timedelta(
+        token_cache.cached_datetime = datetime.now(UTC).replace(tzinfo=None)
+        token_cache.expiration_datetime = datetime.now(UTC).replace(
+            tzinfo=None
+        ) + timedelta(
             seconds=randint(
                 TOKEN_CACHE_TTL - TOKEN_CACHE_TTL_JITTER,
                 TOKEN_CACHE_TTL + TOKEN_CACHE_TTL_JITTER,
@@ -165,6 +167,7 @@ class IbetStandardTokenInterface:
 
 class IbetSecurityTokenInterface(IbetStandardTokenInterface):
     personal_info_contract_address: str
+    require_personal_info_registered: bool
     transferable: bool
     is_offering: bool
     transfer_approval_required: bool
@@ -513,7 +516,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     )
                     if (
                         is_updated is False
-                        and token_cache.expiration_datetime > datetime.utcnow()
+                        and token_cache.expiration_datetime
+                        > datetime.now(UTC).replace(tzinfo=None)
                     ):
                         # Get data from cache
                         for k, v in token_cache.attributes.items():
@@ -549,6 +553,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     # IbetSecurityTokenInterface attribute
                     AsyncContractUtils.call_function(
                         contract, "personalInfoAddress", (), ZERO_ADDRESS
+                    ),
+                    AsyncContractUtils.call_function(
+                        contract, "requirePersonalInfoRegistered", (), True
                     ),
                     AsyncContractUtils.call_function(
                         contract, "transferable", (), False
@@ -596,6 +603,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     self.privacy_policy,
                     self.status,
                     self.personal_info_contract_address,
+                    self.require_personal_info_registered,
                     self.transferable,
                     self.is_offering,
                     self.transfer_approval_required,
@@ -967,6 +975,28 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.require_personal_info_registered is not None:
+            tx = await contract.functions.setRequirePersonalInfoRegistered(
+                data.require_personal_info_registered
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
         if data.contact_information is not None:
             tx = await contract.functions.setContactInformation(
                 data.contact_information
@@ -1122,7 +1152,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     )
                     if (
                         is_updated is False
-                        and token_cache.expiration_datetime > datetime.utcnow()
+                        and token_cache.expiration_datetime
+                        > datetime.now(UTC).replace(tzinfo=None)
                     ):
                         # Get data from cache
                         for k, v in token_cache.attributes.items():
@@ -1160,6 +1191,9 @@ class IbetShareContract(IbetSecurityTokenInterface):
                         contract, "personalInfoAddress", (), ZERO_ADDRESS
                     ),
                     AsyncContractUtils.call_function(
+                        contract, "requirePersonalInfoRegistered", (), True
+                    ),
+                    AsyncContractUtils.call_function(
                         contract, "transferable", (), False
                     ),
                     AsyncContractUtils.call_function(contract, "isOffering", (), False),
@@ -1189,6 +1223,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     self.privacy_policy,
                     self.status,
                     self.personal_info_contract_address,
+                    self.require_personal_info_registered,
                     self.transferable,
                     self.is_offering,
                     self.transfer_approval_required,
@@ -1253,6 +1288,28 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.personal_info_contract_address is not None:
             tx = await contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.require_personal_info_registered is not None:
+            tx = await contract.functions.setRequirePersonalInfoRegistered(
+                data.require_personal_info_registered
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,

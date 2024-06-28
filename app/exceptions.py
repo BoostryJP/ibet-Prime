@@ -56,6 +56,15 @@ class Integer64bitLimitExceededError(AppError):
     code = 5
 
 
+class OperationNotSupportedVersionError(AppError):
+    """
+    The token version for which the operation is not supported
+    """
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 6
+
+
 class OperationNotAllowedStateError(AppError):
     """
     Error returned when server-side data is not ready to process the request

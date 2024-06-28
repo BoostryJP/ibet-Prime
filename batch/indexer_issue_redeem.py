@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -197,10 +197,11 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                    )
+                    transaction_hash = event["transactionHash"].to_0x_hex()
+                    block_timestamp = datetime.fromtimestamp(
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
+                        UTC,
+                    ).replace(tzinfo=None)
                     if args["amount"] > sys.maxsize:
                         pass
                     else:
@@ -215,7 +216,7 @@ class Processor:
                             block_timestamp=block_timestamp,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_redeem(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -237,10 +238,11 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                    )
+                    transaction_hash = event["transactionHash"].to_0x_hex()
+                    block_timestamp = datetime.fromtimestamp(
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
+                        UTC,
+                    ).replace(tzinfo=None)
                     if args["amount"] > sys.maxsize:
                         pass
                     else:
@@ -255,7 +257,7 @@ class Processor:
                             block_timestamp=block_timestamp,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     @staticmethod
     async def __insert_index(

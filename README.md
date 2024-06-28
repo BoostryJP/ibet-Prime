@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-24.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -22,11 +22,11 @@ English | [日本語](./README_JA.md)
 
 ## Dependencies
 
-- [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.11
+- [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.12
 - [PostgreSQL](https://www.postgresql.org/) - version 15
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
-  - We use [ganache](https://github.com/trufflesuite/ganache) for local development and unit testing, and we use the latest version.
+  - We use [hardhat network](https://hardhat.org/hardhat-network/) for local development and unit testing, and we use the latest version.
 
 
 ## Supported ibet smart contract version
@@ -52,12 +52,17 @@ English | [日本語](./README_JA.md)
 
 Install python packages with:
 ```bash
-$ poetry install --no-root --only main -E ibet-explorer
+$ poetry install --no-root --only main --all-extras
 ```
 
 ### Install pre-commit hook
 ```bash
 $ poetry run pre-commit install
+```
+
+### Install hardhat
+```bash
+$ npm install
 ```
 
 ### Setting environment variables

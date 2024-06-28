@@ -31,9 +31,11 @@ from .batch_register_personal_info import (
     BatchRegisterPersonalInfoUploadStatus,
 )
 from .bulk_transfer import BulkTransfer, BulkTransferUpload
+from .dvp_agent_account import DVPAgentAccount
 from .e2e_messaging_account import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from .freeze_log_account import FreezeLogAccount
 from .idx_block_data import IDXBlockData, IDXBlockDataBlockNumber
+from .idx_delivery import DeliveryStatus, IDXDelivery, IDXDeliveryBlockNumber
 from .idx_e2e_messaging import IDXE2EMessaging, IDXE2EMessagingBlockNumber
 from .idx_issue_redeem import (
     IDXIssueRedeem,
@@ -42,7 +44,12 @@ from .idx_issue_redeem import (
     IDXIssueRedeemSortItem,
 )
 from .idx_lock_unlock import IDXLock, IDXUnlock
-from .idx_personal_info import IDXPersonalInfo, IDXPersonalInfoBlockNumber
+from .idx_personal_info import (
+    IDXPersonalInfo,
+    IDXPersonalInfoBlockNumber,
+    IDXPersonalInfoHistory,
+    PersonalInfoEventType,
+)
 from .idx_position import (
     IDXLockedPosition,
     IDXPosition,

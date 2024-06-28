@@ -52,6 +52,7 @@ class UpdateParams(BaseModel):
     is_redeemed: Optional[bool] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     contact_information: Optional[str] = None
     privacy_policy: Optional[str] = None
     transfer_approval_required: Optional[bool] = None

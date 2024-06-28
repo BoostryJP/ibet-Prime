@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import re
 import secrets
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List, Optional, Sequence
 
 import boto3
@@ -163,7 +163,9 @@ async def create_account(
     _account_rsa_key.rsa_private_key = rsa_private_key
     _account_rsa_key.rsa_public_key = rsa_public_key
     _account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
-    _account_rsa_key.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
+    _account_rsa_key.block_timestamp = datetime.fromtimestamp(
+        block["timestamp"], UTC
+    ).replace(tzinfo=None)
     db.add(_account_rsa_key)
 
     # Insert initial transaction execution management record

@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -226,7 +226,7 @@ class Processor:
                         {
                             "event": _event["event"],
                             "args": dict(_event["args"]),
-                            "transaction_hash": _event["transactionHash"].hex(),
+                            "transaction_hash": _event["transactionHash"].to_0x_hex(),
                             "block_number": _event["blockNumber"],
                             "log_index": _event["logIndex"],
                         }
@@ -244,7 +244,7 @@ class Processor:
                     {
                         "event": _event["event"],
                         "args": dict(_event["args"]),
-                        "transaction_hash": _event["transactionHash"].hex(),
+                        "transaction_hash": _event["transactionHash"].to_0x_hex(),
                         "block_number": _event["blockNumber"],
                         "log_index": _event["logIndex"],
                     }
@@ -266,7 +266,7 @@ class Processor:
                         {
                             "event": _event["event"],
                             "args": dict(_event["args"]),
-                            "transaction_hash": _event["transactionHash"].hex(),
+                            "transaction_hash": _event["transactionHash"].to_0x_hex(),
                             "block_number": _event["blockNumber"],
                             "log_index": _event["logIndex"],
                         }
@@ -291,15 +291,17 @@ class Processor:
                     amount = int(args.get("value"))
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if (await web3.eth.get_code(from_account)).hex() != "0x" or (
+                if (await web3.eth.get_code(from_account)).to_0x_hex() != "0x" or (
                     await web3.eth.get_code(to_account)
-                ).hex() != "0x":
+                ).to_0x_hex() != "0x":
                     continue
 
                 transaction_hash = event["transaction_hash"]
                 block_number = event["block_number"]
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(block_number))["timestamp"]
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(block_number))["timestamp"], UTC
+                ).replace(
+                    tzinfo=None
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
@@ -368,10 +370,12 @@ class Processor:
                 account = args.get("targetAddress", ZERO_ADDRESS)
                 amount = args.get("amount")
 
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 block_number = event["blockNumber"]
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(block_number))["timestamp"]
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(block_number))["timestamp"], UTC
+                ).replace(
+                    tzinfo=None
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
@@ -428,10 +432,12 @@ class Processor:
                 account = args.get("targetAddress", ZERO_ADDRESS)
                 amount = args.get("amount")
 
-                transaction_hash = event["transactionHash"].hex()
+                transaction_hash = event["transactionHash"].to_0x_hex()
                 block_number = event["blockNumber"]
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(block_number))["timestamp"]
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(block_number))["timestamp"], UTC
+                ).replace(
+                    tzinfo=None
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:

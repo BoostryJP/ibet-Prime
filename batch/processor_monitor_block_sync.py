@@ -25,8 +25,8 @@ import uvloop
 from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import AsyncWeb3, Web3
-from web3.middleware import async_geth_poa_middleware
+from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -121,8 +121,8 @@ class Processor:
     ):
         self.node_info[endpoint_uri] = {"priority": priority}
 
-        web3 = AsyncWeb3(Web3.AsyncHTTPProvider(endpoint_uri))
-        web3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
+        web3 = AsyncWeb3(AsyncHTTPProvider(endpoint_uri))
+        web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         self.node_info[endpoint_uri]["web3"] = web3
 
         # Get block number

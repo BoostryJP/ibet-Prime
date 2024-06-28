@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -201,10 +201,11 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                    )
+                    transaction_hash = event["transactionHash"].to_0x_hex()
+                    block_timestamp = datetime.fromtimestamp(
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
+                        UTC,
+                    ).replace(tzinfo=None)
                     if args["value"] > sys.maxsize:
                         pass
                     else:
@@ -242,10 +243,11 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                    )
+                    transaction_hash = event["transactionHash"].to_0x_hex()
+                    block_timestamp = datetime.fromtimestamp(
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
+                        UTC,
+                    ).replace(tzinfo=None)
                     if args["value"] > sys.maxsize:
                         pass
                     else:

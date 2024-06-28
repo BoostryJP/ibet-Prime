@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "ibet-prime-settlement"
+version = "0.1.0"
+description = "ibet-Prime Settlement CLI"
+authors = ["BOOSTRY Co., Ltd. <dev@boostry.co.jp>"]
+readme = "README.md"
+packages = [
+    { include = "../settlement" },
+]
+
+[tool.poetry.dependencies]
+python = "3.12.2"
+
+[tool.poetry.scripts]
+settlement-cli = "settlement.src.main:app"
+
+[tool.mypy]
+python_version = "3.12"
+no_strict_optional = true
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -22,7 +22,7 @@ import base64
 import json
 import sys
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 import uvloop
 from Crypto.Cipher import AES, PKCS1_OAEP
@@ -172,14 +172,16 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                transaction_hash = event["transactionHash"].hex()
-                block_timestamp = datetime.utcfromtimestamp(
-                    (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-                )
+                transaction_hash = event["transactionHash"].to_0x_hex()
+                block_timestamp = datetime.fromtimestamp(
+                    (await web3.eth.get_block(event["blockNumber"]))["timestamp"], UTC
+                ).replace(tzinfo=None)
                 args = event["args"]
                 from_address = args["sender"]
                 to_address = args["receiver"]
-                send_timestamp = datetime.utcfromtimestamp(args["time"])
+                send_timestamp = datetime.fromtimestamp(args["time"], UTC).replace(
+                    tzinfo=None
+                )
                 text = args["text"]
 
                 # Check if the message receiver is owned accounts
@@ -211,7 +213,7 @@ class Processor:
                     block_timestamp=block_timestamp,
                 )
         except Exception as e:
-            LOG.error(e)
+            raise
 
     @staticmethod
     async def __get_e2e_messaging_account(db_session: AsyncSession, to_address: str):

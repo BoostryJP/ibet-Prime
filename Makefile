@@ -1,7 +1,7 @@
-.PHONY: isort black test run
+.PHONY: format isort black doc test test_migrations run
 
 install:
-	poetry install --no-root -E ibet-explorer
+	poetry install --no-root --all-extras
 	poetry run pre-commit install
 
 update:
@@ -14,6 +14,9 @@ isort:
 
 black:
 	black .
+
+doc:
+	poetry run python docs/generate_openapi_doc.py
 
 test:
 	pytest tests/

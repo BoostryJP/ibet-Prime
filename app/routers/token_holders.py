@@ -18,16 +18,20 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
+from datetime import datetime
 from typing import Optional, Sequence
 
+import pytz
 from fastapi import APIRouter, Depends, Header, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
 
+import config
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError
 from app.model.db import (
     IDXPersonalInfo,
+    IDXPersonalInfoHistory,
     Token,
     TokenHolder,
     TokenHolderBatchStatus,
@@ -37,6 +41,8 @@ from app.model.schema import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse,
+    ListTokenHoldersPersonalInfoHistoryQuery,
+    ListTokenHoldersPersonalInfoHistoryResponse,
     ListTokenHoldersPersonalInfoQuery,
     ListTokenHoldersPersonalInfoResponse,
     RetrieveTokenHoldersListResponse,
@@ -52,45 +58,85 @@ router = APIRouter(
     prefix="/token",
     tags=["token_common"],
 )
+local_tz = pytz.timezone(config.TZ)
+utc_tz = pytz.timezone("UTC")
 
 
 # GET: /token/holders/personal_info
 @router.get(
     "/holders/personal_info",
+    operation_id="ListTokenHoldersPersonalInfo",
     response_model=ListTokenHoldersPersonalInfoResponse,
     responses=get_routers_responses(422),
 )
 async def list_all_token_holders_personal_info(
     db: DBAsyncSession,
     issuer_address: str = Header(...),
-    request_query: ListTokenHoldersPersonalInfoQuery = Depends(),
+    get_query: ListTokenHoldersPersonalInfoQuery = Depends(),
 ):
     """Lists the personal information of all registered holders linked to the token issuer"""
+
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    offset = request_query.offset
-    limit = request_query.limit
-    sort_order = request_query.sort_order  # default: asc
-
+    # Get all data
     stmt = select(IDXPersonalInfo).where(
         IDXPersonalInfo.issuer_address == issuer_address
     )
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
+    # Filter
+    if get_query.account_address:
+        stmt = stmt.where(IDXPersonalInfo.account_address == get_query.account_address)
+    if get_query.created_from:
+        _created_from = datetime.strptime(
+            get_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.created
+            >= local_tz.localize(_created_from).astimezone(utc_tz)
+        )
+    if get_query.created_to:
+        _created_to = datetime.strptime(
+            get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.created <= local_tz.localize(_created_to).astimezone(utc_tz)
+        )
+    if get_query.modified_from:
+        _modified_from = datetime.strptime(
+            get_query.modified_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.modified
+            >= local_tz.localize(_modified_from).astimezone(utc_tz)
+        )
+    if get_query.modified_to:
+        _modified_to = datetime.strptime(
+            get_query.modified_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.modified
+            <= local_tz.localize(_modified_to).astimezone(utc_tz)
+        )
+
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:
+    sort_attr = getattr(IDXPersonalInfo, get_query.sort_item, None)
+    if get_query.sort_order == 0:  # ASC
+        stmt = stmt.order_by(sort_attr)
+    else:  # DESC
+        stmt = stmt.order_by(desc(sort_attr))
+    if get_query.sort_item != IDXPersonalInfo.created:
+        # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(IDXPersonalInfo.created)
-    else:
-        stmt = stmt.order_by(desc(IDXPersonalInfo.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     personal_info_list: Sequence[IDXPersonalInfo] = (await db.scalars(stmt)).all()
     data = [_personal_info.json() for _personal_info in personal_info_list]
@@ -99,8 +145,101 @@ async def list_all_token_holders_personal_info(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
+                "total": total,
+            },
+            "personal_info": data,
+        },
+    )
+
+
+# GET: /token/holders/personal_info/history
+@router.get(
+    "/holders/personal_info/history",
+    operation_id="ListTokenHoldersPersonalInfoHistory",
+    response_model=ListTokenHoldersPersonalInfoHistoryResponse,
+    responses=get_routers_responses(422),
+)
+async def list_all_token_holders_personal_info_history(
+    db: DBAsyncSession,
+    issuer_address: str = Header(...),
+    get_query: ListTokenHoldersPersonalInfoHistoryQuery = Depends(),
+):
+    """List personal information historical data"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get all data
+    stmt = select(IDXPersonalInfoHistory).where(
+        IDXPersonalInfoHistory.issuer_address == issuer_address
+    )
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Filter
+    if get_query.account_address is not None:
+        stmt = stmt.where(
+            IDXPersonalInfoHistory.account_address == get_query.account_address
+        )
+    if get_query.event_type is not None:
+        stmt = stmt.where(IDXPersonalInfoHistory.event_type == get_query.event_type)
+    if get_query.block_timestamp_from:
+        _block_timestamp_from = datetime.strptime(
+            get_query.block_timestamp_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfoHistory.block_timestamp
+            >= local_tz.localize(_block_timestamp_from).astimezone(utc_tz)
+        )
+    if get_query.block_timestamp_to:
+        _block_timestamp_to = datetime.strptime(
+            get_query.block_timestamp_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfoHistory.block_timestamp
+            <= local_tz.localize(_block_timestamp_to).astimezone(utc_tz)
+        )
+    if get_query.created_from:
+        _created_from = datetime.strptime(
+            get_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfoHistory.created
+            >= local_tz.localize(_created_from).astimezone(utc_tz)
+        )
+    if get_query.created_to:
+        _created_to = datetime.strptime(
+            get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfoHistory.created
+            <= local_tz.localize(_created_to).astimezone(utc_tz)
+        )
+
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Sort
+    if get_query.sort_order == 0:
+        stmt = stmt.order_by(IDXPersonalInfoHistory.block_timestamp)
+    else:
+        stmt = stmt.order_by(desc(IDXPersonalInfoHistory.block_timestamp))
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    history_list: Sequence[IDXPersonalInfoHistory] = (await db.scalars(stmt)).all()
+    data = [_history.json() for _history in history_list]
+
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "personal_info": data,

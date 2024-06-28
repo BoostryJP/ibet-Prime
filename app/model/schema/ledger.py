@@ -126,6 +126,7 @@ class RetrieveLedgerDetailsHistoryResponse(BaseModel):
     headers: Optional[List[dict]] = None
     data: List[RetrieveLedgerDetailsDataHistoryResponse]
     footers: Optional[List[dict]] = None
+    some_personal_info_not_registered: bool
 
 
 class RetrieveLedgerHistoryResponse(BaseModel):

@@ -9,6 +9,9 @@ __pycache__/
 # pyenv
 .python-version
 
+# Node
+node_modules/
+
 # Intellij
 .idea
 /*.iml

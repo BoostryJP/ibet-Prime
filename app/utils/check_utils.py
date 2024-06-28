@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Optional
 
 from fastapi import Request
@@ -192,10 +192,7 @@ async def check_token_for_auth(db: AsyncSession, issuer_address: str, auth_token
         hashed_token = hashlib.sha256(auth_token.encode()).hexdigest()
         if issuer_token.auth_token != hashed_token:
             raise AuthorizationError
-        elif (
-            issuer_token.valid_duration != 0
-            and issuer_token.usage_start
-            + timedelta(seconds=issuer_token.valid_duration)
-            < datetime.utcnow()
-        ):
+        elif issuer_token.valid_duration != 0 and issuer_token.usage_start + timedelta(
+            seconds=issuer_token.valid_duration
+        ) < datetime.now(UTC).replace(tzinfo=None):
             raise AuthorizationError

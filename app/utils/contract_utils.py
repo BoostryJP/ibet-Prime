@@ -202,13 +202,15 @@ class ContractUtils:
                 transaction_dict=transaction, private_key=private_key
             )
             # Send Transaction
-            tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction.hex())
+            tx_hash = web3.eth.send_raw_transaction(
+                signed_tx.raw_transaction.to_0x_hex()
+            )
             tx_receipt = web3.eth.wait_for_transaction_receipt(
                 transaction_hash=tx_hash, timeout=10
             )
             if tx_receipt["status"] == 0:
                 # inspect reason of transaction fail
-                code_msg = ContractUtils.inspect_tx_failure(tx_hash.hex())
+                code_msg = ContractUtils.inspect_tx_failure(tx_hash.to_0x_hex())
                 raise ContractRevertError(code_msg=code_msg)
         except:
             raise
@@ -216,7 +218,7 @@ class ContractUtils:
             local_session.rollback()  # unlock record
             local_session.close()
 
-        return tx_hash.hex(), tx_receipt
+        return tx_hash.to_0x_hex(), tx_receipt
 
     @staticmethod
     def inspect_tx_failure(tx_hash: str) -> str:
@@ -268,16 +270,16 @@ class ContractUtils:
 
         :param contract: Contract
         :param event: Event
-        :param block_from: fromBlock
-        :param block_to: toBlock
+        :param block_from: from_block
+        :param block_to: to_block
         :param argument_filters: Argument filter
         :return: Event logs
         """
         try:
             _event = getattr(contract.events, event)
             result = _event.get_logs(
-                fromBlock=block_from,
-                toBlock=block_to,
+                from_block=block_from,
+                to_block=block_to,
                 argument_filters=argument_filters,
             )
         except ABIEventFunctionNotFound:
@@ -455,14 +457,16 @@ class AsyncContractUtils:
             )
             # Send Transaction
             tx_hash = await async_web3.eth.send_raw_transaction(
-                signed_tx.rawTransaction.hex()
+                signed_tx.raw_transaction.to_0x_hex()
             )
             tx_receipt = await async_web3.eth.wait_for_transaction_receipt(
                 transaction_hash=tx_hash, timeout=10
             )
             if tx_receipt["status"] == 0:
                 # inspect reason of transaction fail
-                code_msg = await AsyncContractUtils.inspect_tx_failure(tx_hash.hex())
+                code_msg = await AsyncContractUtils.inspect_tx_failure(
+                    tx_hash.to_0x_hex()
+                )
                 raise ContractRevertError(code_msg=code_msg)
         except:
             raise
@@ -470,7 +474,7 @@ class AsyncContractUtils:
             await local_session.rollback()  # unlock record
             await local_session.close()
 
-        return tx_hash.hex(), tx_receipt
+        return tx_hash.to_0x_hex(), tx_receipt
 
     @staticmethod
     async def inspect_tx_failure(tx_hash: str) -> str:
@@ -522,16 +526,16 @@ class AsyncContractUtils:
 
         :param contract: Contract
         :param event: Event
-        :param block_from: fromBlock
-        :param block_to: toBlock
+        :param block_from: from_block
+        :param block_to: to_block
         :param argument_filters: Argument filter
         :return: Event logs
         """
         try:
             _event = getattr(contract.events, event)
             result = await _event.get_logs(
-                fromBlock=block_from,
-                toBlock=block_to,
+                from_block=block_from,
+                to_block=block_to,
                 argument_filters=argument_filters,
             )
         except ABIEventFunctionNotFound:

@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Optional, Sequence
 
 import uvloop
@@ -284,7 +284,7 @@ class Processor:
                             notice_code=0,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_token_cancel_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -326,7 +326,7 @@ class Processor:
                         notice_code=1,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_token_approve_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -369,7 +369,7 @@ class Processor:
                         notice_code=2,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_apply_for_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -417,7 +417,7 @@ class Processor:
                             notice_code=0,
                         )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_cancel_transfer(
         self, db_session: AsyncSession, block_from, block_to
@@ -459,7 +459,7 @@ class Processor:
                         notice_code=1,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_escrow_finished(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -500,7 +500,7 @@ class Processor:
                         notice_code=3,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_exchange_approve_transfer(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -541,7 +541,7 @@ class Processor:
                         notice_code=2,
                     )
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __register_notification(
         self,
@@ -665,17 +665,17 @@ class Processor:
             transfer_approval.amount = amount
             try:
                 transfer_approval.application_datetime = datetime.fromtimestamp(
-                    float(optional_data_applicant), tz=timezone.utc
+                    float(optional_data_applicant), tz=UTC
                 )
             except ValueError:
                 transfer_approval.application_datetime = None
             transfer_approval.application_blocktimestamp = datetime.fromtimestamp(
-                block_timestamp, tz=timezone.utc
+                block_timestamp, tz=UTC
             )
         elif event_type == "Cancel":
             if transfer_approval is not None:
                 transfer_approval.cancellation_blocktimestamp = datetime.fromtimestamp(
-                    block_timestamp, tz=timezone.utc
+                    block_timestamp, tz=UTC
                 )
                 transfer_approval.cancelled = True
         elif event_type == "EscrowFinish":
@@ -685,12 +685,12 @@ class Processor:
             if transfer_approval is not None:
                 try:
                     transfer_approval.approval_datetime = datetime.fromtimestamp(
-                        float(optional_data_approver), tz=timezone.utc
+                        float(optional_data_approver), tz=UTC
                     )
                 except ValueError:
                     transfer_approval.approval_datetime = None
                 transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
-                    block_timestamp, tz=timezone.utc
+                    block_timestamp, tz=UTC
                 )
                 transfer_approval.transfer_approved = True
         await db_session.merge(transfer_approval)

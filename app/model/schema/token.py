@@ -27,7 +27,7 @@ from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic.dataclasses import dataclass
 
-from app.model import EthereumAddress
+from app.model import EthereumAddress, ValidatedDatetimeStr
 
 from .base import (
     CURRENCY_str,
@@ -74,6 +74,7 @@ class IbetStraightBondCreate(BaseModel):
     is_offering: Optional[bool] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     image_url: Optional[list[str]] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
@@ -130,6 +131,7 @@ class IbetStraightBondUpdate(BaseModel):
     is_redeemed: Optional[bool] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
@@ -214,6 +216,7 @@ class IbetShareCreate(BaseModel):
     is_offering: Optional[bool] = None
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
@@ -239,6 +242,7 @@ class IbetShareUpdate(BaseModel):
     dividends: Optional[float] = Field(default=None, ge=0.00, le=5_000_000_000.00)
     tradable_exchange_contract_address: Optional[EthereumAddress] = None
     personal_info_contract_address: Optional[EthereumAddress] = None
+    require_personal_info_registered: Optional[bool] = None
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
@@ -359,6 +363,7 @@ class ListAllHoldersSortItem(StrEnum):
     balance = "balance"
     pending_transfer = "pending_transfer"
     locked = "locked"
+    balance_and_pending_transfer = "balance_and_pending_transfer"
     key_manager = "key_manager"
     holder_name = "holder_name"
 
@@ -389,6 +394,16 @@ class ListAllHoldersQuery:
         Optional[ValueOperator],
         Query(
             description="search condition of locked amount(0:equal, 1:greater than or equal, 2:less than or equal）",
+        ),
+    ] = ValueOperator.EQUAL
+    balance_and_pending_transfer: Annotated[
+        Optional[int],
+        Query(description="number of balance plus pending transfer amount"),
+    ] = None
+    balance_and_pending_transfer_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="search condition of balance plus pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
         ),
     ] = ValueOperator.EQUAL
     account_address: Annotated[
@@ -464,10 +479,10 @@ class ListTokenOperationLogHistoryQuery:
         Optional[TokenUpdateOperationCategory], Query(description="Trigger of change")
     ] = None
     created_from: Annotated[
-        Optional[datetime], Query(description="Created datetime filter(From)")
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
     ] = None
     created_to: Annotated[
-        Optional[datetime], Query(description="Created datetime filter(To)")
+        Optional[ValidatedDatetimeStr], Query(description="created datetime (To)")
     ] = None
     sort_item: Annotated[ListTokenHistorySortItem, Query(description="Sort item")] = (
         ListTokenHistorySortItem.created
@@ -515,6 +530,7 @@ class IbetStraightBondResponse(BaseModel):
     is_offering: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
+    require_personal_info_registered: bool
     contact_information: str
     privacy_policy: str
     issue_datetime: str
@@ -544,6 +560,7 @@ class IbetShareResponse(BaseModel):
     is_offering: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
+    require_personal_info_registered: bool
     contact_information: str
     privacy_policy: str
     issue_datetime: str

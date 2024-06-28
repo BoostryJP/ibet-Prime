@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from .e2e_messaging import E2EMessaging
 from .exchange import IbetExchangeInterface, IbetSecurityTokenEscrow
 from .freeze_log import FreezeLogContract
-from .personal_info import PersonalInfoContract
+from .personal_info import ContractPersonalInfoType, PersonalInfoContract
 from .token import (
     IbetSecurityTokenInterface,
     IbetShareContract,

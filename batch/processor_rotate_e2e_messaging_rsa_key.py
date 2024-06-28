@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -176,9 +176,9 @@ class Processor:
             _account_rsa_key.rsa_private_key = rsa_private_key
             _account_rsa_key.rsa_public_key = rsa_public_key
             _account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(pass_phrase)
-            _account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
-                block["timestamp"]
-            )
+            _account_rsa_key.block_timestamp = datetime.fromtimestamp(
+                block["timestamp"], UTC
+            ).replace(tzinfo=None)
             db_session.add(_account_rsa_key)
 
     @staticmethod

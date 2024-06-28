@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
@@ -40,6 +40,8 @@ from app.model.db import (
     Account,
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber,
+    IDXPersonalInfoHistory,
+    PersonalInfoEventType,
     Token,
     TokenType,
 )
@@ -203,7 +205,9 @@ class Processor:
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
                         block = await web3.eth.get_block(event["blockNumber"])
-                        timestamp = datetime.utcfromtimestamp(block["timestamp"])
+                        timestamp = datetime.fromtimestamp(
+                            block["timestamp"], UTC
+                        ).replace(tzinfo=None)
                         decrypted_personal_info = (
                             await _personal_info_contract.get_info(
                                 account_address=account_address, default_value=None
@@ -213,12 +217,13 @@ class Processor:
                             db_session=db_session,
                             account_address=account_address,
                             issuer_address=link_address,
+                            event_type=PersonalInfoEventType.REGISTER,
                             personal_info=decrypted_personal_info,
                             timestamp=timestamp,
                         )
                         await db_session.commit()
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     async def __sync_personal_info_modify(
         self, db_session: AsyncSession, block_from, block_to
@@ -234,7 +239,9 @@ class Processor:
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
                         block = await web3.eth.get_block(event["blockNumber"])
-                        timestamp = datetime.utcfromtimestamp(block["timestamp"])
+                        timestamp = datetime.fromtimestamp(
+                            block["timestamp"], UTC
+                        ).replace(tzinfo=None)
                         decrypted_personal_info = (
                             await _personal_info_contract.get_info(
                                 account_address=account_address, default_value=None
@@ -244,18 +251,20 @@ class Processor:
                             db_session=db_session,
                             account_address=account_address,
                             issuer_address=link_address,
+                            event_type=PersonalInfoEventType.MODIFY,
                             personal_info=decrypted_personal_info,
                             timestamp=timestamp,
                         )
                         await db_session.commit()
             except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+                raise
 
     @staticmethod
     async def __sink_on_personal_info(
         db_session: AsyncSession,
         account_address: str,
         issuer_address: str,
+        event_type: PersonalInfoEventType,
         personal_info: dict,
         timestamp: datetime,
     ):
@@ -291,6 +300,14 @@ class Processor:
             LOG.debug(
                 f"Register: account_address={account_address}, issuer_address={issuer_address}"
             )
+
+        _personal_info_history = IDXPersonalInfoHistory()
+        _personal_info_history.account_address = account_address
+        _personal_info_history.issuer_address = issuer_address
+        _personal_info_history.event_type = event_type
+        _personal_info_history.personal_info = _personal_info.personal_info
+        _personal_info_history.block_timestamp = timestamp
+        db_session.add(_personal_info_history)
 
 
 async def main():

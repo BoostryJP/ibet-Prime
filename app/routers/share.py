@@ -18,14 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import List, Optional, Sequence
 
+import pytz
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
-from pytz import timezone
 from sqlalchemy import (
     String,
     and_,
@@ -42,6 +42,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.orm import aliased
+from sqlalchemy.sql.functions import coalesce
 
 import config
 from app import log
@@ -51,6 +52,7 @@ from app.exceptions import (
     ContractRevertError,
     InvalidParameterError,
     OperationNotAllowedStateError,
+    OperationNotSupportedVersionError,
     SendTransactionError,
 )
 from app.model.blockchain import (
@@ -169,8 +171,8 @@ router = APIRouter(
 )
 
 LOG = log.get_logger()
-local_tz = timezone(config.TZ)
-utc_tz = timezone("UTC")
+local_tz = pytz.timezone(config.TZ)
+utc_tz = pytz.timezone("UTC")
 
 
 # POST: /share/tokens
@@ -246,6 +248,7 @@ async def issue_token(
     update_items = [
         "tradable_exchange_contract_address",
         "personal_info_contract_address",
+        "require_personal_info_registered",
         "transferable",
         "status",
         "is_offering",
@@ -304,7 +307,9 @@ async def issue_token(
         _utxo.token_address = contract_address
         _utxo.amount = token.total_supply
         _utxo.block_number = block["number"]
-        _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
+        _utxo.block_timestamp = datetime.fromtimestamp(block["timestamp"], UTC).replace(
+            tzinfo=None
+        )
         db.add(_utxo)
 
         token_status = 1  # succeeded
@@ -317,7 +322,7 @@ async def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_22_12
+    _token.version = TokenVersion.V_24_06
     db.add(_token)
 
     # Register operation log
@@ -372,7 +377,7 @@ async def list_all_tokens(
     for token in tokens:
         # Get contract data
         share_token = (await IbetShareContract(token.token_address).get()).__dict__
-        issue_datetime_utc = timezone("UTC").localize(token.created)
+        issue_datetime_utc = pytz.timezone("UTC").localize(token.created)
         share_token["issue_datetime"] = issue_datetime_utc.astimezone(
             local_tz
         ).isoformat()
@@ -413,7 +418,7 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
 
     # Get contract data
     share_token = (await IbetShareContract(token_address).get()).__dict__
-    issue_datetime_utc = timezone("UTC").localize(_token.created)
+    issue_datetime_utc = pytz.timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     share_token["token_status"] = _token.token_status
     share_token["contract_version"] = _token.version
@@ -434,13 +439,14 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
         InvalidParameterError,
         SendTransactionError,
         ContractRevertError,
+        OperationNotSupportedVersionError,
     ),
 )
 async def update_token(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
-    token: IbetShareUpdate,
+    update_data: IbetShareUpdate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
@@ -488,12 +494,19 @@ async def update_token(
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
 
+    # Verify that the token version supports the operation
+    if _token.version < TokenVersion.V_24_06:
+        if update_data.require_personal_info_registered is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
     # Send transaction
     try:
         token_contract = IbetShareContract(token_address)
         original_contents = (await token_contract.get()).__dict__
         await token_contract.update(
-            data=UpdateParams(**token.model_dump()),
+            data=UpdateParams(**update_data.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
         )
@@ -505,7 +518,7 @@ async def update_token(
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
     operation_log.type = TokenType.IBET_SHARE.value
-    operation_log.arguments = token.model_dump(exclude_none=True)
+    operation_log.arguments = update_data.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
     operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
     db.add(operation_log)
@@ -546,14 +559,20 @@ async def list_share_operation_log_history(
             )
         )
     if request_query.created_from:
+        _created_from = datetime.strptime(
+            request_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            >= local_tz.localize(request_query.created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz)
         )
     if request_query.created_to:
+        _created_to = datetime.strptime(
+            request_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            <= local_tz.localize(request_query.created_to).astimezone(utc_tz)
+            <= local_tz.localize(_created_to).astimezone(utc_tz)
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
@@ -663,7 +682,7 @@ async def list_additional_issuance_history(
 
     history = []
     for _event in _events:
-        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(_event.block_timestamp)
         history.append(
             {
                 "transaction_hash": _event.transaction_hash,
@@ -779,11 +798,6 @@ async def list_all_additional_issue_upload(
     get_query: ListAllAdditionalIssueUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
-    processed = get_query.processed
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -798,28 +812,28 @@ async def list_all_additional_issue_upload(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if processed is not None:
-        stmt = stmt.where(BatchIssueRedeemUpload.processed == processed)
+    if get_query.processed is not None:
+        stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(BatchIssueRedeemUpload.created)
     else:  # DESC
         stmt = stmt.order_by(desc(BatchIssueRedeemUpload.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
 
     uploads = []
     for _upload in _upload_list:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -834,8 +848,8 @@ async def list_all_additional_issue_upload(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
             "total": total,
         },
         "uploads": uploads,
@@ -1025,11 +1039,6 @@ async def list_redeem_history(
     get_query: ListRedeemHistoryQuery = Depends(),
 ):
     """List redemption history"""
-    sort_item = get_query.sort_item
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1060,26 +1069,26 @@ async def list_redeem_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
-    if sort_order == 0:  # ASC
+    sort_attr = getattr(IDXIssueRedeem, get_query.sort_item.value, None)
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+    if get_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
     history = []
     for _event in _events:
-        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(_event.block_timestamp)
         history.append(
             {
                 "transaction_hash": _event.transaction_hash,
@@ -1095,8 +1104,8 @@ async def list_redeem_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "history": history,
@@ -1195,10 +1204,6 @@ async def list_all_redeem_upload(
     get_query: ListAllRedeemUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
-    processed = get_query.processed
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
 
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
@@ -1215,28 +1220,28 @@ async def list_all_redeem_upload(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if processed is not None:
-        stmt = stmt.where(BatchIssueRedeemUpload.processed == processed)
+    if get_query.processed is not None:
+        stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(BatchIssueRedeemUpload.created)
     else:  # DESC
         stmt = stmt.order_by(desc(BatchIssueRedeemUpload.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
 
     uploads = []
     for _upload in _upload_list:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -1251,8 +1256,8 @@ async def list_all_redeem_upload(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
             "total": total,
         },
         "uploads": uploads,
@@ -1472,10 +1477,10 @@ async def list_all_scheduled_events(
 
     token_events = []
     for _token_event in _token_events:
-        scheduled_datetime_utc = timezone("UTC").localize(
+        scheduled_datetime_utc = pytz.timezone("UTC").localize(
             _token_event.scheduled_datetime
         )
-        created_utc = timezone("UTC").localize(_token_event.created)
+        created_utc = pytz.timezone("UTC").localize(_token_event.created)
         token_events.append(
             {
                 "scheduled_event_id": _token_event.event_id,
@@ -1498,7 +1503,12 @@ async def list_all_scheduled_events(
     "/tokens/{token_address}/scheduled_events",
     response_model=ScheduledEventIdResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        422,
+        401,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+        OperationNotSupportedVersionError,
     ),
 )
 async def schedule_new_update_event(
@@ -1546,6 +1556,13 @@ async def schedule_new_update_event(
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Verify that the token version supports the operation
+    if _token.version < TokenVersion.V_24_06:
+        if event_data.data.require_personal_info_registered is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
 
     # Register an event
     _scheduled_event = ScheduledEvents()
@@ -1610,8 +1627,10 @@ async def retrieve_token_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
 
-    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
-    created_utc = timezone("UTC").localize(_token_event.created)
+    scheduled_datetime_utc = pytz.timezone("UTC").localize(
+        _token_event.scheduled_datetime
+    )
+    created_utc = pytz.timezone("UTC").localize(_token_event.created)
     return json_response(
         {
             "scheduled_event_id": _token_event.event_id,
@@ -1678,8 +1697,10 @@ async def delete_scheduled_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
 
-    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
-    created_utc = timezone("UTC").localize(_token_event.created)
+    scheduled_datetime_utc = pytz.timezone("UTC").localize(
+        _token_event.scheduled_datetime
+    )
+    created_utc = pytz.timezone("UTC").localize(_token_event.created)
     rtn = {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
@@ -1710,21 +1731,6 @@ async def list_all_holders(
     issuer_address: str = Header(...),
 ):
     """List all share token holders"""
-    include_former_holder = get_query.include_former_holder
-    balance = get_query.balance
-    balance_operator = get_query.balance_operator
-    pending_transfer = get_query.pending_transfer
-    pending_transfer_operator = get_query.pending_transfer_operator
-    locked = get_query.locked
-    locked_operator = get_query.locked_operator
-    account_address = get_query.account_address
-    holder_name = get_query.holder_name
-    key_manager = get_query.key_manager
-    sort_item = get_query.sort_item
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -1791,7 +1797,7 @@ async def list_all_holders(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if not include_former_holder:
+    if not get_query.include_former_holder:
         stmt = stmt.where(
             or_(
                 IDXPosition.balance != 0,
@@ -1802,75 +1808,109 @@ async def list_all_holders(
             )
         )
 
-    if balance is not None and balance_operator is not None:
-        match balance_operator:
+    if get_query.balance is not None and get_query.balance_operator is not None:
+        match get_query.balance_operator:
             case ValueOperator.EQUAL:
-                stmt = stmt.where(IDXPosition.balance == balance)
+                stmt = stmt.where(IDXPosition.balance == get_query.balance)
             case ValueOperator.GTE:
-                stmt = stmt.where(IDXPosition.balance >= balance)
+                stmt = stmt.where(IDXPosition.balance >= get_query.balance)
             case ValueOperator.LTE:
-                stmt = stmt.where(IDXPosition.balance <= balance)
+                stmt = stmt.where(IDXPosition.balance <= get_query.balance)
 
-    if pending_transfer is not None and pending_transfer_operator is not None:
-        match pending_transfer_operator:
+    if (
+        get_query.pending_transfer is not None
+        and get_query.pending_transfer_operator is not None
+    ):
+        match get_query.pending_transfer_operator:
             case ValueOperator.EQUAL:
-                stmt = stmt.where(IDXPosition.pending_transfer == pending_transfer)
+                stmt = stmt.where(
+                    IDXPosition.pending_transfer == get_query.pending_transfer
+                )
             case ValueOperator.GTE:
-                stmt = stmt.where(IDXPosition.pending_transfer >= pending_transfer)
+                stmt = stmt.where(
+                    IDXPosition.pending_transfer >= get_query.pending_transfer
+                )
             case ValueOperator.LTE:
-                stmt = stmt.where(IDXPosition.pending_transfer <= pending_transfer)
+                stmt = stmt.where(
+                    IDXPosition.pending_transfer <= get_query.pending_transfer
+                )
 
-    if locked is not None and locked_operator is not None:
-        match locked_operator:
+    if get_query.locked is not None and get_query.locked_operator is not None:
+        match get_query.locked_operator:
             case ValueOperator.EQUAL:
-                stmt = stmt.having(locked_value == locked)
+                stmt = stmt.having(coalesce(locked_value, 0) == get_query.locked)
             case ValueOperator.GTE:
-                stmt = stmt.having(locked_value >= locked)
+                stmt = stmt.having(coalesce(locked_value, 0) >= get_query.locked)
             case ValueOperator.LTE:
-                stmt = stmt.having(locked_value <= locked)
+                stmt = stmt.having(coalesce(locked_value, 0) <= get_query.locked)
 
-    if account_address is not None:
-        stmt = stmt.where(IDXPosition.account_address.like("%" + account_address + "%"))
+    if (
+        get_query.balance_and_pending_transfer is not None
+        and get_query.balance_and_pending_transfer_operator is not None
+    ):
+        match get_query.balance_and_pending_transfer_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(
+                    IDXPosition.balance + IDXPosition.pending_transfer
+                    == get_query.balance_and_pending_transfer
+                )
+            case ValueOperator.GTE:
+                stmt = stmt.where(
+                    IDXPosition.balance + IDXPosition.pending_transfer
+                    >= get_query.balance_and_pending_transfer
+                )
+            case ValueOperator.LTE:
+                stmt = stmt.where(
+                    IDXPosition.balance + IDXPosition.pending_transfer
+                    <= get_query.balance_and_pending_transfer
+                )
 
-    if holder_name is not None:
+    if get_query.account_address is not None:
+        stmt = stmt.where(
+            IDXPosition.account_address.like("%" + get_query.account_address + "%")
+        )
+
+    if get_query.holder_name is not None:
         stmt = stmt.where(
             IDXPersonalInfo._personal_info["name"]
             .as_string()
-            .like("%" + holder_name + "%")
+            .like("%" + get_query.holder_name + "%")
         )
 
-    if key_manager is not None:
+    if get_query.key_manager is not None:
         stmt = stmt.where(
             IDXPersonalInfo._personal_info["key_manager"]
             .as_string()
-            .like("%" + key_manager + "%")
+            .like("%" + get_query.key_manager + "%")
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_item == ListAllHoldersSortItem.holder_name:
+    if get_query.sort_item == ListAllHoldersSortItem.holder_name:
         sort_attr = IDXPersonalInfo._personal_info["name"].as_string()
-    elif sort_item == ListAllHoldersSortItem.key_manager:
+    elif get_query.sort_item == ListAllHoldersSortItem.key_manager:
         sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
-    elif sort_item == ListAllHoldersSortItem.locked:
+    elif get_query.sort_item == ListAllHoldersSortItem.locked:
         sort_attr = locked_value
+    elif get_query.sort_item == ListAllHoldersSortItem.balance_and_pending_transfer:
+        sort_attr = IDXPosition.balance + IDXPosition.pending_transfer
     else:
-        sort_attr = getattr(IDXPosition, sort_item)
+        sort_attr = getattr(IDXPosition, get_query.sort_item)
 
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(asc(sort_attr))
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != ListAllHoldersSortItem.created:
+    if get_query.sort_item != ListAllHoldersSortItem.created:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(asc(IDXPosition.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _holders: Sequence[
         tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
@@ -1923,8 +1963,8 @@ async def list_all_holders(
             "result_set": {
                 "count": count,
                 "total": total,
-                "limit": limit,
-                "offset": offset,
+                "limit": get_query.limit,
+                "offset": get_query.offset,
             },
             "holders": holders,
         }
@@ -2248,11 +2288,6 @@ async def list_all_personal_info_batch_registration_uploads(
     get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
 ):
     """List all personal information batch registration uploads"""
-    status = get_query.status
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Verify that the token is issued by the issuer_address
     _token: Token | None = (
         await db.scalars(
@@ -2280,22 +2315,22 @@ async def list_all_personal_info_batch_registration_uploads(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if status is not None:
-        stmt = stmt.where(BatchRegisterPersonalInfoUpload.status == status)
+    if get_query.status is not None:
+        stmt = stmt.where(BatchRegisterPersonalInfoUpload.status == get_query.status)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(BatchRegisterPersonalInfoUpload.created)
     else:  # DESC
         stmt = stmt.order_by(desc(BatchRegisterPersonalInfoUpload.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
         await db.scalars(stmt)
@@ -2303,7 +2338,7 @@ async def list_all_personal_info_batch_registration_uploads(
 
     uploads = []
     for _upload in _upload_list:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -2316,8 +2351,8 @@ async def list_all_personal_info_batch_registration_uploads(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "uploads": uploads,
@@ -2403,7 +2438,7 @@ async def batch_register_personal_info(
         {
             "batch_id": batch_id,
             "status": batch.status,
-            "created": timezone("UTC")
+            "created": pytz.timezone("UTC")
             .localize(batch.created)
             .astimezone(local_tz)
             .isoformat(),
@@ -2631,7 +2666,7 @@ async def list_all_lock_events_by_share(
     for lock_event in lock_events:
         token: Token = lock_event.Token
         share_contract = await IbetShareContract(token.token_address).get()
-        block_timestamp_utc = timezone("UTC").localize(lock_event.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(lock_event.block_timestamp)
         resp_data.append(
             {
                 "category": lock_event.category,
@@ -2748,10 +2783,10 @@ async def transfer_ownership(
 async def list_transfer_history(
     db: DBAsyncSession,
     token_address: str,
-    request_query: ListTransferHistoryQuery = Depends(),
+    query: ListTransferHistoryQuery = Depends(),
 ):
     """List token transfer history"""
-    # Get token
+    # Check if the token has been issued
     _token: Token | None = (
         await db.scalars(
             select(Token)
@@ -2792,33 +2827,71 @@ async def list_transfer_history(
         )
         .where(IDXTransfer.token_address == token_address)
     )
-
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if request_query.source_event is not None:
-        stmt = stmt.where(IDXTransfer.source_event == request_query.source_event)
-    if request_query.data is not None:
+    # Filter
+    if query.block_timestamp_from is not None:
         stmt = stmt.where(
-            cast(IDXTransfer.data, String).like("%" + request_query.data + "%")
+            IDXTransfer.block_timestamp
+            >= local_tz.localize(query.block_timestamp_from).astimezone(UTC)
         )
-
+    if query.block_timestamp_to is not None:
+        stmt = stmt.where(
+            IDXTransfer.block_timestamp
+            <= local_tz.localize(query.block_timestamp_to).astimezone(UTC)
+        )
+    if query.from_address is not None:
+        stmt = stmt.where(IDXTransfer.from_address == query.from_address)
+    if query.to_address is not None:
+        stmt = stmt.where(IDXTransfer.to_address == query.to_address)
+    if query.from_address_name:
+        stmt = stmt.where(
+            from_address_personal_info._personal_info["name"]
+            .as_string()
+            .like("%" + query.from_address_name + "%")
+        )
+    if query.to_address_name:
+        stmt = stmt.where(
+            to_address_personal_info._personal_info["name"]
+            .as_string()
+            .like("%" + query.to_address_name + "%")
+        )
+    if query.amount is not None and query.amount_operator is not None:
+        match query.amount_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(IDXTransfer.amount == query.amount)
+            case ValueOperator.GTE:
+                stmt = stmt.where(IDXTransfer.amount >= query.amount)
+            case ValueOperator.LTE:
+                stmt = stmt.where(IDXTransfer.amount <= query.amount)
+    if query.source_event is not None:
+        stmt = stmt.where(IDXTransfer.source_event == query.source_event)
+    if query.data is not None:
+        stmt = stmt.where(cast(IDXTransfer.data, String).like("%" + query.data + "%"))
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    sort_attr = getattr(IDXTransfer, request_query.sort_item.value, None)
-    if request_query.sort_order == 0:  # ASC
+    match query.sort_item:
+        case ListTransferHistorySortItem.FROM_ADDRESS_NAME:
+            sort_attr = from_address_personal_info._personal_info["name"].as_string()
+        case ListTransferHistorySortItem.TO_ADDRESS_NAME:
+            sort_attr = to_address_personal_info._personal_info["name"].as_string()
+        case _:
+            sort_attr = getattr(IDXTransfer, query.sort_item.value, None)
+
+    if query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if request_query.sort_item != ListTransferHistorySortItem.BLOCK_TIMESTAMP:
+    if query.sort_item != ListTransferHistorySortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXTransfer.block_timestamp))
 
     # Pagination
-    if request_query.limit is not None:
-        stmt = stmt.limit(request_query.limit)
-    if request_query.offset is not None:
-        stmt = stmt.offset(request_query.offset)
+    if query.limit is not None:
+        stmt = stmt.limit(query.limit)
+    if query.offset is not None:
+        stmt = stmt.offset(query.offset)
 
     _transfers: Sequence[
         tuple[IDXTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
@@ -2826,7 +2899,7 @@ async def list_transfer_history(
 
     transfer_history = []
     for _transfer, _from_address_personal_info, _to_address_personal_info in _transfers:
-        block_timestamp_utc = timezone("UTC").localize(_transfer.block_timestamp)
+        block_timestamp_utc = pytz.timezone("UTC").localize(_transfer.block_timestamp)
         transfer_history.append(
             {
                 "transaction_hash": _transfer.transaction_hash,
@@ -2854,8 +2927,8 @@ async def list_transfer_history(
         {
             "result_set": {
                 "count": count,
-                "offset": request_query.offset,
-                "limit": request_query.limit,
+                "offset": query.offset,
+                "limit": query.limit,
                 "total": total,
             },
             "transfer_history": transfer_history,
@@ -3010,14 +3083,6 @@ async def list_token_transfer_approval_history(
     get_query: ListTransferApprovalHistoryQuery = Depends(),
 ):
     """List token transfer approval history"""
-    from_address = get_query.from_address
-    to_address = get_query.to_address
-    status = get_query.status
-    sort_item = get_query.sort_item
-    sort_order = get_query.sort_order
-    offset = get_query.offset
-    limit = get_query.limit
-
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -3134,33 +3199,33 @@ async def list_token_transfer_approval_history(
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
-    if from_address is not None:
-        stmt = stmt.where(subquery.from_address == from_address)
-    if to_address is not None:
-        stmt = stmt.where(subquery.to_address == to_address)
-    if status is not None:
-        stmt = stmt.where(literal_column("status").in_(status))
+    if get_query.from_address is not None:
+        stmt = stmt.where(subquery.from_address == get_query.from_address)
+    if get_query.to_address is not None:
+        stmt = stmt.where(subquery.to_address == get_query.to_address)
+    if get_query.status is not None:
+        stmt = stmt.where(literal_column("status").in_(get_query.status))
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_item != IDXTransferApprovalsSortItem.STATUS:
-        sort_attr = getattr(subquery, sort_item, None)
+    if get_query.sort_item != IDXTransferApprovalsSortItem.STATUS:
+        sort_attr = getattr(subquery, get_query.sort_item, None)
     else:
         sort_attr = literal_column("status")
-    if sort_order == 0:  # ASC
+    if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != IDXTransferApprovalsSortItem.ID:
+    if get_query.sort_item != IDXTransferApprovalsSortItem.ID:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(subquery.id))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _transfer_approvals: Sequence[
         tuple[
@@ -3202,12 +3267,12 @@ async def list_token_transfer_approval_history(
         else:
             issuer_cancelable = True
 
-        application_datetime_utc = timezone("UTC").localize(
+        application_datetime_utc = pytz.timezone("UTC").localize(
             _transfer_approval.application_datetime
         )
         application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
 
-        application_blocktimestamp_utc = timezone("UTC").localize(
+        application_blocktimestamp_utc = pytz.timezone("UTC").localize(
             _transfer_approval.application_blocktimestamp
         )
         application_blocktimestamp = application_blocktimestamp_utc.astimezone(
@@ -3215,7 +3280,7 @@ async def list_token_transfer_approval_history(
         ).isoformat()
 
         if _transfer_approval.approval_datetime is not None:
-            approval_datetime_utc = timezone("UTC").localize(
+            approval_datetime_utc = pytz.timezone("UTC").localize(
                 _transfer_approval.approval_datetime
             )
             approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
@@ -3223,7 +3288,7 @@ async def list_token_transfer_approval_history(
             approval_datetime = None
 
         if _transfer_approval.approval_blocktimestamp is not None:
-            approval_blocktimestamp_utc = timezone("UTC").localize(
+            approval_blocktimestamp_utc = pytz.timezone("UTC").localize(
                 _transfer_approval.approval_blocktimestamp
             )
             approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(
@@ -3233,7 +3298,7 @@ async def list_token_transfer_approval_history(
             approval_blocktimestamp = None
 
         if _transfer_approval.cancellation_blocktimestamp is not None:
-            cancellation_blocktimestamp_utc = timezone("UTC").localize(
+            cancellation_blocktimestamp_utc = pytz.timezone("UTC").localize(
                 _transfer_approval.cancellation_blocktimestamp
             )
             cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
@@ -3288,8 +3353,8 @@ async def list_token_transfer_approval_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "transfer_approval_history": transfer_approval_history,
@@ -3456,7 +3521,7 @@ async def update_transfer_approval(
     #    a cancelTransfer is performed immediately.
     #  - CANCEL -> cancelTransfer
     try:
-        now = str(datetime.utcnow().timestamp())
+        now = str(datetime.now(UTC).replace(tzinfo=None).timestamp())
         if data.operation_type == UpdateTransferApprovalOperationType.APPROVE:
             if _transfer_approval.exchange_address == config.ZERO_ADDRESS:
                 _data = {
@@ -3643,12 +3708,12 @@ async def retrieve_transfer_approval_history(
     else:
         issuer_cancelable = True
 
-    application_datetime_utc = timezone("UTC").localize(
+    application_datetime_utc = pytz.timezone("UTC").localize(
         _transfer_approval.application_datetime
     )
     application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
 
-    application_blocktimestamp_utc = timezone("UTC").localize(
+    application_blocktimestamp_utc = pytz.timezone("UTC").localize(
         _transfer_approval.application_blocktimestamp
     )
     application_blocktimestamp = application_blocktimestamp_utc.astimezone(
@@ -3656,7 +3721,7 @@ async def retrieve_transfer_approval_history(
     ).isoformat()
 
     if _transfer_approval.approval_datetime is not None:
-        approval_datetime_utc = timezone("UTC").localize(
+        approval_datetime_utc = pytz.timezone("UTC").localize(
             _transfer_approval.approval_datetime
         )
         approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
@@ -3664,7 +3729,7 @@ async def retrieve_transfer_approval_history(
         approval_datetime = None
 
     if _transfer_approval.approval_blocktimestamp is not None:
-        approval_blocktimestamp_utc = timezone("UTC").localize(
+        approval_blocktimestamp_utc = pytz.timezone("UTC").localize(
             _transfer_approval.approval_blocktimestamp
         )
         approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(
@@ -3674,7 +3739,7 @@ async def retrieve_transfer_approval_history(
         approval_blocktimestamp = None
 
     if _transfer_approval.cancellation_blocktimestamp is not None:
-        cancellation_blocktimestamp_utc = timezone("UTC").localize(
+        cancellation_blocktimestamp_utc = pytz.timezone("UTC").localize(
             _transfer_approval.cancellation_blocktimestamp
         )
         cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
@@ -3910,7 +3975,7 @@ async def list_bulk_transfer_upload(
 
     uploads = []
     for _upload in _uploads:
-        created_utc = timezone("UTC").localize(_upload.created)
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
                 "issuer_address": _upload.issuer_address,
