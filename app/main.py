@@ -166,7 +166,7 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
 
 # 400:BadRequestError
 @app.exception_handler(BadRequestError)
-async def invalid_parameter_error_handler(request: Request, exc: BadRequestError):
+async def bad_request_error_handler(request: Request, exc: BadRequestError):
     meta = {"code": exc.code, "title": exc.__class__.__name__}
 
     if len(exc.args) > 0:
