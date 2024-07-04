@@ -135,7 +135,7 @@ class TestUpdateDVPDeliveryPOST:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -234,7 +234,7 @@ class TestUpdateDVPDeliveryPOST:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         auth_token = AuthToken()
@@ -338,7 +338,7 @@ class TestUpdateDVPDeliveryPOST:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -449,7 +449,7 @@ class TestUpdateDVPDeliveryPOST:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -712,7 +712,7 @@ class TestUpdateDVPDeliveryPOST:
         token.issuer_address = issuer_address
         token.token_address = "0x0000000000000000000000000000000000000000"
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -884,7 +884,7 @@ class TestUpdateDVPDeliveryPOST:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()

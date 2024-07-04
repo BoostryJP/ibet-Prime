@@ -31,11 +31,13 @@ class IbetStraightBondContractVersion(StrEnum):
     V_22_12 = "22_12"
     V_23_12 = "23_12"
     V_24_06 = "24_06"
+    V_24_09 = "24_09"
 
 
 class IbetShareContractVersion(StrEnum):
     V_22_12 = "22_12"
     V_24_06 = "24_06"
+    V_24_09 = "24_09"
 
 
 MMDD_constr = Annotated[

@@ -22,7 +22,7 @@ from pydantic import BaseModel, PositiveInt
 from app.model import EthereumAddress
 
 
-class TransferParams(BaseModel):
+class ForcedTransferParams(BaseModel):
     from_address: EthereumAddress
     to_address: EthereumAddress
     amount: PositiveInt

@@ -22,7 +22,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_straight_bond import TransferParams
+from app.model.blockchain.tx_params.ibet_straight_bond import ForcedTransferParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -38,7 +38,7 @@ class TestAppRoutersBondTransfersPOST:
 
     # <Normal_1>
     # Authorization by eoa-password
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer")
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.forced_transfer")
     def test_normal_1(self, IbetStraightBondContract_mock, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -65,7 +65,7 @@ class TestAppRoutersBondTransfersPOST:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -91,7 +91,7 @@ class TestAppRoutersBondTransfersPOST:
 
         # assertion
         IbetStraightBondContract_mock.assert_any_call(
-            data=TransferParams(
+            data=ForcedTransferParams(
                 **{
                     "from_address": _from_address,
                     "to_address": _to_address,
@@ -107,7 +107,7 @@ class TestAppRoutersBondTransfersPOST:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer")
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.forced_transfer")
     def test_normal_2(self, IbetStraightBondContract_mock, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -140,7 +140,7 @@ class TestAppRoutersBondTransfersPOST:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -163,7 +163,7 @@ class TestAppRoutersBondTransfersPOST:
 
         # assertion
         IbetStraightBondContract_mock.assert_any_call(
-            data=TransferParams(
+            data=ForcedTransferParams(
                 **{
                     "from_address": _from_address,
                     "to_address": _to_address,
@@ -533,7 +533,7 @@ class TestAppRoutersBondTransfersPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -564,7 +564,7 @@ class TestAppRoutersBondTransfersPOST:
     # <Error_10>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetStraightBondContract.transfer",
+        "app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     def test_error_10(self, client, db):
@@ -593,7 +593,7 @@ class TestAppRoutersBondTransfersPOST:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()

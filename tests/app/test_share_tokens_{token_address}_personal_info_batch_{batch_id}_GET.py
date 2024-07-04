@@ -94,7 +94,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

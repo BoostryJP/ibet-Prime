@@ -164,84 +164,21 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
     )
 
 
-# 400:InvalidParameterError
-@app.exception_handler(InvalidParameterError)
-async def invalid_parameter_error_handler(request: Request, exc: InvalidParameterError):
-    meta = {"code": 1, "title": "InvalidParameterError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
+# 400:BadRequestError
+@app.exception_handler(BadRequestError)
+async def invalid_parameter_error_handler(request: Request, exc: BadRequestError):
+    meta = {"code": exc.code, "title": exc.__class__.__name__}
 
-
-# 400:SendTransactionError
-@app.exception_handler(SendTransactionError)
-async def send_transaction_error_handler(request: Request, exc: SendTransactionError):
-    meta = {"code": 2, "title": "SendTransactionError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:AuthTokenAlreadyExistsError
-@app.exception_handler(AuthTokenAlreadyExistsError)
-async def auth_token_already_exists_error_handler(
-    request: Request, exc: AuthTokenAlreadyExistsError
-):
-    meta = {"code": 3, "title": "AuthTokenAlreadyExistsError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta}),
-    )
-
-
-# 400:ResponseLimitExceededError
-@app.exception_handler(ResponseLimitExceededError)
-async def response_limit_exceeded_error_handler(
-    request: Request, exc: ResponseLimitExceededError
-):
-    meta = {"code": 4, "title": "ResponseLimitExceededError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:Integer64bitLimitExceededError
-@app.exception_handler(Integer64bitLimitExceededError)
-async def response_limit_exceeded_error_handler(
-    request: Request, exc: Integer64bitLimitExceededError
-):
-    meta = {"code": 5, "title": "Integer64bitLimitExceededError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:OperationNotSupportedVersionError
-@app.exception_handler(OperationNotSupportedVersionError)
-async def operation_not_supported_version_error_handler(
-    request: Request, exc: OperationNotSupportedVersionError
-):
-    meta = {"code": 6, "title": "OperationNotSupportedVersionError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:OperationNotAllowedStateError
-@app.exception_handler(OperationNotAllowedStateError)
-async def operation_not_permitted_error_handler(
-    request: Request, exc: OperationNotAllowedStateError
-):
-    meta = {"code": exc.code, "title": "OperationNotAllowedStateError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
+    if len(exc.args) > 0:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+        )
+    else:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=jsonable_encoder({"meta": meta}),
+        )
 
 
 # 400:ContractRevertError

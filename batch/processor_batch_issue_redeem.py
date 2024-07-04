@@ -46,11 +46,13 @@ from app.model.db import (
     BatchIssueRedeemUpload,
     Notification,
     NotificationType,
+    Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch import batch_log
-from config import DATABASE_URL
+from config import BULK_TX_LOT_SIZE, DATABASE_URL
 
 """
 [PROCESSOR-Batch-Issue-Redeem]
@@ -65,17 +67,36 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
+
     async def process(self):
         db_session = BatchAsyncSessionLocal()
         try:
-            upload_list: Sequence[BatchIssueRedeemUpload] = (
-                await db_session.scalars(
-                    select(BatchIssueRedeemUpload).where(
-                        BatchIssueRedeemUpload.processed == False
+            upload_list: Sequence[
+                tuple[BatchIssueRedeemUpload, TokenVersion | None]
+            ] = (
+                (
+                    await db_session.execute(
+                        select(BatchIssueRedeemUpload, Token.version)
+                        .outerjoin(
+                            Token,
+                            and_(
+                                BatchIssueRedeemUpload.issuer_address
+                                == Token.issuer_address,
+                                BatchIssueRedeemUpload.token_address
+                                == Token.token_address,
+                            ),
+                        )
+                        .where(BatchIssueRedeemUpload.processed == False)
+                        .order_by(BatchIssueRedeemUpload.created)
                     )
                 )
-            ).all()
-            for upload in upload_list:
+                .tuples()
+                .all()
+            )
+            for _d in upload_list:
+                upload = _d[0]
+                token_version = _d[1]
+
                 LOG.info(f"Process start: upload_id={upload.upload_id}")
 
                 # Get issuer's private key
@@ -125,100 +146,27 @@ class Processor:
                     await db_session.commit()
                     continue
 
-                # Batch processing
-                batch_data_list: Sequence[BatchIssueRedeem] = (
-                    await db_session.scalars(
-                        select(BatchIssueRedeem).where(
-                            and_(
-                                BatchIssueRedeem.upload_id == upload.upload_id,
-                                BatchIssueRedeem.status == 0,
-                            )
-                        )
+                # Processing
+                if token_version is not None and token_version >= TokenVersion.V_24_09:
+                    await self.__processing_in_batch(
+                        db_session=db_session, issuer_pk=issuer_pk, upload=upload
                     )
-                ).all()
-                for batch_data in batch_data_list:
-                    tx_hash = "-"
-                    try:
-                        if upload.token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                            if (
-                                upload.category
-                                == BatchIssueRedeemProcessingCategory.ISSUE.value
-                            ):
-                                tx_hash = await IbetStraightBondContract(
-                                    upload.token_address
-                                ).additional_issue(
-                                    data=IbetStraightBondAdditionalIssueParams(
-                                        account_address=batch_data.account_address,
-                                        amount=batch_data.amount,
-                                    ),
-                                    tx_from=upload.issuer_address,
-                                    private_key=issuer_pk,
-                                )
-                            elif (
-                                upload.category
-                                == BatchIssueRedeemProcessingCategory.REDEEM.value
-                            ):
-                                tx_hash = await IbetStraightBondContract(
-                                    upload.token_address
-                                ).redeem(
-                                    data=IbetStraightBondRedeemParams(
-                                        account_address=batch_data.account_address,
-                                        amount=batch_data.amount,
-                                    ),
-                                    tx_from=upload.issuer_address,
-                                    private_key=issuer_pk,
-                                )
-                        elif upload.token_type == TokenType.IBET_SHARE.value:
-                            if (
-                                upload.category
-                                == BatchIssueRedeemProcessingCategory.ISSUE.value
-                            ):
-                                tx_hash = await IbetShareContract(
-                                    upload.token_address
-                                ).additional_issue(
-                                    data=IbetShareAdditionalIssueParams(
-                                        account_address=batch_data.account_address,
-                                        amount=batch_data.amount,
-                                    ),
-                                    tx_from=upload.issuer_address,
-                                    private_key=issuer_pk,
-                                )
-                            elif (
-                                upload.category
-                                == BatchIssueRedeemProcessingCategory.REDEEM.value
-                            ):
-                                tx_hash = await IbetShareContract(
-                                    upload.token_address
-                                ).redeem(
-                                    data=IbetShareRedeemParams(
-                                        account_address=batch_data.account_address,
-                                        amount=batch_data.amount,
-                                    ),
-                                    tx_from=upload.issuer_address,
-                                    private_key=issuer_pk,
-                                )
-                        LOG.debug(f"Transaction sent successfully: {tx_hash}")
-                        batch_data.status = 1
-                    except ContractRevertError as e:
-                        LOG.warning(
-                            f"Transaction reverted: upload_id=<{batch_data.upload_id}> error_code:<{e.code}> error_msg:<{e.message}>"
-                        )
-                        batch_data.status = 2
-                    except SendTransactionError:
-                        LOG.warning(f"Failed to send transaction: {tx_hash}")
-                        batch_data.status = 2
-                    finally:
-                        await db_session.commit()  # commit for each data
+                else:
+                    await self.__processing_individually(
+                        db_session=db_session, issuer_pk=issuer_pk, upload=upload
+                    )
 
                 # Process failed data
                 failed_batch_data_list: Sequence[BatchIssueRedeem] = (
                     await db_session.scalars(
-                        select(BatchIssueRedeem).where(
+                        select(BatchIssueRedeem)
+                        .where(
                             and_(
                                 BatchIssueRedeem.upload_id == upload.upload_id,
                                 BatchIssueRedeem.status == 2,
                             )
                         )
+                        .order_by(BatchIssueRedeem.created)
                     )
                 ).all()
 
@@ -242,6 +190,217 @@ class Processor:
                 LOG.info(f"Process end: upload_id={upload.upload_id}")
         finally:
             await db_session.close()
+
+    @staticmethod
+    async def __processing_individually(
+        db_session: AsyncSession, issuer_pk: bytes, upload: BatchIssueRedeemUpload
+    ):
+        """
+        Process transactions line by line
+        - For v24.6 and earlier tokens
+        """
+        batch_data_list: Sequence[BatchIssueRedeem] = (
+            await db_session.scalars(
+                select(BatchIssueRedeem).where(
+                    and_(
+                        BatchIssueRedeem.upload_id == upload.upload_id,
+                        BatchIssueRedeem.status == 0,
+                    )
+                )
+            )
+        ).all()
+        for batch_data in batch_data_list:
+            tx_hash = "-"
+            try:
+                if upload.token_type == TokenType.IBET_STRAIGHT_BOND.value:
+                    if (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.ISSUE.value
+                    ):
+                        tx_hash = await IbetStraightBondContract(
+                            upload.token_address
+                        ).additional_issue(
+                            data=IbetStraightBondAdditionalIssueParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            ),
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+                    elif (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.REDEEM.value
+                    ):
+                        tx_hash = await IbetStraightBondContract(
+                            upload.token_address
+                        ).redeem(
+                            data=IbetStraightBondRedeemParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            ),
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+                elif upload.token_type == TokenType.IBET_SHARE.value:
+                    if (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.ISSUE.value
+                    ):
+                        tx_hash = await IbetShareContract(
+                            upload.token_address
+                        ).additional_issue(
+                            data=IbetShareAdditionalIssueParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            ),
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+                    elif (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.REDEEM.value
+                    ):
+                        tx_hash = await IbetShareContract(upload.token_address).redeem(
+                            data=IbetShareRedeemParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            ),
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+                LOG.debug(f"Transaction sent successfully: {tx_hash}")
+                batch_data.status = 1
+            except ContractRevertError as e:
+                LOG.warning(
+                    f"Transaction reverted: upload_id=<{batch_data.upload_id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                )
+                batch_data.status = 2
+            except SendTransactionError:
+                LOG.warning(f"Failed to send transaction: {tx_hash}")
+                batch_data.status = 2
+            finally:
+                await db_session.commit()  # commit for each data
+
+    @staticmethod
+    async def __processing_in_batch(
+        db_session: AsyncSession, issuer_pk: bytes, upload: BatchIssueRedeemUpload
+    ):
+        """
+        Process transactions in batch
+        """
+
+        while True:
+            # Get unprocessed records
+            # - Process up to 100(default) records in a batch
+            batch_data_list: Sequence[BatchIssueRedeem] = (
+                await db_session.scalars(
+                    select(BatchIssueRedeem)
+                    .where(
+                        and_(
+                            BatchIssueRedeem.upload_id == upload.upload_id,
+                            BatchIssueRedeem.status == 0,
+                        )
+                    )
+                    .limit(BULK_TX_LOT_SIZE)
+                )
+            ).all()
+            if len(batch_data_list) == 0:
+                break
+
+            tx_hash = "-"
+            try:
+                # Send bulk transaction
+                if upload.token_type == TokenType.IBET_STRAIGHT_BOND.value:
+                    if (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.ISSUE.value
+                    ):
+                        tx_data: list[IbetStraightBondAdditionalIssueParams] = [
+                            IbetStraightBondAdditionalIssueParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            )
+                            for batch_data in batch_data_list
+                        ]
+                        tx_hash = await IbetStraightBondContract(
+                            upload.token_address
+                        ).bulk_additional_issue(
+                            data=tx_data,
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+                    elif (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.REDEEM.value
+                    ):
+                        tx_data: list[IbetStraightBondRedeemParams] = [
+                            IbetStraightBondRedeemParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            )
+                            for batch_data in batch_data_list
+                        ]
+                        tx_hash = await IbetStraightBondContract(
+                            upload.token_address
+                        ).bulk_redeem(
+                            data=tx_data,
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+                elif upload.token_type == TokenType.IBET_SHARE.value:
+                    if (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.ISSUE.value
+                    ):
+                        tx_data: list[IbetShareAdditionalIssueParams] = [
+                            IbetShareAdditionalIssueParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            )
+                            for batch_data in batch_data_list
+                        ]
+                        tx_hash = await IbetShareContract(
+                            upload.token_address
+                        ).bulk_additional_issue(
+                            data=tx_data,
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+                    elif (
+                        upload.category
+                        == BatchIssueRedeemProcessingCategory.REDEEM.value
+                    ):
+                        tx_data: list[IbetShareRedeemParams] = [
+                            IbetShareRedeemParams(
+                                account_address=batch_data.account_address,
+                                amount=batch_data.amount,
+                            )
+                            for batch_data in batch_data_list
+                        ]
+                        tx_hash = await IbetShareContract(
+                            upload.token_address
+                        ).bulk_redeem(
+                            data=tx_data,
+                            tx_from=upload.issuer_address,
+                            private_key=issuer_pk,
+                        )
+
+                # Update status
+                LOG.debug(f"Transaction sent successfully: {tx_hash}")
+                for batch_data in batch_data_list:
+                    batch_data.status = 1
+            except ContractRevertError as e:
+                LOG.warning(
+                    f"Transaction reverted: upload_id=<{upload.upload_id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                )
+                for batch_data in batch_data_list:
+                    batch_data.status = 2
+            except SendTransactionError:
+                LOG.warning(f"Failed to send transaction: {tx_hash}")
+                for batch_data in batch_data_list:
+                    batch_data.status = 2
+            finally:
+                await db_session.commit()  # commit per each bulk transaction
 
     @staticmethod
     async def __sink_on_notification(

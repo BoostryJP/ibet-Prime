@@ -54,6 +54,8 @@ class TestAppRoutersShareBulkTransferGET:
         "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80",  # 2: failed
     ]
 
+    test_token_address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -76,6 +78,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
             bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_address = self.test_token_address
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
@@ -94,8 +97,8 @@ class TestAppRoutersShareBulkTransferGET:
             {
                 "issuer_address": self.upload_issuer_list[1]["address"],
                 "token_type": TokenType.IBET_SHARE.value,
+                "token_address": self.test_token_address,
                 "upload_id": self.upload_id_list[1],
-                "transaction_compression": False,
                 "status": 1,
                 "created": pytz.timezone("UTC")
                 .localize(utc_now)
@@ -116,6 +119,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
             bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_address = self.test_token_address
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
@@ -133,8 +137,8 @@ class TestAppRoutersShareBulkTransferGET:
                 {
                     "issuer_address": self.upload_issuer_list[i]["address"],
                     "token_type": TokenType.IBET_SHARE.value,
+                    "token_address": self.test_token_address,
                     "upload_id": self.upload_id_list[i],
-                    "transaction_compression": False,
                     "status": i,
                     "created": pytz.timezone("UTC")
                     .localize(utc_now)

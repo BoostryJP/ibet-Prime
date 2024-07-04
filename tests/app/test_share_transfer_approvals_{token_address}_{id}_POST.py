@@ -90,7 +90,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -227,7 +227,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -365,7 +365,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -507,7 +507,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -841,7 +841,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         db.commit()
@@ -886,7 +886,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         db.commit()
@@ -930,7 +930,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -995,7 +995,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1060,7 +1060,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1123,7 +1123,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1186,7 +1186,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1262,7 +1262,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1355,7 +1355,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1465,7 +1465,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1559,7 +1559,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1664,7 +1664,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1757,7 +1757,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1855,7 +1855,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10
@@ -1923,7 +1923,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         id = 10

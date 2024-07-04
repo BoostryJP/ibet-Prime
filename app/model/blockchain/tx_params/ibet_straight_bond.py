@@ -30,10 +30,10 @@ from .ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
+    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
     RedeemParams as IbetSecurityTokenRedeemParams,
-    TransferParams as IbetSecurityTokenTransferParams,
 )
 
 
@@ -88,7 +88,7 @@ class UpdateParams(BaseModel):
         return v
 
 
-class TransferParams(IbetSecurityTokenTransferParams):
+class ForcedTransferParams(IbetSecurityTokenForcedTransferParams):
     pass
 
 

@@ -4,17 +4,17 @@
 | ContractReceiver.json           | **v22.12.0** | no                     | yes      |
 | ContractRegistry.json           | **v22.12.0** | no                     | yes      |
 | TokenList.json                  | **v22.12.0** | yes(only for unittest) | yes      |
-| IbetStandardTokenInterface.json | **v22.12.0** | no                     | yes      |
-| IbetStandardToken.json          | **v22.12.0** | yes(only for unittest) | yes      |
-| IbetMembership.json             | **v22.12.0** | yes(only for unittest) | yes      |
-| IbetCoupon.json                 | **v22.12.0** | yes(only for unittest) | yes      |
-| IbetSecurityTokenInterface.json | **v24.6.0**  | no                     | yes      |
-| IbetStraightBond.json           | **v24.6.0**  | **yes**                | yes      |
-| IbetShare.json                  | **v24.6.0**  | **yes**                | yes      |
+| IbetStandardTokenInterface.json | **v24.9.0**  | no                     | yes      |
+| IbetStandardToken.json          | **v24.9.0**  | yes(only for unittest) | yes      |
+| IbetMembership.json             | **v24.9.0**  | yes(only for unittest) | yes      |
+| IbetCoupon.json                 | **v24.9.0**  | yes(only for unittest) | yes      |
+| IbetSecurityTokenInterface.json | **v24.9.0**  | no                     | yes      |
+| IbetStraightBond.json           | **v24.9.0**  | **yes**                | yes      |
+| IbetShare.json                  | **v24.9.0**  | **yes**                | yes      |
 | IbetExchangeInterface.json      | **v22.12.0** | no                     | yes      |
 | IbetExchange.json               | **v22.12.0** | yes(only for unittest) | yes      |
 | ExchangeStorage.json            | **v22.12.0** | yes(only for unittest) | yes      |
-| IbetEscrow.json                 | **v22.12.0** | yes(only for unittest) | yes      |
+| IbetEscrow.json                 | **v24.6.0**  | yes(only for unittest) | yes      |
 | EscrowStorage.json              | **v22.12.0** | yes(only for unittest) | yes      |
 | IbetSecurityTokenEscrow.json    | **v22.12.0** | yes(only for unittest) | yes      |
 | DVPStorage.json                 | **v24.6.0**  | yes(only for unittest) | yes      |

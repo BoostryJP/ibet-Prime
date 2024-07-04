@@ -55,7 +55,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         db.commit()
@@ -247,7 +247,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         _template = LedgerTemplate()
@@ -906,7 +906,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         db.commit()
@@ -1097,7 +1097,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         db.commit()

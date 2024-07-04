@@ -66,7 +66,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -131,7 +131,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -206,7 +206,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -258,7 +258,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -313,7 +313,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -368,7 +368,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -423,7 +423,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -472,7 +472,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -521,7 +521,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -568,7 +568,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -615,7 +615,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -703,7 +703,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         token.token_address = token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
