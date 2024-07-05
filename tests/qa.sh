@@ -24,7 +24,7 @@ cd /app/ibet-Prime
 sleep 10
 
 # test
-pytest tests/ -v --cov=app/routers/ --cov-report=xml --cov-branch -vv
+pytest tests/ -v --cov=app/routers/ --cov-report=xml --cov-branch
 
 status_code=$?
 

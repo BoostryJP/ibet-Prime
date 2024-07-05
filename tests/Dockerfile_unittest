@@ -95,7 +95,7 @@ RUN . ~/.bash_profile \
 FROM ubuntu:22.04 AS runner
 
 # make application directory
-RUN mkdir -p /app
+RUN mkdir -p /app/ibet-Prime/
 
 # add apl user/group
 RUN groupadd -g 1000 apl \
@@ -119,7 +119,7 @@ RUN apt-get update -q \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # copy test cases
-USER root
+USER apl
 RUN mkdir -p /app/ibet-Prime/tests/
 RUN mkdir -p /app/ibet-Prime/cov/
 COPY --chown=apl:apl tests/ /app/ibet-Prime/tests/
