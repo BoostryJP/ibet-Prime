@@ -329,8 +329,9 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -382,8 +383,9 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -425,8 +427,9 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -478,8 +481,9 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -1242,8 +1246,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -1725,7 +1730,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
