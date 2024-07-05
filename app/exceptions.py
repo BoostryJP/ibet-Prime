@@ -65,7 +65,7 @@ class OperationNotSupportedVersionError(BadRequestError):
 
 class TokenNotExistError(BadRequestError):
     """
-    Operations on non-transferable tokens
+    Operation on non-existent token
     """
 
     code = 7
