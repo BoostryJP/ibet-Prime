@@ -2,6 +2,12 @@ name: Unit Test
 on: [pull_request]
 
 jobs:
+  build:
+    name: 'Build docker image'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-test-image
   lint-black:
     name: 'Lint check (black)'
     runs-on: ubuntu-latest
@@ -11,14 +17,18 @@ jobs:
   unit-test-postgres:
     name: 'Unit tests (PostgreSQL)'
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-test-image
       - name: run unit test using postgres
         run: docker compose run ibet-prime-postgres
   migration-test-postgres:
     name: 'Migration tests (PostgreSQL)'
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-test-image
       - name: run unit test using postgres
         run: docker compose run ibet-prime-postgres bash --login -c "cd /app/ibet-Prime && pytest -vv --test-alembic -m 'alembic'"
