@@ -31,46 +31,67 @@ class AppError(Exception):
 ################################################
 # 400_BAD_REQUEST
 ################################################
-class InvalidParameterError(AppError):
+class BadRequestError(AppError):
     status_code = status.HTTP_400_BAD_REQUEST
+
+
+class InvalidParameterError(BadRequestError):
     code = 1
 
 
-class SendTransactionError(AppError):
-    status_code = status.HTTP_400_BAD_REQUEST
+class SendTransactionError(BadRequestError):
     code = 2
 
 
-class AuthTokenAlreadyExistsError(AppError):
-    status_code = status.HTTP_400_BAD_REQUEST
+class AuthTokenAlreadyExistsError(BadRequestError):
     code = 3
 
 
-class ResponseLimitExceededError(AppError):
-    status_code = status.HTTP_400_BAD_REQUEST
+class ResponseLimitExceededError(BadRequestError):
     code = 4
 
 
-class Integer64bitLimitExceededError(AppError):
-    status_code = status.HTTP_400_BAD_REQUEST
+class Integer64bitLimitExceededError(BadRequestError):
     code = 5
 
 
-class OperationNotSupportedVersionError(AppError):
+class OperationNotSupportedVersionError(BadRequestError):
     """
     The token version for which the operation is not supported
     """
 
-    status_code = status.HTTP_400_BAD_REQUEST
     code = 6
 
 
-class OperationNotAllowedStateError(AppError):
+class TokenNotExistError(BadRequestError):
+    """
+    Operation on non-existent token
+    """
+
+    code = 7
+
+
+class NonTransferableTokenError(BadRequestError):
+    """
+    Operations on non-transferable tokens
+    """
+
+    code = 8
+
+
+class MultipleTokenTransferNotAllowedError(BadRequestError):
+    """
+    Transfer operations that do not allow specifying multiple tokens at once
+    """
+
+    code = 9
+
+
+class OperationNotAllowedStateError(BadRequestError):
     """
     Error returned when server-side data is not ready to process the request
     """
 
-    status_code = status.HTTP_400_BAD_REQUEST
     code_list = [
         101,  # Transfer approval operations cannot be performed for accounts that do not have personal information registered.
     ]

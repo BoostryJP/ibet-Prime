@@ -42,10 +42,10 @@ from app.model.blockchain.tx_params.ibet_share import (
     ApproveTransferParams,
     BulkTransferParams,
     CancelTransferParams,
+    ForcedTransferParams,
     ForceUnlockPrams,
     LockParams,
     RedeemParams,
-    TransferParams,
     UpdateParams,
 )
 from app.model.db import TokenAttrUpdate, TokenCache
@@ -960,9 +960,8 @@ class TestUpdate:
         )
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 500001")),
@@ -980,7 +979,7 @@ class TestUpdate:
         assert exc_info.value.args[0] == "Message sender is not contract owner."
 
 
-class TestTransfer:
+class TestForcedTransfer:
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -1017,8 +1016,8 @@ class TestTransfer:
 
         # transfer
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
-        _transfer_data = TransferParams(**_data)
-        await share_contract.transfer(
+        _transfer_data = ForcedTransferParams(**_data)
+        await share_contract.forced_transfer(
             data=_transfer_data, tx_from=from_address, private_key=from_private_key
         )
 
@@ -1033,13 +1032,13 @@ class TestTransfer:
     ###########################################################################
 
     # <Error_1>
-    # validation (TransferParams)
+    # validation (ForcedTransferParams)
     # required field
     @pytest.mark.asyncio
     async def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
-            TransferParams(**_data)
+            ForcedTransferParams(**_data)
         assert exc_info.value.errors() == [
             {
                 "input": {},
@@ -1065,7 +1064,7 @@ class TestTransfer:
         ]
 
     # <Error_2>
-    # validation (TransferParams)
+    # validation (ForcedTransferParams)
     # invalid parameter
     @pytest.mark.asyncio
     async def test_error_2(self, db):
@@ -1075,7 +1074,7 @@ class TestTransfer:
             "amount": 0,
         }
         with pytest.raises(ValidationError) as exc_info:
-            TransferParams(**_data)
+            ForcedTransferParams(**_data)
         assert exc_info.value.errors() == [
             {
                 "ctx": {"error": ANY},
@@ -1136,9 +1135,9 @@ class TestTransfer:
 
         # transfer
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
-        _transfer_data = TransferParams(**_data)
+        _transfer_data = ForcedTransferParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            await share_contract.transfer(
+            await share_contract.forced_transfer(
                 data=_transfer_data,
                 tx_from="invalid_tx_from",
                 private_key=from_private_key,
@@ -1179,9 +1178,9 @@ class TestTransfer:
 
         # transfer
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
-        _transfer_data = TransferParams(**_data)
+        _transfer_data = ForcedTransferParams(**_data)
         with pytest.raises(SendTransactionError):
-            await share_contract.transfer(
+            await share_contract.forced_transfer(
                 data=_transfer_data,
                 tx_from=from_address,
                 private_key="invalid_private_key",
@@ -1226,10 +1225,10 @@ class TestTransfer:
 
         # transfer
         _data = {"from_address": issuer_address, "to_address": to_address, "amount": 10}
-        _transfer_data = TransferParams(**_data)
+        _transfer_data = ForcedTransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                await share_contract.transfer(
+                await share_contract.forced_transfer(
                     data=_transfer_data, tx_from=issuer_address, private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TimeExhausted)
@@ -1273,10 +1272,10 @@ class TestTransfer:
 
         # transfer
         _data = {"from_address": issuer_address, "to_address": to_address, "amount": 10}
-        _transfer_data = TransferParams(**_data)
+        _transfer_data = ForcedTransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                await share_contract.transfer(
+                await share_contract.forced_transfer(
                     data=_transfer_data, tx_from=issuer_address, private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
@@ -1318,7 +1317,7 @@ class TestTransfer:
             "to_address": to_address,
             "amount": 10000000,
         }
-        _transfer_data = TransferParams(**_data)
+        _transfer_data = ForcedTransferParams(**_data)
 
         # mock
         # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
@@ -1330,12 +1329,221 @@ class TestTransfer:
         )
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            await share_contract.transfer(
+            await share_contract.forced_transfer(
                 data=_transfer_data, tx_from=issuer_address, private_key=private_key
             )
 
         # assertion
         assert exc_info.value.args[0] == "Message sender balance is insufficient."
+
+
+class TestBulkForcedTransfer:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_private_key
+        )
+
+        # bulk transfer
+        _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
+        transfer_list = [ForcedTransferParams(**_data), ForcedTransferParams(**_data)]
+        await share_contract.bulk_forced_transfer(
+            data=transfer_list, tx_from=from_address, private_key=from_private_key
+        )
+
+        # assertion
+        from_balance = await share_contract.get_account_balance(from_address)
+        to_balance = await share_contract.get_account_balance(to_address)
+        assert from_balance == arguments[3] - 20
+        assert to_balance == 20
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Transaction REVERT
+    # -> ContractRevertError
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_private_key
+        )
+
+        # mock
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
+        InspectionMock = mock.patch(
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 110401")),
+        )
+
+        # bulk transfer
+        _data = {
+            "from_address": from_address,
+            "to_address": to_address,
+            "amount": arguments[3] + 1,
+        }
+        transfer_list = [
+            ForcedTransferParams(**_data),
+        ]
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            await share_contract.bulk_forced_transfer(
+                data=transfer_list,
+                tx_from=from_address,
+                private_key=from_private_key,
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Message sender balance is insufficient."
+
+    # <Error_2>
+    # TimeExhausted
+    # -> SendTransactionError
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_private_key
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted,
+        )
+
+        # bulk transfer
+        _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
+        transfer_list = [ForcedTransferParams(**_data), ForcedTransferParams(**_data)]
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                await share_contract.bulk_forced_transfer(
+                    data=transfer_list,
+                    tx_from=from_address,
+                    private_key=from_private_key,
+                )
+        # assertion
+        assert isinstance(exc_info.value.args[0], TimeExhausted)
+
+    # <Error_3>
+    # Invalid tx_from
+    # -> SendTransactionError
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_private_key
+        )
+
+        # bulk transfer
+        _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
+        transfer_list = [ForcedTransferParams(**_data), ForcedTransferParams(**_data)]
+        with pytest.raises(SendTransactionError) as exc_info:
+            await share_contract.bulk_forced_transfer(
+                data=transfer_list,
+                tx_from="invalid_tx_from",  # invalid
+                private_key=from_private_key,
+            )
+
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
 
 
 class TestBulkTransfer:
@@ -1619,9 +1827,8 @@ class TestBulkTransfer:
         )
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted: ")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 120502")),
@@ -2066,9 +2273,8 @@ class TestAdditionalIssue:
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 500001")),
@@ -2081,6 +2287,209 @@ class TestAdditionalIssue:
 
         # assertion
         assert exc_info.value.args[0] == "Message sender is not contract owner."
+
+
+class TestBulkAdditionalIssue:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        contract_address, abi, tx_hash = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
+
+        # additional issue
+        _data = {"account_address": issuer_address, "amount": 10}
+        _add_data = [AdditionalIssueParams(**_data), AdditionalIssueParams(**_data)]
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
+        await share_contract.bulk_additional_issue(
+            data=_add_data, tx_from=issuer_address, private_key=private_key
+        )
+
+        # assertion
+        share_contract_attr = await share_contract.get()
+        assert share_contract_attr.total_supply == arguments[3] + 20
+
+        balance = await share_contract.get_account_balance(issuer_address)
+        assert balance == arguments[3] + 20
+
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Transaction REVERT
+    # -> ContractRevertError
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        user_account = config_eth_account("user2")
+        user_address = user_account.get("address")
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+        user_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_account.get("keyfile_json"),
+            password=user_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_private_key
+        )
+
+        # additional issue
+        _data = {"account_address": issuer_address, "amount": 10}
+        _add_data = [
+            AdditionalIssueParams(**_data),
+            AdditionalIssueParams(**_data),
+        ]
+
+        # mock
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
+        InspectionMock = mock.patch(
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 500001")),
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            await share_contract.bulk_additional_issue(
+                data=_add_data, tx_from=user_address, private_key=user_private_key
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Message sender is not contract owner."
+
+    # <Error_2>
+    # TimeExhausted
+    # -> SendTransactionError
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted,
+        )
+
+        # additional issue
+        _data = {"account_address": issuer_address, "amount": 10}
+        _add_data = [AdditionalIssueParams(**_data), AdditionalIssueParams(**_data)]
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                await share_contract.bulk_additional_issue(
+                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                )
+        assert exc_info.type(SendTransactionError(TimeExhausted))
+
+    # <Error_3>
+    # Invalid tx_from
+    # -> SendTransactionError
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
+
+        # additional issue
+        _data = {"account_address": issuer_address, "amount": 10}
+        _add_data = [
+            AdditionalIssueParams(**_data),
+            AdditionalIssueParams(**_data),
+        ]
+        with pytest.raises(SendTransactionError) as exc_info:
+            await share_contract.bulk_additional_issue(
+                data=_add_data, tx_from="invalid_tx_from", private_key=private_key
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
 
 
 class TestRedeem:
@@ -2393,9 +2802,8 @@ class TestRedeem:
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 111102")),
@@ -2411,6 +2819,200 @@ class TestRedeem:
             exc_info.value.args[0]
             == "Redeem amount is less than target address balance."
         )
+
+
+class TestBulkRedeem:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        contract_address, abi, tx_hash = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
+
+        # redeem
+        _data = {"account_address": issuer_address, "amount": 10}
+        _add_data = [RedeemParams(**_data), RedeemParams(**_data)]
+        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
+        await share_contract.bulk_redeem(
+            data=_add_data, tx_from=issuer_address, private_key=private_key
+        )
+
+        # assertion
+        share_contract_attr = await share_contract.get()
+        assert share_contract_attr.total_supply == arguments[3] - 20
+
+        balance = await share_contract.get_account_balance(issuer_address)
+        assert balance == arguments[3] - 20
+
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Transaction REVERT
+    # -> ContractRevertError
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
+
+        # redeem
+        _data = {"account_address": issuer_address, "amount": 100_000_000}
+        _add_data = [RedeemParams(**_data), RedeemParams(**_data)]
+
+        # mock
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
+        InspectionMock = mock.patch(
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 111102")),
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            await share_contract.bulk_redeem(
+                data=_add_data, tx_from=issuer_address, private_key=private_key
+            )
+
+        # assertion
+        assert (
+            exc_info.value.args[0]
+            == "Redeem amount is less than target address balance."
+        )
+
+    # <Error_2>
+    # TimeExhausted
+    # -> SendTransactionError
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted,
+        )
+
+        # redeem
+        _data = {"account_address": issuer_address, "amount": 10}
+        _add_data = [RedeemParams(**_data), RedeemParams(**_data)]
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                await share_contract.bulk_redeem(
+                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                )
+        assert exc_info.type(SendTransactionError(TimeExhausted))
+
+    # <Error_3>
+    # Invalid tx_from
+    # -> SendTransactionError
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8"),
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
+
+        # redeem
+        _data = {"account_address": issuer_address, "amount": 10}
+        _add_data = [RedeemParams(**_data), RedeemParams(**_data)]
+        with pytest.raises(SendTransactionError) as exc_info:
+            await share_contract.bulk_redeem(
+                data=_add_data, tx_from="invalid_tx_from", private_key=private_key
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
 
 
 class TestGetAccountBalance:
@@ -2961,9 +3563,8 @@ class TestApproveTransfer:
         # This would be failed.
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 120902")),
@@ -3316,9 +3917,8 @@ class TestCancelTransfer:
         cancel_data = approve_data
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 120802")),
@@ -3676,9 +4276,8 @@ class TestLock:
         )
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 110002")),
@@ -4156,9 +4755,8 @@ class TestForceUnlock:
         )
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             AsyncMock(side_effect=ContractLogicError("execution reverted: 111201")),

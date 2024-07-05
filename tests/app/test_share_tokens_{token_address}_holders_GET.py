@@ -57,7 +57,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -95,7 +95,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: Position
@@ -212,7 +212,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -441,7 +441,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -590,7 +590,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -747,7 +747,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -939,7 +939,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -1150,7 +1150,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -1361,7 +1361,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -1553,7 +1553,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -1764,7 +1764,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -1975,7 +1975,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -2167,7 +2167,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -2379,7 +2379,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -2620,7 +2620,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -2815,7 +2815,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -3029,7 +3029,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -3243,7 +3243,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -3435,7 +3435,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -3646,7 +3646,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -3838,7 +3838,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -4071,7 +4071,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -4304,7 +4304,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -4537,7 +4537,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -4770,7 +4770,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -5003,7 +5003,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -5237,7 +5237,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -5502,7 +5502,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -5766,7 +5766,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -5977,7 +5977,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data: account_address_1
@@ -6218,7 +6218,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         # prepare data

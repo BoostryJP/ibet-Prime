@@ -55,9 +55,6 @@ class TestAppRoutersBondBulkTransferPOST:
     req_tokens = [
         "0xbB4138520af85fAfdDAACc7F0AabfE188334D0ca",
         "0x55e20Fa9F4Fa854Ef06081734872b734c105916b",
-        "0x1d2E98AD049e978B08113fD282BD42948F265DDa",
-        "0x2413a63D91eb10e1472a18aD4b9628fBE4aac8B8",
-        "0x6f9486251F4034C251ecb8Fa0f087CDDb3cDe6d7",
     ]
 
     upload_id_list = [
@@ -67,6 +64,7 @@ class TestAppRoutersBondBulkTransferPOST:
     ]
 
     # <Normal_1>
+    # Authorization by eoa-password
     def test_normal_1(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
@@ -83,7 +81,7 @@ class TestAppRoutersBondBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_24_06
+            _token.version = TokenVersion.V_24_09
             db.add(_token)
 
         db.commit()
@@ -98,7 +96,7 @@ class TestAppRoutersBondBulkTransferPOST:
                     "amount": 5,
                 },
                 {
-                    "token_address": self.req_tokens[1],
+                    "token_address": self.req_tokens[0],
                     "from_address": self.from_address,
                     "to_address": self.to_address,
                     "amount": 10,
@@ -124,6 +122,7 @@ class TestAppRoutersBondBulkTransferPOST:
         ).all()
         assert len(bulk_transfer_upload) == 1
         assert bulk_transfer_upload[0].issuer_address == self.admin_address
+        assert bulk_transfer_upload[0].token_address == self.req_tokens[0]
         assert bulk_transfer_upload[0].status == 0
 
         bulk_transfer = db.scalars(
@@ -140,7 +139,7 @@ class TestAppRoutersBondBulkTransferPOST:
         assert bulk_transfer[0].amount == 5
         assert bulk_transfer[0].status == 0
         assert bulk_transfer[1].issuer_address == self.admin_address
-        assert bulk_transfer[1].token_address == self.req_tokens[1]
+        assert bulk_transfer[1].token_address == self.req_tokens[0]
         assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert bulk_transfer[1].from_address == self.from_address
         assert bulk_transfer[1].to_address == self.to_address
@@ -172,7 +171,7 @@ class TestAppRoutersBondBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = ""
-            _token.version = TokenVersion.V_24_06
+            _token.version = TokenVersion.V_24_09
             db.add(_token)
 
         db.commit()
@@ -187,7 +186,7 @@ class TestAppRoutersBondBulkTransferPOST:
                     "amount": 5,
                 },
                 {
-                    "token_address": self.req_tokens[1],
+                    "token_address": self.req_tokens[0],
                     "from_address": self.from_address,
                     "to_address": self.to_address,
                     "amount": 10,
@@ -213,6 +212,7 @@ class TestAppRoutersBondBulkTransferPOST:
         ).all()
         assert len(bulk_transfer_upload) == 1
         assert bulk_transfer_upload[0].issuer_address == self.admin_address
+        assert bulk_transfer_upload[0].token_address == self.req_tokens[0]
         assert bulk_transfer_upload[0].status == 0
 
         bulk_transfer = db.scalars(
@@ -229,90 +229,6 @@ class TestAppRoutersBondBulkTransferPOST:
         assert bulk_transfer[0].amount == 5
         assert bulk_transfer[0].status == 0
         assert bulk_transfer[1].issuer_address == self.admin_address
-        assert bulk_transfer[1].token_address == self.req_tokens[1]
-        assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND.value
-        assert bulk_transfer[1].from_address == self.from_address
-        assert bulk_transfer[1].to_address == self.to_address
-        assert bulk_transfer[1].amount == 10
-        assert bulk_transfer[1].status == 0
-
-    # <Normal_3>
-    # transaction_compression = True
-    def test_normal_3(self, client, db):
-        # prepare data : Account(Issuer)
-        account = Account()
-        account.issuer_address = self.from_address
-        account.keyfile = self.admin_keyfile
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        # prepare data : Tokens
-        for _t in self.req_tokens:
-            _token = Token()
-            _token.type = TokenType.IBET_STRAIGHT_BOND.value
-            _token.tx_hash = ""
-            _token.issuer_address = self.from_address
-            _token.token_address = _t
-            _token.abi = ""
-            _token.version = TokenVersion.V_24_06
-            db.add(_token)
-
-        db.commit()
-
-        # request target API
-        req_param = {
-            "transfer_list": [
-                {
-                    "token_address": self.req_tokens[0],
-                    "from_address": self.from_address,
-                    "to_address": self.to_address,
-                    "amount": 5,
-                },
-                {
-                    "token_address": self.req_tokens[0],
-                    "from_address": self.from_address,
-                    "to_address": self.to_address,
-                    "amount": 10,
-                },
-            ],
-            "transaction_compression": True,
-        }
-        resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": self.from_address,
-                "eoa-password": E2EEUtils.encrypt("password"),
-            },
-        )
-
-        # assertion
-        assert resp.status_code == 200
-
-        bulk_transfer_upload = db.scalars(
-            select(BulkTransferUpload).where(
-                BulkTransferUpload.upload_id == resp.json()["upload_id"]
-            )
-        ).all()
-        assert len(bulk_transfer_upload) == 1
-        assert bulk_transfer_upload[0].issuer_address == self.from_address
-        assert bulk_transfer_upload[0].transaction_compression is True
-        assert bulk_transfer_upload[0].status == 0
-
-        bulk_transfer = db.scalars(
-            select(BulkTransfer)
-            .where(BulkTransfer.upload_id == resp.json()["upload_id"])
-            .order_by(BulkTransfer.id)
-        ).all()
-        assert len(bulk_transfer) == 2
-        assert bulk_transfer[0].issuer_address == self.from_address
-        assert bulk_transfer[0].token_address == self.req_tokens[0]
-        assert bulk_transfer[0].token_type == TokenType.IBET_STRAIGHT_BOND.value
-        assert bulk_transfer[0].from_address == self.from_address
-        assert bulk_transfer[0].to_address == self.to_address
-        assert bulk_transfer[0].amount == 5
-        assert bulk_transfer[0].status == 0
-        assert bulk_transfer[1].issuer_address == self.from_address
         assert bulk_transfer[1].token_address == self.req_tokens[0]
         assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert bulk_transfer[1].from_address == self.from_address
@@ -324,10 +240,10 @@ class TestAppRoutersBondBulkTransferPOST:
     # Error Case
     ###########################################################################
 
-    # <Error_1>
+    # <Error_1_1>
     # RequestValidationError
     # invalid type
-    def test_error_1(self, client, db):
+    def test_error_1_1(self, client, db):
         _token_address_int = 10  # integer
         _from_address_long = (
             "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D7811"  # long address
@@ -387,10 +303,10 @@ class TestAppRoutersBondBulkTransferPOST:
             ],
         }
 
-    # <Error_2>
+    # <Error_1_2>
     # RequestValidationError
     # invalid type(max values)
-    def test_error_2(self, client, db):
+    def test_error_1_2(self, client, db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -425,10 +341,10 @@ class TestAppRoutersBondBulkTransferPOST:
             ],
         }
 
-    # <Error_3>
+    # <Error_1_3>
     # RequestValidationError
     # headers and body required
-    def test_error_3(self, client, db):
+    def test_error_1_3(self, client, db):
         # request target API
         resp = client.post(self.test_url)
 
@@ -452,10 +368,10 @@ class TestAppRoutersBondBulkTransferPOST:
             ],
         }
 
-    # <Error_4>
+    # <Error_1_4>
     # RequestValidationError
     # issuer-address
-    def test_error_4(self, client, db):
+    def test_error_1_4(self, client, db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -485,10 +401,10 @@ class TestAppRoutersBondBulkTransferPOST:
             ],
         }
 
-    # <Error_5>
+    # <Error_1_5>
     # RequestValidationError
     # eoa-password(not decrypt)
-    def test_error_5(self, client, db):
+    def test_error_1_5(self, client, db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -520,10 +436,10 @@ class TestAppRoutersBondBulkTransferPOST:
             ],
         }
 
-    # <Error_6>
+    # <Error_2>
     # InvalidParameterError
     # list length is 0
-    def test_error_6(self, client, db):
+    def test_error_2(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -559,10 +475,10 @@ class TestAppRoutersBondBulkTransferPOST:
             ],
         }
 
-    # <Error_7>
+    # <Error_3_1>
     # AuthorizationError
     # issuer does not exist
-    def test_error_7(self, client, db):
+    def test_error_3_1(self, client, db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -596,10 +512,10 @@ class TestAppRoutersBondBulkTransferPOST:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-    # <Error_8>
+    # <Error_3_2>
     # AuthorizationError
     # password mismatch
-    def test_error_8(self, client, db):
+    def test_error_3_2(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -635,10 +551,9 @@ class TestAppRoutersBondBulkTransferPOST:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-    # <Error_9>
-    # InvalidParameterError
-    # token not found
-    def test_error_9(self, client, db):
+    # <Error_4>
+    # TokenNotExistError
+    def test_error_4(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -670,14 +585,13 @@ class TestAppRoutersBondBulkTransferPOST:
 
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "meta": {"code": 7, "title": "TokenNotExistError"},
             "detail": f"token not found: {self.req_tokens[0]}",
         }
 
-    # <Error_10>
-    # InvalidParameterError
-    # processing token
-    def test_error_10(self, client, db):
+    # <Error_5>
+    # NonTransferableTokenError
+    def test_error_5(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -693,7 +607,7 @@ class TestAppRoutersBondBulkTransferPOST:
         _token.token_address = self.req_tokens[0]
         _token.abi = ""
         _token.token_status = 0
-        _token.version = TokenVersion.V_24_06
+        _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         db.commit()
@@ -720,31 +634,19 @@ class TestAppRoutersBondBulkTransferPOST:
 
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "meta": {"code": 8, "title": "NonTransferableTokenError"},
             "detail": f"this token is temporarily unavailable: {self.req_tokens[0]}",
         }
 
-    # <Error_11_1>
-    # transaction_compression = True
-    # Token addresses are not the same
-    def test_error_11_1(self, client, db):
+    # <Error_6>
+    # MultipleTokenTransferNotAllowedError
+    def test_error_6(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.from_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
-
-        # prepare data : Tokens
-        for _t in self.req_tokens:
-            _token = Token()
-            _token.type = TokenType.IBET_STRAIGHT_BOND.value
-            _token.tx_hash = ""
-            _token.issuer_address = self.from_address
-            _token.token_address = _t
-            _token.abi = ""
-            _token.version = TokenVersion.V_24_06
-            db.add(_token)
 
         db.commit()
 
@@ -764,7 +666,6 @@ class TestAppRoutersBondBulkTransferPOST:
                     "amount": 10,
                 },
             ],
-            "transaction_compression": True,
         }
         resp = client.post(
             self.test_url,
@@ -778,122 +679,6 @@ class TestAppRoutersBondBulkTransferPOST:
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 1, "title": "InvalidParameterError"},
-            "detail": "When using transaction compression, all token_address must be the same.",
-        }
-
-    # <Error_11_2>
-    # transaction_compression = True
-    # From addresses are not the same
-    def test_error_11_2(self, client, db):
-        # prepare data : Account(Issuer)
-        account = Account()
-        account.issuer_address = self.from_address
-        account.keyfile = self.admin_keyfile
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        # prepare data : Tokens
-        for _t in self.req_tokens:
-            _token = Token()
-            _token.type = TokenType.IBET_STRAIGHT_BOND.value
-            _token.tx_hash = ""
-            _token.issuer_address = self.from_address
-            _token.token_address = _t
-            _token.abi = ""
-            _token.version = TokenVersion.V_24_06
-            db.add(_token)
-
-        db.commit()
-
-        # request target API
-        req_param = {
-            "transfer_list": [
-                {
-                    "token_address": self.req_tokens[0],
-                    "from_address": self.from_address,
-                    "to_address": self.to_address,
-                    "amount": 5,
-                },
-                {
-                    "token_address": self.req_tokens[0],
-                    "from_address": self.to_address,  # Wrong from_address
-                    "to_address": self.to_address,
-                    "amount": 10,
-                },
-            ],
-            "transaction_compression": True,
-        }
-        resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": self.from_address,
-                "eoa-password": E2EEUtils.encrypt("password"),
-            },
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {"code": 1, "title": "InvalidParameterError"},
-            "detail": "When using transaction compression, all from_address must be the same.",
-        }
-
-    # <Error_11_3>
-    # transaction_compression = True
-    # from_address and issuer_address are different
-    def test_error_11_3(self, client, db):
-        # prepare data : Account(Issuer)
-        account = Account()
-        account.issuer_address = self.admin_address
-        account.keyfile = self.admin_keyfile
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        # prepare data : Tokens
-        for _t in self.req_tokens:
-            _token = Token()
-            _token.type = TokenType.IBET_STRAIGHT_BOND.value
-            _token.tx_hash = ""
-            _token.issuer_address = self.admin_address
-            _token.token_address = _t
-            _token.abi = ""
-            _token.version = TokenVersion.V_24_06
-            db.add(_token)
-
-        db.commit()
-
-        # request target API
-        req_param = {
-            "transfer_list": [
-                {
-                    "token_address": self.req_tokens[0],
-                    "from_address": self.from_address,
-                    "to_address": self.to_address,
-                    "amount": 5,
-                },
-                {
-                    "token_address": self.req_tokens[0],
-                    "from_address": self.from_address,
-                    "to_address": self.to_address,
-                    "amount": 10,
-                },
-            ],
-            "transaction_compression": True,
-        }
-        resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": self.admin_address,
-                "eoa-password": E2EEUtils.encrypt("password"),
-            },
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {"code": 1, "title": "InvalidParameterError"},
-            "detail": "When using transaction compression, from_address must be the same as issuer_address.",
+            "meta": {"code": 9, "title": "MultipleTokenTransferNotAllowedError"},
+            "detail": "All token_address must be the same.",
         }

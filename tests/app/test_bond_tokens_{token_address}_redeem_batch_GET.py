@@ -52,7 +52,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
@@ -80,7 +80,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -127,7 +127,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -234,7 +234,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -328,7 +328,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -428,7 +428,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -520,7 +520,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -643,7 +643,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()

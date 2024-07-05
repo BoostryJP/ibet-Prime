@@ -175,7 +175,10 @@ TOKEN_CACHE_TTL_JITTER = (
 ####################################################
 # Batch settings
 ####################################################
+
+# =============================
 # Indexer
+# =============================
 INDEXER_SYNC_INTERVAL = 10
 INDEXER_BLOCK_LOT_MAX_SIZE = (
     int(os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE"))
@@ -183,7 +186,17 @@ INDEXER_BLOCK_LOT_MAX_SIZE = (
     else 1000000
 )
 
+# =============================
 # Processor
+# =============================
+
+# Bulk Tx
+BULK_TX_LOT_SIZE = (
+    int(os.environ.get("BULK_TX_LOT_SIZE"))
+    if os.environ.get("BULK_TX_LOT_SIZE")
+    else 100
+)
+
 # Bulk Transfer
 BULK_TRANSFER_INTERVAL = (
     int(os.environ.get("BULK_TRANSFER_INTERVAL"))

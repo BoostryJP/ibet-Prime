@@ -31,17 +31,17 @@ from web3.middleware import ExtraDataToPOAMiddleware
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
     AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    ForcedTransferParams as IbetShareTransferParams,
     ForceUnlockPrams as IbetShareForceUnlockParams,
     LockParams as IbetShareLockParams,
     RedeemParams as IbetShareRedeemParams,
-    TransferParams as IbetShareTransferParams,
     UpdateParams as IbetShareUpdateParams,
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    ForcedTransferParams as IbetStraightBondTransferParams,
     LockParams as IbetStraightBondLockParams,
     RedeemParams as IbetStraightBondRedeemParams,
-    TransferParams as IbetStraightBondTransferParams,
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.model.db import UTXO, Account, Token, TokenType, TokenVersion, UTXOBlockNumber
@@ -153,7 +153,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -165,7 +165,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         account = Account()
@@ -192,7 +192,7 @@ class TestProcessor:
         _transfer_1 = IbetShareTransferParams(
             from_address=issuer_address, to_address=user_address_1, amount=70
         )
-        await IbetShareContract(token_address_2).transfer(
+        await IbetShareContract(token_address_2).forced_transfer(
             _transfer_1, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -201,7 +201,7 @@ class TestProcessor:
         _transfer_2 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_1, amount=40
         )
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer_2, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -210,7 +210,7 @@ class TestProcessor:
         _transfer_3 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_2, amount=20
         )
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer_3, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -219,7 +219,7 @@ class TestProcessor:
         _transfer_4 = IbetShareTransferParams(
             from_address=user_address_1, to_address=user_address_2, amount=10
         )
-        await IbetShareContract(token_address_2).transfer(
+        await IbetShareContract(token_address_2).forced_transfer(
             _transfer_4, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -300,7 +300,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         latest_block_number = web3.eth.block_number
@@ -320,30 +320,30 @@ class TestProcessor:
         _transfer = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_1, amount=60
         )
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
         _transfer = IbetStraightBondTransferParams(
             from_address=user_address_1, to_address=user_address_2, amount=10
         )
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
         time.sleep(1)
@@ -418,7 +418,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         account = Account()
@@ -515,7 +515,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         account = Account()
@@ -557,7 +557,7 @@ class TestProcessor:
         _transfer_1 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=exchange_address, amount=100
         )
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer_1, issuer_address, issuer_private_key
         )
 
@@ -606,7 +606,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -791,7 +791,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -803,7 +803,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         account = Account()
@@ -879,7 +879,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -891,7 +891,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         account = Account()
@@ -1038,7 +1038,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -1050,7 +1050,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         account = Account()
@@ -1231,7 +1231,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -1243,7 +1243,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         account = Account()
@@ -1409,7 +1409,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         account = Account()
@@ -1443,14 +1443,14 @@ class TestProcessor:
         _transfer_1 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_1, amount=90
         )
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer_1, issuer_address, issuer_private_key
         )
         # Share:issuer -> user2
         _transfer_3 = IbetStraightBondTransferParams(
             from_address=issuer_address, to_address=user_address_2, amount=1000000000000
         )
-        await IbetStraightBondContract(token_address_1).transfer(
+        await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer_3, issuer_address, issuer_private_key
         )
 
@@ -1545,7 +1545,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         db.commit()
