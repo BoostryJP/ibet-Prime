@@ -1,0 +1,22 @@
+name: 'Setup Docker Build'
+description: 'Setup docker builder for using github actions cache'
+runs:
+  using: "composite"
+  steps:
+    - uses: docker/setup-buildx-action@v3
+    - name: Set metadata
+      id: metadata
+      uses: docker/metadata-action@v5
+      with:
+        images: ibet-prime
+        tags: |
+          type=sha,format=short
+    - uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./tests/Dockerfile_unittest
+        tags: ${{ steps.metadata.outputs.tags }}
+        push: false
+        load: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=min
