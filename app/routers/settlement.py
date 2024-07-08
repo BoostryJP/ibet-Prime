@@ -446,7 +446,7 @@ async def create_dvp_delivery(
             "agent_address": data.agent_address,
             "data": data.data,
         }
-        await dvp_contract.create_delivery(
+        (_, _, delivery_id) = await dvp_contract.create_delivery(
             data=CreateDeliveryParams(**_data),
             tx_from=issuer_address,
             private_key=private_key,
@@ -454,7 +454,11 @@ async def create_dvp_delivery(
     except SendTransactionError:
         raise SendTransactionError("failed to create delivery")
 
-    return
+    return json_response(
+        {
+            "delivery_id": delivery_id,
+        }
+    )
 
 
 # GET: /settlement/dvp/{exchange_address}/delivery/{delivery_id}

@@ -199,6 +199,27 @@ class TestAppRoutersNotificationsGET:
         )  # JST 2022/01/03
         db.add(_notification_9)
 
+        _notification_10 = Notification()
+        _notification_10.notice_id = "notice_id_10"
+        _notification_10.issuer_address = issuer_address_2
+        _notification_10.priority = 0
+        _notification_10.type = NotificationType.DVP_DELIVERY_INFO
+        _notification_10.code = 0
+        _notification_10.metainfo = {
+            "exchange_address": "0x0000000000000000000000000000000000000000",
+            "delivery_id": 1,
+            "token_address": "0x0000000000000000000000000000000000000000",
+            "token_type": TokenType.IBET_SHARE.value,
+            "seller_address": "0x0000000000000000000000000000000000000000",
+            "buyer_address": "0x0000000000000000000000000000000000000000",
+            "agent_address": "0x0000000000000000000000000000000000000000",
+            "amount": 30,
+        }
+        _notification_10.created = datetime.strptime(
+            "2022/01/09 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
+        db.add(_notification_10)
+
         db.commit()
 
         # request target API
@@ -209,7 +230,7 @@ class TestAppRoutersNotificationsGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {"count": 9, "offset": None, "limit": None, "total": 9},
+            "result_set": {"count": 10, "offset": None, "limit": None, "total": 10},
             "notifications": [
                 {
                     "notice_id": "notice_id_1",
@@ -330,6 +351,24 @@ class TestAppRoutersNotificationsGET:
                         "recipient_address": "0x0000000000000000000000000000000000000000",
                         "value": 30,
                         "data": {"message": "unlock1"},
+                    },
+                    "created": "2022-01-09T09:20:30+09:00",
+                },
+                {
+                    "notice_id": "notice_id_10",
+                    "issuer_address": issuer_address_2,
+                    "priority": 0,
+                    "notice_type": NotificationType.DVP_DELIVERY_INFO,
+                    "notice_code": 0,
+                    "metainfo": {
+                        "exchange_address": "0x0000000000000000000000000000000000000000",
+                        "delivery_id": 1,
+                        "token_address": "0x0000000000000000000000000000000000000000",
+                        "token_type": TokenType.IBET_SHARE.value,
+                        "seller_address": "0x0000000000000000000000000000000000000000",
+                        "buyer_address": "0x0000000000000000000000000000000000000000",
+                        "agent_address": "0x0000000000000000000000000000000000000000",
+                        "amount": 30,
                     },
                     "created": "2022-01-09T09:20:30+09:00",
                 },

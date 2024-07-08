@@ -19,8 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import sys
+import uuid
 from datetime import UTC, datetime
-from typing import Literal, Optional, Sequence
+from typing import Annotated, Literal, Optional, Sequence
 
 import uvloop
 from sqlalchemy import and_, select
@@ -36,6 +37,8 @@ from app.model.db import (
     DeliveryStatus,
     IDXDelivery,
     IDXDeliveryBlockNumber,
+    Notification,
+    NotificationType,
     Token,
     TokenType,
 )
@@ -387,6 +390,22 @@ class Processor:
                     block_timestamp=block_timestamp,
                     transaction_hash=transaction_hash,
                 )
+                issuer_address, token_type = await self.__get_issuer_address_token_type(
+                    db_session=db_session, token_address=args.get("token", ZERO_ADDRESS)
+                )
+                await self.__sink_on_delivery_info_notification(
+                    db_session=db_session,
+                    exchange_address=exchange.address,
+                    delivery_id=args.get("deliveryId"),
+                    issuer_address=issuer_address,
+                    token_address=args.get("token", ZERO_ADDRESS),
+                    token_type=token_type,
+                    buyer_address=args.get("buyer", ZERO_ADDRESS),
+                    seller_address=args.get("seller", ZERO_ADDRESS),
+                    amount=amount,
+                    agent_address=args.get("agent", ZERO_ADDRESS),
+                    code=0,  # deliveryConfirmed
+                )
         except Exception:
             raise
 
@@ -430,6 +449,22 @@ class Processor:
                     agent_address=args.get("agent", ZERO_ADDRESS),
                     block_timestamp=block_timestamp,
                     transaction_hash=transaction_hash,
+                )
+                issuer_address, token_type = await self.__get_issuer_address_token_type(
+                    db_session=db_session, token_address=args.get("token", ZERO_ADDRESS)
+                )
+                await self.__sink_on_delivery_info_notification(
+                    db_session=db_session,
+                    exchange_address=exchange.address,
+                    delivery_id=args.get("deliveryId"),
+                    issuer_address=issuer_address,
+                    token_address=args.get("token", ZERO_ADDRESS),
+                    token_type=token_type,
+                    buyer_address=args.get("buyer", ZERO_ADDRESS),
+                    seller_address=args.get("seller", ZERO_ADDRESS),
+                    amount=amount,
+                    agent_address=args.get("agent", ZERO_ADDRESS),
+                    code=1,  # deliveryFinished
                 )
         except Exception:
             raise
@@ -571,6 +606,57 @@ class Processor:
                 delivery.valid = False
                 delivery.status = DeliveryStatus.DELIVERY_ABORTED
         await db_session.merge(delivery)
+
+    @staticmethod
+    async def __get_issuer_address_token_type(
+        db_session: AsyncSession, token_address: str
+    ):
+        (issuer_address, token_type) = (
+            (
+                await db_session.execute(
+                    select(Token.issuer_address, Token.type)
+                    .where(Token.token_address == token_address)
+                    .limit(1)
+                )
+            )
+            .tuples()
+            .first()
+        )
+        return issuer_address, token_type
+
+    @staticmethod
+    async def __sink_on_delivery_info_notification(
+        db_session: AsyncSession,
+        exchange_address: str,
+        delivery_id: int,
+        issuer_address: str,
+        token_address: str,
+        token_type: str,
+        buyer_address: str,
+        seller_address: str,
+        amount: int,
+        agent_address: str,
+        code: Literal[
+            Annotated[1, "deliveryConfirmed"], Annotated[2, "deliveryFinished"]
+        ],
+    ):
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.DVP_DELIVERY_INFO
+        notification.code = code  # 0: deliveryConfirmed, 1: deliveryFinished
+        notification.metainfo = {
+            "exchange_address": exchange_address,
+            "delivery_id": delivery_id,
+            "token_address": token_address,
+            "token_type": token_type,
+            "seller_address": seller_address,
+            "buyer_address": buyer_address,
+            "agent_address": agent_address,
+            "amount": amount,
+        }
+        db_session.add(notification)
 
 
 async def main():

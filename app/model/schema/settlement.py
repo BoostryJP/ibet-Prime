@@ -154,6 +154,12 @@ class ListAllDVPAgentAccountResponse(RootModel[list[DVPAgentAccountResponse]]):
     pass
 
 
+class CreateDVPDeliveryResponse(BaseModel):
+    """Create DVP delivery schema (RESPONSE)"""
+
+    delivery_id: int
+
+
 class RetrieveDVPDeliveryResponse(BaseModel):
     """Retrieve DVP delivery schema (Response)"""
 
