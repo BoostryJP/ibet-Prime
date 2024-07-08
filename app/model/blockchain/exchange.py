@@ -137,7 +137,13 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
-            return tx_hash, tx_receipt
+            latest_delivery_id = await AsyncContractUtils.call_function(
+                contract=self.exchange_contract,
+                function_name="latestDeliveryId",
+                args=(),
+                default_returns=None,
+            )
+            return tx_hash, tx_receipt, latest_delivery_id
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:

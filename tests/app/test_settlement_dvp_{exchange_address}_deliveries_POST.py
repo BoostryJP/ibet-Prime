@@ -160,7 +160,7 @@ class TestCreateDVPDeliveriesPOST:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() is None
+        assert resp.json() == {"delivery_id": 1}
 
     # <Normal_2>
     # Authorization by auth-token
@@ -250,7 +250,7 @@ class TestCreateDVPDeliveriesPOST:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() is None
+        assert resp.json() == {"delivery_id": 1}
 
     ###########################################################################
     # Error Case

@@ -64,6 +64,10 @@ notice_type: LockInfo
 
 notice_type: UnlockInfo
 - 0: Balance is unlocked
+
+notice_type: DVPDeliveryInfo
+- 0: Delivery is confirmed
+- 1: Delivery is finished
 """
 
 
@@ -98,3 +102,4 @@ class NotificationType(str, Enum):
     BATCH_ISSUE_REDEEM_PROCESSED = "BatchIssueProcessed"
     LOCK_INFO = "LockInfo"
     UNLOCK_INFO = "UnlockInfo"
+    DVP_DELIVERY_INFO = "DVPDeliveryInfo"

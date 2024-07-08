@@ -457,8 +457,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issue Token Bond Tokens Post
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
@@ -467,8 +467,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Issue Token Bond Tokens Post
     get:
       tags:
@@ -591,8 +591,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Token Bond Tokens  Token Address  Post
         '404':
           description: Not Found Error
@@ -865,8 +865,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue Bond Tokens  Token Address  Additional
                   Issue Post
         '404':
@@ -1026,8 +1026,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue In Batch Bond Tokens  Token Address  Additional
                   Issue Batch Post
         '404':
@@ -1225,8 +1225,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token Bond Tokens  Token Address  Redeem
                   Post
         '404':
@@ -1384,8 +1384,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token In Batch Bond Tokens  Token Address  Redeem
                   Batch Post
         '404':
@@ -1539,8 +1539,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Schedule New Update Event Bond Tokens  Token Address  Scheduled
                   Events Post
         '404':
@@ -1663,8 +1663,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Delete Scheduled Event Bond Tokens  Token Address  Scheduled
                   Events  Scheduled Event Id  Delete
         '404':
@@ -2045,8 +2045,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Register Holder Personal Info Bond Tokens  Token
                   Address  Personal Info Post
         '404':
@@ -2218,8 +2218,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Batch Register Personal Info Bond Tokens  Token
                   Address  Personal Info Batch Post
         '404':
@@ -2464,8 +2464,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Transfer Ownership Bond Transfers Post
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
@@ -2881,8 +2881,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Transfer Approval Bond Transfer Approvals  Token
                   Address   Id  Post
         '404':
@@ -3002,8 +3002,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Bulk Transfer Ownership Bond Bulk Transfer Post
         '422':
           description: Validation Error
@@ -3018,10 +3018,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
-                  - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                   - $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorResponse'
+                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                 title: Response 400 Bulk Transfer Ownership Bond Bulk Transfer Post
     get:
       tags:
@@ -4539,8 +4539,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Force Unlock Positions  Account Address  Force
                   Unlock Post
         '422':
@@ -4670,8 +4670,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issue Token Share Tokens Post
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
@@ -4680,8 +4680,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Issue Token Share Tokens Post
     get:
       tags:
@@ -4803,8 +4803,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Token Share Tokens  Token Address  Post
         '404':
           description: Not Found Error
@@ -5077,8 +5077,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue Share Tokens  Token Address  Additional
                   Issue Post
         '404':
@@ -5238,8 +5238,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue In Batch Share Tokens  Token
                   Address  Additional Issue Batch Post
         '404':
@@ -5437,8 +5437,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token Share Tokens  Token Address  Redeem
                   Post
         '404':
@@ -5596,8 +5596,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token In Batch Share Tokens  Token Address  Redeem
                   Batch Post
         '404':
@@ -5751,8 +5751,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Schedule New Update Event Share Tokens  Token
                   Address  Scheduled Events Post
         '404':
@@ -5875,8 +5875,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Delete Scheduled Event Share Tokens  Token Address  Scheduled
                   Events  Scheduled Event Id  Delete
         '404':
@@ -6257,8 +6257,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Register Holder Personal Info Share Tokens  Token
                   Address  Personal Info Post
         '404':
@@ -6430,8 +6430,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Batch Register Personal Info Share Tokens  Token
                   Address  Personal Info Batch Post
         '404':
@@ -6670,8 +6670,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Transfer Ownership Share Transfers Post
         '404':
           description: Not Found Error
@@ -7094,8 +7094,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Transfer Approval Share Transfer Approvals  Token
                   Address   Id  Post
         '404':
@@ -7215,8 +7215,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Bulk Transfer Ownership Share Bulk Transfer Post
         '422':
           description: Validation Error
@@ -7231,10 +7231,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
-                  - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                   - $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorResponse'
+                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                 title: Response 400 Bulk Transfer Ownership Share Bulk Transfer Post
     get:
       tags:
@@ -9969,6 +9969,83 @@ components:
         - is_deleted
       title: DVPAgentAccountResponse
       description: DVP agent account reference schema (RESPONSE)
+    DVPDeliveryInfoMetaInfo:
+      properties:
+        exchange_address:
+          type: string
+          title: Exchange Address
+        delivery_id:
+          type: integer
+          title: Delivery Id
+        token_address:
+          type: string
+          title: Token Address
+        token_type:
+          $ref: '#/components/schemas/TokenType'
+        seller_address:
+          type: string
+          title: Seller Address
+        buyer_address:
+          type: string
+          title: Buyer Address
+        agent_address:
+          type: string
+          title: Agent Address
+        amount:
+          type: integer
+          title: Amount
+      type: object
+      required:
+        - exchange_address
+        - delivery_id
+        - token_address
+        - token_type
+        - seller_address
+        - buyer_address
+        - agent_address
+        - amount
+      title: DVPDeliveryInfoMetaInfo
+    DVPDeliveryInfoNotification:
+      properties:
+        notice_id:
+          type: string
+          title: Notice Id
+        issuer_address:
+          type: string
+          title: Issuer Address
+        priority:
+          type: integer
+          title: Priority
+        notice_code:
+          type: integer
+          maximum: 1.0
+          minimum: 0.0
+          title: Notice Code
+          description: |2-
+             notice_type: DVPDeliveryInfo
+             - 0: Delivery is confirmed
+             - 1: Delivery is finished
+        created:
+          type: string
+          title: Created
+        notice_type:
+          type: string
+          enum:
+            - DVPDeliveryInfo
+          const: DVPDeliveryInfo
+          title: Notice Type
+        metainfo:
+          $ref: '#/components/schemas/DVPDeliveryInfoMetaInfo'
+      type: object
+      required:
+        - notice_id
+        - issuer_address
+        - priority
+        - notice_code
+        - created
+        - notice_type
+        - metainfo
+      title: DVPDeliveryInfoNotification
     DeliveryStatus:
       type: integer
       enum:
@@ -12391,6 +12468,7 @@ components:
         - $ref: '#/components/schemas/BatchIssueRedeemProcessedNotification'
         - $ref: '#/components/schemas/LockInfoNotification'
         - $ref: '#/components/schemas/UnlockInfoNotification'
+        - $ref: '#/components/schemas/DVPDeliveryInfoNotification'
       title: NotificationsListResponse
       description: Notifications List schema (Response)
     OperationNotAllowedStateErrorCode:
@@ -13346,7 +13424,7 @@ components:
         - meta
         - detail
       title: TokenNotExistErrorResponse
-      description: Operations on non-transferable tokens
+      description: Operation on non-existent token
     TokenOperationLogResponse:
       properties:
         original_contents:
