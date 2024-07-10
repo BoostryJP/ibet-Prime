@@ -118,6 +118,7 @@ from .settlement import (
     CancelDVPDeliveryRequest,
     CreateDVPAgentAccountRequest,
     CreateDVPDeliveryRequest,
+    CreateDVPDeliveryResponse,
     DVPAgentAccountChangeEOAPasswordRequest,
     DVPAgentAccountResponse,
     FinishDVPDeliveryRequest,
