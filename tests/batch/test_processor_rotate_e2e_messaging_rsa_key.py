@@ -48,7 +48,7 @@ def processor(db, e2e_messaging_contract):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield Processor(is_shutdown=asyncio.Event())
+    yield Processor()
     log.propagate = False
     log.setLevel(default_log_level)
 
