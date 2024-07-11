@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import uuid
+from asyncio import Event
 from typing import List, Sequence
 
 import uvloop
@@ -46,10 +47,10 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.asyncio_utils import SemaphoreTaskGroup
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import (
     BULK_TRANSFER_INTERVAL,
     BULK_TRANSFER_WORKER_COUNT,
@@ -71,9 +72,11 @@ web3 = AsyncWeb3Wrapper()
 
 class Processor:
     worker_num: int
+    is_shutdown: Event
 
-    def __init__(self, worker_num):
+    def __init__(self, worker_num, is_shutdown: Event):
         self.worker_num: int = worker_num
+        self.is_shutdown = is_shutdown
 
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
@@ -83,6 +86,9 @@ class Processor:
                 return
 
             for _d in upload_list:
+                if self.is_shutdown.is_set():
+                    return
+
                 _upload = _d[0]
                 _token_version = _d[1]
 
@@ -161,6 +167,9 @@ class Processor:
                     )
                     # Execute bulk forced transfer for each sub-list
                     for _transfer_list in chunked_transfer_list:
+                        if self.is_shutdown.is_set():
+                            return
+
                         try:
                             _transfer_data_list = [
                                 ForcedTransferParams(
@@ -208,6 +217,9 @@ class Processor:
                         await db_session.commit()
                 else:
                     for _transfer in transfer_list:
+                        if self.is_shutdown.is_set():
+                            return
+
                         # Execute bulk forced transfer
                         try:
                             _transfer_data = ForcedTransferParams(
@@ -545,12 +557,13 @@ processing_issuer = {}
 
 
 class Worker:
-    def __init__(self, worker_num: int):
-        processor = Processor(worker_num=worker_num)
+    def __init__(self, worker_num: int, is_shutdown: Event):
+        processor = Processor(worker_num=worker_num, is_shutdown=is_shutdown)
         self.processor = processor
+        self.is_shutdown = is_shutdown
 
     async def run(self):
-        while True:
+        while not self.is_shutdown.is_set():
             try:
                 await self.processor.process()
             except ServiceUnavailableError:
@@ -560,21 +573,29 @@ class Worker:
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"
                 )
 
-            await asyncio.sleep(BULK_TRANSFER_INTERVAL)
+            for _ in range(BULK_TRANSFER_INTERVAL):
+                if self.is_shutdown.is_set():
+                    break
+                await asyncio.sleep(1)
 
 
 async def main():
     LOG.info("Service started successfully")
 
-    workers = [Worker(i) for i in range(BULK_TRANSFER_WORKER_COUNT)]
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
+
+    workers = [
+        asyncio.create_task(Worker(worker_num=i, is_shutdown=is_shutdown).run())
+        for i in range(BULK_TRANSFER_WORKER_COUNT)
+    ]
     try:
-        await SemaphoreTaskGroup.run(
-            *[worker.run() for worker in workers],
-            max_concurrency=BULK_TRANSFER_WORKER_COUNT,
-        )
-    except ExceptionGroup:
-        LOG.exception("Processor went down")
-        sys.exit(1)
+        while not is_shutdown.is_set():
+            await asyncio.sleep(1)
+    finally:
+        # Ensure that all workers is shutdown
+        await asyncio.gather(*workers)
+        LOG.info(f"Service is shutdown")
 
 
 if __name__ == "__main__":

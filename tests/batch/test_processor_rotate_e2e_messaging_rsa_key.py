@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import logging
 import time
 from datetime import UTC, datetime, timedelta
@@ -47,7 +48,7 @@ def processor(db, e2e_messaging_contract):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield Processor()
+    yield Processor(is_shutdown=asyncio.Event())
     log.propagate = False
     log.setLevel(default_log_level)
 

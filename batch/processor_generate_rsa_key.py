@@ -31,7 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import BatchAsyncSessionLocal
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
-from batch import batch_log
+from batch.utils import batch_log
 from config import DATABASE_URL
 
 """

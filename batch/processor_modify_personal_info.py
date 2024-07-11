@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import sys
+from asyncio import Event
 from typing import Sequence, Set
 
 import uvloop
@@ -42,7 +43,8 @@ from app.model.db import (
     TokenType,
 )
 from app.utils.contract_utils import AsyncContractUtils
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import ZERO_ADDRESS
 
 """
@@ -57,11 +59,17 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 
 class Processor:
+    def __init__(self, is_shutdown: Event):
+        self.is_shutdown = is_shutdown
+
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
             temporary_list = await self.__get_temporary_list(db_session=db_session)
             for temporary in temporary_list:
+                if self.is_shutdown.is_set():
+                    return
+
                 LOG.info(f"Process start: issuer={temporary.issuer_address}")
 
                 contract_accessor_list = (
@@ -82,6 +90,9 @@ class Processor:
                 count = len(idx_personal_info_list)
                 completed_count = 0
                 for idx_personal_info in idx_personal_info_list:
+                    if self.is_shutdown.is_set():
+                        return
+
                     # Get target PersonalInfo contract accessor
                     for contract_accessor in contract_accessor_list:
                         is_registered = await AsyncContractUtils.call_function(
@@ -217,9 +228,11 @@ class Processor:
             temporary.rsa_private_key
         )
         personal_info_contract_accessor.issuer.rsa_passphrase = temporary.rsa_passphrase
-        # Modify
-        info = await personal_info_contract_accessor.get_info(
-            idx_personal_info.account_address, default_value=None
+
+        info_decrypted_with_previous_key = (
+            await personal_info_contract_accessor.get_info(
+                idx_personal_info.account_address, default_value=None
+            )
         )
         # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
@@ -234,13 +247,20 @@ class Processor:
             "is_corporate": None,
             "tax_category": None,
         }
-        if info == default_info:
-            return False
+        if info_decrypted_with_previous_key == default_info:
+            info_decrypted_with_current_key = (
+                await personal_info_contract_accessor.get_info(
+                    idx_personal_info.account_address, default_value=None
+                )
+            )
+            if info_decrypted_with_current_key == default_info:
+                return False
+            return True
 
         # Modify personal information
         await personal_info_contract_accessor.modify_info(
             account_address=idx_personal_info.account_address,
-            data=info,
+            data=info_decrypted_with_previous_key,
             default_value=None,
         )
         return True
@@ -261,19 +281,28 @@ class Processor:
 
 async def main():
     LOG.info("Service started successfully")
-    processor = Processor()
 
-    while True:
-        try:
-            await processor.process()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
-        except SQLAlchemyError as sa_err:
-            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.exception(ex)
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
 
-        await asyncio.sleep(10)
+    processor = Processor(is_shutdown)
+
+    try:
+        while not is_shutdown.is_set():
+            try:
+                await processor.process()
+            except ServiceUnavailableError:
+                LOG.warning("An external service was unavailable")
+            except SQLAlchemyError as sa_err:
+                LOG.error(
+                    f"A database error has occurred: code={sa_err.code}\n{sa_err}"
+                )
+            except Exception as ex:
+                LOG.exception(ex)
+
+            await asyncio.sleep(10)
+    finally:
+        LOG.info("Service is shutdown")
 
 
 if __name__ == "__main__":

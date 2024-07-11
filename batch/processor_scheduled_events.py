@@ -21,6 +21,7 @@ import asyncio
 import sys
 import time
 import uuid
+from asyncio import Event
 from datetime import UTC, datetime, timezone
 from typing import List, Optional, Sequence, Set
 
@@ -53,10 +54,10 @@ from app.model.db import (
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
 )
-from app.utils.asyncio_utils import SemaphoreTaskGroup
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import SCHEDULED_EVENTS_INTERVAL, SCHEDULED_EVENTS_WORKER_COUNT
 
 """
@@ -72,14 +73,15 @@ web3 = AsyncWeb3Wrapper()
 
 
 class Processor:
-    def __init__(self, worker_num: int):
+    def __init__(self, worker_num: int, is_shutdown: Event):
         self.worker_num = worker_num
+        self.is_shutdown = is_shutdown
 
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
             process_start_time = datetime.now(UTC).replace(tzinfo=None)
-            while True:
+            while not self.is_shutdown.is_set():
                 events_list = await self.__get_events_of_one_issuer(
                     db_session=db_session, filter_time=process_start_time
                 )
@@ -145,6 +147,9 @@ class Processor:
         self, db_session: AsyncSession, events_list: List[ScheduledEvents]
     ):
         for _event in events_list:
+            if self.is_shutdown.is_set():
+                return
+
             LOG.info(f"<{self.worker_num}> Process start: upload_id={_event.id}")
 
             _upload_status = 1
@@ -334,12 +339,13 @@ processing_issuers: Set[str] = set()
 
 
 class Worker:
-    def __init__(self, worker_num: int):
-        processor = Processor(worker_num=worker_num)
+    def __init__(self, worker_num: int, is_shutdown: Event):
+        processor = Processor(worker_num=worker_num, is_shutdown=is_shutdown)
         self.processor = processor
+        self.is_shutdown = is_shutdown
 
     async def run(self):
-        while True:
+        while not self.is_shutdown.is_set():
             started_at = time.time()
             try:
                 await self.processor.process()
@@ -350,23 +356,31 @@ class Worker:
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"
                 )
 
-            await asyncio.sleep(
-                max(0, SCHEDULED_EVENTS_INTERVAL - (time.time() - started_at))
-            )
+            for _ in range(
+                max(0, int(SCHEDULED_EVENTS_INTERVAL - (time.time() - started_at)))
+            ):
+                if self.is_shutdown.is_set():
+                    break
+                await asyncio.sleep(1)
 
 
 async def main():
     LOG.info("Service started successfully")
 
-    workers = [Worker(i) for i in range(SCHEDULED_EVENTS_WORKER_COUNT)]
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
+
+    workers = [
+        asyncio.create_task(Worker(worker_num=i, is_shutdown=is_shutdown).run())
+        for i in range(SCHEDULED_EVENTS_WORKER_COUNT)
+    ]
     try:
-        await SemaphoreTaskGroup.run(
-            *[worker.run() for worker in workers],
-            max_concurrency=SCHEDULED_EVENTS_WORKER_COUNT,
-        )
-    except ExceptionGroup:
-        LOG.exception("Processor went down")
-        sys.exit(1)
+        while not is_shutdown.is_set():
+            await asyncio.sleep(1)
+    finally:
+        # Ensure that all workers is shutdown
+        await asyncio.gather(*workers)
+        LOG.info(f"Service is shutdown")
 
 
 if __name__ == "__main__":

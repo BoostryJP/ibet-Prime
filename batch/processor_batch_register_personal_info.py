@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import sys
 import uuid
+from asyncio import Event
 from typing import Sequence
 
 import uvloop
@@ -50,9 +51,9 @@ from app.model.db import (
     Token,
     TokenType,
 )
-from app.utils.asyncio_utils import SemaphoreTaskGroup
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import (
     BATCH_REGISTER_PERSONAL_INFO_INTERVAL,
     BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT,
@@ -75,10 +76,12 @@ web3 = AsyncWeb3Wrapper()
 class Processor:
     worker_num: int
     personal_info_contract_accessor_map: dict[str, PersonalInfoContract]
+    is_shutdown: Event
 
-    def __init__(self, worker_num):
+    def __init__(self, worker_num, is_shutdown: Event):
         self.worker_num = worker_num
         self.personal_info_contract_accessor_map = {}
+        self.is_shutdown = is_shutdown
 
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
@@ -91,6 +94,9 @@ class Processor:
                 return
 
             for _upload in upload_list:
+                if self.is_shutdown.is_set():
+                    return
+
                 LOG.info(
                     f"<{self.worker_num}> Process start: upload_id={_upload.upload_id}"
                 )
@@ -135,6 +141,9 @@ class Processor:
                     db_session=db_session, upload_id=_upload.upload_id, status=0
                 )
                 for batch_data in batch_data_list:
+                    if self.is_shutdown.is_set():
+                        return
+
                     try:
                         personal_info_contract: PersonalInfoContract | None = (
                             self.personal_info_contract_accessor_map.get(
@@ -417,12 +426,13 @@ processing_issuer: dict[int, dict[str, str]] = {}
 
 
 class Worker:
-    def __init__(self, worker_num: int):
-        processor = Processor(worker_num=worker_num)
+    def __init__(self, worker_num: int, is_shutdown: Event):
+        processor = Processor(worker_num=worker_num, is_shutdown=is_shutdown)
         self.processor = processor
+        self.is_shutdown = is_shutdown
 
     async def run(self):
-        while True:
+        while not self.is_shutdown.is_set():
             try:
                 await self.processor.process()
             except ServiceUnavailableError:
@@ -432,21 +442,29 @@ class Worker:
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"
                 )
 
-            await asyncio.sleep(BATCH_REGISTER_PERSONAL_INFO_INTERVAL)
+            for _ in range(BATCH_REGISTER_PERSONAL_INFO_INTERVAL):
+                if self.is_shutdown.is_set():
+                    break
+                await asyncio.sleep(1)
 
 
 async def main():
     LOG.info("Service started successfully")
 
-    workers = [Worker(i) for i in range(BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT)]
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
+
+    workers = [
+        asyncio.create_task(Worker(worker_num=i, is_shutdown=is_shutdown).run())
+        for i in range(BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT)
+    ]
     try:
-        await SemaphoreTaskGroup.run(
-            *[worker.run() for worker in workers],
-            max_concurrency=BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT,
-        )
-    except ExceptionGroup:
-        LOG.exception("Processor went down")
-        sys.exit(1)
+        while not is_shutdown.is_set():
+            await asyncio.sleep(1)
+    finally:
+        # Ensure that all workers is shutdown
+        await asyncio.gather(*workers)
+        LOG.info(f"Service is shutdown")
 
 
 if __name__ == "__main__":

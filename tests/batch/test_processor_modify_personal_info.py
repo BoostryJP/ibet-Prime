@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
+
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import func, select
@@ -55,7 +57,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 @pytest.fixture(scope="function")
 def processor(db):
-    return Processor()
+    return Processor(asyncio.Event())
 
 
 def deploy_personal_info_contract(issuer_user):

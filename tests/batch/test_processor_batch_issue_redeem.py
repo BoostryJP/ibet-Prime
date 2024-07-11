@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import logging
 import uuid
 from typing import List, Sequence
@@ -58,7 +59,7 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield Processor()
+    yield Processor(asyncio.Event())
     log.propagate = False
     log.setLevel(default_log_level)
 
