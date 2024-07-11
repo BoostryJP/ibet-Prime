@@ -200,6 +200,7 @@ class TokenHoldersCollectionHolder(BaseModel):
 class RetrieveTokenHoldersListResponse(BaseModel):
     """Retrieve Token Holders List schema (RESPONSE)"""
 
+    result_set: ResultSet
     status: TokenHolderBatchStatus
     holders: List[TokenHoldersCollectionHolder]
     model_config = ConfigDict(
