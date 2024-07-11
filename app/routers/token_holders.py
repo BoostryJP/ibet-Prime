@@ -24,6 +24,7 @@ from typing import Optional, Sequence
 import pytz
 from fastapi import APIRouter, Depends, Header, Path, Query
 from fastapi.exceptions import HTTPException
+from pydantic import NonNegativeInt
 from sqlalchemy import and_, asc, desc, func, select
 
 import config
@@ -460,6 +461,8 @@ async def retrieve_token_holders_collection(
         description="UUID v4 required",
     ),
     issuer_address: str = Header(...),
+    offset: Optional[NonNegativeInt] = Query(None),
+    limit: Optional[NonNegativeInt] = Query(None),
 ):
     """Retrieve token holders collection"""
 
@@ -507,18 +510,33 @@ async def retrieve_token_holders_collection(
         )
         raise InvalidParameterError(description)
 
+    # Base query
+    stmt = (
+        select(TokenHolder)
+        .where(TokenHolder.holder_list_id == _same_list_id_record.id)
+        .order_by(asc(TokenHolder.account_address))
+    )
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = total
+
+    # Pagination
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    if offset is not None:
+        stmt = stmt.offset(offset)
+
     # Get holder list
-    _token_holders: Sequence[TokenHolder] = (
-        await db.scalars(
-            select(TokenHolder)
-            .where(TokenHolder.holder_list_id == _same_list_id_record.id)
-            .order_by(asc(TokenHolder.account_address))
-        )
-    ).all()
+    _token_holders: Sequence[TokenHolder] = (await db.scalars(stmt)).all()
     token_holders = [_token_holder.json() for _token_holder in _token_holders]
 
     return json_response(
         {
+            "result_set": {
+                "count": count,
+                "offset": offset,
+                "limit": limit,
+                "total": total,
+            },
             "status": _same_list_id_record.batch_status,
             "holders": token_holders,
         }

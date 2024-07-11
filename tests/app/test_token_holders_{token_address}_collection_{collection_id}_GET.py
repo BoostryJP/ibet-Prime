@@ -87,6 +87,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
             "status": TokenHolderBatchStatus.DONE.value,
             "holders": [],
         }
@@ -137,11 +138,69 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         )
         db.scalars(select(TokenHolder)).all()
         sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "status": TokenHolderBatchStatus.DONE.value,
             "holders": sorted_holders,
+        }
+
+    # Normal_3
+    # GET
+    # Pagination
+    def test_normal_3(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            holders.append(_token_holder.json())
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={"offset": 1, "limit": 1},
+        )
+        db.scalars(select(TokenHolder)).all()
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 3, "offset": 1, "limit": 1, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": [sorted_holders[1]],
         }
 
     ####################################################################
@@ -392,5 +451,43 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                     "msg": "Field required",
                     "type": "missing",
                 }
+            ],
+        }
+
+    # Error_7
+    # 422: Request Validation Error
+    # offset/limit: Input should be greater than or equal to 0
+    def test_error_7(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id="some_list_id"),
+            headers={"issuer-address": issuer_address},
+            params={"offset": -1, "limit": -1},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "greater_than_equal",
+                    "loc": ["query", "offset"],
+                    "msg": "Input should be greater than or equal to 0",
+                    "input": "-1",
+                    "ctx": {"ge": 0},
+                },
+                {
+                    "type": "greater_than_equal",
+                    "loc": ["query", "limit"],
+                    "msg": "Input should be greater than or equal to 0",
+                    "input": "-1",
+                    "ctx": {"ge": 0},
+                },
             ],
         }
