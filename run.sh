@@ -41,7 +41,7 @@ fi
 function trap_sigterm() {
   echo "$0: Shutdown."
   if [ "${RUN_MODE}" == "server" ]; then
-    exit 0
+    PIDS=$(ps -ef | grep "[p]ython run.py" | awk '{print $2}')
   else
     PIDS=$(ps -ef | grep "[p]ython batch" | awk '{print $2}')
   fi
