@@ -47,6 +47,7 @@ from app.model.schema import (
     CancelDVPDeliveryRequest,
     CreateDVPAgentAccountRequest,
     CreateDVPDeliveryRequest,
+    CreateDVPDeliveryResponse,
     DVPAgentAccountChangeEOAPasswordRequest,
     DVPAgentAccountResponse,
     FinishDVPDeliveryRequest,
@@ -401,7 +402,7 @@ async def list_all_dvp_deliveries(
 @router.post(
     "/dvp/{exchange_address}/deliveries",
     operation_id="CreateDVPDelivery",
-    response_model=None,
+    response_model=CreateDVPDeliveryResponse,
     responses=get_routers_responses(
         404, 422, InvalidParameterError, SendTransactionError
     ),
