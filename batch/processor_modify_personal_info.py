@@ -232,11 +232,9 @@ class Processor:
             temporary.rsa_private_key
         )
         personal_info_contract_accessor.issuer.rsa_passphrase = temporary.rsa_passphrase
-
-        info_decrypted_with_previous_key = (
-            await personal_info_contract_accessor.get_info(
-                idx_personal_info.account_address, default_value=None
-            )
+        # Modify
+        info = await personal_info_contract_accessor.get_info(
+            idx_personal_info.account_address, default_value=None
         )
         # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
@@ -251,20 +249,13 @@ class Processor:
             "is_corporate": None,
             "tax_category": None,
         }
-        if info_decrypted_with_previous_key == default_info:
-            info_decrypted_with_current_key = (
-                await personal_info_contract_accessor.get_info(
-                    idx_personal_info.account_address, default_value=None
-                )
-            )
-            if info_decrypted_with_current_key == default_info:
-                return False
-            return True
+        if info == default_info:
+            return False
 
         # Modify personal information
         await personal_info_contract_accessor.modify_info(
             account_address=idx_personal_info.account_address,
-            data=info_decrypted_with_previous_key,
+            data=info,
             default_value=None,
         )
         return True
