@@ -24,12 +24,12 @@ from typing import Sequence
 import uvloop
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from sqlalchemy import create_engine, or_, select
+from sqlalchemy import and_, create_engine, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
 from batch.utils import batch_log
 from config import DATABASE_URL
@@ -77,12 +77,23 @@ class Processor:
 
     @staticmethod
     async def __get_account_list(db_session: AsyncSession):
+        # NOTE: rsa_private_key in Account DB and AccountRsaKeyTemporary DB is the same when API is executed,
+        #       Account DB is changed when RSA generate batch is completed.
         account_list: Sequence[Account] = (
             await db_session.scalars(
-                select(Account).where(
+                select(Account)
+                .outerjoin(
+                    AccountRsaKeyTemporary,
+                    Account.issuer_address == AccountRsaKeyTemporary.issuer_address,
+                )
+                .where(
                     or_(
                         Account.rsa_status == AccountRsaStatus.CREATING.value,
-                        Account.rsa_status == AccountRsaStatus.CHANGING.value,
+                        and_(
+                            Account.rsa_status == AccountRsaStatus.CHANGING.value,
+                            Account.rsa_private_key
+                            == AccountRsaKeyTemporary.rsa_private_key,
+                        ),
                     )
                 )
             )
