@@ -27,6 +27,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import log
 from app.database import DBAsyncSession
 from app.exceptions import Integer64bitLimitExceededError, InvalidParameterError
 from app.model.blockchain import (
@@ -66,7 +67,7 @@ router = APIRouter(
     prefix="/ledger",
     tags=["token_common"],
 )
-
+LOG = log.get_logger()
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
 
@@ -960,6 +961,7 @@ async def __get_personal_info(
 
         # Retrieve personal info from contract storage
         personal_info_contract = PersonalInfoContract(
+            logger=LOG,
             issuer=issuer_account,
             contract_address=token_contract.personal_info_contract_address,
         )

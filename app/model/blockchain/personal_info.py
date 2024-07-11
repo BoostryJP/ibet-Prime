@@ -55,7 +55,8 @@ class PersonalInfoContract:
     personal_info_contract: AsyncContract
     issuer: Account
 
-    def __init__(self, issuer: Account, contract_address=None):
+    def __init__(self, logger: logging.Logger, issuer: Account, contract_address=None):
+        self.logger = logger
         self.personal_info_contract = AsyncContractUtils.get_contract(
             contract_name="PersonalInfo", contract_address=contract_address
         )
@@ -99,7 +100,7 @@ class PersonalInfoContract:
                     key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
                     self.cipher = PKCS1_OAEP.new(key)
             except Exception as err:
-                logging.error(f"Cannot open the private key: {err}")
+                self.logger.error(f"Cannot open the private key: {err}")
                 return ContractPersonalInfoType(
                     key_manager=default_value,
                     name=default_value,
@@ -132,7 +133,9 @@ class PersonalInfoContract:
                         tax_category=decrypted_info.get("tax_category", None),
                     ).model_dump()
                 except Exception as err:
-                    logging.error(f"Failed to decrypt: {err}")
+                    self.logger.error(
+                        f"Failed to decrypt: issuer_address={self.issuer.issuer_address}, account_address={account_address}: {err}"
+                    )
                     return ContractPersonalInfoType(
                         key_manager=default_value,
                         name=default_value,
@@ -196,7 +199,7 @@ class PersonalInfoContract:
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
-            logging.exception(f"{err}")
+            self.logger.exception(f"{err}")
             raise SendTransactionError(err)
         return tx_hash
 
@@ -252,7 +255,7 @@ class PersonalInfoContract:
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
-            logging.exception(f"{err}")
+            self.logger.exception(f"{err}")
             raise SendTransactionError(err)
 
     async def get_register_event(self, block_from, block_to):

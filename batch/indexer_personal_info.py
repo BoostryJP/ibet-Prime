@@ -151,6 +151,7 @@ class Processor:
                 )
             ).first()
             personal_info_contract = PersonalInfoContract(
+                logger=LOG,
                 issuer=issuer_account,
                 contract_address=item["personal_info_address"],
             )

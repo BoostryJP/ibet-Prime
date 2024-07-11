@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+import logging
 
 import pytest
 from eth_keyfile import decode_keyfile_json
@@ -98,7 +99,9 @@ async def set_personal_info_contract(
         ContractUtils.send_transaction(tx, private_key)
 
         if sender["data"]:
-            personal_info = PersonalInfoContract(issuer_account, contract_address)
+            personal_info = PersonalInfoContract(
+                logging.getLogger("unittest"), issuer_account, contract_address
+            )
             await personal_info.modify_info(sender["user"]["address"], sender["data"])
 
 
@@ -347,7 +350,7 @@ class TestProcessor:
         assert temporary.rsa_passphrase == rsa_passphrase
 
         _personal_info_1 = PersonalInfoContract(
-            account, personal_info_contract_address_1
+            logging.getLogger("unittest"), account, personal_info_contract_address_1
         )
         assert (
             await _personal_info_1.get_info(personal_user_1["address"])
@@ -372,7 +375,7 @@ class TestProcessor:
             "tax_category": None,
         }
         _personal_info_2 = PersonalInfoContract(
-            account, personal_info_contract_address_2
+            logging.getLogger("unittest"), account, personal_info_contract_address_2
         )
         assert (await _personal_info_2.get_info(personal_user_3["address"])) == {
             "key_manager": None,
@@ -427,7 +430,7 @@ class TestProcessor:
         assert temporary.rsa_passphrase == rsa_passphrase
 
         _personal_info_1 = PersonalInfoContract(
-            account, personal_info_contract_address_1
+            logging.getLogger("unittest"), account, personal_info_contract_address_1
         )
         assert (await _personal_info_1.get_info(personal_user_1["address"])) == {
             "key_manager": "key_manager_user1",
@@ -450,7 +453,7 @@ class TestProcessor:
             "tax_category": None,
         }
         _personal_info_2 = PersonalInfoContract(
-            account, personal_info_contract_address_2
+            logging.getLogger("unittest"), account, personal_info_contract_address_2
         )
         assert (await _personal_info_2.get_info(personal_user_3["address"])) == {
             "key_manager": None,
@@ -494,7 +497,7 @@ class TestProcessor:
         assert _temporary_count == 0
 
         _personal_info_1 = PersonalInfoContract(
-            account, personal_info_contract_address_1
+            logging.getLogger("unittest"), account, personal_info_contract_address_1
         )
         assert (await _personal_info_1.get_info(personal_user_1["address"])) == {
             "key_manager": "key_manager_user1",
@@ -517,7 +520,7 @@ class TestProcessor:
             "tax_category": None,
         }
         _personal_info_2 = PersonalInfoContract(
-            account, personal_info_contract_address_2
+            logging.getLogger("unittest"), account, personal_info_contract_address_2
         )
         assert (await _personal_info_2.get_info(personal_user_3["address"])) == {
             "key_manager": None,

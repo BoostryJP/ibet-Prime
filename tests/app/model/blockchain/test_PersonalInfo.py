@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import base64
 import json
+import logging
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -63,7 +64,9 @@ def initialize(issuer, db):
     )
 
     personal_info_contract = PersonalInfoContract(
-        issuer=_account, contract_address=contract_address
+        logger=logging.getLogger("unittest"),
+        issuer=_account,
+        contract_address=contract_address,
     )
     return personal_info_contract
 

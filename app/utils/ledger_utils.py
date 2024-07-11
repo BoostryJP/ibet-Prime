@@ -25,6 +25,7 @@ import pytz
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import log
 from app.model.blockchain import (
     ContractPersonalInfoType,
     IbetShareContract,
@@ -47,6 +48,7 @@ from app.model.db import (
 )
 from config import TZ
 
+LOG = log.get_logger()
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
 
@@ -214,6 +216,7 @@ async def __get_details_data_list_from_ibetfin(
         )
     ).first()
     personal_info_contract = PersonalInfoContract(
+        logger=LOG,
         issuer=issuer_account,
         contract_address=token_contract.personal_info_contract_address,
     )

@@ -2264,6 +2264,7 @@ async def register_holder_personal_info(
     token_contract = await IbetShareContract(token_address).get()
     try:
         personal_info_contract = PersonalInfoContract(
+            logger=LOG,
             issuer=issuer_account,
             contract_address=token_contract.personal_info_contract_address,
         )
