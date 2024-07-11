@@ -22,7 +22,7 @@ from unittest import mock
 import pytest
 from sqlalchemy import select
 
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import Account, AccountRsaStatus, AccountRsaKeyTemporary
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_generate_rsa_key import Processor
 from tests.account_config import config_eth_account
@@ -88,6 +88,13 @@ class TestProcessor:
         account_2.rsa_passphrase = rsa_passphrase_2
         account_2.rsa_status = AccountRsaStatus.CHANGING.value
         db.add(account_2)
+
+        temporary_2 = AccountRsaKeyTemporary()
+        temporary_2.issuer_address = issuer_address_2
+        temporary_2.rsa_private_key = account_2.rsa_private_key
+        temporary_2.rsa_public_key = account_2.rsa_public_key
+        temporary_2.rsa_passphrase = account_2.rsa_passphrase
+        db.add(temporary_2)
 
         # data:UNSET(Non-Target)
         account_3 = Account()
