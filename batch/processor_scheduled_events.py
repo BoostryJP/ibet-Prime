@@ -22,7 +22,7 @@ import sys
 import time
 import uuid
 from asyncio import Event
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from typing import List, Optional, Sequence, Set
 
 import uvloop

@@ -20,7 +20,6 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
-from asyncio import Event
 from datetime import UTC, datetime
 from typing import Sequence
 
@@ -43,7 +42,6 @@ from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from batch.utils import batch_log
-from batch.utils.signal_handler import setup_signal_handler
 from config import E2E_MESSAGING_CONTRACT_ADDRESS, ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL
 
 """
@@ -57,12 +55,11 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 
 class Processor:
-    def __init__(self, is_shutdown: Event):
+    def __init__(self):
         self.e2e_messaging_contract = AsyncContractUtils.get_contract(
             contract_name="E2EMessaging",
             contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
         )
-        self.is_shutdown = is_shutdown
 
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
@@ -72,9 +69,6 @@ class Processor:
                 db_session=db_session
             )
             for _e2e_messaging_account in e2e_messaging_account_list:
-                if self.is_shutdown.is_set():
-                    return
-
                 await self.__auto_generate_rsa_key(
                     db_session=db_session,
                     base_time=base_time,
@@ -209,32 +203,23 @@ class Processor:
 
 async def main():
     LOG.info("Service started successfully")
+    processor = Processor()
 
-    is_shutdown = asyncio.Event()
-    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
+    while True:
+        start_time = time.time()
+        try:
+            await processor.process()
+        except ServiceUnavailableError:
+            LOG.warning("An external service was unavailable")
+        except SQLAlchemyError as sa_err:
+            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
+        except Exception as ex:
+            LOG.error(ex)
 
-    processor = Processor(is_shutdown)
-
-    try:
-        while not is_shutdown.is_set():
-            start_time = time.time()
-            try:
-                await processor.process()
-            except ServiceUnavailableError:
-                LOG.warning("An external service was unavailable")
-            except SQLAlchemyError as sa_err:
-                LOG.error(
-                    f"A database error has occurred: code={sa_err.code}\n{sa_err}"
-                )
-            except Exception as ex:
-                LOG.error(ex)
-
-            elapsed_time = time.time() - start_time
-            await asyncio.sleep(
-                max(ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL - elapsed_time, 0)
-            )
-    finally:
-        LOG.info("Service is shutdown")
+        elapsed_time = time.time() - start_time
+        await asyncio.sleep(
+            max(ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL - elapsed_time, 0)
+        )
 
 
 if __name__ == "__main__":
