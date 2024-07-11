@@ -142,6 +142,9 @@ class Processor:
                 )
                 for batch_data in batch_data_list:
                     if self.is_shutdown.is_set():
+                        LOG.info(
+                            f"<{self.worker_num}> Process pause for graceful shutdown: upload_id={_upload.upload_id}"
+                        )
                         return
 
                     try:
@@ -256,6 +259,7 @@ class Processor:
             if contract_address != ZERO_ADDRESS:
                 self.personal_info_contract_accessor_map[token.token_address] = (
                     PersonalInfoContract(
+                        logger=LOG,
                         issuer=issuer_account,
                         contract_address=contract_address,
                     )

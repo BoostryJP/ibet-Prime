@@ -91,6 +91,9 @@ class Processor:
                 completed_count = 0
                 for idx_personal_info in idx_personal_info_list:
                     if self.is_shutdown.is_set():
+                        LOG.info(
+                            f"Process pause for graceful shutdown: issuer={temporary.issuer_address}"
+                        )
                         return
 
                     # Get target PersonalInfo contract accessor
@@ -192,6 +195,7 @@ class Processor:
                 ).first()
                 personal_info_contract_list.add(
                     PersonalInfoContract(
+                        logger=LOG,
                         issuer=issuer_account,
                         contract_address=contract_address,
                     )

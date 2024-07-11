@@ -163,6 +163,9 @@ class Processor:
                         db_session=db_session, issuer_pk=issuer_pk, upload=upload
                     )
                 if self.is_shutdown.is_set():
+                    LOG.info(
+                        f"Process pause for graceful shutdown: upload_id={upload.upload_id}"
+                    )
                     return
 
                 # Process failed data

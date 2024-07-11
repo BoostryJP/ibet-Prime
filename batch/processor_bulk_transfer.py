@@ -168,6 +168,9 @@ class Processor:
                     # Execute bulk forced transfer for each sub-list
                     for _transfer_list in chunked_transfer_list:
                         if self.is_shutdown.is_set():
+                            LOG.info(
+                                f"<{self.worker_num}> Process pause for graceful shutdown: upload_id={_upload.upload_id}"
+                            )
                             return
 
                         try:
