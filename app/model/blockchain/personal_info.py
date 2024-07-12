@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import logging
+from typing import Final
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
@@ -53,14 +54,17 @@ class PersonalInfoContract:
     """PersonalInfo contract"""
 
     personal_info_contract: AsyncContract
-    issuer: Account
+    issuer: Final[Account]
+    private_key: bytes | None
 
-    def __init__(self, issuer: Account, contract_address=None):
+    def __init__(self, logger: logging.Logger, issuer: Account, contract_address=None):
+        self.logger = logger
         self.personal_info_contract = AsyncContractUtils.get_contract(
             contract_name="PersonalInfo", contract_address=contract_address
         )
         self.issuer = issuer
         self.cipher = None
+        self.private_key = None
 
     async def get_info(self, account_address: str, default_value=None):
         """Get personal information from contract storage
@@ -99,7 +103,7 @@ class PersonalInfoContract:
                     key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
                     self.cipher = PKCS1_OAEP.new(key)
             except Exception as err:
-                logging.error(f"Cannot open the private key: {err}")
+                self.logger.error(f"Cannot open the private key: {err}")
                 return ContractPersonalInfoType(
                     key_manager=default_value,
                     name=default_value,
@@ -132,7 +136,9 @@ class PersonalInfoContract:
                         tax_category=decrypted_info.get("tax_category", None),
                     ).model_dump()
                 except Exception as err:
-                    logging.error(f"Failed to decrypt: {err}")
+                    self.logger.error(
+                        f"Failed to decrypt: issuer_address={self.issuer.issuer_address}, account_address={account_address}: {err}"
+                    )
                     return ContractPersonalInfoType(
                         key_manager=default_value,
                         name=default_value,
@@ -174,10 +180,12 @@ class PersonalInfoContract:
         )
 
         try:
-            password = E2EEUtils.decrypt(self.issuer.eoa_password)
-            private_key = decode_keyfile_json(
-                raw_keyfile_json=self.issuer.keyfile, password=password.encode("utf-8")
-            )
+            if self.private_key is None:
+                password = E2EEUtils.decrypt(self.issuer.eoa_password)
+                self.private_key = decode_keyfile_json(
+                    raw_keyfile_json=self.issuer.keyfile,
+                    password=password.encode("utf-8"),
+                )
             tx = await self.personal_info_contract.functions.forceRegister(
                 account_address, ciphertext.decode("utf-8")
             ).build_transaction(
@@ -189,14 +197,14 @@ class PersonalInfoContract:
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=self.private_key
             )
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
-            logging.exception(f"{err}")
+            self.logger.exception(f"{err}")
             raise SendTransactionError(err)
         return tx_hash
 
@@ -230,10 +238,12 @@ class PersonalInfoContract:
         )
 
         try:
-            password = E2EEUtils.decrypt(self.issuer.eoa_password)
-            private_key = decode_keyfile_json(
-                raw_keyfile_json=self.issuer.keyfile, password=password.encode("utf-8")
-            )
+            if self.private_key is None:
+                password = E2EEUtils.decrypt(self.issuer.eoa_password)
+                self.private_key = decode_keyfile_json(
+                    raw_keyfile_json=self.issuer.keyfile,
+                    password=password.encode("utf-8"),
+                )
             tx = await self.personal_info_contract.functions.modify(
                 account_address, ciphertext.decode("utf-8")
             ).build_transaction(
@@ -245,14 +255,14 @@ class PersonalInfoContract:
                 }
             )
             await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=self.private_key
             )
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
-            logging.exception(f"{err}")
+            self.logger.exception(f"{err}")
             raise SendTransactionError(err)
 
     async def get_register_event(self, block_from, block_to):

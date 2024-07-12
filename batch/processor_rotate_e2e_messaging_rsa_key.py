@@ -41,8 +41,7 @@ from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
 from config import E2E_MESSAGING_CONTRACT_ADDRESS, ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL
 
 """
@@ -53,8 +52,6 @@ Processor for key rotation for encrypted E2E messaging on the blockchain
 
 process_name = "PROCESSOR-Rotate-E2E-Messaging-RSA-Key"
 LOG = batch_log.get_logger(process_name=process_name)
-
-web3 = AsyncWeb3Wrapper()
 
 
 class Processor:

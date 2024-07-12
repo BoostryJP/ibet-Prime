@@ -30,7 +30,7 @@ from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import Account, Token, TokenType
-from batch import batch_log
+from batch.utils import batch_log
 from config import INDEXER_SYNC_INTERVAL
 
 process_name = "INDEXER-Token-Cache"

@@ -46,7 +46,7 @@ from app.model.db import (
     TokenType,
 )
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
 
 process_name = "INDEXER-Personal-Info"
@@ -151,6 +151,7 @@ class Processor:
                 )
             ).first()
             personal_info_contract = PersonalInfoContract(
+                logger=LOG,
                 issuer=issuer_account,
                 contract_address=item["personal_info_address"],
             )

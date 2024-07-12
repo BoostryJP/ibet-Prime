@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
@@ -47,7 +48,7 @@ def processor(db):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield Processor(worker_num=0)
+    yield Processor(worker_num=0, is_shutdown=asyncio.Event())
     log.propagate = False
     log.setLevel(default_log_level)
 

@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import uuid
+from asyncio import Event
 from typing import Sequence
 
 import uvloop
@@ -51,7 +52,8 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import BULK_TX_LOT_SIZE, DATABASE_URL
 
 """
@@ -67,6 +69,8 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
+    def __init__(self, is_shutdown: Event):
+        self.is_shutdown = is_shutdown
 
     async def process(self):
         db_session = BatchAsyncSessionLocal()
@@ -94,6 +98,9 @@ class Processor:
                 .all()
             )
             for _d in upload_list:
+                if self.is_shutdown.is_set():
+                    return
+
                 upload = _d[0]
                 token_version = _d[1]
 
@@ -155,6 +162,11 @@ class Processor:
                     await self.__processing_individually(
                         db_session=db_session, issuer_pk=issuer_pk, upload=upload
                     )
+                if self.is_shutdown.is_set():
+                    LOG.info(
+                        f"Process pause for graceful shutdown: upload_id={upload.upload_id}"
+                    )
+                    return
 
                 # Process failed data
                 failed_batch_data_list: Sequence[BatchIssueRedeem] = (
@@ -191,9 +203,8 @@ class Processor:
         finally:
             await db_session.close()
 
-    @staticmethod
     async def __processing_individually(
-        db_session: AsyncSession, issuer_pk: bytes, upload: BatchIssueRedeemUpload
+        self, db_session: AsyncSession, issuer_pk: bytes, upload: BatchIssueRedeemUpload
     ):
         """
         Process transactions line by line
@@ -210,6 +221,9 @@ class Processor:
             )
         ).all()
         for batch_data in batch_data_list:
+            if self.is_shutdown.is_set():
+                return
+
             tx_hash = "-"
             try:
                 if upload.token_type == TokenType.IBET_STRAIGHT_BOND.value:
@@ -281,15 +295,17 @@ class Processor:
             finally:
                 await db_session.commit()  # commit for each data
 
-    @staticmethod
     async def __processing_in_batch(
-        db_session: AsyncSession, issuer_pk: bytes, upload: BatchIssueRedeemUpload
+        self, db_session: AsyncSession, issuer_pk: bytes, upload: BatchIssueRedeemUpload
     ):
         """
         Process transactions in batch
         """
 
         while True:
+            if self.is_shutdown.is_set():
+                return
+
             # Get unprocessed records
             # - Process up to 100(default) records in a batch
             batch_data_list: Sequence[BatchIssueRedeem] = (
@@ -431,16 +447,28 @@ class Processor:
 
 async def main():
     LOG.info("Service started successfully")
-    processor = Processor()
-    while True:
-        try:
-            await processor.process()
-        except SQLAlchemyError as sa_err:
-            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.exception(ex)
 
-        await asyncio.sleep(60)
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
+
+    processor = Processor(is_shutdown)
+    try:
+        while not is_shutdown.is_set():
+            try:
+                await processor.process()
+            except SQLAlchemyError as sa_err:
+                LOG.error(
+                    f"A database error has occurred: code={sa_err.code}\n{sa_err}"
+                )
+            except Exception as ex:
+                LOG.exception(ex)
+
+            for _ in range(60):
+                if is_shutdown.is_set():
+                    break
+                await asyncio.sleep(1)
+    finally:
+        LOG.info("Service is shutdown")
 
 
 if __name__ == "__main__":

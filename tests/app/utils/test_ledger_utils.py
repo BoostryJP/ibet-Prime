@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import logging
 from datetime import datetime
 
 import pytest
@@ -135,7 +136,9 @@ def deploy_personal_info_contract(address: str, private_key: bytes):
 async def register_personal_info(
     contract_address: str, issuer_account: Account, investor_list: list
 ):
-    personal_info = PersonalInfoContract(issuer_account, contract_address)
+    personal_info = PersonalInfoContract(
+        logging.getLogger("unittest"), issuer_account, contract_address
+    )
     for investor in investor_list:
         await personal_info.register_info(investor["address"], investor["data"])
 

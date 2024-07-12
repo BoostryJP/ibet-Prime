@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import logging
 import time
 from datetime import UTC, datetime, timedelta

@@ -31,7 +31,7 @@ from web3.middleware import ExtraDataToPOAMiddleware
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import Node
-from batch import batch_log
+from batch.utils import batch_log
 from config import (
     BLOCK_GENERATION_SPEED_THRESHOLD,
     BLOCK_SYNC_REMAINING_THRESHOLD,

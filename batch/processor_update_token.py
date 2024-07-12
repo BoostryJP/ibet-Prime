@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import uuid
+from asyncio import Event
 from datetime import UTC, datetime
 from typing import Sequence
 
@@ -58,7 +59,8 @@ from app.model.db import (
 )
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import TOKEN_LIST_CONTRACT_ADDRESS, UPDATE_TOKEN_INTERVAL
 
 """
@@ -72,6 +74,9 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 
 class Processor:
+    def __init__(self, is_shutdown: Event):
+        self.is_shutdown = is_shutdown
+
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
@@ -79,6 +84,9 @@ class Processor:
                 db_session=db_session
             )
             for _update_token in _update_token_list:
+                if self.is_shutdown.is_set():
+                    return
+
                 LOG.info(f"Process start: upload_id={_update_token.token_address}")
 
                 notice_type = ""
@@ -371,19 +379,28 @@ class Processor:
 
 async def main():
     LOG.info("Service started successfully")
-    processor = Processor()
 
-    while True:
-        try:
-            await processor.process()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
-        except SQLAlchemyError as sa_err:
-            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.error(ex)
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
 
-        await asyncio.sleep(UPDATE_TOKEN_INTERVAL)
+    processor = Processor(is_shutdown)
+
+    try:
+        while not is_shutdown.is_set():
+            try:
+                await processor.process()
+            except ServiceUnavailableError:
+                LOG.warning("An external service was unavailable")
+            except SQLAlchemyError as sa_err:
+                LOG.error(
+                    f"A database error has occurred: code={sa_err.code}\n{sa_err}"
+                )
+            except Exception as ex:
+                LOG.error(ex)
+
+            await asyncio.sleep(UPDATE_TOKEN_INTERVAL)
+    finally:
+        LOG.info("Service is shutdown")
 
 
 if __name__ == "__main__":

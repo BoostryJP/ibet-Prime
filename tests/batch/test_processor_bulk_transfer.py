@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 from unittest.mock import ANY, patch
 
 import pytest
@@ -41,7 +42,7 @@ from tests.account_config import config_eth_account
 
 @pytest.fixture(scope="function")
 def processor(db):
-    return Processor(worker_num=0)
+    return Processor(worker_num=0, is_shutdown=asyncio.Event())
 
 
 class TestProcessor:

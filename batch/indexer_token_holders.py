@@ -39,7 +39,7 @@ from app.model.db import (
 )
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
 from config import (
     DATABASE_URL,
     INDEXER_BLOCK_LOT_MAX_SIZE,
