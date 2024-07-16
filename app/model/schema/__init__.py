@@ -163,6 +163,8 @@ from .token_holders import (
     ListTokenHoldersPersonalInfoHistoryResponse,
     ListTokenHoldersPersonalInfoQuery,
     ListTokenHoldersPersonalInfoResponse,
+    RetrieveTokenHoldersCollectionQuery,
+    RetrieveTokenHoldersCollectionSortItem,
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
