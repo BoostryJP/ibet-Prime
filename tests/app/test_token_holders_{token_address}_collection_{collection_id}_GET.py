@@ -20,12 +20,14 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from unittest import mock
 
+import pytest
 from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
 from app.model.db import (
+    IDXPersonalInfo,
     Token,
     TokenHolder,
     TokenHolderBatchStatus,
@@ -48,9 +50,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     ###########################################################################
 
     # Normal_1
-    # GET
     # Holders in response is empty.
-    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_1(self, client, db):
         # Issue Token
         user = config_eth_account("user1")
@@ -93,7 +93,6 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         }
 
     # Normal_2
-    # GET
     # Holders in response is filled.
     def test_normal_2(self, client, db):
         # Issue Token
@@ -128,7 +127,21 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             db.add(_token_holder)
-            holders.append(_token_holder.json())
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": {
+                        "key_manager": None,
+                        "name": None,
+                        "email": None,
+                        "birth": None,
+                        "address": None,
+                        "is_corporate": None,
+                        "postal_code": None,
+                        "tax_category": None,
+                    },
+                }
+            )
         db.commit()
 
         # request target api
@@ -147,10 +160,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             "holders": sorted_holders,
         }
 
-    # Normal_3
-    # GET
-    # Pagination
-    def test_normal_3(self, client, db):
+    # Normal_3_1_1
+    # Search filter: hold balance & "="
+    def test_normal_3_1_1(self, client, db):
         # Issue Token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -183,7 +195,802 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             db.add(_token_holder)
-            holders.append(_token_holder.json())
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "hold_balance": 10000,
+                "hold_balance_operator": 0,
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[0]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_1_2
+    # Search filter: hold balance & ">="
+    def test_normal_3_1_2(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "hold_balance": 20000,
+                "hold_balance_operator": 1,
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[1], holders[2]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_1_3
+    # Search filter: hold balance & "<="
+    def test_normal_3_1_3(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "hold_balance": 10000,
+                "hold_balance_operator": 2,
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[0]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_2_1
+    # Search filter: locked balance & "="
+    def test_normal_3_2_1(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "locked_balance": 20000,
+                "locked_balance_operator": 0,
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[0]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_2_2
+    # Search filter: locked balance & ">="
+    def test_normal_3_2_2(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "locked_balance": 40000,
+                "locked_balance_operator": 1,
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[1], holders[2]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_2_3
+    # Search filter: locked balance & "<="
+    def test_normal_3_2_3(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "locked_balance": 20000,
+                "locked_balance_operator": 2,
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[0]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_3
+    # Search filter: key_manager
+    def test_normal_3_3(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "key_manager": "_1",
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[0]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_4
+    # Search filter: tax_category
+    def test_normal_3_4(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={"tax_category": 1},
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[0]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_3_5
+    # Search filter: account_address
+    def test_normal_3_5(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={
+                "account_address": config_eth_account("user2")["address"],
+            },
+        )
+        db.scalars(select(TokenHolder)).all()
+        holders = [holders[0]]
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_4
+    # Sort
+    @pytest.mark.parametrize(
+        "sort_item",
+        [
+            "account_address",
+            "hold_balance",
+            "locked_balance",
+            "key_manager",
+            "tax_category",
+        ],
+    )
+    def test_normal_4(self, sort_item, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info._personal_info = {
+                "key_manager": f"key_manager_{str(i+1)}",
+                "name": f"name_{str(i+1)}",
+                "postal_code": f"{str(i+1)}",
+                "address": f"{str(i+1)}",
+                "email": f"{str(i+1)}",
+                "birth": f"{str(i+1)}",
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        db.commit()
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params={"sort_item": sort_item},
+        )
+        db.scalars(select(TokenHolder)).all()
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
+            "status": TokenHolderBatchStatus.DONE.value,
+            "holders": sorted_holders,
+        }
+
+    # Normal_5
+    # Pagination
+    def test_normal_5(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
+        db.add(_token_holders_list)
+        db.commit()
+
+        holders = []
+        for i, user in enumerate(["user2", "user3", "user4"]):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
+            db.add(_token_holder)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "personal_information": {
+                        "key_manager": None,
+                        "name": None,
+                        "email": None,
+                        "birth": None,
+                        "address": None,
+                        "is_corporate": None,
+                        "postal_code": None,
+                        "tax_category": None,
+                    },
+                }
+            )
         db.commit()
 
         # request target api

@@ -24,7 +24,6 @@ from typing import Optional, Sequence
 import pytz
 from fastapi import APIRouter, Depends, Header, Path, Query
 from fastapi.exceptions import HTTPException
-from pydantic import NonNegativeInt
 from sqlalchemy import and_, asc, desc, func, select
 
 import config
@@ -46,8 +45,11 @@ from app.model.schema import (
     ListTokenHoldersPersonalInfoHistoryResponse,
     ListTokenHoldersPersonalInfoQuery,
     ListTokenHoldersPersonalInfoResponse,
+    RetrieveTokenHoldersCollectionQuery,
+    RetrieveTokenHoldersCollectionSortItem,
     RetrieveTokenHoldersListResponse,
 )
+from app.model.schema.base import ValueOperator
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
@@ -461,8 +463,7 @@ async def retrieve_token_holders_collection(
         description="UUID v4 required",
     ),
     issuer_address: str = Header(...),
-    offset: Optional[NonNegativeInt] = Query(None),
-    limit: Optional[NonNegativeInt] = Query(None),
+    get_query: RetrieveTokenHoldersCollectionQuery = Depends(),
 ):
     """Retrieve token holders collection"""
 
@@ -512,29 +513,125 @@ async def retrieve_token_holders_collection(
 
     # Base query
     stmt = (
-        select(TokenHolder)
+        select(TokenHolder, IDXPersonalInfo)
+        .outerjoin(
+            IDXPersonalInfo,
+            and_(
+                IDXPersonalInfo.issuer_address == issuer_address,
+                IDXPersonalInfo.account_address == TokenHolder.account_address,
+            ),
+        )
         .where(TokenHolder.holder_list_id == _same_list_id_record.id)
-        .order_by(asc(TokenHolder.account_address))
     )
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
-    count = total
+
+    if (
+        get_query.hold_balance is not None
+        and get_query.hold_balance_operator is not None
+    ):
+        match get_query.hold_balance_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(TokenHolder.hold_balance == get_query.hold_balance)
+            case ValueOperator.GTE:
+                stmt = stmt.where(TokenHolder.hold_balance >= get_query.hold_balance)
+            case ValueOperator.LTE:
+                stmt = stmt.where(TokenHolder.hold_balance <= get_query.hold_balance)
+
+    if (
+        get_query.locked_balance is not None
+        and get_query.locked_balance_operator is not None
+    ):
+        match get_query.locked_balance_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(
+                    TokenHolder.locked_balance == get_query.locked_balance
+                )
+            case ValueOperator.GTE:
+                stmt = stmt.where(
+                    TokenHolder.locked_balance >= get_query.locked_balance
+                )
+            case ValueOperator.LTE:
+                stmt = stmt.where(
+                    TokenHolder.locked_balance <= get_query.locked_balance
+                )
+
+    if get_query.account_address is not None:
+        stmt = stmt.where(
+            TokenHolder.account_address.like("%" + get_query.account_address + "%")
+        )
+
+    if get_query.tax_category is not None:
+        stmt = stmt.where(
+            IDXPersonalInfo._personal_info["tax_category"].as_integer()
+            == get_query.tax_category
+        )
+
+    if get_query.key_manager is not None:
+        stmt = stmt.where(
+            IDXPersonalInfo._personal_info["key_manager"]
+            .as_string()
+            .like("%" + get_query.key_manager + "%")
+        )
+
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Sort
+    if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.holder_name:
+        sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()
+    elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.key_manager:
+        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
+    else:
+        sort_attr = getattr(TokenHolder, get_query.sort_item)
+
+    if get_query.sort_order == 0:  # ASC
+        stmt = stmt.order_by(asc(sort_attr))
+    else:  # DESC
+        stmt = stmt.order_by(desc(sort_attr))
+    if get_query.sort_item != RetrieveTokenHoldersCollectionSortItem.account_address:
+        # NOTE: Set secondary sort for consistent results
+        stmt = stmt.order_by(
+            asc(RetrieveTokenHoldersCollectionSortItem.account_address)
+        )
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     # Get holder list
-    _token_holders: Sequence[TokenHolder] = (await db.scalars(stmt)).all()
-    token_holders = [_token_holder.json() for _token_holder in _token_holders]
+    _token_holders: Sequence[tuple[TokenHolder, IDXPersonalInfo | None]] = (
+        (await db.execute(stmt)).tuples().all()
+    )
+    personal_info_default = {
+        "key_manager": None,
+        "name": None,
+        "postal_code": None,
+        "address": None,
+        "email": None,
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None,
+    }
+    token_holders = [
+        {
+            **_token_holder[0].json(),
+            "personal_information": (
+                _token_holder[1].personal_info
+                if _token_holder[1] is not None
+                and _token_holder[1].personal_info is not None
+                else personal_info_default
+            ),
+        }
+        for _token_holder in _token_holders
+    ]
 
     return json_response(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "status": _same_list_id_record.batch_status,
