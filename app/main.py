@@ -61,16 +61,29 @@ tags_metadata = [
     {"name": "settlement", "description": "Settlement related features"},
     {"name": "utility", "description": "Utility functions"},
     {
-        "name": "[misc] settlement_agent",
-        "description": "Settlement related features for paying agent",
-    },
-    {
         "name": "[misc] messaging",
         "description": "Messaging functions with external systems",
     },
-    {"name": "[misc] blockchain_explorer", "description": "Blockchain explorer"},
-    {"name": "[misc] freeze_log", "description": "Freeze log contract"},
 ]
+
+if DVP_AGENT_FEATURE_ENABLED:
+    tags_metadata.append(
+        {
+            "name": "[misc] settlement_agent",
+            "description": "Settlement related features for paying agent",
+        }
+    )
+
+if BC_EXPLORER_ENABLED:
+    tags_metadata.append(
+        {"name": "[misc] blockchain_explorer", "description": "Blockchain explorer"}
+    )
+
+if FREEZE_LOG_FEATURE_ENABLED:
+    tags_metadata.append(
+        {"name": "[misc] freeze_log", "description": "Freeze log contract"}
+    )
+
 
 app = FastAPI(
     title="ibet Prime",
