@@ -126,7 +126,7 @@ class TestGetBlockData:
         self.insert_block_data(db, self.block_2)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(self.apiurl.format(1))
 
         # Assertion
@@ -141,7 +141,7 @@ class TestGetBlockData:
     # BC_EXPLORER_ENABLED = False (default)
     def test_error_1(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", False):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
             resp = client.get(self.apiurl.format(0))
 
         # Assertion
@@ -155,7 +155,7 @@ class TestGetBlockData:
     # DataNotExistsError
     def test_error_2(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(self.apiurl.format(0))
 
         # Assertion
@@ -169,7 +169,7 @@ class TestGetBlockData:
     # Invalid Parameter
     def test_error_3(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(self.apiurl.format(-1))
 
         # Assertion

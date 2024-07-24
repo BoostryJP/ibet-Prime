@@ -157,7 +157,6 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 TOKEN_LIST_CONTRACT_ADDRESS = os.environ.get("TOKEN_LIST_CONTRACT_ADDRESS")
 E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get("E2E_MESSAGING_CONTRACT_ADDRESS")
-FREEZE_LOG_CONTRACT_ADDRESS = os.environ.get("FREEZE_LOG_CONTRACT_ADDRESS")
 
 # Token data cache
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
@@ -351,8 +350,24 @@ E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" el
 ####################################################
 # Blockchain explorer settings
 ####################################################
-# Blockchain Explorer
 BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
+
+
+####################################################
+# Freeze log option settings
+####################################################
+FREEZE_LOG_FEATURE_ENABLED = (
+    True if os.environ.get("FREEZE_LOG_FEATURE_ENABLED") == "1" else False
+)
+FREEZE_LOG_CONTRACT_ADDRESS = os.environ.get("FREEZE_LOG_CONTRACT_ADDRESS")
+
+
+####################################################
+# DvP agent option settings
+####################################################
+DVP_AGENT_FEATURE_ENABLED = (
+    True if os.environ.get("DVP_AGENT_FEATURE_ENABLED") == "1" else False
+)
 
 
 ####################################################

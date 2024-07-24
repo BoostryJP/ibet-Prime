@@ -54,7 +54,7 @@ from config import (
     FREEZE_LOG_CONTRACT_ADDRESS,
 )
 
-router = APIRouter(prefix="/freeze_log", tags=["utility"])
+router = APIRouter(prefix="/freeze_log", tags=["[misc] freeze_log"])
 
 
 # POST: /freeze_log/accounts

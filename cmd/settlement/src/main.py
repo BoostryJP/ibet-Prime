@@ -145,7 +145,7 @@ def finish(
     )
 
     resp = httpx.post(
-        url=f"{api_url}/settlement/dvp/{exchange_address}/delivery/{delivery_id}",
+        url=f"{api_url}/settlement/dvp/{exchange_address}/delivery/{delivery_id}/agent",
         json=json.loads(finish_params.model_dump_json()),
     )
 
@@ -185,7 +185,7 @@ def abort(
     )
 
     resp = httpx.post(
-        url=f"{api_url}/settlement/dvp/{exchange_address}/delivery/{delivery_id}",
+        url=f"{api_url}/settlement/dvp/{exchange_address}/delivery/{delivery_id}/agent",
         json=json.loads(abort_params.model_dump_json()),
     )
 

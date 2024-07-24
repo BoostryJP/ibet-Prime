@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-24.6-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.9-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -117,6 +117,12 @@ The main environment variables are as follows.
         <td>True</td>
         <td nowrap>E2EMessaging contract address</td>
         <td>0x0000000000000000000000000000000000000000</td>
+    </tr>
+    <tr>
+        <td>BC_EXPLORER_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Whether to use the BC Explorer</td>
+        <td>0(not use) / 1(use)</td>
     </tr>
     <tr>
         <td>TZ</td>

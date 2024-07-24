@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: ibet Prime
   description: Security token management system for ibet network
-  version: '24.6'
+  version: '24.9'
 paths:
   /:
     get:
@@ -348,8 +348,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/AuthTokenAlreadyExistsErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                 title: Response 400 Create Auth Token Accounts  Issuer Address  Auth
                   Token Post
     delete:
@@ -457,8 +457,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issue Token Bond Tokens Post
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
@@ -591,8 +591,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Token Bond Tokens  Token Address  Post
         '404':
           description: Not Found Error
@@ -608,9 +608,9 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Update Token Bond Tokens  Token Address  Post
   /bond/tokens/{token_address}/history:
     get:
@@ -865,8 +865,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue Bond Tokens  Token Address  Additional
                   Issue Post
         '404':
@@ -883,8 +883,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Additional Issue Bond Tokens  Token Address  Additional
                   Issue Post
   /bond/tokens/{token_address}/additional_issue/batch:
@@ -1026,8 +1026,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue In Batch Bond Tokens  Token Address  Additional
                   Issue Batch Post
         '404':
@@ -1225,8 +1225,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token Bond Tokens  Token Address  Redeem
                   Post
         '404':
@@ -1243,8 +1243,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeem Token Bond Tokens  Token Address  Redeem
                   Post
   /bond/tokens/{token_address}/redeem/batch:
@@ -1384,8 +1384,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token In Batch Bond Tokens  Token Address  Redeem
                   Batch Post
         '404':
@@ -1539,8 +1539,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Schedule New Update Event Bond Tokens  Token Address  Scheduled
                   Events Post
         '404':
@@ -1663,8 +1663,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Delete Scheduled Event Bond Tokens  Token Address  Scheduled
                   Events  Scheduled Event Id  Delete
         '404':
@@ -2045,8 +2045,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Register Holder Personal Info Bond Tokens  Token
                   Address  Personal Info Post
         '404':
@@ -2063,8 +2063,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Register Holder Personal Info Bond Tokens  Token
                   Address  Personal Info Post
   /bond/tokens/{token_address}/personal_info/batch:
@@ -2218,8 +2218,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Batch Register Personal Info Bond Tokens  Token
                   Address  Personal Info Batch Post
         '404':
@@ -2464,8 +2464,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Transfer Ownership Bond Transfers Post
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
@@ -2475,8 +2475,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transfer Ownership Bond Transfers Post
   /bond/transfers/{token_address}:
     get:
@@ -2881,8 +2881,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Transfer Approval Bond Transfer Approvals  Token
                   Address   Id  Post
         '404':
@@ -2898,10 +2898,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Update Transfer Approval Bond Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -3002,8 +3002,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Bulk Transfer Ownership Bond Bulk Transfer Post
         '422':
           description: Validation Error
@@ -3018,9 +3018,9 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
                   - $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorResponse'
+                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                 title: Response 400 Bulk Transfer Ownership Bond Bulk Transfer Post
     get:
@@ -3102,7 +3102,7 @@ paths:
   /e2e_messaging/accounts:
     get:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: List All Accounts
       description: List all e2e messaging accounts
       operationId: list_all_accounts_e2e_messaging_accounts_get
@@ -3118,7 +3118,7 @@ paths:
                 title: Response List All Accounts E2E Messaging Accounts Get
     post:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: Create Account
       description: Create Account
       operationId: create_account_e2e_messaging_accounts_post
@@ -3149,13 +3149,13 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Create Account E2E Messaging Accounts Post
   /e2e_messaging/accounts/{account_address}:
     get:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: Retrieve Account
       description: Retrieve an e2e messaging account
       operationId: retrieve_account_e2e_messaging_accounts__account_address__get
@@ -3181,7 +3181,7 @@ paths:
                 $ref: '#/components/schemas/Error404Model'
     delete:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: Delete Account
       description: Logically delete an e2e messaging account
       operationId: delete_account_e2e_messaging_accounts__account_address__delete
@@ -3208,7 +3208,7 @@ paths:
   /e2e_messaging/accounts/{account_address}/rsa_key:
     post:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: Update Account Rsa Key
       description: Update an e2e messaging account rsa key
       operationId: update_account_rsa_key_e2e_messaging_accounts__account_address__rsa_key_post
@@ -3247,7 +3247,7 @@ paths:
   /e2e_messaging/accounts/{account_address}/eoa_password:
     post:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: Change Eoa Password
       description: Change Account's EOA Password
       operationId: change_eoa_password_e2e_messaging_accounts__account_address__eoa_password_post
@@ -3289,7 +3289,7 @@ paths:
   /e2e_messaging/accounts/{account_address}/rsa_passphrase:
     post:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: Change Rsa Passphrase
       description: Change Account's RSA Passphrase
       operationId: 
@@ -3332,7 +3332,7 @@ paths:
   /e2e_messaging/messages:
     get:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: List All E2E Messages
       description: List all e2e message
       operationId: list_all_e2e_messages_e2e_messaging_messages_get
@@ -3403,7 +3403,7 @@ paths:
   /e2e_messaging/messages/{id}:
     get:
       tags:
-        - messaging
+        - '[misc] messaging'
       summary: Retrieve E2E Messaging
       description: Retrieve an e2e message
       operationId: retrieve_e2e_messaging_e2e_messaging_messages__id__get
@@ -4539,8 +4539,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Force Unlock Positions  Account Address  Force
                   Unlock Post
         '422':
@@ -4557,8 +4557,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Force Unlock Positions  Account Address  Force
                   Unlock Post
   /positions/{account_address}/{token_address}:
@@ -4670,8 +4670,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issue Token Share Tokens Post
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
@@ -4803,8 +4803,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Token Share Tokens  Token Address  Post
         '404':
           description: Not Found Error
@@ -4820,9 +4820,9 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Update Token Share Tokens  Token Address  Post
   /share/tokens/{token_address}/history:
     get:
@@ -5077,8 +5077,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue Share Tokens  Token Address  Additional
                   Issue Post
         '404':
@@ -5095,8 +5095,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Additional Issue Share Tokens  Token Address  Additional
                   Issue Post
   /share/tokens/{token_address}/additional_issue/batch:
@@ -5238,8 +5238,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Additional Issue In Batch Share Tokens  Token
                   Address  Additional Issue Batch Post
         '404':
@@ -5437,8 +5437,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token Share Tokens  Token Address  Redeem
                   Post
         '404':
@@ -5455,8 +5455,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeem Token Share Tokens  Token Address  Redeem
                   Post
   /share/tokens/{token_address}/redeem/batch:
@@ -5596,8 +5596,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Redeem Token In Batch Share Tokens  Token Address  Redeem
                   Batch Post
         '404':
@@ -5751,8 +5751,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Schedule New Update Event Share Tokens  Token
                   Address  Scheduled Events Post
         '404':
@@ -5875,8 +5875,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Delete Scheduled Event Share Tokens  Token Address  Scheduled
                   Events  Scheduled Event Id  Delete
         '404':
@@ -6257,8 +6257,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Register Holder Personal Info Share Tokens  Token
                   Address  Personal Info Post
         '404':
@@ -6275,8 +6275,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Register Holder Personal Info Share Tokens  Token
                   Address  Personal Info Post
   /share/tokens/{token_address}/personal_info/batch:
@@ -6430,8 +6430,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Batch Register Personal Info Share Tokens  Token
                   Address  Personal Info Batch Post
         '404':
@@ -6670,8 +6670,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Transfer Ownership Share Transfers Post
         '404':
           description: Not Found Error
@@ -6687,8 +6687,8 @@ paths:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transfer Ownership Share Transfers Post
   /share/transfers/{token_address}:
     get:
@@ -7094,8 +7094,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Update Transfer Approval Share Transfer Approvals  Token
                   Address   Id  Post
         '404':
@@ -7111,10 +7111,10 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Update Transfer Approval Share Transfer Approvals  Token
                   Address   Id  Post
     get:
@@ -7215,8 +7215,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/Error401Model'
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Bulk Transfer Ownership Share Bulk Transfer Post
         '422':
           description: Validation Error
@@ -7231,9 +7231,9 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
                   - $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorResponse'
+                  - $ref: '#/components/schemas/TokenNotExistErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                 title: Response 400 Bulk Transfer Ownership Share Bulk Transfer Post
     get:
@@ -7857,581 +7857,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /blockchain_explorer/block_data:
-    get:
-      tags:
-        - blockchain_explorer
-      summary: '[ibet Blockchain Explorer] List block data'
-      description: |-
-        Returns a list of block data within the specified block number range.
-        The maximum number of search results is 1000.
-      operationId: ListBlockData
-      parameters:
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
-        - name: from_block_number
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            title: From Block Number
-        - name: to_block_number
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            title: To Block Number
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/SortOrder'
-              - type: 'null'
-            description: 'sort order(0: ASC, 1: DESC)'
-            default: 0
-            title: Sort Order
-          description: 'sort order(0: ASC, 1: DESC)'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockDataListResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseLimitExceededErrorResponse'
-  /blockchain_explorer/block_data/{block_number}:
-    get:
-      tags:
-        - blockchain_explorer
-      summary: '[ibet Blockchain Explorer] Retrieve block data'
-      description: Returns block data in the specified block number.
-      operationId: GetBlockData
-      parameters:
-        - name: block_number
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 0
-            description: Block number
-            title: Block Number
-          description: Block number
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockDataResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /blockchain_explorer/tx_data:
-    get:
-      tags:
-        - blockchain_explorer
-      summary: '[ibet Blockchain Explorer] List tx data'
-      description: |-
-        Returns a list of transactions by various search parameters.
-        The maximum number of search results is 10000.
-      operationId: ListTxData
-      parameters:
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
-        - name: block_number
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: block number
-            title: Block Number
-          description: block number
-        - name: from_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: tx from
-            title: From Address
-          description: tx from
-        - name: to_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: tx to
-            title: To Address
-          description: tx to
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TxDataListResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseLimitExceededErrorResponse'
-  /blockchain_explorer/tx_data/{hash}:
-    get:
-      tags:
-        - blockchain_explorer
-      summary: '[ibet Blockchain Explorer] Retrieve transaction data'
-      description: Searching for the transaction by transaction hash
-      operationId: GetTxData
-      parameters:
-        - name: hash
-          in: path
-          required: true
-          schema:
-            type: string
-            description: Transaction hash
-            title: Hash
-          description: Transaction hash
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TxDataResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /freeze_log/accounts:
-    get:
-      tags:
-        - utility
-      summary: List All Accounts
-      description: List all freeze-logging accounts
-      operationId: ListAllFreezeLogAccount
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListAllFreezeLogAccountResponse'
-    post:
-      tags:
-        - utility
-      summary: Create Account
-      description: Create Freeze-Logging Account
-      operationId: CreateFreezeLogAccount
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateFreezeLogAccountRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FreezeLogAccountResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /freeze_log/accounts/{account_address}:
-    delete:
-      tags:
-        - utility
-      summary: Delete Account
-      description: Logically delete an freeze-logging account
-      operationId: DeleteFreezeLogAccount
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FreezeLogAccountResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /freeze_log/accounts/{account_address}/eoa_password:
-    post:
-      tags:
-        - utility
-      summary: Change Eoa Password
-      description: Change Account's EOA Password
-      operationId: ChangeFreezeLogAccountPassword
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FreezeLogAccountChangeEOAPasswordRequest'
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /freeze_log/logs:
-    post:
-      tags:
-        - utility
-      summary: Record New Log
-      operationId: RecordNewFreezeLog
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RecordNewFreezeLogRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RecordNewFreezeLogResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Recordnewfreezelog
-  /freeze_log/logs/{log_index}:
-    post:
-      tags:
-        - utility
-      summary: Update Log
-      operationId: UpdateFreezeLog
-      parameters:
-        - name: log_index
-          in: path
-          required: true
-          schema:
-            type: integer
-            description: Log index
-            title: Log Index
-          description: Log index
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateFreezeLogRequest'
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatefreezelog
-    get:
-      tags:
-        - utility
-      summary: Retrieve Log
-      operationId: RetrieveFreezeLog
-      parameters:
-        - name: log_index
-          in: path
-          required: true
-          schema:
-            type: integer
-            description: Log index
-            title: Log Index
-          description: Log index
-        - name: account_address
-          in: query
-          required: true
-          schema:
-            type: string
-            description: Logging account address
-            title: Account Address
-          description: Logging account address
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /settlement/dvp/agent/accounts:
-    get:
-      tags:
-        - token_common
-      summary: List All Accounts
-      description: List all DVP-Payment Agent accounts
-      operationId: ListAllDVPAgentAccount
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListAllDVPAgentAccountResponse'
-    post:
-      tags:
-        - token_common
-      summary: Create Account
-      description: Create DVP-Payment Agent Account
-      operationId: CreateDVPAgentAccount
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateDVPAgentAccountRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DVPAgentAccountResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /settlement/dvp/agent/account/{account_address}:
-    delete:
-      tags:
-        - token_common
-      summary: Delete Account
-      description: Logically delete an DVP-Payment Agent Account
-      operationId: DeleteDVPAgentAccount
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DVPAgentAccountResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /settlement/dvp/agent/account/{account_address}/eoa_password:
-    post:
-      tags:
-        - token_common
-      summary: Change Eoa Password
-      description: Change Account's EOA Password
-      operationId: ChangeDVPAgentAccountPassword
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DVPAgentAccountChangeEOAPasswordRequest'
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /settlement/dvp/{exchange_address}/deliveries:
     get:
       tags:
-        - token_common
+        - settlement
       summary: List All Dvp Deliveries
       description: List of DVP delivery
       operationId: ListAllDVPDeliveries
@@ -8556,6 +7985,12 @@ paths:
             description: Number of set
             title: Limit
           description: Number of set
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
       responses:
         '200':
           description: Successful Response
@@ -8584,7 +8019,7 @@ paths:
                 $ref: '#/components/schemas/InvalidParameterErrorResponse'
     post:
       tags:
-        - token_common
+        - settlement
       summary: Create Dvp Delivery
       operationId: CreateDVPDelivery
       parameters:
@@ -8654,7 +8089,7 @@ paths:
   /settlement/dvp/{exchange_address}/delivery/{delivery_id}:
     get:
       tags:
-        - token_common
+        - settlement
       summary: Retrieve Dvp Delivery
       description: Retrieve a dvp delivery
       operationId: RetrieveDVPDelivery
@@ -8675,6 +8110,12 @@ paths:
             description: Delivery Id
             title: Delivery Id
           description: Delivery Id
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
       responses:
         '200':
           description: Successful Response
@@ -8703,7 +8144,7 @@ paths:
                 $ref: '#/components/schemas/InvalidParameterErrorResponse'
     post:
       tags:
-        - token_common
+        - settlement
       summary: Update Dvp Delivery
       operationId: UpdateDVPDelivery
       parameters:
@@ -8723,9 +8164,7 @@ paths:
           in: header
           required: false
           schema:
-            anyOf:
-              - type: string
-              - type: 'null'
+            type: string
             title: Issuer-Address
         - name: eoa-password
           in: header
@@ -8748,8 +8187,173 @@ paths:
         content:
           application/json:
             schema:
+              $ref: '#/components/schemas/CancelDVPDeliveryRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                title: Response 400 Updatedvpdelivery
+  /settlement/dvp/agent/accounts:
+    get:
+      tags:
+        - '[misc] settlement_agent'
+      summary: List All Accounts
+      description: List all DVP-Payment Agent accounts
+      operationId: ListAllDVPAgentAccount
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllDVPAgentAccountResponse'
+    post:
+      tags:
+        - '[misc] settlement_agent'
+      summary: Create Account
+      description: Create DVP-Payment Agent Account
+      operationId: CreateDVPAgentAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDVPAgentAccountRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DVPAgentAccountResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /settlement/dvp/agent/account/{account_address}:
+    delete:
+      tags:
+        - '[misc] settlement_agent'
+      summary: Delete Account
+      description: Logically delete an DVP-Payment Agent Account
+      operationId: DeleteDVPAgentAccount
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DVPAgentAccountResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+  /settlement/dvp/agent/account/{account_address}/eoa_password:
+    post:
+      tags:
+        - '[misc] settlement_agent'
+      summary: Change Eoa Password
+      description: Change Agent's EOA Password
+      operationId: ChangeDVPAgentAccountPassword
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DVPAgentAccountChangeEOAPasswordRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /settlement/dvp/{exchange_address}/delivery/{delivery_id}/agent:
+    post:
+      tags:
+        - '[misc] settlement_agent'
+      summary: Agent Update Dvp Delivery
+      description: Finish/Abort DVP delivery
+      operationId: AgentUpdateDVPDelivery
+      parameters:
+        - name: exchange_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Exchange Address
+        - name: delivery_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Delivery Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
               anyOf:
-                - $ref: '#/components/schemas/CancelDVPDeliveryRequest'
                 - $ref: '#/components/schemas/FinishDVPDeliveryRequest'
                 - $ref: '#/components/schemas/AbortDVPDeliveryRequest'
               title: Data
@@ -8777,7 +8381,463 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatedvpdelivery
+                title: Response 400 Agentupdatedvpdelivery
+  /blockchain_explorer/block_data:
+    get:
+      tags:
+        - '[misc] blockchain_explorer'
+      summary: '[ibet Blockchain Explorer] List block data'
+      description: |-
+        Returns a list of block data within the specified block number range.
+        The maximum number of search results is 1000.
+      operationId: ListBlockData
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: start position
+            title: Offset
+          description: start position
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: number of set
+            title: Limit
+          description: number of set
+        - name: from_block_number
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            title: From Block Number
+        - name: to_block_number
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            title: To Block Number
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'sort order(0: ASC, 1: DESC)'
+            default: 0
+            title: Sort Order
+          description: 'sort order(0: ASC, 1: DESC)'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockDataListResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseLimitExceededErrorResponse'
+  /blockchain_explorer/block_data/{block_number}:
+    get:
+      tags:
+        - '[misc] blockchain_explorer'
+      summary: '[ibet Blockchain Explorer] Retrieve block data'
+      description: Returns block data in the specified block number.
+      operationId: GetBlockData
+      parameters:
+        - name: block_number
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+            description: Block number
+            title: Block Number
+          description: Block number
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockDataResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+  /blockchain_explorer/tx_data:
+    get:
+      tags:
+        - '[misc] blockchain_explorer'
+      summary: '[ibet Blockchain Explorer] List tx data'
+      description: |-
+        Returns a list of transactions by various search parameters.
+        The maximum number of search results is 10000.
+      operationId: ListTxData
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: start position
+            title: Offset
+          description: start position
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: number of set
+            title: Limit
+          description: number of set
+        - name: block_number
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: block number
+            title: Block Number
+          description: block number
+        - name: from_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: tx from
+            title: From Address
+          description: tx from
+        - name: to_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: tx to
+            title: To Address
+          description: tx to
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TxDataListResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseLimitExceededErrorResponse'
+  /blockchain_explorer/tx_data/{hash}:
+    get:
+      tags:
+        - '[misc] blockchain_explorer'
+      summary: '[ibet Blockchain Explorer] Retrieve transaction data'
+      description: Searching for the transaction by transaction hash
+      operationId: GetTxData
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Transaction hash
+            title: Hash
+          description: Transaction hash
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TxDataResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+  /freeze_log/accounts:
+    get:
+      tags:
+        - '[misc] freeze_log'
+      summary: List All Accounts
+      description: List all freeze-logging accounts
+      operationId: ListAllFreezeLogAccount
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllFreezeLogAccountResponse'
+    post:
+      tags:
+        - '[misc] freeze_log'
+      summary: Create Account
+      description: Create Freeze-Logging Account
+      operationId: CreateFreezeLogAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFreezeLogAccountRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreezeLogAccountResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /freeze_log/accounts/{account_address}:
+    delete:
+      tags:
+        - '[misc] freeze_log'
+      summary: Delete Account
+      description: Logically delete an freeze-logging account
+      operationId: DeleteFreezeLogAccount
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreezeLogAccountResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+  /freeze_log/accounts/{account_address}/eoa_password:
+    post:
+      tags:
+        - '[misc] freeze_log'
+      summary: Change Eoa Password
+      description: Change Account's EOA Password
+      operationId: ChangeFreezeLogAccountPassword
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FreezeLogAccountChangeEOAPasswordRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /freeze_log/logs:
+    post:
+      tags:
+        - '[misc] freeze_log'
+      summary: Record New Log
+      operationId: RecordNewFreezeLog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordNewFreezeLogRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordNewFreezeLogResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                title: Response 400 Recordnewfreezelog
+  /freeze_log/logs/{log_index}:
+    post:
+      tags:
+        - '[misc] freeze_log'
+      summary: Update Log
+      operationId: UpdateFreezeLog
+      parameters:
+        - name: log_index
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: Log index
+            title: Log Index
+          description: Log index
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFreezeLogRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
+                title: Response 400 Updatefreezelog
+    get:
+      tags:
+        - '[misc] freeze_log'
+      summary: Retrieve Log
+      operationId: RetrieveFreezeLog
+      parameters:
+        - name: log_index
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: Log index
+            title: Log Index
+          description: Log index
+        - name: account_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Logging account address
+            title: Account Address
+          description: Logging account address
+      responses:
+        '200':
+          description: Successful Response
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
 components:
   schemas:
     AbortDVPDeliveryRequest:
@@ -14302,9 +14362,15 @@ tags:
     description: Bond token management
   - name: share
     description: Share token management
+  - name: settlement
+    description: Settlement related features
   - name: utility
     description: Utility functions
-  - name: messaging
+  - name: '[misc] settlement_agent'
+    description: Settlement related features for paying agent
+  - name: '[misc] messaging'
     description: Messaging functions with external systems
-  - name: blockchain_explorer
+  - name: '[misc] blockchain_explorer'
     description: Blockchain explorer
+  - name: '[misc] freeze_log'
+    description: Freeze log contract

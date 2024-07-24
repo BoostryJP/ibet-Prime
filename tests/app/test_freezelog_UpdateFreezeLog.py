@@ -55,7 +55,7 @@ class TestUpdateFreezeLog:
         db.commit()
 
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -108,13 +108,13 @@ class TestUpdateFreezeLog:
         db.commit()
 
         with mock.patch(
-            "app.routers.freeze_log.E2EE_REQUEST_ENABLED",
+            "app.routers.misc.freeze_log.E2EE_REQUEST_ENABLED",
             False,
         ), mock.patch(
             "app.model.schema.freeze_log.E2EE_REQUEST_ENABLED",
             False,
         ), mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -171,7 +171,7 @@ class TestUpdateFreezeLog:
         db.commit()
 
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -236,7 +236,7 @@ class TestUpdateFreezeLog:
         db.commit()
 
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -294,7 +294,7 @@ class TestUpdateFreezeLog:
         db.commit()
 
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -342,7 +342,7 @@ class TestUpdateFreezeLog:
         password = "password"
 
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Update log
@@ -381,7 +381,7 @@ class TestUpdateFreezeLog:
         db.commit()
 
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Update log
@@ -422,7 +422,7 @@ class TestUpdateFreezeLog:
             "app.utils.contract_utils.AsyncContractUtils.send_transaction",
             MagicMock(side_effect=Exception("tx error")),
         ), mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Update log

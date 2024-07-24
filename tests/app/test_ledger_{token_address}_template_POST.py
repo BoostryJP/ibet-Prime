@@ -42,7 +42,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
 
     # <Normal_1>
     # Create
-    @mock.patch("app.routers.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.create_ledger")
     def test_normal_1(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -234,7 +234,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
 
     # <Normal_2>
     # Update
-    @mock.patch("app.routers.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.create_ledger")
     def test_normal_2(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]

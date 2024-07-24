@@ -84,7 +84,7 @@ class TestGetTxData:
         self.insert_tx_data(db, self.tx_data)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"
@@ -121,7 +121,7 @@ class TestGetTxData:
         self.insert_token_data(db, token_info)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"
@@ -154,7 +154,7 @@ class TestGetTxData:
     # BC_EXPLORER_ENABLED = False (default)
     def test_error_1(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", False):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
             resp = client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"
@@ -172,7 +172,7 @@ class TestGetTxData:
     # DataNotExistsError
     def test_error_2(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"

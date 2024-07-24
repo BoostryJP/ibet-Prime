@@ -55,7 +55,7 @@ class TestRecordNewFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -98,13 +98,13 @@ class TestRecordNewFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.E2EE_REQUEST_ENABLED",
+            "app.routers.misc.freeze_log.E2EE_REQUEST_ENABLED",
             False,
         ), mock.patch(
             "app.model.schema.freeze_log.E2EE_REQUEST_ENABLED",
             False,
         ), mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -137,7 +137,7 @@ class TestRecordNewFreezeLog:
     def test_error_1_1(self, client, db, freeze_log_contract):
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {}
@@ -181,7 +181,7 @@ class TestRecordNewFreezeLog:
     def test_error_1_2(self, client, db, freeze_log_contract):
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -227,7 +227,7 @@ class TestRecordNewFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -273,7 +273,7 @@ class TestRecordNewFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -309,7 +309,7 @@ class TestRecordNewFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -347,7 +347,7 @@ class TestRecordNewFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -387,7 +387,7 @@ class TestRecordNewFreezeLog:
             "app.utils.contract_utils.AsyncContractUtils.send_transaction",
             MagicMock(side_effect=Exception("tx error")),
         ), mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {

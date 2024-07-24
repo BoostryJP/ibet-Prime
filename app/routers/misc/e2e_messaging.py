@@ -75,7 +75,7 @@ from config import (
     TZ,
 )
 
-router = APIRouter(prefix="/e2e_messaging", tags=["messaging"])
+router = APIRouter(prefix="/e2e_messaging", tags=["[misc] messaging"])
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")

@@ -48,7 +48,7 @@ web3 = Web3Wrapper()
 BLOCK_RESPONSE_LIMIT = 1000
 TX_RESPONSE_LIMIT = 10000
 
-router = APIRouter(prefix="/blockchain_explorer", tags=["blockchain_explorer"])
+router = APIRouter(prefix="/blockchain_explorer", tags=["[misc] blockchain_explorer"])
 
 
 # ------------------------------

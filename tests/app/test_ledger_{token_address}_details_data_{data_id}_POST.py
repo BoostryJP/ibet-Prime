@@ -35,7 +35,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.routers.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.create_ledger")
     def test_normal_1(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -120,7 +120,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
 
     # <Normal_2>
     # Max value
-    @mock.patch("app.routers.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.create_ledger")
     def test_normal_2(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]

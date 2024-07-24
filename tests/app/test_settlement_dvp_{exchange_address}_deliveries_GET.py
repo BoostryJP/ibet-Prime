@@ -19,9 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 
-import pytz
-
-from app.model.db import DeliveryStatus, IDXDelivery
+from app.model.db import DeliveryStatus, IDXDelivery, Token, TokenType, TokenVersion
 
 
 class TestListAllDVPDeliveries:
@@ -36,10 +34,14 @@ class TestListAllDVPDeliveries:
     # 0 record
     def test_normal_1(self, client, db):
         exchange_address = "0x1234567890123456789012345678900000000000"
+        issuer_address = "0x1234567890123456789012345678900000000100"
 
         # request target api
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -61,13 +63,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -189,6 +212,9 @@ class TestListAllDVPDeliveries:
         # request target api
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -344,13 +370,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -473,6 +520,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"token_address": token_address_1},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -605,13 +655,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -734,6 +805,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"seller_address": seller_address_1},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -866,13 +940,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -995,6 +1090,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"agent_address": agent_address_1},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -1127,13 +1225,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1256,6 +1375,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"valid": False},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -1319,13 +1441,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1448,6 +1591,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"status": DeliveryStatus.DELIVERY_FINISHED.value},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -1488,13 +1634,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1617,6 +1784,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"create_blocktimestamp_from": str(datetime(2024, 1, 1, 9, 0, 1))},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -1657,13 +1827,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1786,6 +1977,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"create_blocktimestamp_to": str(datetime(2024, 1, 1, 9, 0, 1))},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -1849,13 +2043,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1981,6 +2196,9 @@ class TestListAllDVPDeliveries:
                 "create_blocktimestamp_from": str(datetime(2024, 1, 1, 9, 0, 1)),
                 "create_blocktimestamp_to": str(datetime(2024, 1, 1, 9, 0, 1)),
             },
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -2021,13 +2239,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2150,6 +2389,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"sort_order": 0},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -2305,13 +2547,34 @@ class TestListAllDVPDeliveries:
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
         seller_address_2 = "0x1234567890123456789012345678900000000200"
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
         agent_address_2 = "0x1234567890123456789012345678900000002000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_2
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2434,6 +2697,9 @@ class TestListAllDVPDeliveries:
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"offset": 2, "limit": 2},
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -2496,9 +2762,35 @@ class TestListAllDVPDeliveries:
 
     # Error_1
     # RequestValidationError
-    # query(invalid value)
+    # Missing header
     def test_error_1(self, client, db):
         exchange_address = "0x1234567890123456789012345678900000000000"
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(exchange_address=exchange_address),
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "missing",
+                    "loc": ["header", "issuer-address"],
+                    "msg": "Field required",
+                    "input": None,
+                }
+            ],
+        }
+
+    # Error_2
+    # RequestValidationError
+    # query(invalid value)
+    def test_error_2(self, client, db):
+        exchange_address = "0x1234567890123456789012345678900000000000"
+        issuer_address = "0x1234567890123456789012345678900000000100"
 
         # request target api
         resp = client.get(
@@ -2511,6 +2803,9 @@ class TestListAllDVPDeliveries:
                 "sort_item": "test",
                 "offset": "test",
                 "limit": "test",
+            },
+            headers={
+                "issuer-address": issuer_address,
             },
         )
 
