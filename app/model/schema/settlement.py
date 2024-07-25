@@ -218,3 +218,36 @@ class ListAllDVPDeliveriesResponse(BaseModel):
 
     result_set: ResultSet
     deliveries: list[RetrieveDVPDeliveryResponse]
+
+
+class RetrieveDVPAgentDeliveryResponse(BaseModel):
+    """Retrieve DVP delivery schema for paying agent (Response)"""
+
+    exchange_address: str
+    delivery_id: int
+    token_address: str
+    buyer_address: str
+    seller_address: str
+    amount: int
+    agent_address: str
+    data: str = Field(examples=["{}", '{"type": "primary"}'])
+    create_blocktimestamp: str
+    create_transaction_hash: str
+    cancel_blocktimestamp: Optional[str] = Field(...)
+    cancel_transaction_hash: Optional[str] = Field(...)
+    confirm_blocktimestamp: Optional[str] = Field(...)
+    confirm_transaction_hash: Optional[str] = Field(...)
+    finish_blocktimestamp: Optional[str] = Field(...)
+    finish_transaction_hash: Optional[str] = Field(...)
+    abort_blocktimestamp: Optional[str] = Field(...)
+    abort_transaction_hash: Optional[str] = Field(...)
+    confirmed: bool
+    valid: bool
+    status: DeliveryStatus
+
+
+class ListAllDVPAgentDeliveriesResponse(BaseModel):
+    """List all DVP delivery schema for paying agent (Response)"""
+
+    result_set: ResultSet
+    deliveries: list[RetrieveDVPAgentDeliveryResponse]

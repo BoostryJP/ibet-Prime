@@ -8460,7 +8460,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListAllDVPDeliveriesResponse'
+                $ref: '#/components/schemas/ListAllDVPAgentDeliveriesResponse'
         '404':
           description: Not Found Error
           content:
@@ -12231,6 +12231,21 @@ components:
       type: array
       title: ListAllDVPAgentAccountResponse
       description: DVP agent account list reference schema (RESPONSE)
+    ListAllDVPAgentDeliveriesResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        deliveries:
+          items:
+            $ref: '#/components/schemas/RetrieveDVPAgentDeliveryResponse'
+          type: array
+          title: Deliveries
+      type: object
+      required:
+        - result_set
+        - deliveries
+      title: ListAllDVPAgentDeliveriesResponse
+      description: List all DVP delivery schema for paying agent (Response)
     ListAllDVPDeliveriesResponse:
       properties:
         result_set:
@@ -13211,6 +13226,114 @@ components:
         - total
       title: ResultSet
       description: result set for pagination
+    RetrieveDVPAgentDeliveryResponse:
+      properties:
+        exchange_address:
+          type: string
+          title: Exchange Address
+        delivery_id:
+          type: integer
+          title: Delivery Id
+        token_address:
+          type: string
+          title: Token Address
+        buyer_address:
+          type: string
+          title: Buyer Address
+        seller_address:
+          type: string
+          title: Seller Address
+        amount:
+          type: integer
+          title: Amount
+        agent_address:
+          type: string
+          title: Agent Address
+        data:
+          type: string
+          title: Data
+          examples:
+            - '{}'
+            - '{"type": "primary"}'
+        create_blocktimestamp:
+          type: string
+          title: Create Blocktimestamp
+        create_transaction_hash:
+          type: string
+          title: Create Transaction Hash
+        cancel_blocktimestamp:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Cancel Blocktimestamp
+        cancel_transaction_hash:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Cancel Transaction Hash
+        confirm_blocktimestamp:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Confirm Blocktimestamp
+        confirm_transaction_hash:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Confirm Transaction Hash
+        finish_blocktimestamp:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Finish Blocktimestamp
+        finish_transaction_hash:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Finish Transaction Hash
+        abort_blocktimestamp:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Abort Blocktimestamp
+        abort_transaction_hash:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Abort Transaction Hash
+        confirmed:
+          type: boolean
+          title: Confirmed
+        valid:
+          type: boolean
+          title: Valid
+        status:
+          $ref: '#/components/schemas/DeliveryStatus'
+      type: object
+      required:
+        - exchange_address
+        - delivery_id
+        - token_address
+        - buyer_address
+        - seller_address
+        - amount
+        - agent_address
+        - data
+        - create_blocktimestamp
+        - create_transaction_hash
+        - cancel_blocktimestamp
+        - cancel_transaction_hash
+        - confirm_blocktimestamp
+        - confirm_transaction_hash
+        - finish_blocktimestamp
+        - finish_transaction_hash
+        - abort_blocktimestamp
+        - abort_transaction_hash
+        - confirmed
+        - valid
+        - status
+      title: RetrieveDVPAgentDeliveryResponse
+      description: Retrieve DVP delivery schema for paying agent (Response)
     RetrieveDVPDeliveryResponse:
       properties:
         exchange_address:
