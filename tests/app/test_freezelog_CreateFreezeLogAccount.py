@@ -43,7 +43,7 @@ class TestCreateFreezeLogAccount:
     def test_normal_1(self, client, db, freeze_log_contract):
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
@@ -81,9 +81,9 @@ class TestCreateFreezeLogAccount:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.AWS_KMS_GENERATE_RANDOM_ENABLED", True
+            "app.routers.misc.freeze_log.AWS_KMS_GENERATE_RANDOM_ENABLED", True
         ), mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ), mock_boto3_client:
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
@@ -117,7 +117,7 @@ class TestCreateFreezeLogAccount:
     def test_error_1(self, client, db, freeze_log_contract):
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {}
@@ -144,7 +144,7 @@ class TestCreateFreezeLogAccount:
     def test_error_2(self, client, db, freeze_log_contract):
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {
@@ -175,7 +175,7 @@ class TestCreateFreezeLogAccount:
     def test_error_3(self, client, db, freeze_log_contract):
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}

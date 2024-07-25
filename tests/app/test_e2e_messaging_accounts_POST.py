@@ -77,7 +77,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         )
 
         with mock.patch(
-            "app.routers.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+            "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
             e2e_messaging_contract.address,
         ), (
             mock_E2EMessaging_set_public_key
@@ -179,9 +179,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         )
 
         with mock.patch(
-            "app.routers.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
+            "app.routers.misc.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
         ), mock.patch(
-            "app.routers.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+            "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
             e2e_messaging_contract.address,
         ), (
             mock_boto3_client

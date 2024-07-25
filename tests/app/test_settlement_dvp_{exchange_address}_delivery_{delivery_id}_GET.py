@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 
-from app.model.db import DeliveryStatus, IDXDelivery
+from app.model.db import DeliveryStatus, IDXDelivery, Token, TokenType, TokenVersion
 from tests.account_config import config_eth_account
 
 
@@ -41,11 +41,23 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
 
-        seller_address_1 = "0x1234567890123456789012345678900000000100"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        seller_address_1 = issuer_address
 
         buyer_address = "0x1234567890123456789012345678911111111111"
 
         agent_address_1 = "0x1234567890123456789012345678900000001000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address_1
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -69,6 +81,9 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         # request target API
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address, delivery_id=1),
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion
@@ -102,13 +117,42 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
     ###########################################################################
 
     # Error_1
-    # NotFound
+    # RequestValidationError
+    # Missing header
     def test_error_1(self, client, db):
         exchange_address = "0x1234567890123456789012345678900000000000"
 
         # request target API
         resp = client.get(
             self.base_url.format(exchange_address=exchange_address, delivery_id=1),
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "missing",
+                    "loc": ["header", "issuer-address"],
+                    "msg": "Field required",
+                    "input": None,
+                }
+            ],
+        }
+
+    # Error_2
+    # NotFound
+    def test_error_2(self, client, db):
+        exchange_address = "0x1234567890123456789012345678900000000000"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(exchange_address=exchange_address, delivery_id=1),
+            headers={
+                "issuer-address": issuer_address,
+            },
         )
 
         # assertion

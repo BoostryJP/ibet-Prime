@@ -109,7 +109,7 @@ class TestListTxData:
         self.insert_tx_data(db, self.B_tx_1)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(self.apiurl)
 
         # Assertion
@@ -136,7 +136,7 @@ class TestListTxData:
         self.insert_tx_data(db, self.B_tx_1)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"block_number": 6791871}
             resp = client.get(self.apiurl, params=params)
 
@@ -160,7 +160,7 @@ class TestListTxData:
         self.insert_tx_data(db, self.B_tx_1)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"from_address": "0x30406cd5f18dd87367b782b9d63b4d79f7f5ebb8"}
             resp = client.get(self.apiurl, params=params)
 
@@ -187,7 +187,7 @@ class TestListTxData:
         self.insert_tx_data(db, self.B_tx_1)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"to_address": "0xeceb9fdbd2cf677be5fa8b1ceeb53e53d582f0eb"}
             resp = client.get(self.apiurl, params=params)
 
@@ -211,7 +211,7 @@ class TestListTxData:
         self.insert_tx_data(db, self.B_tx_1)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"offset": 1}
             resp = client.get(self.apiurl, params=params)
 
@@ -238,7 +238,7 @@ class TestListTxData:
         self.insert_tx_data(db, self.B_tx_1)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"limit": 1}
             resp = client.get(self.apiurl, params=params)
 
@@ -262,7 +262,7 @@ class TestListTxData:
     # BC_EXPLORER_ENABLED = False (default)
     def test_error_1(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", False):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
             resp = client.get(self.apiurl)
 
         # Assertion
@@ -276,7 +276,7 @@ class TestListTxData:
     # Invalid Parameter
     def test_error_2_1(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"offset": -1, "limit": -1, "block_number": -1}
             resp = client.get(self.apiurl, params=params)
 
@@ -313,7 +313,7 @@ class TestListTxData:
     # Invalid Parameter
     def test_error_2_2(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"from_address": "abcd", "to_address": "abcd"}
             resp = client.get(self.apiurl, params=params)
 
@@ -348,8 +348,8 @@ class TestListTxData:
 
         # Request target API
         with mock.patch(
-            "app.routers.bc_explorer.BC_EXPLORER_ENABLED", True
-        ), mock.patch("app.routers.bc_explorer.TX_RESPONSE_LIMIT", 2):
+            "app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True
+        ), mock.patch("app.routers.misc.bc_explorer.TX_RESPONSE_LIMIT", 2):
             resp = client.get(self.apiurl)
 
         # Assertion

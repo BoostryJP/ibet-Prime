@@ -144,7 +144,7 @@ class TestListBlockData:
     # IDXBlockDataBlockNumber is None
     def test_normal_1_1(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(self.apiurl)
 
         # Assertion
@@ -168,7 +168,7 @@ class TestListBlockData:
         self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = client.get(self.apiurl)
 
         # Assertion
@@ -197,7 +197,7 @@ class TestListBlockData:
         self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"from_block_number": 1}
             resp = client.get(self.apiurl, params=params)
 
@@ -226,7 +226,7 @@ class TestListBlockData:
         self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"to_block_number": 1}
             resp = client.get(self.apiurl, params=params)
 
@@ -255,7 +255,7 @@ class TestListBlockData:
         self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"offset": 1}
             resp = client.get(self.apiurl, params=params)
 
@@ -284,7 +284,7 @@ class TestListBlockData:
         self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"limit": 1}
             resp = client.get(self.apiurl, params=params)
 
@@ -310,7 +310,7 @@ class TestListBlockData:
         self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"sort_order": 1}
             resp = client.get(self.apiurl, params=params)
 
@@ -338,7 +338,7 @@ class TestListBlockData:
     # BC_EXPLORER_ENABLED = False (default)
     def test_error_1(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", False):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
             resp = client.get(self.apiurl)
 
         # Assertion
@@ -352,7 +352,7 @@ class TestListBlockData:
     # Invalid Parameter
     def test_error_2(self, client: TestClient, db: Session):
         # Request target API
-        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {
                 "offset": -1,
                 "limit": -1,
@@ -408,8 +408,8 @@ class TestListBlockData:
 
         # Request target API
         with mock.patch(
-            "app.routers.bc_explorer.BC_EXPLORER_ENABLED", True
-        ), mock.patch("app.routers.bc_explorer.BLOCK_RESPONSE_LIMIT", 2):
+            "app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True
+        ), mock.patch("app.routers.misc.bc_explorer.BLOCK_RESPONSE_LIMIT", 2):
             resp = client.get(self.apiurl)
 
         # Assertion

@@ -70,7 +70,7 @@ class TestAppRoutersAccountsPOST:
 
     # <Normal_2>
     # AWS KMS
-    @mock.patch("app.routers.account.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
+    @mock.patch("app.routers.issuer.account.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
     @mock.patch("boto3.client")
     def test_normal_2(self, boto3_mock, client, db):
         accounts_before = db.scalars(select(Account)).all()

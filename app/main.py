@@ -29,23 +29,26 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.exceptions import *
 from app.log import output_access_log
-from app.routers import (
+from app.routers.issuer import (
     account,
-    bc_explorer,
     bond,
     common,
-    e2e_messaging,
     file,
-    freeze_log,
     ledger,
     notification,
     position,
-    settlement,
+    settlement_issuer,
     share,
     token_holders,
 )
+from app.routers.misc import bc_explorer, e2e_messaging, freeze_log, settlement_agent
 from app.utils.docs_utils import custom_openapi
-from config import SERVER_NAME
+from config import (
+    BC_EXPLORER_ENABLED,
+    DVP_AGENT_FEATURE_ENABLED,
+    FREEZE_LOG_FEATURE_ENABLED,
+    SERVER_NAME,
+)
 
 tags_metadata = [
     {"name": "root", "description": ""},
@@ -55,15 +58,37 @@ tags_metadata = [
     {"name": "token_common", "description": "Common functions for tokens"},
     {"name": "bond", "description": "Bond token management"},
     {"name": "share", "description": "Share token management"},
+    {"name": "settlement", "description": "Settlement related features"},
     {"name": "utility", "description": "Utility functions"},
-    {"name": "messaging", "description": "Messaging functions with external systems"},
-    {"name": "blockchain_explorer", "description": "Blockchain explorer"},
+    {
+        "name": "[misc] messaging",
+        "description": "Messaging functions with external systems",
+    },
 ]
+
+if DVP_AGENT_FEATURE_ENABLED:
+    tags_metadata.append(
+        {
+            "name": "[misc] settlement_agent",
+            "description": "Settlement related features for paying agent",
+        }
+    )
+
+if BC_EXPLORER_ENABLED:
+    tags_metadata.append(
+        {"name": "[misc] blockchain_explorer", "description": "Blockchain explorer"}
+    )
+
+if FREEZE_LOG_FEATURE_ENABLED:
+    tags_metadata.append(
+        {"name": "[misc] freeze_log", "description": "Freeze log contract"}
+    )
+
 
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="24.6",
+    version="24.9",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -104,10 +129,16 @@ app.include_router(notification.router)
 app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
-app.include_router(bc_explorer.router)
-app.include_router(freeze_log.router)
-app.include_router(settlement.router)
+app.include_router(settlement_issuer.router)
 
+if DVP_AGENT_FEATURE_ENABLED:
+    app.include_router(settlement_agent.router)
+
+if BC_EXPLORER_ENABLED:
+    app.include_router(bc_explorer.router)
+
+if FREEZE_LOG_FEATURE_ENABLED:
+    app.include_router(freeze_log.router)
 
 ###############################################################
 # EXCEPTION

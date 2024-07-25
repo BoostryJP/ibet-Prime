@@ -77,7 +77,7 @@ class TestCreateDVPAgentAccount:
 
         # Request target api
         with mock.patch(
-            "app.routers.settlement.AWS_KMS_GENERATE_RANDOM_ENABLED", True
+            "app.routers.misc.settlement_agent.AWS_KMS_GENERATE_RANDOM_ENABLED", True
         ), mock_boto3_client:
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
             resp = client.post(self.test_url, json=req_param)

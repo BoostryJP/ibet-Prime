@@ -21,6 +21,9 @@ services:
       - TEST_DATABASE_URL=postgresql+psycopg://apluser:apluserpass@postgres/apldb
       - WEB3_HTTP_PROVIDER=http://quorum:8545
       - RESPONSE_VALIDATION_MODE=1
+      - BC_EXPLORER_ENABLED=1
+      - FREEZE_LOG_FEATURE_ENABLED=1
+      - DVP_AGENT_FEATURE_ENABLED=1
     links:
       - postgres:postgres
       - hardhat-network:quorum

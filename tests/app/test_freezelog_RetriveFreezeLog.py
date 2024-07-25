@@ -51,7 +51,7 @@ class TestRetrieveFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -103,7 +103,7 @@ class TestRetrieveFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -154,7 +154,7 @@ class TestRetrieveFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Record new log
@@ -200,7 +200,7 @@ class TestRetrieveFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             # Get log
