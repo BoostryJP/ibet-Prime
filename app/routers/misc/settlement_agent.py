@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import re
 import secrets
+from datetime import UTC
 from typing import Sequence
 
 import boto3
@@ -27,8 +28,8 @@ import pytz
 from coincurve import PublicKey
 from eth_keyfile import decode_keyfile_json
 from eth_utils import keccak, to_checksum_address
-from fastapi import APIRouter, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import and_, desc, func, select
 
 import config
 from app.database import DBAsyncSession
@@ -38,7 +39,7 @@ from app.model.blockchain.tx_params.ibet_security_token_dvp import (
     AbortDeliveryParams,
     FinishDeliveryParams,
 )
-from app.model.db import DVPAgentAccount, TransactionLock
+from app.model.db import DVPAgentAccount, IDXDelivery, TransactionLock
 from app.model.schema import (
     AbortDVPDeliveryRequest,
     CreateDVPAgentAccountRequest,
@@ -46,6 +47,8 @@ from app.model.schema import (
     DVPAgentAccountResponse,
     FinishDVPDeliveryRequest,
     ListAllDVPAgentAccountResponse,
+    ListAllDVPAgentDeliveriesQuery,
+    ListAllDVPDeliveriesResponse,
 )
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
@@ -242,16 +245,158 @@ async def change_eoa_password(
     return
 
 
-# POST: /settlement/dvp/{exchange_address}/delivery/{delivery_id}/agent
+# GET: /settlement/dvp/agent/{exchange_address}/deliveries
+@router.get(
+    "/dvp/agent/{exchange_address}/deliveries",
+    operation_id="ListAllDVPAgentDeliveries",
+    response_model=ListAllDVPDeliveriesResponse,
+    responses=get_routers_responses(404, 422, InvalidParameterError),
+)
+async def list_all_dvp_agent_deliveries(
+    db: DBAsyncSession,
+    exchange_address: str,
+    request_query: ListAllDVPAgentDeliveriesQuery = Depends(),
+):
+    """List all DVP deliveries for paying agent"""
+    stmt = select(IDXDelivery).where(
+        and_(
+            IDXDelivery.exchange_address == exchange_address,
+            IDXDelivery.agent_address == request_query.agent_address,
+        )
+    )
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    if request_query.token_address is not None:
+        stmt = stmt.where(IDXDelivery.token_address == request_query.token_address)
+    if request_query.seller_address is not None:
+        stmt = stmt.where(IDXDelivery.seller_address == request_query.seller_address)
+    if request_query.valid is not None:
+        stmt = stmt.where(IDXDelivery.valid == request_query.valid)
+    if request_query.status is not None:
+        stmt = stmt.where(IDXDelivery.status == request_query.status)
+    if request_query.create_blocktimestamp_from is not None:
+        stmt = stmt.where(
+            IDXDelivery.create_blocktimestamp
+            >= local_tz.localize(request_query.create_blocktimestamp_from).astimezone(
+                tz=UTC
+            )
+        )
+    if request_query.create_blocktimestamp_to is not None:
+        stmt = stmt.where(
+            IDXDelivery.create_blocktimestamp
+            <= local_tz.localize(request_query.create_blocktimestamp_to).astimezone(
+                tz=UTC
+            )
+        )
+
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Sort
+    if request_query.sort_order == 0:  # ASC
+        stmt = stmt.order_by(IDXDelivery.create_blocktimestamp)
+    else:  # DESC
+        stmt = stmt.order_by(desc(IDXDelivery.create_blocktimestamp))
+
+    # Pagination
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
+
+    _deliveries: Sequence[IDXDelivery] = (await db.scalars(stmt)).all()
+
+    deliveries = []
+    for _delivery in _deliveries:
+        if _delivery.create_blocktimestamp is not None:
+            create_blocktimestamp = (
+                local_tz.localize(_delivery.create_blocktimestamp)
+                .astimezone(tz=UTC)
+                .isoformat()
+            )
+        else:
+            create_blocktimestamp = None
+        if _delivery.cancel_blocktimestamp is not None:
+            cancel_blocktimestamp = (
+                local_tz.localize(_delivery.cancel_blocktimestamp)
+                .astimezone(tz=UTC)
+                .isoformat()
+            )
+        else:
+            cancel_blocktimestamp = None
+        if _delivery.confirm_blocktimestamp is not None:
+            confirm_blocktimestamp = (
+                local_tz.localize(_delivery.confirm_blocktimestamp)
+                .astimezone(tz=UTC)
+                .isoformat()
+            )
+        else:
+            confirm_blocktimestamp = None
+        if _delivery.finish_blocktimestamp is not None:
+            finish_blocktimestamp = (
+                local_tz.localize(_delivery.finish_blocktimestamp)
+                .astimezone(tz=UTC)
+                .isoformat()
+            )
+        else:
+            finish_blocktimestamp = None
+        if _delivery.abort_blocktimestamp is not None:
+            abort_blocktimestamp = (
+                local_tz.localize(_delivery.abort_blocktimestamp)
+                .astimezone(tz=UTC)
+                .isoformat()
+            )
+        else:
+            abort_blocktimestamp = None
+
+        deliveries.append(
+            {
+                "exchange_address": _delivery.exchange_address,
+                "delivery_id": _delivery.delivery_id,
+                "token_address": _delivery.token_address,
+                "buyer_address": _delivery.buyer_address,
+                "seller_address": _delivery.seller_address,
+                "amount": _delivery.amount,
+                "agent_address": _delivery.agent_address,
+                "data": _delivery.data,
+                "create_blocktimestamp": create_blocktimestamp,
+                "create_transaction_hash": _delivery.create_transaction_hash,
+                "cancel_blocktimestamp": cancel_blocktimestamp,
+                "cancel_transaction_hash": _delivery.cancel_transaction_hash,
+                "confirm_blocktimestamp": confirm_blocktimestamp,
+                "confirm_transaction_hash": _delivery.confirm_transaction_hash,
+                "finish_blocktimestamp": finish_blocktimestamp,
+                "finish_transaction_hash": _delivery.finish_transaction_hash,
+                "abort_blocktimestamp": abort_blocktimestamp,
+                "abort_transaction_hash": _delivery.abort_transaction_hash,
+                "confirmed": _delivery.confirmed,
+                "valid": _delivery.valid,
+                "status": _delivery.status,
+            }
+        )
+
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": request_query.offset,
+                "limit": request_query.limit,
+                "total": total,
+            },
+            "deliveries": deliveries,
+        }
+    )
+
+
+# POST: /settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}
 @router.post(
-    "/dvp/{exchange_address}/delivery/{delivery_id}/agent",
-    operation_id="AgentUpdateDVPDelivery",
+    "/dvp/agent/{exchange_address}/delivery/{delivery_id}",
+    operation_id="UpdateDVPAgentDelivery",
     response_model=None,
     responses=get_routers_responses(
         404, 422, InvalidParameterError, SendTransactionError
     ),
 )
-async def agent_update_dvp_delivery(
+async def update_dvp_agent_delivery(
     db: DBAsyncSession,
     exchange_address: str,
     delivery_id: str,

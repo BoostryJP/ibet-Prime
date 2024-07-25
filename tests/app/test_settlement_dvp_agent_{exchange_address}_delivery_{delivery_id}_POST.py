@@ -71,7 +71,7 @@ async def deploy_bond_token_contract(
 
 class TestUpdateDVPDeliveryPOST:
     # target API endpoint
-    base_url = "/settlement/dvp/{exchange_address}/delivery/{delivery_id}/agent"
+    base_url = "/settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}"
 
     ###########################################################################
     # Normal Case

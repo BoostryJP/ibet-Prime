@@ -106,6 +106,30 @@ class ListAllDVPDeliveriesQuery:
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
+@dataclass
+class ListAllDVPAgentDeliveriesQuery:
+    agent_address: Annotated[str, Query(description="Agent address")]
+    token_address: Annotated[Optional[str], Query(description="Token address")] = None
+    seller_address: Annotated[Optional[str], Query(description="Seller address")] = None
+    buyer_address: Annotated[Optional[str], Query(description="Buyer address")] = None
+    valid: Annotated[Optional[bool], Query(description="Valid flag")] = None
+    status: Annotated[
+        Optional[DeliveryStatus], Query(description="Delivery status")
+    ] = None
+    create_blocktimestamp_from: Annotated[
+        Optional[datetime], Query(description="Create block timestamp filter(From)")
+    ] = None
+    create_blocktimestamp_to: Annotated[
+        Optional[datetime], Query(description="Create block timestamp filter(To)")
+    ] = None
+
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
 class CreateDVPDeliveryRequest(BaseModel):
     """DVP delivery create schema (REQUEST)"""
 

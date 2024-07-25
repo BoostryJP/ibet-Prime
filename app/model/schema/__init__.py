@@ -123,6 +123,7 @@ from .settlement import (
     DVPAgentAccountResponse,
     FinishDVPDeliveryRequest,
     ListAllDVPAgentAccountResponse,
+    ListAllDVPAgentDeliveriesQuery,
     ListAllDVPDeliveriesQuery,
     ListAllDVPDeliveriesResponse,
     RetrieveDVPDeliveryResponse,

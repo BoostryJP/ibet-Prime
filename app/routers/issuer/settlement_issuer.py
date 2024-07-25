@@ -69,7 +69,7 @@ async def list_all_dvp_deliveries(
     request_query: ListAllDVPDeliveriesQuery = Depends(),
     issuer_address: str = Header(...),
 ):
-    """List of DVP delivery"""
+    """List all DVP deliveries"""
     stmt = (
         select(IDXDelivery)
         .join(Token, Token.token_address == IDXDelivery.token_address)
