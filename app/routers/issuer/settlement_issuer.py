@@ -24,6 +24,7 @@ import pytz
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Request
 from sqlalchemy import and_, desc, func, select
+from sqlalchemy.orm import aliased
 
 import config
 from app.database import DBAsyncSession
@@ -33,7 +34,7 @@ from app.model.blockchain.tx_params.ibet_security_token_dvp import (
     CancelDeliveryParams,
     CreateDeliveryParams,
 )
-from app.model.db import IDXDelivery, Token
+from app.model.db import IDXDelivery, IDXPersonalInfo, Token
 from app.model.schema import (
     CancelDVPDeliveryRequest,
     CreateDVPDeliveryRequest,
@@ -70,9 +71,26 @@ async def list_all_dvp_deliveries(
     issuer_address: str = Header(...),
 ):
     """List all DVP deliveries"""
+    buyer_personal_info = aliased(IDXPersonalInfo)
+    seller_personal_info = aliased(IDXPersonalInfo)
+
     stmt = (
-        select(IDXDelivery)
+        select(IDXDelivery, buyer_personal_info, seller_personal_info)
         .join(Token, Token.token_address == IDXDelivery.token_address)
+        .outerjoin(
+            buyer_personal_info,
+            and_(
+                Token.issuer_address == buyer_personal_info.issuer_address,
+                IDXDelivery.buyer_address == buyer_personal_info.account_address,
+            ),
+        )
+        .outerjoin(
+            seller_personal_info,
+            and_(
+                Token.issuer_address == seller_personal_info.issuer_address,
+                IDXDelivery.seller_address == seller_personal_info.account_address,
+            ),
+        )
         .where(
             and_(
                 IDXDelivery.exchange_address == exchange_address,
@@ -121,10 +139,12 @@ async def list_all_dvp_deliveries(
     if request_query.offset is not None:
         stmt = stmt.offset(request_query.offset)
 
-    _deliveries: Sequence[IDXDelivery] = (await db.scalars(stmt)).all()
+    _deliveries: Sequence[
+        tuple[IDXDelivery, IDXPersonalInfo | None, IDXPersonalInfo | None]
+    ] = ((await db.execute(stmt)).tuples().all())
 
     deliveries = []
-    for _delivery in _deliveries:
+    for _delivery, _buyer_info, _seller_info in _deliveries:
         if _delivery.create_blocktimestamp is not None:
             create_blocktimestamp = (
                 local_tz.localize(_delivery.create_blocktimestamp)
@@ -172,7 +192,13 @@ async def list_all_dvp_deliveries(
                 "delivery_id": _delivery.delivery_id,
                 "token_address": _delivery.token_address,
                 "buyer_address": _delivery.buyer_address,
+                "buyer_personal_information": (
+                    _buyer_info.personal_info if _buyer_info is not None else None
+                ),
                 "seller_address": _delivery.seller_address,
+                "seller_personal_information": (
+                    _seller_info.personal_info if _seller_info is not None else None
+                ),
                 "amount": _delivery.amount,
                 "agent_address": _delivery.agent_address,
                 "data": _delivery.data,
@@ -283,58 +309,83 @@ async def retrieve_dvp_delivery(
     issuer_address: str = Header(...),
 ):
     """Retrieve a dvp delivery"""
-    _delivery: IDXDelivery | None = (
-        await db.scalars(
-            select(IDXDelivery)
-            .join(Token, Token.token_address == IDXDelivery.token_address)
-            .where(
-                and_(
-                    IDXDelivery.exchange_address == exchange_address,
-                    IDXDelivery.delivery_id == delivery_id,
-                    Token.issuer_address == issuer_address,
+    buyer_personal_info = aliased(IDXPersonalInfo)
+    seller_personal_info = aliased(IDXPersonalInfo)
+
+    _delivery: (
+        tuple[IDXDelivery, IDXPersonalInfo | None, IDXPersonalInfo | None] | None
+    ) = (
+        (
+            await db.execute(
+                select(IDXDelivery, buyer_personal_info, seller_personal_info)
+                .join(Token, Token.token_address == IDXDelivery.token_address)
+                .outerjoin(
+                    buyer_personal_info,
+                    and_(
+                        Token.issuer_address == buyer_personal_info.issuer_address,
+                        IDXDelivery.buyer_address
+                        == buyer_personal_info.account_address,
+                    ),
                 )
+                .outerjoin(
+                    seller_personal_info,
+                    and_(
+                        Token.issuer_address == seller_personal_info.issuer_address,
+                        IDXDelivery.seller_address
+                        == seller_personal_info.account_address,
+                    ),
+                )
+                .where(
+                    and_(
+                        IDXDelivery.exchange_address == exchange_address,
+                        IDXDelivery.delivery_id == delivery_id,
+                        Token.issuer_address == issuer_address,
+                    )
+                )
+                .limit(1)
             )
-            .limit(1)
         )
-    ).first()
+        .tuples()
+        .first()
+    )
     if _delivery is None:
         raise HTTPException(status_code=404, detail="delivery not found")
 
-    if _delivery.create_blocktimestamp is not None:
+    if _delivery[0].create_blocktimestamp is not None:
         create_blocktimestamp = (
-            local_tz.localize(_delivery.create_blocktimestamp)
+            local_tz.localize(_delivery[0].create_blocktimestamp)
             .astimezone(tz=UTC)
             .isoformat()
         )
     else:
         create_blocktimestamp = None
-    if _delivery.cancel_blocktimestamp is not None:
+    if _delivery[0].cancel_blocktimestamp is not None:
         cancel_blocktimestamp = (
-            local_tz.localize(_delivery.cancel_blocktimestamp)
+            local_tz.localize(_delivery[0].cancel_blocktimestamp)
             .astimezone(tz=UTC)
             .isoformat()
         )
     else:
         cancel_blocktimestamp = None
-    if _delivery.confirm_blocktimestamp is not None:
+    if _delivery[0].confirm_blocktimestamp is not None:
         confirm_blocktimestamp = (
-            local_tz.localize(_delivery.confirm_blocktimestamp)
+            local_tz.localize(_delivery[0].confirm_blocktimestamp)
             .astimezone(tz=UTC)
             .isoformat()
         )
     else:
         confirm_blocktimestamp = None
-    if _delivery.finish_blocktimestamp is not None:
+    if _delivery[0].finish_blocktimestamp is not None:
         finish_blocktimestamp = (
-            local_tz.localize(_delivery.finish_blocktimestamp)
+            local_tz.localize(_delivery[0].finish_blocktimestamp)
             .astimezone(tz=UTC)
             .isoformat()
         )
     else:
         finish_blocktimestamp = None
-    if _delivery.abort_blocktimestamp is not None:
+    if _delivery[0].abort_blocktimestamp is not None:
         abort_blocktimestamp = (
-            local_tz.localize(_delivery.abort_blocktimestamp)
+            local_tz.localize(_delivery[0].abort_blocktimestamp)
             .astimezone(tz=UTC)
             .isoformat()
         )
@@ -343,27 +394,33 @@ async def retrieve_dvp_delivery(
 
     return json_response(
         {
-            "exchange_address": _delivery.exchange_address,
-            "delivery_id": _delivery.delivery_id,
-            "token_address": _delivery.token_address,
-            "buyer_address": _delivery.buyer_address,
-            "seller_address": _delivery.seller_address,
-            "amount": _delivery.amount,
-            "agent_address": _delivery.agent_address,
-            "data": _delivery.data,
+            "exchange_address": _delivery[0].exchange_address,
+            "delivery_id": _delivery[0].delivery_id,
+            "token_address": _delivery[0].token_address,
+            "buyer_address": _delivery[0].buyer_address,
+            "buyer_personal_information": (
+                _delivery[1].personal_info if _delivery[1] is not None else None
+            ),
+            "seller_address": _delivery[0].seller_address,
+            "seller_personal_information": (
+                _delivery[2].personal_info if _delivery[2] is not None else None
+            ),
+            "amount": _delivery[0].amount,
+            "agent_address": _delivery[0].agent_address,
+            "data": _delivery[0].data,
             "create_blocktimestamp": create_blocktimestamp,
-            "create_transaction_hash": _delivery.create_transaction_hash,
+            "create_transaction_hash": _delivery[0].create_transaction_hash,
             "cancel_blocktimestamp": cancel_blocktimestamp,
-            "cancel_transaction_hash": _delivery.cancel_transaction_hash,
+            "cancel_transaction_hash": _delivery[0].cancel_transaction_hash,
             "confirm_blocktimestamp": confirm_blocktimestamp,
-            "confirm_transaction_hash": _delivery.confirm_transaction_hash,
+            "confirm_transaction_hash": _delivery[0].confirm_transaction_hash,
             "finish_blocktimestamp": finish_blocktimestamp,
-            "finish_transaction_hash": _delivery.finish_transaction_hash,
+            "finish_transaction_hash": _delivery[0].finish_transaction_hash,
             "abort_blocktimestamp": abort_blocktimestamp,
-            "abort_transaction_hash": _delivery.abort_transaction_hash,
-            "confirmed": _delivery.confirmed,
-            "valid": _delivery.valid,
-            "status": _delivery.status,
+            "abort_transaction_hash": _delivery[0].abort_transaction_hash,
+            "confirmed": _delivery[0].confirmed,
+            "valid": _delivery[0].valid,
+            "status": _delivery[0].status,
         }
     )
 

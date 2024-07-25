@@ -238,6 +238,9 @@ def custom_openapi(app):
                         schema = _get(resp, "content", "application/json", "schema")
                         if schema == {}:
                             resp.pop("content")
+                        any_of: list | None = _get(schema, "anyOf")
+                        if any_of is not None:
+                            schema["anyOf"] = sorted(any_of, key=lambda x: x["$ref"])
 
         return openapi_schema
 

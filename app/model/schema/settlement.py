@@ -27,6 +27,7 @@ from pydantic.dataclasses import dataclass
 
 from app.model import EthereumAddress
 from app.model.schema.base import ResultSet, SortOrder
+from app.model.schema.personal_info import PersonalInfo
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
 
@@ -191,7 +192,9 @@ class RetrieveDVPDeliveryResponse(BaseModel):
     delivery_id: int
     token_address: str
     buyer_address: str
+    buyer_personal_information: Optional[PersonalInfo] = Field(...)
     seller_address: str
+    seller_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     agent_address: str
     data: str = Field(examples=["{}", '{"type": "primary"}'])
