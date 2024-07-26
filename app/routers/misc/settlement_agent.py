@@ -48,6 +48,7 @@ from app.model.schema import (
     FinishDVPDeliveryRequest,
     ListAllDVPAgentAccountResponse,
     ListAllDVPAgentDeliveriesQuery,
+    ListAllDVPAgentDeliveriesResponse,
     ListAllDVPDeliveriesResponse,
 )
 from app.utils.docs_utils import get_routers_responses
@@ -249,7 +250,7 @@ async def change_eoa_password(
 @router.get(
     "/dvp/agent/{exchange_address}/deliveries",
     operation_id="ListAllDVPAgentDeliveries",
-    response_model=ListAllDVPDeliveriesResponse,
+    response_model=ListAllDVPAgentDeliveriesResponse,
     responses=get_routers_responses(404, 422, InvalidParameterError),
 )
 async def list_all_dvp_agent_deliveries(
