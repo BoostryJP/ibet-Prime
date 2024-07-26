@@ -48,7 +48,7 @@ def contract_list(db):
         raw_keyfile_json=test_account.get("keyfile_json"),
         password=test_account.get("password").encode("utf-8"),
     )
-    contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+    contract_address, _, _ = ContractUtils.deploy_contract(
         contract_name="TokenList",
         args=[],
         deployer=deployer_address,
@@ -85,7 +85,7 @@ class TestRegisterTokenList:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_token_address, abi, tx_hash = await share_contract.create(
+        share_token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -117,7 +117,7 @@ class TestRegisterTokenList:
             "リターン内容",
             "発行目的",
         ]
-        bond_token_address, abi, tx_hash = await IbetStraightBondContract().create(
+        bond_token_address, _, _ = await IbetStraightBondContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 

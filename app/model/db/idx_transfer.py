@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import JSON, BigInteger, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,7 +26,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
 
-class IDXTransferSourceEventType(str, Enum):
+class IDXTransferSourceEventType(StrEnum):
     """Transfer source event type"""
 
     TRANSFER = "Transfer"

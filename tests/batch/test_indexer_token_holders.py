@@ -25,9 +25,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
@@ -2321,34 +2318,34 @@ class TestProcessor:
         await processor.collect()
         # Then processor call "__process_all" method 10 times.
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=10000000, to=10999999")
+            (LOG.name, logging.INFO, "syncing from=10000000, to=10999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=11000000, to=11999999")
+            (LOG.name, logging.INFO, "syncing from=11000000, to=11999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=12000000, to=12999999")
+            (LOG.name, logging.INFO, "syncing from=12000000, to=12999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=13000000, to=13999999")
+            (LOG.name, logging.INFO, "syncing from=13000000, to=13999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=14000000, to=14999999")
+            (LOG.name, logging.INFO, "syncing from=14000000, to=14999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=15000000, to=15999999")
+            (LOG.name, logging.INFO, "syncing from=15000000, to=15999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=16000000, to=16999999")
+            (LOG.name, logging.INFO, "syncing from=16000000, to=16999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=17000000, to=17999999")
+            (LOG.name, logging.INFO, "syncing from=17000000, to=17999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=18000000, to=18999999")
+            (LOG.name, logging.INFO, "syncing from=18000000, to=18999999")
         )
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.INFO, f"syncing from=19000000, to=19999999")
+            (LOG.name, logging.INFO, "syncing from=19000000, to=19999999")
         )
 
         db.rollback()

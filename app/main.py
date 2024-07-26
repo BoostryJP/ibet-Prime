@@ -25,9 +25,15 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from pydantic_core import ArgsKwargs, ErrorDetails
+from starlette import status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.exceptions import *
+from app.exceptions import (
+    AuthorizationError,
+    BadRequestError,
+    ContractRevertError,
+    ServiceUnavailableError,
+)
 from app.log import output_access_log
 from app.routers.issuer import (
     account,

@@ -23,7 +23,6 @@ from app.model.db import DeliveryStatus, IDXDelivery, Token, TokenType, TokenVer
 
 
 class TestListAllDVPDeliveries:
-
     agent_address_1 = "0x1234567890123456789012345678900000001000"
     agent_address_2 = "0x1234567890123456789012345678900000002000"
 

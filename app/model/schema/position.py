@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
@@ -58,7 +58,7 @@ class LockedPosition(BaseModel):
     locked: int = Field(description="Locked amount")
 
 
-class LockEventCategory(str, Enum):
+class LockEventCategory(StrEnum):
     Lock = "Lock"
     Unlock = "Unlock"
 
@@ -88,7 +88,7 @@ class LockEvent(BaseModel):
 ############################
 
 
-class ListAllLockEventsSortItem(str, Enum):
+class ListAllLockEventsSortItem(StrEnum):
     token_address = "token_address"
     lock_address = "lock_address"
     recipient_address = "recipient_address"

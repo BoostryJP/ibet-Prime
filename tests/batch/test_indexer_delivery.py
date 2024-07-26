@@ -50,15 +50,10 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.indexer_delivery import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
-from tests.contract_utils import (
-    IbetSecurityTokenContractTestUtils as STContractUtils,
-    IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
-    PersonalInfoContractTestUtils,
-)
 
 web3 = AsyncWeb3Wrapper()
 
@@ -198,7 +193,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = await web3.eth.block_number
+        await web3.eth.block_number
         await processor.sync_new_logs()
 
         # Assertion
@@ -263,7 +258,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = await web3.eth.block_number
+        await web3.eth.block_number
         await processor.sync_new_logs()
 
         # Assertion
@@ -379,12 +374,12 @@ class TestProcessor:
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_private_key_1 = decode_keyfile_json(
+        decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
         user_3 = config_eth_account("user3")
         agent_address = user_3["address"]
-        agent_private_key = decode_keyfile_json(
+        decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
@@ -529,16 +524,12 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
+
         user_3 = config_eth_account("user3")
         agent_address = user_3["address"]
-        agent_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -704,9 +695,6 @@ class TestProcessor:
         )
         user_3 = config_eth_account("user3")
         agent_address = user_3["address"]
-        agent_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -873,9 +861,6 @@ class TestProcessor:
         )
         user_3 = config_eth_account("user3")
         agent_address = user_3["address"]
-        agent_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -1663,13 +1648,6 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
-        user_address_1 = user_2["address"]
-        user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
-        user_3 = config_eth_account("user3")
-        user_address_2 = user_3["address"]
 
         # Prepare data : Account
         account = Account()
@@ -1843,9 +1821,15 @@ class TestProcessor:
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch("batch.indexer_delivery.INDEXER_SYNC_INTERVAL", None), patch.object(
-            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
-        ), pytest.raises(TypeError):
+        with (
+            patch("batch.indexer_delivery.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncWeb3Wrapper().eth,
+                "contract",
+                side_effect=ServiceUnavailableError(),
+            ),
+            pytest.raises(TypeError),
+        ):
             await main_func()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.WARNING, "An external service was unavailable")
@@ -1853,9 +1837,13 @@ class TestProcessor:
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy Error
-        with patch("batch.indexer_delivery.INDEXER_SYNC_INTERVAL", None), patch.object(
-            AsyncSession, "commit", side_effect=SQLAlchemyError(code="dbapi")
-        ), pytest.raises(TypeError):
+        with (
+            patch("batch.indexer_delivery.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncSession, "commit", side_effect=SQLAlchemyError(code="dbapi")
+            ),
+            pytest.raises(TypeError),
+        ):
             await main_func()
         assert "A database error has occurred: code=dbapi" in caplog.text
         caplog.clear()

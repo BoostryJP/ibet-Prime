@@ -380,12 +380,11 @@ class TestProcessor:
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
-        with patch("batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None), patch(
-            "batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncSession, "scalars", side_effect=InvalidRequestError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None),
+            patch("batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None),
+            patch.object(AsyncSession, "scalars", side_effect=InvalidRequestError()),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.text.count("A database error has occurred")

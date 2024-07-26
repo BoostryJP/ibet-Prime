@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from enum import Enum, StrEnum
+from enum import StrEnum
 
 from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,7 +26,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base, naive_utcnow
 
 
-class TokenType(str, Enum):
+class TokenType(StrEnum):
     IBET_STRAIGHT_BOND = "IbetStraightBond"
     IBET_SHARE = "IbetShare"
 

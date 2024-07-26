@@ -24,19 +24,6 @@ from typing import Optional
 
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from rich.text import Text
-from src import connector
-from src.gui.consts import ID
-from src.gui.error import Error
-from src.gui.screen.base import TuiScreen
-from src.gui.widget.block_detail_view import BlockDetailView
-from src.gui.widget.block_list_table import BlockListTable
-from src.gui.widget.block_list_view import (
-    BlockListQueryPanel,
-    BlockListSummaryPanel,
-    BlockListView,
-)
-from src.gui.widget.menu import Menu, MenuInstruction
-from src.gui.widget.query_panel import QuerySetting
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
@@ -51,6 +38,19 @@ from app.model.schema import (
     ListTxDataQuery,
 )
 from app.model.schema.base import SortOrder
+from src import connector
+from src.gui.consts import ID
+from src.gui.error import Error
+from src.gui.screen.base import TuiScreen
+from src.gui.widget.block_detail_view import BlockDetailView
+from src.gui.widget.block_list_table import BlockListTable
+from src.gui.widget.block_list_view import (
+    BlockListQueryPanel,
+    BlockListSummaryPanel,
+    BlockListView,
+)
+from src.gui.widget.menu import Menu, MenuInstruction
+from src.gui.widget.query_panel import QuerySetting
 
 
 class BlockScreen(TuiScreen):
@@ -172,9 +172,9 @@ class BlockScreen(TuiScreen):
         ):
             return
 
-        self.query_one(BlockListQueryPanel).block_list_query = (
-            self.tui.state.block_list_query
-        )
+        self.query_one(
+            BlockListQueryPanel
+        ).block_list_query = self.tui.state.block_list_query
         asyncio.create_task(self.fetch_block_list())
 
     ##################################################
@@ -285,5 +285,5 @@ class BlockScreen(TuiScreen):
             f"Is Synced: {is_synced}"
         )
         self.query_one(f"#{ID.BLOCK_NOTION}", Static).update(
-            f"Press [E] To Load Block List"
+            "Press [E] To Load Block List"
         )

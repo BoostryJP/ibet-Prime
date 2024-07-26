@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import BigInteger, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -48,14 +48,14 @@ class IDXIssueRedeem(Base):
     block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
 
 
-class IDXIssueRedeemEventType(str, Enum):
+class IDXIssueRedeemEventType(StrEnum):
     """Issue/Redeem event type"""
 
     ISSUE = "Issue"
     REDEEM = "Redeem"
 
 
-class IDXIssueRedeemSortItem(str, Enum):
+class IDXIssueRedeemSortItem(StrEnum):
     """Issue/Redeem sort item"""
 
     BLOCK_TIMESTAMP = "block_timestamp"

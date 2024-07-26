@@ -347,9 +347,10 @@ class TestListTxData:
         self.insert_tx_data(db, self.B_tx_1)
 
         # Request target API
-        with mock.patch(
-            "app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True
-        ), mock.patch("app.routers.misc.bc_explorer.TX_RESPONSE_LIMIT", 2):
+        with (
+            mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True),
+            mock.patch("app.routers.misc.bc_explorer.TX_RESPONSE_LIMIT", 2),
+        ):
             resp = client.get(self.apiurl)
 
         # Assertion

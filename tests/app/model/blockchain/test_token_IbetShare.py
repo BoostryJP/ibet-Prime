@@ -86,7 +86,7 @@ class TestCreate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -255,7 +255,7 @@ class TestCreate:
             "20221231",
             10000,
         ]
-        contract_address, abi, tx_hash = await IbetShareContract().create(
+        contract_address, _, _ = await IbetShareContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -299,7 +299,7 @@ class TestGet:
             10001,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -356,7 +356,7 @@ class TestGet:
             10001,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -454,7 +454,7 @@ class TestGet:
             10001,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -593,7 +593,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -653,7 +653,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -779,7 +779,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -819,7 +819,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -857,7 +857,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -903,7 +903,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -955,7 +955,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -1338,7 +1338,6 @@ class TestForcedTransfer:
 
 
 class TestBulkForcedTransfer:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -1783,7 +1782,7 @@ class TestBulkTransfer:
         # bulk transfer
         _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
         _transfer_data = BulkTransferParams(**_data)
-        with pytest.raises(SendTransactionError) as exc_info:
+        with pytest.raises(SendTransactionError):
             await share_contract.bulk_transfer(
                 data=_transfer_data,
                 tx_from=from_address,
@@ -1985,7 +1984,7 @@ class TestAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2270,7 +2269,6 @@ class TestAdditionalIssue:
         # additional issue
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = AdditionalIssueParams(**_data)
-        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
         #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
@@ -2290,7 +2288,6 @@ class TestAdditionalIssue:
 
 
 class TestBulkAdditionalIssue:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -2318,7 +2315,7 @@ class TestBulkAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2520,7 +2517,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2626,7 +2623,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2664,7 +2661,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2704,7 +2701,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2748,7 +2745,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2792,14 +2789,13 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # redeem
         _data = {"account_address": issuer_address, "amount": 100_000_000}
         _add_data = RedeemParams(**_data)
-        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
         #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
@@ -2822,7 +2818,6 @@ class TestRedeem:
 
 
 class TestBulkRedeem:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -2850,7 +2845,7 @@ class TestBulkRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        contract_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3043,7 +3038,7 @@ class TestGetAccountBalance:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3418,7 +3413,7 @@ class TestApproveTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3458,7 +3453,7 @@ class TestApproveTransfer:
         ]
 
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3772,7 +3767,7 @@ class TestCancelTransfer:
         ]
 
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3812,7 +3807,7 @@ class TestCancelTransfer:
         ]
 
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -4084,7 +4079,7 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4128,7 +4123,7 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4172,7 +4167,7 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4222,7 +4217,7 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4271,7 +4266,7 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4499,7 +4494,7 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4557,7 +4552,7 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4615,7 +4610,7 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4679,7 +4674,7 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4742,7 +4737,7 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 

@@ -25,7 +25,7 @@ import uvloop
 from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
+from web3 import AsyncHTTPProvider, AsyncWeb3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.database import BatchAsyncSessionLocal

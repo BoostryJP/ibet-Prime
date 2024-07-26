@@ -300,9 +300,7 @@ class Processor:
                 block_number = event["block_number"]
                 block_timestamp = datetime.fromtimestamp(
                     (await web3.eth.get_block(block_number))["timestamp"], UTC
-                ).replace(
-                    tzinfo=None
-                )  # UTC
+                ).replace(tzinfo=None)  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True
@@ -374,9 +372,7 @@ class Processor:
                 block_number = event["blockNumber"]
                 block_timestamp = datetime.fromtimestamp(
                     (await web3.eth.get_block(block_number))["timestamp"], UTC
-                ).replace(
-                    tzinfo=None
-                )  # UTC
+                ).replace(tzinfo=None)  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True
@@ -436,9 +432,7 @@ class Processor:
                 block_number = event["blockNumber"]
                 block_timestamp = datetime.fromtimestamp(
                     (await web3.eth.get_block(block_number))["timestamp"], UTC
-                ).replace(
-                    tzinfo=None
-                )  # UTC
+                ).replace(tzinfo=None)  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True

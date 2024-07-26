@@ -670,7 +670,7 @@ class TestCreateLedger:
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
-        user_private_key_2 = decode_keyfile_json(
+        decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
@@ -1961,7 +1961,7 @@ class TestCreateLedger:
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
-        user_private_key_2 = decode_keyfile_json(
+        decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 

@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import math
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum, StrEnum
+from enum import StrEnum
 from typing import Annotated, Optional, Self
 
 from fastapi import Query
@@ -304,7 +304,7 @@ class IbetShareRedeem(BaseModel):
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
 
-class IssueRedeemSortItem(str, Enum):
+class IssueRedeemSortItem(StrEnum):
     """Issue/Redeem sort item"""
 
     BLOCK_TIMESTAMP = "block_timestamp"
@@ -423,7 +423,7 @@ class ListAllHoldersQuery:
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
-class ListAllTokenLockEventsSortItem(str, Enum):
+class ListAllTokenLockEventsSortItem(StrEnum):
     account_address = "account_address"
     lock_address = "lock_address"
     recipient_address = "recipient_address"

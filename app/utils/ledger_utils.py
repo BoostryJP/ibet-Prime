@@ -191,9 +191,10 @@ async def __get_details_data_list(
         # NOTE:
         # If there is an account with no personal information registered,
         # some_personal_info_not_registered will be True.
-        data_list, some_personal_info_not_registered = (
-            await __get_details_data_list_from_ibetfin(token_address, token_type, db)
-        )
+        (
+            data_list,
+            some_personal_info_not_registered,
+        ) = await __get_details_data_list_from_ibetfin(token_address, token_type, db)
 
     return data_list, some_personal_info_not_registered
 

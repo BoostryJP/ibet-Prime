@@ -15,7 +15,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import JSON, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -48,5 +48,5 @@ class ScheduledEvents(Base):
     data: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
-class ScheduledEventType(str, Enum):
+class ScheduledEventType(StrEnum):
     UPDATE = "Update"

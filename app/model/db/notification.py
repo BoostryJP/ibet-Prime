@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -92,7 +92,7 @@ class Notification(Base):
     metainfo: Mapped[dict | None] = mapped_column(JSON)
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     ISSUE_ERROR = "IssueError"
     BULK_TRANSFER_ERROR = "BulkTransferError"
     BATCH_REGISTER_PERSONAL_INFO_ERROR = "BatchRegisterPersonalInfoError"

@@ -212,7 +212,7 @@ class Processor:
                     message=message,
                     block_timestamp=block_timestamp,
                 )
-        except Exception as e:
+        except Exception:
             raise
 
     @staticmethod

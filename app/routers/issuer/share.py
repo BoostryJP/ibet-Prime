@@ -149,7 +149,6 @@ from app.model.schema import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     TokenAddressResponse,
-    TokenUpdateOperationCategory,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenDetailResponse,
@@ -244,7 +243,7 @@ async def issue_token(
         contract_address, abi, tx_hash = await IbetShareContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
-    except SendTransactionError as e:
+    except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
 
     # Check need update
@@ -1207,7 +1206,6 @@ async def list_all_redeem_upload(
     get_query: ListAllRedeemUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
-
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1917,7 +1915,7 @@ async def list_all_holders(
 
     _holders: Sequence[
         tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
-    ] = ((await db.execute(stmt)).tuples().all())
+    ] = (await db.execute(stmt)).tuples().all()
 
     personal_info_default = {
         "key_manager": None,
@@ -3533,14 +3531,12 @@ async def update_transfer_approval(
                     "data": now,
                 }
                 try:
-                    _, tx_receipt = await IbetShareContract(
-                        token_address
-                    ).approve_transfer(
+                    await IbetShareContract(token_address).approve_transfer(
                         data=ApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
                     )
-                except ContractRevertError as approve_transfer_err:
+                except ContractRevertError:
                     # If approveTransfer end with revert,
                     # cancelTransfer should be performed immediately.
                     # After cancelTransfer, ContractRevertError is returned.
@@ -3550,7 +3546,7 @@ async def update_transfer_approval(
                             tx_from=issuer_address,
                             private_key=private_key,
                         )
-                    except ContractRevertError as cancel_transfer_err:
+                    except ContractRevertError:
                         raise
                     except Exception:
                         raise SendTransactionError
@@ -3560,7 +3556,7 @@ async def update_transfer_approval(
                 _data = {"escrow_id": _transfer_approval.application_id, "data": now}
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
                 try:
-                    _, tx_receipt = await escrow.approve_transfer(
+                    await escrow.approve_transfer(
                         data=EscrowApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
@@ -3573,7 +3569,7 @@ async def update_transfer_approval(
         else:  # CANCEL
             _data = {"application_id": _transfer_approval.application_id, "data": now}
             try:
-                _, tx_receipt = await IbetShareContract(token_address).cancel_transfer(
+                await IbetShareContract(token_address).cancel_transfer(
                     data=CancelTransferParams(**_data),
                     tx_from=issuer_address,
                     private_key=private_key,

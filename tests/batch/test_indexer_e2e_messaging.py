@@ -566,7 +566,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         }
         message_message_str = json.dumps(message)
 
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_3,  # not target
@@ -631,7 +631,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Send Message
         message = "test"
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -702,7 +702,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 }
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -760,7 +760,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "type": "test_type",
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -829,7 +829,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -897,7 +897,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 },
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -964,7 +964,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 },
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -1031,7 +1031,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -1090,7 +1090,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         }
         message_message_str = json.dumps(message)
 
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
@@ -1110,9 +1110,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] + 1, UTC
-        ).replace(
-            tzinfo=None
-        )  # Registry after send message
+        ).replace(tzinfo=None)  # Registry after send message
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -1165,7 +1163,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": "cipher_key", "message": encrypted_message},
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -1232,7 +1230,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -1304,7 +1302,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -1367,7 +1365,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": "test_message"},
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
@@ -1437,7 +1435,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
+        _, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])

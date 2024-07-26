@@ -76,12 +76,14 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             ],
         )
 
-        with mock.patch(
-            "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
-            e2e_messaging_contract.address,
-        ), (
-            mock_E2EMessaging_set_public_key
-        ), mock_ContractUtils_get_block_by_transaction_hash:
+        with (
+            mock.patch(
+                "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+                e2e_messaging_contract.address,
+            ),
+            mock_E2EMessaging_set_public_key,
+            mock_ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
             resp = client.post(self.base_url, json=req_param)
@@ -178,16 +180,18 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             ],
         )
 
-        with mock.patch(
-            "app.routers.misc.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
-        ), mock.patch(
-            "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
-            e2e_messaging_contract.address,
-        ), (
-            mock_boto3_client
-        ), (
-            mock_E2EMessaging_set_public_key
-        ), mock_ContractUtils_get_block_by_transaction_hash:
+        with (
+            mock.patch(
+                "app.routers.misc.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
+            ),
+            mock.patch(
+                "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+                e2e_messaging_contract.address,
+            ),
+            mock_boto3_client,
+            mock_E2EMessaging_set_public_key,
+            mock_ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "eoa_password": E2EEUtils.encrypt(self.valid_password),

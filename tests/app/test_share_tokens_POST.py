@@ -99,8 +99,10 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with (
-            IbetShareContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetShareContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -236,8 +238,10 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with (
-            IbetShareContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetShareContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -357,8 +361,10 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with (
-            IbetShareContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetShareContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -489,8 +495,10 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with (
-            IbetShareContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetShareContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -622,8 +630,10 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with (
-            IbetShareContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetShareContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -702,8 +712,10 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with (
-            IbetShareContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetShareContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -836,8 +848,6 @@ class TestAppRoutersShareTokensPOST:
     # Validation Error
     # required headers
     def test_error_2_2(self, client, db):
-        test_account = config_eth_account("user1")
-
         # request target api
         req_param = {
             "name": "name_test1",
@@ -1214,7 +1224,6 @@ class TestAppRoutersShareTokensPOST:
     # Password Mismatch
     def test_error_3_2(self, client, db):
         test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
 
         # prepare data
         account = Account()

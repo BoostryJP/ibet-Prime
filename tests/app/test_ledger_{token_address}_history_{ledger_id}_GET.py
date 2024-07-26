@@ -995,7 +995,10 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         )
 
         # request target API
-        with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
+        with (
+            token_get_mock,
+            personal_get_info_mock as personal_get_info_mock_patch,
+        ):
             # Note:
             # account_address_2 has no personal information in the DB
             # and gets information from the contract
@@ -1304,7 +1307,10 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         )
 
         # request target API
-        with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
+        with (
+            token_get_mock,
+            personal_get_info_mock as personal_get_info_mock_patch,
+        ):
             # Note:
             # account_address_2 has no personal information in the DB
             # and gets information from the contract
@@ -1553,7 +1559,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         )
 
         # request target API
-        with token_get_mock as token_get_mock_patch:
+        with token_get_mock:
             resp = client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
@@ -1630,7 +1636,6 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
         personal_info_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"
 
         # prepare data
@@ -1740,7 +1745,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         )
 
         # request target API
-        with token_get_mock as token_get_mock_patch:
+        with token_get_mock:
             resp = client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
@@ -1753,62 +1758,65 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {
-            "created": "2022/12/01",
-            "token_name": "テスト原簿",
-            "currency": "JPY",
-            "headers": [
-                {
-                    "key": "aaa",
-                    "value": "aaa",
-                },
-                {
-                    "hoge": "aaaa",
-                    "fuga": "bbbb",
-                },
-            ],
-            "details": [
-                {
-                    "token_detail_type": "権利_test_1",
-                    "headers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {"test1": "a", "test2": "b"},
-                    ],
-                    "data": [
-                        {
-                            "account_address": issuer_address,
-                            "name": None,
-                            "address": None,
-                            "amount": 10,
-                            "price": 20,
-                            "balance": 30,
-                            "acquisition_date": "2022/12/02",
-                        },
-                    ],
-                    "footers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {"f-test1": "a", "f-test2": "b"},
-                    ],
-                    "some_personal_info_not_registered": False,  # Issuer cannot have any personal info
-                },
-            ],
-            "footers": [
-                {
-                    "key": "aaa",
-                    "value": "aaa",
-                },
-                {
-                    "f-hoge": "aaaa",
-                    "f-fuga": "bbbb",
-                },
-            ],
-        }
+        assert (
+            resp.json()
+            == {
+                "created": "2022/12/01",
+                "token_name": "テスト原簿",
+                "currency": "JPY",
+                "headers": [
+                    {
+                        "key": "aaa",
+                        "value": "aaa",
+                    },
+                    {
+                        "hoge": "aaaa",
+                        "fuga": "bbbb",
+                    },
+                ],
+                "details": [
+                    {
+                        "token_detail_type": "権利_test_1",
+                        "headers": [
+                            {
+                                "key": "aaa",
+                                "value": "aaa",
+                            },
+                            {"test1": "a", "test2": "b"},
+                        ],
+                        "data": [
+                            {
+                                "account_address": issuer_address,
+                                "name": None,
+                                "address": None,
+                                "amount": 10,
+                                "price": 20,
+                                "balance": 30,
+                                "acquisition_date": "2022/12/02",
+                            },
+                        ],
+                        "footers": [
+                            {
+                                "key": "aaa",
+                                "value": "aaa",
+                            },
+                            {"f-test1": "a", "f-test2": "b"},
+                        ],
+                        "some_personal_info_not_registered": False,  # Issuer cannot have any personal info
+                    },
+                ],
+                "footers": [
+                    {
+                        "key": "aaa",
+                        "value": "aaa",
+                    },
+                    {
+                        "f-hoge": "aaaa",
+                        "f-fuga": "bbbb",
+                    },
+                ],
+            }
+        )
 
     # <Normal_3_5>
     # latest_flg = 1 (Get the latest personal info)
@@ -1943,9 +1951,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         )  # JST 2022/01/02
         db.add(_ledger_1)
 
-        _idx_personal_info_1 = (
-            IDXPersonalInfo()
-        )  # Note: account_address_1 has personal information in DB but the values are null
+        _idx_personal_info_1 = IDXPersonalInfo()  # Note: account_address_1 has personal information in DB but the values are null
         _idx_personal_info_1.account_address = account_address_1
         _idx_personal_info_1.issuer_address = issuer_address
         _idx_personal_info_1.personal_info = {
@@ -2001,7 +2007,10 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         )
 
         # request target API
-        with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
+        with (
+            token_get_mock,
+            personal_get_info_mock as personal_get_info_mock_patch,
+        ):
             # Note:
             # account_address_2 has no personal information in the DB
             # and gets information from the contract

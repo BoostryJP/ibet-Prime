@@ -17,8 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import base64
-
 from sqlalchemy import select
 
 from app.model.db import UploadFile

@@ -218,10 +218,6 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     def test_normal_1(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account["keyfile_json"],
-            password="password".encode("utf-8"),
-        )
         _keyfile = test_account["keyfile_json"]
 
         # prepare data: Token
@@ -560,7 +556,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = await deploy_share_token_contract(
+        token_contract, _ = await deploy_share_token_contract(
             db,
             _issuer_address,
             issuer_private_key,
@@ -1067,7 +1063,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = await deploy_share_token_contract(
+        token_contract, _ = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address

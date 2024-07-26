@@ -98,8 +98,10 @@ class TestAppRoutersBondTokensPOST:
         )
 
         with (
-            IbetStraightBondContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetStraightBondContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -227,8 +229,9 @@ class TestAppRoutersBondTokensPOST:
         )
 
         with (
-            IbetStraightBondContract_create
-        ), ContractUtils_get_block_by_transaction_hash:
+            IbetStraightBondContract_create,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -369,8 +372,10 @@ class TestAppRoutersBondTokensPOST:
         )
 
         with (
-            IbetStraightBondContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+            IbetStraightBondContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
             # request target api
             req_param = {
                 "name": "name_test1",
