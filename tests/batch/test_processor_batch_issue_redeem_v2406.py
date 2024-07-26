@@ -707,7 +707,7 @@ class TestProcessor:
         with patch(
             target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
             side_effect=SendTransactionError(),
-        ) as IbetStraightBondContract_additional_issue:
+        ):
             await processor.process()
 
         # Assertion: DB
@@ -814,12 +814,15 @@ class TestProcessor:
         db.commit()
 
         # mock
-        with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
-            side_effect=ContractRevertError("999999"),
-        ), patch(
-            target="app.model.blockchain.token.IbetShareContract.additional_issue",
-            side_effect=ContractRevertError("999999"),
+        with (
+            patch(
+                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+                side_effect=ContractRevertError("999999"),
+            ),
+            patch(
+                target="app.model.blockchain.token.IbetShareContract.additional_issue",
+                side_effect=ContractRevertError("999999"),
+            ),
         ):
             await processor.process()
 

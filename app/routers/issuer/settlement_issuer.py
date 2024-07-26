@@ -141,7 +141,7 @@ async def list_all_dvp_deliveries(
 
     _deliveries: Sequence[
         tuple[IDXDelivery, IDXPersonalInfo | None, IDXPersonalInfo | None]
-    ] = ((await db.execute(stmt)).tuples().all())
+    ] = (await db.execute(stmt)).tuples().all()
 
     deliveries = []
     for _delivery, _buyer_info, _seller_info in _deliveries:

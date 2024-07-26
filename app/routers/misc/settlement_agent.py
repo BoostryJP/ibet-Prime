@@ -49,7 +49,6 @@ from app.model.schema import (
     ListAllDVPAgentAccountResponse,
     ListAllDVPAgentDeliveriesQuery,
     ListAllDVPAgentDeliveriesResponse,
-    ListAllDVPDeliveriesResponse,
 )
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils

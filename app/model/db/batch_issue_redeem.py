@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import BigInteger, Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -44,7 +44,7 @@ class BatchIssueRedeemUpload(Base):
     processed: Mapped[bool | None] = mapped_column(Boolean, default=False, index=True)
 
 
-class BatchIssueRedeemProcessingCategory(str, Enum):
+class BatchIssueRedeemProcessingCategory(StrEnum):
     """Batch Issue/Redeem Category"""
 
     ISSUE = "Issue"

@@ -118,9 +118,9 @@ class TestDeployContract:
     @pytest.mark.asyncio
     async def test_normal_1(self, db):
         (
-            rtn_contract_address,
+            _,
             rtn_abi,
-            rtn_tx_hash,
+            _,
         ) = await AsyncContractUtils.deploy_contract(
             contract_name=self.test_contract_name,
             args=self.test_arg,

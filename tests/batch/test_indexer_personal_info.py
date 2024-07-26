@@ -20,7 +20,6 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import logging
-from unittest import mock
 from unittest.mock import patch
 
 import pytest
@@ -32,7 +31,6 @@ from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
@@ -49,7 +47,7 @@ from app.model.db import (
 )
 from app.utils.contract_utils import AsyncContractUtils, ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
+from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_personal_info import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
@@ -1029,24 +1027,20 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
-        with patch(
-            "batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncSession, "scalars", side_effect=InvalidRequestError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),
+            patch.object(AsyncSession, "scalars", side_effect=InvalidRequestError()),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.text.count("A database error has occurred")
         caplog.clear()
 
         # Run mainloop once and fail with connection to blockchain
-        with patch(
-            "batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncContractUtils, "call_function", ConnectionError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),
+            patch.object(AsyncContractUtils, "call_function", ConnectionError()),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.record_tuples.count(

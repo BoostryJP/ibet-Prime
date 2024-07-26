@@ -271,10 +271,13 @@ class TestProcessor:
         self.set_block_number(db, before_block_number)
 
         # Execute batch processing
-        with mock.patch(
-            "web3.providers.rpc.async_rpc.AsyncHTTPProvider.make_request",
-            MagicMock(side_effect=ServiceUnavailableError()),
-        ), pytest.raises(ServiceUnavailableError):
+        with (
+            mock.patch(
+                "web3.providers.rpc.async_rpc.AsyncHTTPProvider.make_request",
+                MagicMock(side_effect=ServiceUnavailableError()),
+            ),
+            pytest.raises(ServiceUnavailableError),
+        ):
             await processor.process()
 
         # Assertion
@@ -301,9 +304,10 @@ class TestProcessor:
         web3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Execute batch processing
-        with mock.patch.object(
-            AsyncSession, "commit", side_effect=SQLAlchemyError()
-        ), pytest.raises(SQLAlchemyError):
+        with (
+            mock.patch.object(AsyncSession, "commit", side_effect=SQLAlchemyError()),
+            pytest.raises(SQLAlchemyError),
+        ):
             await processor.process()
 
         # Assertion

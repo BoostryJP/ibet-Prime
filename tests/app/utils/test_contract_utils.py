@@ -116,7 +116,7 @@ class TestDeployContract:
     ###########################################################################
     # <Normal_1>
     def test_normal_1(self, db):
-        rtn_contract_address, rtn_abi, rtn_tx_hash = ContractUtils.deploy_contract(
+        _, rtn_abi, _ = ContractUtils.deploy_contract(
             contract_name=self.test_contract_name,
             args=self.test_arg,
             deployer=self.test_account["address"],

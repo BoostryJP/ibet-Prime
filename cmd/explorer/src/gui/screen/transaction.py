@@ -19,6 +19,12 @@ SPDX-License-Identifier: Apache-2.0
 
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from rich.text import Text
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
+from textual.widgets import DataTable, Footer, Label
+
+from app.model.schema.bc_explorer import TxDataDetail
 from src import connector
 from src.gui.consts import ID
 from src.gui.screen.base import TuiScreen
@@ -26,12 +32,6 @@ from src.gui.widget.block_list_table import BlockListTable
 from src.gui.widget.tx_detail_view import TxDetailView
 from src.gui.widget.tx_list_table import TxListTable
 from src.gui.widget.tx_list_view import TxListView
-from textual.app import ComposeResult
-from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
-from textual.widgets import DataTable, Footer, Label
-
-from app.model.schema.bc_explorer import TxDataDetail
 
 
 class TransactionScreen(TuiScreen):
@@ -43,7 +43,7 @@ class TransactionScreen(TuiScreen):
                 Horizontal(
                     Label(Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")),
                     Label(" | "),
-                    Label(f"Selected block: -", id=ID.TX_SELECTED_BLOCK_NUMBER),
+                    Label("Selected block: -", id=ID.TX_SELECTED_BLOCK_NUMBER),
                     id="tx_list_header",
                 ),
                 Horizontal(

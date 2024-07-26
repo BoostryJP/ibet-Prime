@@ -119,7 +119,7 @@ class Processor:
                 await self.__set_indexed_block_number(local_session, block_number)
 
                 await local_session.commit()
-        except Exception as e:
+        except Exception:
             await local_session.rollback()
             raise
         finally:

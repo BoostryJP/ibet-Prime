@@ -86,9 +86,9 @@ class Processor:
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
-            upload_list: list[BatchRegisterPersonalInfoUpload] = (
-                await self.__get_uploads(db_session=db_session)
-            )
+            upload_list: list[
+                BatchRegisterPersonalInfoUpload
+            ] = await self.__get_uploads(db_session=db_session)
 
             if len(upload_list) < 1:
                 return
@@ -352,9 +352,9 @@ class Processor:
 
             processing_issuer[self.worker_num] = {}
             for upload in upload_list:
-                processing_issuer[self.worker_num][
-                    upload.upload_id
-                ] = upload.issuer_address
+                processing_issuer[self.worker_num][upload.upload_id] = (
+                    upload.issuer_address
+                )
         return upload_list
 
     @staticmethod
@@ -468,7 +468,7 @@ async def main():
     finally:
         # Ensure that all workers is shutdown
         await asyncio.gather(*workers)
-        LOG.info(f"Service is shutdown")
+        LOG.info("Service is shutdown")
 
 
 if __name__ == "__main__":

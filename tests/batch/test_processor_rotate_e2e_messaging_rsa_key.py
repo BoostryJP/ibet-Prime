@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import asyncio
 import logging
 import time
 from datetime import UTC, datetime, timedelta
@@ -285,8 +284,9 @@ class TestProcessor:
 
         # Run target process
         with (
-            mock_E2EMessaging_set_public_key
-        ), mock_ContractUtils_get_block_by_transaction_hash:
+            mock_E2EMessaging_set_public_key,
+            mock_ContractUtils_get_block_by_transaction_hash,
+        ):
             await processor.process()
 
             # # Assertion

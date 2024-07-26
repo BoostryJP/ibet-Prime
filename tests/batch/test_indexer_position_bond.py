@@ -4796,12 +4796,14 @@ class TestProcessor:
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch(
-            "batch.indexer_position_bond.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_position_bond.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncWeb3Wrapper().eth,
+                "contract",
+                side_effect=ServiceUnavailableError(),
+            ),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.record_tuples.count(
@@ -4810,12 +4812,10 @@ class TestProcessor:
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
-        with patch(
-            "batch.indexer_position_bond.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncSession, "scalars", side_effect=InvalidRequestError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_position_bond.INDEXER_SYNC_INTERVAL", None),
+            patch.object(AsyncSession, "scalars", side_effect=InvalidRequestError()),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.text.count("A database error has occurred")

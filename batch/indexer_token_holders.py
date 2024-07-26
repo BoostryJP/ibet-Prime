@@ -185,10 +185,10 @@ class Processor:
         local_session = self.__get_db_session()
         try:
             if not (await self.__load_target(local_session)):
-                LOG.debug(f"There are no pending collect batch")
+                LOG.debug("There are no pending collect batch")
                 return
             if not (await self.__load_token_info(local_session)):
-                LOG.debug(f"Token contract must be listed to TokenList contract.")
+                LOG.debug("Token contract must be listed to TokenList contract.")
                 await self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
                 await local_session.commit()
                 return

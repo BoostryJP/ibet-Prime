@@ -55,11 +55,6 @@ from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_transfer_approval import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
-from tests.contract_utils import (
-    IbetSecurityTokenContractTestUtils as STContractUtils,
-    IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
-    PersonalInfoContractTestUtils,
-)
 
 web3 = Web3Wrapper()
 
@@ -1228,7 +1223,7 @@ class TestProcessor:
                 "gasPrice": 0,
             }
         )
-        _, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
+        ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1591,12 +1586,14 @@ class TestProcessor:
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch(
-            "batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncWeb3Wrapper().eth,
+                "contract",
+                side_effect=ServiceUnavailableError(),
+            ),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.record_tuples.count(
@@ -1605,12 +1602,12 @@ class TestProcessor:
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy Error
-        with patch(
-            "batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncSession, "commit", side_effect=SQLAlchemyError(code="dbapi")
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncSession, "commit", side_effect=SQLAlchemyError(code="dbapi")
+            ),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert "A database error has occurred: code=dbapi" in caplog.text

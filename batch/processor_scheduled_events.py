@@ -380,7 +380,7 @@ async def main():
     finally:
         # Ensure that all workers is shutdown
         await asyncio.gather(*workers)
-        LOG.info(f"Service is shutdown")
+        LOG.info("Service is shutdown")
 
 
 if __name__ == "__main__":

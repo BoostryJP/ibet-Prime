@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
@@ -35,7 +35,7 @@ from .personal_info import PersonalInfo
 ############################
 
 
-class TransferSourceEventType(str, Enum):
+class TransferSourceEventType(StrEnum):
     Transfer = "Transfer"
     Unlock = "Unlock"
 
@@ -52,7 +52,7 @@ class TransferApprovalStatus(IntEnum):
 ############################
 
 
-class ListTransferHistorySortItem(str, Enum):
+class ListTransferHistorySortItem(StrEnum):
     BLOCK_TIMESTAMP = "block_timestamp"
     FROM_ADDRESS = "from_address"
     TO_ADDRESS = "to_address"
@@ -107,7 +107,7 @@ class ListTransferHistoryQuery:
     )
 
 
-class UpdateTransferApprovalOperationType(str, Enum):
+class UpdateTransferApprovalOperationType(StrEnum):
     APPROVE = "approve"
     CANCEL = "cancel"
 
@@ -118,7 +118,7 @@ class UpdateTransferApprovalRequest(BaseModel):
     operation_type: UpdateTransferApprovalOperationType = Field(...)
 
 
-class ListTransferApprovalHistorySortItem(str, Enum):
+class ListTransferApprovalHistorySortItem(StrEnum):
     ID = "id"
     EXCHANGE_ADDRESS = "exchange_address"
     APPLICATION_ID = "application_id"

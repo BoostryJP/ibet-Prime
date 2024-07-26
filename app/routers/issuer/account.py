@@ -441,7 +441,7 @@ async def create_auth_token(
     )
 
     # Authentication
-    issuer_account, _ = await check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -524,7 +524,7 @@ async def delete_auth_token(
     )
 
     # Authentication
-    issuer_account, _ = await check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,

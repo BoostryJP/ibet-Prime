@@ -80,12 +80,16 @@ class TestCreateFreezeLogAccount:
         )
 
         # Request target api
-        with mock.patch(
-            "app.routers.misc.freeze_log.AWS_KMS_GENERATE_RANDOM_ENABLED", True
-        ), mock.patch(
-            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
-        ), mock_boto3_client:
+        with (
+            mock.patch(
+                "app.routers.misc.freeze_log.AWS_KMS_GENERATE_RANDOM_ENABLED", True
+            ),
+            mock.patch(
+                "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+                freeze_log_contract.address,
+            ),
+            mock_boto3_client,
+        ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
             resp = client.post(self.test_url, json=req_param)
 

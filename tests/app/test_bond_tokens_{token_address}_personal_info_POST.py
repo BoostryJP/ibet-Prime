@@ -83,8 +83,10 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         )
 
         with (
-            IbetStraightBondContract_get
-        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
+            IbetStraightBondContract_get,
+            PersonalInfoContract_init,
+            PersonalInfoContract_register_info,
+        ):
             # request target API
             req_param = {
                 "account_address": _test_account_address,
@@ -164,8 +166,10 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         )
 
         with (
-            IbetStraightBondContract_get
-        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
+            IbetStraightBondContract_get,
+            PersonalInfoContract_init,
+            PersonalInfoContract_register_info,
+        ):
             # request target API
             req_param = {
                 "account_address": _test_account_address,
@@ -251,8 +255,10 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         )
 
         with (
-            IbetStraightBondContract_get
-        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
+            IbetStraightBondContract_get,
+            PersonalInfoContract_init,
+            PersonalInfoContract_register_info,
+        ):
             # request target API
             req_param = {
                 "account_address": _test_account_address,
@@ -762,8 +768,10 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         )
 
         with (
-            IbetStraightBondContract_get
-        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
+            IbetStraightBondContract_get,
+            PersonalInfoContract_init,
+            PersonalInfoContract_register_info,
+        ):
             # request target API
             req_param = {
                 "account_address": _test_account_address,

@@ -770,7 +770,6 @@ class TestProcessor:
     @mock.patch("batch.processor_create_utxo.create_ledger")
     @pytest.mark.asyncio
     async def test_normal_6(self, mock_func, processor, db):
-
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1388,7 +1387,6 @@ class TestProcessor:
     @mock.patch("batch.processor_create_utxo.create_ledger")
     @pytest.mark.asyncio
     async def test_normal_9(self, mock_func, processor, db):
-
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1555,7 +1553,7 @@ class TestProcessor:
         with mock.patch(
             "web3.eth.Eth.uninstall_filter",
             MagicMock(side_effect=Exception("mock test")),
-        ) as web3_mock:
+        ):
             await processor.process()
 
         _utxo_list = db.scalars(select(UTXO)).all()

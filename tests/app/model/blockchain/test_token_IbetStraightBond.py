@@ -87,7 +87,7 @@ class TestCreate:
             "リターン内容",
             "発行目的",
         ]
-        contract_address, abi, tx_hash = await IbetStraightBondContract().create(
+        contract_address, _, _ = await IbetStraightBondContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -261,7 +261,7 @@ class TestCreate:
             "リターン内容",
             "発行目的",
         ]
-        contract_address, abi, tx_hash = await IbetStraightBondContract().create(
+        contract_address, _, _ = await IbetStraightBondContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -304,12 +304,11 @@ class TestGet:
             "リターン内容",
             "発行目的",
         ]
-        contract_address, abi, tx_hash = await IbetStraightBondContract().create(
+        contract_address, _, _ = await IbetStraightBondContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # get token data
-        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         bond_contract = await IbetStraightBondContract(contract_address).get()
 
         # assertion
@@ -381,9 +380,9 @@ class TestGet:
             "リターン内容",
             "発行目的",
         ]
-        contract_address, abi, tx_hash = await IbetStraightBondContract(
-            ZERO_ADDRESS
-        ).create(args=arguments, tx_from=issuer_address, private_key=private_key)
+        contract_address, _, _ = await IbetStraightBondContract(ZERO_ADDRESS).create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
 
         # create cache
         token_attr = {
@@ -517,9 +516,9 @@ class TestGet:
             "リターン内容",
             "発行目的",
         ]
-        contract_address, abi, tx_hash = await IbetStraightBondContract(
-            ZERO_ADDRESS
-        ).create(args=arguments, tx_from=issuer_address, private_key=private_key)
+        contract_address, _, _ = await IbetStraightBondContract(ZERO_ADDRESS).create(
+            args=arguments, tx_from=issuer_address, private_key=private_key
+        )
 
         # create cache
         token_attr = {
@@ -713,7 +712,7 @@ class TestUpdate:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        contract_address, _, _ = await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -795,7 +794,7 @@ class TestUpdate:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        contract_address, _, _ = await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -1569,7 +1568,6 @@ class TestForcedTransfer:
 
 
 class TestBulkForcedTransfer:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -2027,7 +2025,7 @@ class TestBulkTransfer:
         # bulk transfer
         _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
         _transfer_data = BulkTransferParams(**_data)
-        with pytest.raises(SendTransactionError) as exc_info:
+        with pytest.raises(SendTransactionError):
             await bond_contract.bulk_transfer(
                 data=_transfer_data,
                 tx_from=from_address,
@@ -2238,7 +2236,7 @@ class TestAdditionalIssue:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        contract_address, _, _ = await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2533,7 +2531,6 @@ class TestAdditionalIssue:
         # additional issue
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = AdditionalIssueParams(**_data)
-        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
         #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
@@ -2553,7 +2550,6 @@ class TestAdditionalIssue:
 
 
 class TestBulkAdditionalIssue:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -2583,7 +2579,7 @@ class TestBulkAdditionalIssue:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        contract_address, _, _ = await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2794,7 +2790,7 @@ class TestRedeem:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        contract_address, _, _ = await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3083,7 +3079,6 @@ class TestRedeem:
         # redeem
         _data = {"account_address": issuer_address, "amount": 100_000_000}
         _add_data = RedeemParams(**_data)
-        pre_datetime = datetime.now(UTC).replace(tzinfo=None)
 
         # mock
         #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
@@ -3106,7 +3101,6 @@ class TestRedeem:
 
 
 class TestBulkRedeem:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -3136,7 +3130,7 @@ class TestBulkRedeem:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        contract_address, _, _ = await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -4078,7 +4072,7 @@ class TestCancelTransfer:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -4119,7 +4113,7 @@ class TestCancelTransfer:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        contract_address, abi, tx_hash = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -4396,7 +4390,7 @@ class TestLock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4442,7 +4436,7 @@ class TestLock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4488,7 +4482,7 @@ class TestLock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4540,7 +4534,7 @@ class TestLock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4591,7 +4585,7 @@ class TestLock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4821,7 +4815,7 @@ class TestForceUnlock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4881,7 +4875,7 @@ class TestForceUnlock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -4941,7 +4935,7 @@ class TestForceUnlock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -5007,7 +5001,7 @@ class TestForceUnlock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -5072,7 +5066,7 @@ class TestForceUnlock:
             "発行目的",
         ]
         bond_contract = IbetStraightBondContract()
-        token_address, _, _ = await bond_contract.create(
+        await bond_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 

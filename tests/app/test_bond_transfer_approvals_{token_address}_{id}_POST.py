@@ -1421,8 +1421,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
 
         # request target API
         with (
-            IbetSecurityTokenContract_approve_transfer
-        ), IbetSecurityTokenContract_cancel_transfer:
+            IbetSecurityTokenContract_approve_transfer,
+            IbetSecurityTokenContract_cancel_transfer,
+        ):
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
@@ -1886,7 +1887,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         )
 
         # request target API
-        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
+        with IbetSecurityTokenContract_approve_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
@@ -1969,7 +1970,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         )
 
         # request target API
-        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
+        with IbetSecurityTokenContract_approve_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},

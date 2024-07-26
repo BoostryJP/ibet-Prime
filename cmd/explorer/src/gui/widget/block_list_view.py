@@ -22,10 +22,6 @@ from datetime import datetime
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.table import Table
-from src.gui import styles
-from src.gui.consts import ID
-from src.gui.widget.base import TuiStatic, TuiWidget
-from src.gui.widget.block_list_table import BlockListTable
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal
@@ -33,6 +29,10 @@ from textual.reactive import Reactive, reactive
 from textual.timer import Timer
 
 from app.model.schema import ListBlockDataQuery
+from src.gui import styles
+from src.gui.consts import ID
+from src.gui.widget.base import TuiStatic, TuiWidget
+from src.gui.widget.block_list_table import BlockListTable
 
 
 class BlockListQueryPanel(TuiStatic):

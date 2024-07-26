@@ -44,8 +44,7 @@ pytest = "^7.4.4"
 pytest-cov = "^4.1.0"
 pyyaml = "^6.0"
 pre-commit = "^3.6.0"
-isort = "^5.13.2"
-black = "^24.1.1"
+ruff = "^0.5.4"
 textual-dev = "^1.2.1"
 pytest-alembic = "^0.10.7"
 pytest-freezer = "^0.4.8"
@@ -67,10 +66,42 @@ settlement-cli = [
     "typer",
 ]
 
-[tool.isort]
-profile = "black"
-combine_as_imports = true
-skip_glob = ["migrations/*"]
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+preview = true
+explicit-preview-rules = true
+# E: pycodestyle
+# F: Pyflakes
+select = ["E", "F"]
+# UP042: Checks for classes that inherit from both str and enum.Enum
+extend-select = ["UP042"]
+# E711: Comparison to `None` should be `cond is None`
+# E712: Avoid equality comparisons to False
+# E721: Use is and is not for type comparisons, or isinstance() for isinstance checks
+# E722: Do not use bare except
+# E402: Module level import not at top of file
+# E731: Do not assign a lambda expression, use a def
+# E501: Line too long (trust formatter)
+ignore = ["E402", "E711", "E712", "E721", "E722", "E731", "E501"]
+exclude = ["migrations/*"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+# F401 [*] xxx imported but unused
+# F403 from .main import * used; unable to detect undefined names
+"__init__.py" = ["F401", "F403"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
 
 [build-system]
 requires = ["poetry-core"]

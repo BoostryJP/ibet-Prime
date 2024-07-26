@@ -96,16 +96,12 @@ class TestUpdateDVPDeliveryPOST:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
+
         user_3 = config_eth_account("user3")
         agent_address = user_3["address"]
-        agent_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # prepare data
         account = Account()
@@ -195,16 +191,12 @@ class TestUpdateDVPDeliveryPOST:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
+
         user_3 = config_eth_account("user3")
         agent_address = user_3["address"]
-        agent_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # prepare data
         account = Account()
@@ -298,9 +290,6 @@ class TestUpdateDVPDeliveryPOST:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # request target API
         req_param = {"operation_type": "invalid_value"}
@@ -359,9 +348,6 @@ class TestUpdateDVPDeliveryPOST:
     # <Error_3>
     # RequestValidationError: issuer-address
     def test_error_3(self, client, db, ibet_security_token_dvp_contract):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account["address"]
-
         # request target API
         req_param = {
             "operation_type": "Cancel",
@@ -395,9 +381,6 @@ class TestUpdateDVPDeliveryPOST:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # prepare data
         account = Account()
@@ -440,9 +423,6 @@ class TestUpdateDVPDeliveryPOST:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # prepare data
         token = Token()
@@ -485,9 +465,6 @@ class TestUpdateDVPDeliveryPOST:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # prepare data
         account = Account()

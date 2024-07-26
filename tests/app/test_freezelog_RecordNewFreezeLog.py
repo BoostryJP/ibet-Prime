@@ -97,15 +97,19 @@ class TestRecordNewFreezeLog:
         db.commit()
 
         # Request target api
-        with mock.patch(
-            "app.routers.misc.freeze_log.E2EE_REQUEST_ENABLED",
-            False,
-        ), mock.patch(
-            "app.model.schema.freeze_log.E2EE_REQUEST_ENABLED",
-            False,
-        ), mock.patch(
-            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+        with (
+            mock.patch(
+                "app.routers.misc.freeze_log.E2EE_REQUEST_ENABLED",
+                False,
+            ),
+            mock.patch(
+                "app.model.schema.freeze_log.E2EE_REQUEST_ENABLED",
+                False,
+            ),
+            mock.patch(
+                "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+                freeze_log_contract.address,
+            ),
         ):
             req_param = {
                 "account_address": user_address_1,
@@ -383,12 +387,15 @@ class TestRecordNewFreezeLog:
         db.commit()
 
         # Request target api
-        with mock.patch(
-            "app.utils.contract_utils.AsyncContractUtils.send_transaction",
-            MagicMock(side_effect=Exception("tx error")),
-        ), mock.patch(
-            "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+        with (
+            mock.patch(
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                MagicMock(side_effect=Exception("tx error")),
+            ),
+            mock.patch(
+                "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+                freeze_log_contract.address,
+            ),
         ):
             req_param = {
                 "account_address": user_address_1,
