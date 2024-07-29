@@ -29,11 +29,11 @@ jobs:
         with:
           comment_on_pr: false
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-test-image
       - name: Change owner of output directory
         run: |
           sudo chown -R runner:docker /home/runner/work/ibet-Prime/ibet-Prime/cov
           sudo chmod 777 /home/runner/work/ibet-Prime/ibet-Prime/cov
+      - uses: ./.github/actions/setup-test-image
       - name: run unit test using postgres
         run: docker compose run ibet-prime-postgres
       - name: Pytest coverage comment
