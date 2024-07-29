@@ -24,12 +24,13 @@ cd /app/ibet-Prime
 sleep 10
 
 # test
-pytest tests/ -v --cov=app/routers/ --cov-report=xml --cov-branch
+poetry run pytest -v --cov=app/routers/ --cov=app/model/ --cov=app/utils/ --cov=batch/ --cov=cmd/ --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch tests/
 
 status_code=$?
 
 # カバレッジファイルの移動
 mv coverage.xml cov/
+mv pytest.xml cov/
 
 if [ $status_code -ne 0 ]; then
   exit 1
