@@ -24,7 +24,7 @@ cd /app/ibet-Prime
 sleep 10
 
 # test
-poetry run pytest -v --cov=app/routers/ --cov=app/model/ --cov=app/utils/ --cov=batch/ --cov=cmd/ --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch tests/
+pytest -v --cov=app/routers/ --cov=app/model/ --cov=app/utils/ --cov=batch/ --cov=cmd/ --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch tests/
 
 status_code=$?
 
