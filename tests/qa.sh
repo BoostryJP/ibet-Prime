@@ -23,12 +23,12 @@ cd /app/ibet-Prime
 
 sleep 10
 
-# test
-pytest -v --cov=app/routers/ --cov=app/model/ --cov=app/utils/ --cov=batch/ --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch tests/
+# Test
+poetry run pytest -v --cov=app/routers/ --cov=app/model/ --cov=app/utils/ --cov=batch/ --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch tests/
 
 status_code=$?
 
-# カバレッジファイルの移動
+# Move coverage files
 mv coverage.xml cov/
 mv pytest.xml cov/
 
