@@ -97,6 +97,7 @@ class Processor:
                         return
 
                     # Get target PersonalInfo contract accessor
+                    target_contract_accessor = None
                     for contract_accessor in contract_accessor_list:
                         is_registered = await AsyncContractUtils.call_function(
                             contract=contract_accessor.personal_info_contract,
@@ -111,6 +112,9 @@ class Processor:
                             target_contract_accessor = contract_accessor
                             break
 
+                    if target_contract_accessor is None:
+                        continue
+
                     is_modify = await self.__modify_personal_info(
                         temporary=temporary,
                         idx_personal_info=idx_personal_info,
@@ -124,6 +128,9 @@ class Processor:
                 # Once all investors' personal information has been updated,
                 # update the status of the issuer's RSA key.
                 if count == completed_count:
+                    LOG.info(
+                        f"Modify personal info process is completed: issuer={temporary.issuer_address}"
+                    )
                     await self.__sink_on_account(
                         db_session=db_session, issuer_address=temporary.issuer_address
                     )

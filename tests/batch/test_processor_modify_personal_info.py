@@ -58,7 +58,13 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 @pytest.fixture(scope="function")
 def processor(db):
+    LOG = logging.getLogger("background")
+    default_log_level = LOG.level
+    LOG.setLevel(logging.DEBUG)
+    LOG.propagate = True
     return Processor(asyncio.Event())
+    LOG.propagate = False
+    LOG.setLevel(default_log_level)
 
 
 def deploy_personal_info_contract(issuer_user):
@@ -183,7 +189,7 @@ class TestProcessor:
     # Execute Batch Run 2nd: changed RSA
     # Execute Batch Run 3rd: modified PersonalInfo
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db):
+    async def test_normal_1(self, processor, db, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
@@ -481,6 +487,13 @@ class TestProcessor:
         await processor.process()
 
         # assertion(Run 3rd)
+        assert "Failed to decrypt" in caplog.text
+        assert (
+            "background",
+            logging.INFO,
+            f"Modify personal info process is completed: issuer={user_1['address']}",
+        ) in caplog.record_tuples
+
         db.rollback()
         _account = db.scalars(select(Account).limit(1)).first()
         assert _account.issuer_address == user_1["address"]
