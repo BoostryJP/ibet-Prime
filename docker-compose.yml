@@ -30,3 +30,5 @@ services:
     depends_on:
       - postgres
       - hardhat-network
+    volumes:
+      - ./cov:/app/ibet-Prime/cov
