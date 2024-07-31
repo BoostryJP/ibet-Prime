@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+import logging
 import sys
 from asyncio import Event
 from typing import Sequence, Set
@@ -56,6 +57,20 @@ when the issuer's RSA key is updated.
 
 process_name = "PROCESSOR-Modify-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
+
+
+class SupressDecryptFailedLogFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord):
+        if (
+            record.levelname == "ERROR"
+            and isinstance(record.msg, str)
+            and "Failed to decrypt" in record.msg
+        ):
+            return False
+        return True
+
+
+LOG.addFilter(SupressDecryptFailedLogFilter())
 
 
 class Processor:

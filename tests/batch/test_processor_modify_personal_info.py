@@ -487,7 +487,7 @@ class TestProcessor:
         await processor.process()
 
         # assertion(Run 3rd)
-        assert "Failed to decrypt" in caplog.text
+        assert "Failed to decrypt" not in caplog.text
         assert (
             "background",
             logging.INFO,
