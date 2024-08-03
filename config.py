@@ -363,12 +363,17 @@ FREEZE_LOG_CONTRACT_ADDRESS = os.environ.get("FREEZE_LOG_CONTRACT_ADDRESS")
 
 
 ####################################################
-# DvP agent option settings
+# DvP option settings
 ####################################################
+# For paying agent
 DVP_AGENT_FEATURE_ENABLED = (
     True if os.environ.get("DVP_AGENT_FEATURE_ENABLED") == "1" else False
 )
 
+# Data encryption mode
+# - "aes-256-cbc"
+DVP_DATA_ENCRYPTION_MODE = os.environ.get("DVP_DATA_ENCRYPTION_MODE") or None
+DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
 
 ####################################################
 # Other settings

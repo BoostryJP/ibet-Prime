@@ -139,6 +139,7 @@ class CreateDVPDeliveryRequest(BaseModel):
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
     agent_address: EthereumAddress
     data: str
+    settlement_service_type: str
 
 
 class CancelDVPDeliveryRequest(BaseModel):
@@ -177,12 +178,6 @@ class ListAllDVPAgentAccountResponse(RootModel[list[DVPAgentAccountResponse]]):
     """DVP agent account list reference schema (RESPONSE)"""
 
     pass
-
-
-class CreateDVPDeliveryResponse(BaseModel):
-    """Create DVP delivery schema (RESPONSE)"""
-
-    delivery_id: int
 
 
 class RetrieveDVPDeliveryResponse(BaseModel):

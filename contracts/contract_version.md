@@ -18,7 +18,7 @@
 | EscrowStorage.json              | **v22.12.0** | yes(only for unittest) | yes      |
 | IbetSecurityTokenEscrow.json    | **v22.12.0** | yes(only for unittest) | yes      |
 | DVPStorage.json                 | **v24.6.0**  | yes(only for unittest) | yes      |
-| IbetSecurityTokenDVP.json       | **v24.6.0**  | yes(only for unittest) | yes      |
+| IbetSecurityTokenDVP.json       | **v24.9.0**  | yes(only for unittest) | yes      |
 | PaymentGateway.json             | **v22.12.0** | yes(only for unittest) | yes      |
 | PersonalInfo.json               | **v22.12.0** | yes(only for unittest) | yes      |
 | FreezeLog.json                  | **v23.12.0** | yes(only for unittest) | yes      |

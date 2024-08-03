@@ -17,10 +17,15 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import base64
+import json
+import secrets
 from datetime import UTC
 from typing import Optional, Sequence
 
 import pytz
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Request
 from sqlalchemy import and_, desc, func, select
@@ -30,15 +35,23 @@ import config
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError, SendTransactionError
 from app.model.blockchain.exchange import IbetSecurityTokenDVP
-from app.model.blockchain.tx_params.ibet_security_token_dvp import (
-    CancelDeliveryParams,
-    CreateDeliveryParams,
+from app.model.blockchain.token import IbetSecurityTokenInterface
+from app.model.blockchain.tx_params.ibet_security_token import (
+    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
 )
-from app.model.db import IDXDelivery, IDXPersonalInfo, Token
+from app.model.blockchain.tx_params.ibet_security_token_dvp import CancelDeliveryParams
+from app.model.db import (
+    DVPAsyncProcess,
+    DVPAsyncProcessStatus,
+    DVPAsyncProcessStepTxStatus,
+    DVPAsyncProcessType,
+    IDXDelivery,
+    IDXPersonalInfo,
+    Token,
+)
 from app.model.schema import (
     CancelDVPDeliveryRequest,
     CreateDVPDeliveryRequest,
-    CreateDVPDeliveryResponse,
     ListAllDVPDeliveriesQuery,
     ListAllDVPDeliveriesResponse,
     RetrieveDVPDeliveryResponse,
@@ -235,7 +248,7 @@ async def list_all_dvp_deliveries(
 @router.post(
     "/dvp/{exchange_address}/deliveries",
     operation_id="CreateDVPDelivery",
-    response_model=CreateDVPDeliveryResponse,
+    response_model=None,
     responses=get_routers_responses(
         404, 422, InvalidParameterError, SendTransactionError
     ),
@@ -244,7 +257,7 @@ async def create_dvp_delivery(
     db: DBAsyncSession,
     req: Request,
     exchange_address: str,
-    data: CreateDVPDeliveryRequest,
+    create_req: CreateDVPDeliveryRequest,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
@@ -264,35 +277,94 @@ async def create_dvp_delivery(
         auth_token=auth_token,
     )
 
+    # Verify that the token is issued by the issuer_address
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == create_req.token_address,
+                    Token.token_status != 2,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
     # Get private key
     keyfile_json = _account.keyfile
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
     )
 
-    # Create delivery
-    dvp_contract = IbetSecurityTokenDVP(contract_address=exchange_address)
+    # Deposit to DVP contract
     try:
-        _data = {
-            "token_address": data.token_address,
-            "buyer_address": data.buyer_address,
-            "amount": data.amount,
-            "agent_address": data.agent_address,
-            "data": data.data,
-        }
-        (_, _, delivery_id) = await dvp_contract.create_delivery(
-            data=CreateDeliveryParams(**_data),
+        tx_hash = await IbetSecurityTokenInterface(
+            create_req.token_address
+        ).forced_transfer(
+            data=IbetSecurityTokenForcedTransferParams(
+                from_address=issuer_address,
+                to_address=exchange_address,
+                amount=create_req.amount,
+            ),
             tx_from=issuer_address,
             private_key=private_key,
         )
     except SendTransactionError:
-        raise SendTransactionError("failed to create delivery")
+        raise SendTransactionError("failed to send transaction")
 
-    return json_response(
-        {
-            "delivery_id": delivery_id,
-        }
-    )
+    # Structure and encrypt data
+    if config.DVP_DATA_ENCRYPTION_MODE == "aes-256-cbc":
+        pad_message = pad(create_req.data.encode("utf-8"), AES.block_size)
+        aes_iv = secrets.token_bytes(AES.block_size)
+        aes_encryption_key = base64.b64decode(config.DVP_DATA_ENCRYPTION_KEY)
+        cipher = AES.new(aes_encryption_key, AES.MODE_CBC, aes_iv)
+        encrypted_message = base64.b64encode(
+            aes_iv + cipher.encrypt(pad_message)
+        ).decode()
+        _data = json.dumps(
+            {
+                "encryption_algorithm": config.DVP_DATA_ENCRYPTION_MODE,
+                "encryption_key_ref": "local",
+                "settlement_service_type": create_req.settlement_service_type,
+                "data": encrypted_message,
+            }
+        )
+    else:
+        _data = json.dumps(
+            {
+                "encryption_algorithm": None,
+                "encryption_key_ref": None,
+                "settlement_service_type": create_req.settlement_service_type,
+                "data": create_req.data,
+            }
+        )
+
+    # Instruct asynchronous DVP processing
+    dvp_process = DVPAsyncProcess()
+    dvp_process.issuer_address = issuer_address
+    dvp_process.process_type = DVPAsyncProcessType.CREATE_DELIVERY
+    dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+    dvp_process.dvp_contract_address = exchange_address
+    dvp_process.token_address = create_req.token_address
+    dvp_process.seller_address = issuer_address
+    dvp_process.buyer_address = create_req.buyer_address
+    dvp_process.amount = create_req.amount
+    dvp_process.agent_address = create_req.agent_address
+    dvp_process.data = _data
+    dvp_process.step = 0
+    dvp_process.step_tx_hash = tx_hash
+    dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.DONE
+    db.add(dvp_process)
+
+    await db.commit()
+
+    return
 
 
 # GET: /settlement/dvp/{exchange_address}/delivery/{delivery_id}
@@ -438,29 +510,47 @@ async def update_dvp_delivery(
     db: DBAsyncSession,
     req: Request,
     exchange_address: str,
-    delivery_id: str,
-    data: CancelDVPDeliveryRequest,
-    issuer_address: str = Header(None),
+    delivery_id: int,
+    cancel_req: CancelDVPDeliveryRequest,
+    issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    match data.operation_type:
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    _account, decrypt_password = await check_auth(
+        request=req,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Check for delivery data existence
+    delivery: IDXDelivery | None = (
+        await db.scalars(
+            select(IDXDelivery)
+            .join(Token, Token.token_address == IDXDelivery.token_address)
+            .where(
+                and_(
+                    IDXDelivery.exchange_address == exchange_address,
+                    IDXDelivery.delivery_id == delivery_id,
+                    Token.issuer_address == issuer_address,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if delivery is None:
+        raise HTTPException(status_code=404, detail="delivery not found")
+
+    match cancel_req.operation_type:
         case "Cancel":
-            # Validate Headers
-            validate_headers(
-                issuer_address=(issuer_address, address_is_valid_address),
-                eoa_password=(eoa_password, eoa_password_is_encrypted_value),
-            )
-
-            # Authentication
-            _account, decrypt_password = await check_auth(
-                request=req,
-                db=db,
-                issuer_address=issuer_address,
-                eoa_password=eoa_password,
-                auth_token=auth_token,
-            )
-
             # Get private key
             keyfile_json = _account.keyfile
             private_key = decode_keyfile_json(
@@ -478,4 +568,5 @@ async def update_dvp_delivery(
                 )
             except SendTransactionError:
                 raise SendTransactionError("failed to cancel delivery")
-            return
+
+    return

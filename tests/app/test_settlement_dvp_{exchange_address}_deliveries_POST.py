@@ -18,19 +18,29 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+import base64
 import hashlib
 import json
+import secrets
+from unittest import mock
 
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 
 from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.db import (
+    Account,
+    AuthToken,
+    DVPAsyncProcess,
+    Token,
+    TokenType,
+    TokenVersion,
+)
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
 
 
@@ -78,9 +88,10 @@ class TestCreateDVPDeliveriesPOST:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
-    # Authorization by eoa-password
-    def test_normal_1(
+    # <Normal_1_1>
+    # No data encryption
+    # - Authorization by eoa-password
+    def test_normal_1_1(
         self, ibet_security_token_dvp_contract, personal_info_contract, client, db
     ):
         user_1 = config_eth_account("user1")
@@ -121,19 +132,6 @@ class TestCreateDVPDeliveriesPOST:
 
         db.commit()
 
-        # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        ContractUtils.send_transaction(tx, issuer_private_key)
-
         # request target API
         req_param = {
             "token_address": token_contract_1.address,
@@ -141,6 +139,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 10,
             "agent_address": agent_address,
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
         resp = client.post(
             self.base_url.format(
@@ -155,11 +154,40 @@ class TestCreateDVPDeliveriesPOST:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {"delivery_id": 1}
+        assert resp.json() is None
 
-    # <Normal_2>
-    # Authorization by auth-token
-    def test_normal_2(
+        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        assert len(_async_process_list) == 1
+
+        _async_process: DVPAsyncProcess = _async_process_list[0]
+        assert _async_process.id == 1
+        assert _async_process.issuer_address == issuer_address
+        assert _async_process.process_type == "CreateDelivery"
+        assert _async_process.process_status == 1
+        assert (
+            _async_process.dvp_contract_address
+            == ibet_security_token_dvp_contract.address
+        )
+        assert _async_process.token_address == token_contract_1.address
+        assert _async_process.seller_address == issuer_address
+        assert _async_process.buyer_address == user_address_1
+        assert _async_process.amount == 10
+        assert _async_process.agent_address == agent_address
+        assert (
+            _async_process.data
+            == '{"encryption_algorithm": null, "encryption_key_ref": null, "settlement_service_type": "test_service", "data": "{}"}'
+        )
+        assert _async_process.delivery_id is None
+        assert _async_process.step == 0
+        assert _async_process.step_tx_hash is not None
+        assert _async_process.step_tx_status == "done"
+        assert _async_process.revert_tx_hash is None
+        assert _async_process.revert_tx_status is None
+
+    # <Normal_1_2>
+    # No data encryption
+    # - Authorization by auth-token
+    def test_normal_1_2(
         self, ibet_security_token_dvp_contract, personal_info_contract, client, db
     ):
         user_1 = config_eth_account("user1")
@@ -206,19 +234,6 @@ class TestCreateDVPDeliveriesPOST:
 
         db.commit()
 
-        # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        ContractUtils.send_transaction(tx, issuer_private_key)
-
         # request target API
         req_param = {
             "token_address": token_contract_1.address,
@@ -226,6 +241,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 10,
             "agent_address": agent_address,
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
         resp = client.post(
             self.base_url.format(
@@ -240,14 +256,148 @@ class TestCreateDVPDeliveriesPOST:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {"delivery_id": 1}
+        assert resp.json() is None
+
+        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        assert len(_async_process_list) == 1
+
+        _async_process: DVPAsyncProcess = _async_process_list[0]
+        assert _async_process.id == 1
+        assert _async_process.issuer_address == issuer_address
+        assert _async_process.process_type == "CreateDelivery"
+        assert _async_process.process_status == 1
+        assert (
+            _async_process.dvp_contract_address
+            == ibet_security_token_dvp_contract.address
+        )
+        assert _async_process.token_address == token_contract_1.address
+        assert _async_process.seller_address == issuer_address
+        assert _async_process.buyer_address == user_address_1
+        assert _async_process.amount == 10
+        assert _async_process.agent_address == agent_address
+        assert (
+            _async_process.data
+            == '{"encryption_algorithm": null, "encryption_key_ref": null, "settlement_service_type": "test_service", "data": "{}"}'
+        )
+        assert _async_process.delivery_id is None
+        assert _async_process.step == 0
+        assert _async_process.step_tx_hash is not None
+        assert _async_process.step_tx_status == "done"
+        assert _async_process.revert_tx_hash is None
+        assert _async_process.revert_tx_status is None
+
+    # <Normal_2>
+    # Data encryption
+    @mock.patch(
+        "config.DVP_DATA_ENCRYPTION_MODE",
+        "aes-256-cbc",
+    )
+    @mock.patch(
+        "config.DVP_DATA_ENCRYPTION_KEY",
+        base64.b64encode(secrets.token_bytes(32)).decode("utf-8"),
+    )
+    def test_normal_2(
+        self, ibet_security_token_dvp_contract, personal_info_contract, client, db
+    ):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        _keyfile = user_1["keyfile_json"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+
+        user_3 = config_eth_account("user3")
+        agent_address = user_3["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token_contract_1 = asyncio.run(
+            deploy_bond_token_contract(
+                issuer_address,
+                issuer_private_key,
+                personal_info_contract.address,
+                tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
+            )
+        )
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = token_contract_1.address
+        token.abi = ""
+        token.version = TokenVersion.V_24_09
+        db.add(token)
+
+        db.commit()
+
+        # request target API
+        req_param = {
+            "token_address": token_contract_1.address,
+            "buyer_address": user_address_1,
+            "amount": 10,
+            "agent_address": agent_address,
+            "data": json.dumps({}),
+            "settlement_service_type": "test_service",
+        }
+        resp = client.post(
+            self.base_url.format(
+                exchange_address=ibet_security_token_dvp_contract.address
+            ),
+            json=req_param,
+            headers={
+                "issuer-address": issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        assert len(_async_process_list) == 1
+
+        _async_process: DVPAsyncProcess = _async_process_list[0]
+        assert _async_process.id == 1
+        assert _async_process.issuer_address == issuer_address
+        assert _async_process.process_type == "CreateDelivery"
+        assert _async_process.process_status == 1
+        assert (
+            _async_process.dvp_contract_address
+            == ibet_security_token_dvp_contract.address
+        )
+        assert _async_process.token_address == token_contract_1.address
+        assert _async_process.seller_address == issuer_address
+        assert _async_process.buyer_address == user_address_1
+        assert _async_process.amount == 10
+        assert _async_process.agent_address == agent_address
+
+        _data = json.loads(_async_process.data)
+        assert _data["encryption_algorithm"] == "aes-256-cbc"
+        assert _data["encryption_key_ref"] == "local"
+        assert _data["settlement_service_type"] == "test_service"
+        assert _data["data"] is not None
+
+        assert _async_process.delivery_id is None
+        assert _async_process.step == 0
+        assert _async_process.step_tx_hash is not None
+        assert _async_process.step_tx_status == "done"
+        assert _async_process.revert_tx_hash is None
+        assert _async_process.revert_tx_status is None
 
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
-    # RequestValidationError: buyer_address, agent_address
+    # RequestValidationError: token_address, buyer_address, agent_address
     def test_error_1(self, client, db, ibet_security_token_dvp_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -266,7 +416,14 @@ class TestCreateDVPDeliveriesPOST:
         db.commit()
 
         # request target API
-        req_param = {"buyer_address": "0x0", "agent_address": "0x0", "amount": 10}
+        req_param = {
+            "token_address": "0x0",
+            "buyer_address": "0x0",
+            "agent_address": "0x0",
+            "amount": 10,
+            "data": "",
+            "settlement_service_type": "test_service",
+        }
 
         resp = client.post(
             self.base_url.format(
@@ -285,38 +442,25 @@ class TestCreateDVPDeliveriesPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "input": {
-                        "agent_address": "0x0",
-                        "amount": 10,
-                        "buyer_address": "0x0",
-                    },
+                    "type": "value_error",
                     "loc": ["body", "token_address"],
-                    "msg": "Field required",
-                    "type": "missing",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "0x0",
+                    "type": "value_error",
                     "loc": ["body", "buyer_address"],
                     "msg": "Value error, invalid ethereum address",
-                    "type": "value_error",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "0x0",
+                    "type": "value_error",
                     "loc": ["body", "agent_address"],
                     "msg": "Value error, invalid ethereum address",
-                    "type": "value_error",
-                },
-                {
-                    "input": {
-                        "agent_address": "0x0",
-                        "amount": 10,
-                        "buyer_address": "0x0",
-                    },
-                    "loc": ["body", "data"],
-                    "msg": "Field required",
-                    "type": "missing",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
             ],
         }
@@ -347,6 +491,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 0,
             "agent_address": "0x0000000000000000000000000000000000000000",
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
 
         resp = client.post(
@@ -389,6 +534,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 1_000_000_000_001,
             "agent_address": "0x0000000000000000000000000000000000000000",
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
 
         resp = client.post(
@@ -457,6 +603,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 1,
             "agent_address": "0x0000000000000000000000000000000000000000",
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
 
         resp = client.post(
@@ -504,6 +651,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 1,
             "agent_address": "0x0000000000000000000000000000000000000000",
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
 
         resp = client.post(
@@ -553,6 +701,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 1,
             "agent_address": "0x0000000000000000000000000000000000000000",
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
 
         resp = client.post(
@@ -596,6 +745,7 @@ class TestCreateDVPDeliveriesPOST:
             "amount": 1,
             "agent_address": "0x0000000000000000000000000000000000000000",
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
 
         resp = client.post(
@@ -647,6 +797,7 @@ class TestCreateDVPDeliveriesPOST:
                 tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
             )
         )
+
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
@@ -658,26 +809,14 @@ class TestCreateDVPDeliveriesPOST:
 
         db.commit()
 
-        # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        ContractUtils.send_transaction(tx, issuer_private_key)
-
         # request target API
         req_param = {
             "token_address": token_contract_1.address,
             "buyer_address": user_address_1,
-            "amount": 50,
+            "amount": 1000,
             "agent_address": agent_address,
             "data": json.dumps({}),
+            "settlement_service_type": "test_service",
         }
         resp = client.post(
             self.base_url.format(
@@ -694,5 +833,5 @@ class TestCreateDVPDeliveriesPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
-            "detail": "failed to create delivery",
+            "detail": "failed to send transaction",
         }

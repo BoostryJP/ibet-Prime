@@ -115,7 +115,7 @@ class Processor:
                     )
                 ).first()
                 if issuer_account is None:
-                    LOG.exception("Issuer account does not exist")
+                    LOG.error("Issuer account does not exist")
                     await self.__sink_on_notification(
                         db_session=db_session,
                         issuer_address=upload.issuer_address,

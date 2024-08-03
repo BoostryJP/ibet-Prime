@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import hashlib
+from datetime import UTC, datetime
 
 from eth_keyfile import decode_keyfile_json
 
@@ -29,7 +30,9 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 from app.model.db import (
     Account,
     AuthToken,
+    DeliveryStatus,
     DVPAgentAccount,
+    IDXDelivery,
     Token,
     TokenType,
     TokenVersion,
@@ -161,6 +164,23 @@ class TestUpdateDVPDeliveryPOST:
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
+        _idx_delivery = IDXDelivery()
+        _idx_delivery.exchange_address = ibet_security_token_dvp_contract.address
+        _idx_delivery.delivery_id = 1
+        _idx_delivery.token_address = token_contract_1.address
+        _idx_delivery.buyer_address = user_address_1
+        _idx_delivery.seller_address = issuer_address
+        _idx_delivery.amount = 1
+        _idx_delivery.agent_address = agent_address
+        _idx_delivery.data = ""
+        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_transaction_hash = "tx_hash_1"
+        _idx_delivery.confirmed = False
+        _idx_delivery.valid = True
+        _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED
+        db.add(_idx_delivery)
+        db.commit()
+
         # request target API
         req_param = {"operation_type": "Cancel"}
         resp = client.post(
@@ -262,6 +282,23 @@ class TestUpdateDVPDeliveryPOST:
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
+        _idx_delivery = IDXDelivery()
+        _idx_delivery.exchange_address = ibet_security_token_dvp_contract.address
+        _idx_delivery.delivery_id = 1
+        _idx_delivery.token_address = token_contract_1.address
+        _idx_delivery.buyer_address = user_address_1
+        _idx_delivery.seller_address = issuer_address
+        _idx_delivery.amount = 1
+        _idx_delivery.agent_address = agent_address
+        _idx_delivery.data = ""
+        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_transaction_hash = "tx_hash_1"
+        _idx_delivery.confirmed = False
+        _idx_delivery.valid = True
+        _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED
+        db.add(_idx_delivery)
+        db.commit()
+
         # request target API
         req_param = {"operation_type": "Cancel"}
         resp = client.post(
@@ -284,9 +321,10 @@ class TestUpdateDVPDeliveryPOST:
     # Error Case
     ###########################################################################
 
-    # <Error_1>
-    # RequestValidationError: operation_type
-    def test_error_1(self, client, db, ibet_security_token_dvp_contract):
+    # <Error_1_1>
+    # RequestValidationError
+    # - operation_type
+    def test_error_1_1(self, client, db, ibet_security_token_dvp_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
@@ -320,9 +358,11 @@ class TestUpdateDVPDeliveryPOST:
             ],
         }
 
-    # <Error_2>
-    # RequestValidationError: headers and body required
-    def test_error_2(self, client, db, ibet_security_token_dvp_contract):
+    # <Error_1_2>
+    # RequestValidationError
+    # - header: issuer-address
+    # - body field
+    def test_error_1_2(self, client, db, ibet_security_token_dvp_contract):
         # request target API
         resp = client.post(
             self.base_url.format(
@@ -337,47 +377,24 @@ class TestUpdateDVPDeliveryPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "type": "missing",
+                    "loc": ["header", "issuer-address"],
+                    "msg": "Field required",
                     "input": None,
+                },
+                {
+                    "type": "missing",
                     "loc": ["body"],
                     "msg": "Field required",
-                    "type": "missing",
-                }
+                    "input": None,
+                },
             ],
         }
 
-    # <Error_3>
-    # RequestValidationError: issuer-address
-    def test_error_3(self, client, db, ibet_security_token_dvp_contract):
-        # request target API
-        req_param = {
-            "operation_type": "Cancel",
-        }
-
-        resp = client.post(
-            self.base_url.format(
-                exchange_address=ibet_security_token_dvp_contract.address, delivery_id=1
-            ),
-            json=req_param,
-            headers={"issuer-address": "issuer-address"},
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {"code": 1, "title": "RequestValidationError"},
-            "detail": [
-                {
-                    "input": "issuer-address",
-                    "loc": ["header", "issuer-address"],
-                    "msg": "issuer-address is not a valid address",
-                    "type": "value_error",
-                }
-            ],
-        }
-
-    # <Error_4>
-    # RequestValidationError: eoa-password(not decrypt)
-    def test_error_4(self, client, db, ibet_security_token_dvp_contract):
+    # <Error_1_3>
+    # RequestValidationError
+    # - eoa-password(not decrypt)
+    def test_error_1_3(self, client, db, ibet_security_token_dvp_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
@@ -417,9 +434,10 @@ class TestUpdateDVPDeliveryPOST:
             ],
         }
 
-    # <Error_5>
-    # issuer does not exist
-    def test_error_5(self, client, db, ibet_security_token_dvp_contract):
+    # <Error_2_1>
+    # AuthorizationError
+    # - issuer does not exist
+    def test_error_2_1(self, client, db, ibet_security_token_dvp_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
@@ -459,9 +477,10 @@ class TestUpdateDVPDeliveryPOST:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-    # <Error_6>
-    # password mismatch
-    def test_error_6(self, client, db, ibet_security_token_dvp_contract):
+    # <Error_2_2>
+    # AuthorizationError
+    # - password mismatch
+    def test_error_2_2(self, client, db, ibet_security_token_dvp_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
@@ -495,4 +514,42 @@ class TestUpdateDVPDeliveryPOST:
         assert resp.json() == {
             "meta": {"code": 1, "title": "AuthorizationError"},
             "detail": "issuer does not exist, or password mismatch",
+        }
+
+    # <Error_3>
+    # NotFound
+    # - delivery not found
+    def test_error_3(self, client, db, ibet_security_token_dvp_contract):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+        _keyfile = issuer["keyfile_json"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+        db.commit()
+
+        # request target API
+        req_param = {
+            "operation_type": "Cancel",
+        }
+        resp = client.post(
+            self.base_url.format(
+                exchange_address=ibet_security_token_dvp_contract.address, delivery_id=1
+            ),
+            headers={
+                "issuer-address": issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+            json=req_param,
+        )
+
+        # assertion
+        assert resp.status_code == 404
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "delivery not found",
         }
