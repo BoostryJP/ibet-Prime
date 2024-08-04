@@ -104,6 +104,7 @@ class Processor:
             LOG.info(f"[SendStepTx] Start: record_id={record.id}")
 
             if self.is_shutdown.is_set():
+                LOG.info(f"[SendStepTx] End: record_id={record.id}")
                 return
 
             # Get issuer's private key
@@ -189,6 +190,7 @@ class Processor:
             LOG.info(f"[SyncStepTxResult] Start: record_id={record.id}")
 
             if self.is_shutdown.is_set():
+                LOG.info(f"[SyncStepTxResult] End: record_id={record.id}")
                 return
 
             # Wait for tx receipt
@@ -259,8 +261,6 @@ class Processor:
                 ]:
                     if record.step == 1:
                         record.process_status = DVPAsyncProcessStatus.DONE_SUCCESS
-                else:
-                    pass
 
                 await db_session.commit()
 
@@ -285,6 +285,7 @@ class Processor:
             LOG.info(f"[SyncRevertTxResult] Start: record_id={record.id}")
 
             if self.is_shutdown.is_set():
+                LOG.info(f"[SyncRevertTxResult] End: record_id={record.id}")
                 return
 
             # Wait for tx receipt
@@ -359,7 +360,7 @@ class Processor:
                 raw_keyfile_json=issuer_account.keyfile,
                 password=E2EEUtils.decrypt(issuer_account.eoa_password).encode("utf-8"),
             )
-        except (ValueError, TypeError):
+        except:
             raise KeyfileDecodingError from None
 
         return issuer_pk

@@ -79,15 +79,68 @@ class TestProcessor:
     # 1. send_step_tx
     ###############################################################################
 
-    # Normal_1_1
-    # There is no data to process.
+    # Normal_1_1_1
+    # __send_step_tx
+    # - There is no data to process.
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db, caplog):
+    async def test_normal_1_1_1(self, processor, db, caplog):
         # Execute processor
         await processor.process()
 
         # Assertion
         assert caplog.messages == ["Process Start", "Process End"]
+
+    # Normal_1_1_2
+    # __send_step_tx
+    # - Graceful shutdown -> Skip process
+    @mock.patch("asyncio.locks.Event.is_set")
+    @pytest.mark.asyncio
+    async def test_normal_1_1_2(self, mocked_locks_is_set, processor, db, caplog):
+        # Prepare data
+        _account = Account()
+        _account.issuer_address = self.issuer_address
+        _account.keyfile = self.issuer_keyfile
+        _account.eoa_password = self.issuer_eoa_password
+        _account.rsa_status = 3
+        db.add(_account)
+
+        _dvp_process = DVPAsyncProcess()
+        _dvp_process.issuer_address = self.issuer_address
+        _dvp_process.process_type = DVPAsyncProcessType.CREATE_DELIVERY
+        _dvp_process.dvp_contract_address = self.dvp_contract_address
+        _dvp_process.token_address = self.token_address
+        _dvp_process.seller_address = self.issuer_address
+        _dvp_process.buyer_address = self.user_address
+        _dvp_process.amount = 10
+        _dvp_process.agent_address = self.agent_address
+        _dvp_process.data = "test_data"
+        _dvp_process.delivery_id = 1
+        _dvp_process.step = 0
+        _dvp_process.step_tx_hash = "tx_hash"
+        _dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.DONE
+        _dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+        db.add(_dvp_process)
+
+        db.commit()
+
+        # Execute processor
+        mocked_locks_is_set.side_effect = [True]
+        await processor.process()
+
+        # Assertion
+        after_dvp_process: DVPAsyncProcess = db.scalars(
+            select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
+        ).first()
+        assert after_dvp_process.step == 0
+        assert after_dvp_process.step_tx_hash == "tx_hash"
+        assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.DONE
+
+        assert caplog.messages == [
+            "Process Start",
+            "[SendStepTx] Start: record_id=1",
+            "[SendStepTx] End: record_id=1",
+            "Process End",
+        ]
 
     # Normal_1_2
     # __send_step_tx
@@ -251,12 +304,64 @@ class TestProcessor:
             "Process End",
         ]
 
-    # Error_1_1
+    # Error_1_1_1
     # __send_step_tx
-    # - Failed to get issuer's private key
+    # - Failed to get issuer's private key (AccountNotFound)
     @pytest.mark.asyncio
-    async def test_error_1_1(self, processor, db, caplog):
+    async def test_error_1_1_1(self, processor, db, caplog):
         # Prepare data
+        _dvp_process = DVPAsyncProcess()
+        _dvp_process.issuer_address = self.issuer_address
+        _dvp_process.process_type = DVPAsyncProcessType.CREATE_DELIVERY
+        _dvp_process.dvp_contract_address = self.dvp_contract_address
+        _dvp_process.token_address = self.token_address
+        _dvp_process.seller_address = self.issuer_address
+        _dvp_process.buyer_address = self.user_address
+        _dvp_process.amount = 10
+        _dvp_process.agent_address = self.agent_address
+        _dvp_process.data = "test_data"
+        _dvp_process.delivery_id = 1
+        _dvp_process.step = 0
+        _dvp_process.step_tx_hash = "tx_hash"
+        _dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.DONE
+        _dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+        db.add(_dvp_process)
+
+        db.commit()
+
+        # Execute processor
+        await processor.process()
+
+        # Assertion
+        after_dvp_process: DVPAsyncProcess = db.scalars(
+            select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
+        ).first()
+        assert after_dvp_process.step == 0
+        assert after_dvp_process.step_tx_hash == "tx_hash"
+        assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.DONE
+        assert after_dvp_process.process_status == DVPAsyncProcessStatus.PROCESSING
+
+        assert caplog.messages == [
+            "Process Start",
+            "[SendStepTx] Start: record_id=1",
+            "[SendStepTx] Failed to get issuer's private key",
+            "[SendStepTx] End: record_id=1",
+            "Process End",
+        ]
+
+    # Error_1_1_2
+    # __send_step_tx
+    # - Failed to get issuer's private key (KeyfileDecodingError)
+    @pytest.mark.asyncio
+    async def test_error_1_1_2(self, processor, db, caplog):
+        # Prepare data
+        _account = Account()
+        _account.issuer_address = self.issuer_address
+        _account.keyfile = "invalid_keyfile"
+        _account.eoa_password = self.issuer_eoa_password
+        _account.rsa_status = 3
+        db.add(_account)
+
         _dvp_process = DVPAsyncProcess()
         _dvp_process.issuer_address = self.issuer_address
         _dvp_process.process_type = DVPAsyncProcessType.CREATE_DELIVERY
@@ -360,12 +465,63 @@ class TestProcessor:
 
     # Normal_2_1
     # __sync_step_tx_result
+    # - Graceful shutdown -> Skip process
+    @mock.patch("asyncio.locks.Event.is_set")
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, mocked_locks_is_set, processor, db, caplog):
+        # Prepare data
+        _account = Account()
+        _account.issuer_address = self.issuer_address
+        _account.keyfile = self.issuer_keyfile
+        _account.eoa_password = self.issuer_eoa_password
+        _account.rsa_status = 3
+        db.add(_account)
+
+        _dvp_process = DVPAsyncProcess()
+        _dvp_process.issuer_address = self.issuer_address
+        _dvp_process.process_type = DVPAsyncProcessType.CREATE_DELIVERY
+        _dvp_process.dvp_contract_address = self.dvp_contract_address
+        _dvp_process.token_address = self.token_address
+        _dvp_process.seller_address = self.issuer_address
+        _dvp_process.buyer_address = self.user_address
+        _dvp_process.amount = 10
+        _dvp_process.agent_address = self.agent_address
+        _dvp_process.data = "test_data"
+        _dvp_process.delivery_id = 1
+        _dvp_process.step = 1
+        _dvp_process.step_tx_hash = "tx_hash"
+        _dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.PENDING
+        _dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+        db.add(_dvp_process)
+
+        db.commit()
+
+        # Execute processor
+        mocked_locks_is_set.side_effect = [True]
+        await processor.process()
+
+        # Assertion
+        after_dvp_process: DVPAsyncProcess = db.scalars(
+            select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
+        ).first()
+        assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
+        assert after_dvp_process.process_status == DVPAsyncProcessStatus.PROCESSING
+
+        assert caplog.messages == [
+            "Process Start",
+            "[SyncStepTxResult] Start: record_id=1",
+            "[SyncStepTxResult] End: record_id=1",
+            "Process End",
+        ]
+
+    # Normal_2_2
+    # __sync_step_tx_result
     # - The transaction remains pending.
     @mock.patch(
         "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, mocked_wait_for_tx, processor, db, caplog):
+    async def test_normal_2_2(self, mocked_wait_for_tx, processor, db, caplog):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -411,7 +567,7 @@ class TestProcessor:
             "Process End",
         ]
 
-    # Normal_2_2
+    # Normal_2_3
     # __sync_step_tx_result
     # - <Success>
     @pytest.mark.parametrize(
@@ -427,7 +583,7 @@ class TestProcessor:
         "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_2_2(
+    async def test_normal_2_3(
         self, mocked_wait_for_tx, process_type, processor, db, caplog
     ):
         # Prepare data
@@ -475,7 +631,7 @@ class TestProcessor:
             "Process End",
         ]
 
-    # Normal_2_3_1
+    # Normal_2_4_1
     # __sync_step_tx_result
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - <Reverted> -> WithdrawPartial
@@ -486,7 +642,7 @@ class TestProcessor:
         "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
     )
     @pytest.mark.asyncio
-    async def test_normal_2_3_1(
+    async def test_normal_2_4_1(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, db, caplog
     ):
         # Prepare data
@@ -555,7 +711,7 @@ class TestProcessor:
             "Process End",
         ]
 
-    # Normal_2_3_2
+    # Normal_2_4_2
     # __sync_step_tx_result
     # - DVPAsyncProcessType: CANCEL_DELIVERY, FINISH_DELIVERY, ABORT_DELIVERY
     # - <Reverted> -> Retry
@@ -571,7 +727,7 @@ class TestProcessor:
         "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_2_3_2(
+    async def test_normal_2_4_2(
         self, mocked_wait_for_tx, process_type, processor, db, caplog
     ):
         # Prepare data
@@ -754,13 +910,70 @@ class TestProcessor:
 
     # Normal_3_1
     # __sync_revert_tx_result
+    # - Graceful shutdown -> Skip process
+    @mock.patch("asyncio.locks.Event.is_set")
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, mocked_locks_is_set, processor, db, caplog):
+        # Prepare data
+        _account = Account()
+        _account.issuer_address = self.issuer_address
+        _account.keyfile = self.issuer_keyfile
+        _account.eoa_password = self.issuer_eoa_password
+        _account.rsa_status = 3
+        db.add(_account)
+
+        _dvp_process = DVPAsyncProcess()
+        _dvp_process.issuer_address = self.issuer_address
+        _dvp_process.process_type = DVPAsyncProcessType.CREATE_DELIVERY
+        _dvp_process.dvp_contract_address = self.dvp_contract_address
+        _dvp_process.token_address = self.token_address
+        _dvp_process.seller_address = self.issuer_address
+        _dvp_process.buyer_address = self.user_address
+        _dvp_process.amount = 10
+        _dvp_process.agent_address = self.agent_address
+        _dvp_process.data = "test_data"
+        _dvp_process.delivery_id = 1
+        _dvp_process.step = 1
+        _dvp_process.step_tx_hash = "tx_hash"
+        _dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.FAILED
+        _dvp_process.revert_tx_hash = "revert_tx_hash"
+        _dvp_process.revert_tx_status = DVPAsyncProcessRevertTxStatus.PENDING
+        _dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+        db.add(_dvp_process)
+
+        db.commit()
+
+        # Execute processor
+        mocked_locks_is_set.side_effect = [True]
+        await processor.process()
+
+        # Assertion
+        after_dvp_process: DVPAsyncProcess = db.scalars(
+            select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
+        ).first()
+        assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
+        assert after_dvp_process.revert_tx_hash == "revert_tx_hash"
+        assert (
+            after_dvp_process.revert_tx_status == DVPAsyncProcessRevertTxStatus.PENDING
+        )
+        assert after_dvp_process.process_status == DVPAsyncProcessStatus.PROCESSING
+
+        assert caplog.messages == [
+            "Process Start",
+            "[SyncRevertTxResult] Start: record_id=1",
+            "[SyncRevertTxResult] End: record_id=1",
+            "Process End",
+        ]
+
+    # Normal_3_2
+    # __sync_revert_tx_result
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - The transaction remains pending.
     @mock.patch(
         "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, mocked_wait_for_tx, processor, db, caplog):
+    async def test_normal_3_2(self, mocked_wait_for_tx, processor, db, caplog):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -812,7 +1025,7 @@ class TestProcessor:
             "Process End",
         ]
 
-    # Normal_3_2
+    # Normal_3_3
     # __sync_revert_tx_result
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - <Success>
@@ -820,7 +1033,7 @@ class TestProcessor:
         "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, mocked_wait_for_tx, processor, db, caplog):
+    async def test_normal_3_3(self, mocked_wait_for_tx, processor, db, caplog):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -870,7 +1083,7 @@ class TestProcessor:
             "Process End",
         ]
 
-    # Normal_3_3
+    # Normal_3_4
     # __sync_revert_tx_result
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - <Reverted> -> Resend revert transaction
@@ -881,7 +1094,7 @@ class TestProcessor:
         "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
     )
     @pytest.mark.asyncio
-    async def test_normal_3_3(
+    async def test_normal_3_4(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, db, caplog
     ):
         # Prepare data
