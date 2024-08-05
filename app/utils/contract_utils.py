@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from typing import Tuple, Type, TypeVar
 
+from eth_typing import HexStr
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import OperationalError
@@ -33,6 +34,7 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
+from web3.types import TxReceipt
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
@@ -475,6 +477,73 @@ class AsyncContractUtils:
             await local_session.close()
 
         return tx_hash.to_0x_hex(), tx_receipt
+
+    @staticmethod
+    async def send_transaction_no_wait(transaction: dict, private_key: bytes):
+        """Send transaction no wait"""
+        _tx_from = transaction["from"]
+
+        # local database session
+        DB_URI = DATABASE_URL
+        db_engine = create_async_engine(
+            DB_URI,
+            connect_args={"options": "-c lock_timeout=10000"},
+            echo=False,
+            pool_pre_ping=True,
+        )
+        local_session = AsyncSession(
+            autocommit=False,
+            autoflush=True,
+            bind=db_engine,
+        )
+
+        # Exclusive control within transaction execution address
+        # 10-sec timeout
+        # Lock record
+        try:
+            _tm = (
+                await local_session.scalars(
+                    select(TransactionLock)
+                    .where(TransactionLock.tx_from == _tx_from)
+                    .limit(1)
+                    .with_for_update()
+                )
+            ).first()
+        except OperationalError as op_err:
+            await local_session.rollback()
+            await local_session.close()
+            raise SendTransactionError(op_err)
+
+        try:
+            # Get nonce
+            nonce = await async_web3.eth.get_transaction_count(_tx_from)
+            transaction["nonce"] = nonce
+            signed_tx = async_web3.eth.account.sign_transaction(
+                transaction_dict=transaction, private_key=private_key
+            )
+            # Send Transaction
+            tx_hash = await async_web3.eth.send_raw_transaction(
+                signed_tx.raw_transaction.to_0x_hex()
+            )
+        except:
+            raise
+        finally:
+            await local_session.rollback()  # unlock record
+            await local_session.close()
+
+        return tx_hash.to_0x_hex()
+
+    @staticmethod
+    async def wait_for_transaction_receipt(tx_hash: HexStr, timeout: int = 1):
+        """Wait for transaction receipt"""
+        try:
+            tx_receipt: TxReceipt = await async_web3.eth.wait_for_transaction_receipt(
+                transaction_hash=tx_hash, timeout=timeout
+            )
+        except TimeExhausted:
+            raise
+
+        return tx_receipt
 
     @staticmethod
     async def inspect_tx_failure(tx_hash: str) -> str:

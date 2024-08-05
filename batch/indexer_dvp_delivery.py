@@ -18,12 +18,17 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+import base64
+import json
 import sys
 import uuid
 from datetime import UTC, datetime
+from json import JSONDecodeError
 from typing import Annotated, Literal, Optional, Sequence
 
 import uvloop
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +40,10 @@ from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
     Account,
     DeliveryStatus,
+    DVPAsyncProcess,
+    DVPAsyncProcessStatus,
+    DVPAsyncProcessStepTxStatus,
+    DVPAsyncProcessType,
     IDXDelivery,
     IDXDeliveryBlockNumber,
     Notification,
@@ -45,7 +54,13 @@ from app.model.db import (
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.utils import batch_log
-from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
+from config import (
+    DVP_DATA_ENCRYPTION_KEY,
+    DVP_DATA_ENCRYPTION_MODE,
+    INDEXER_BLOCK_LOT_MAX_SIZE,
+    INDEXER_SYNC_INTERVAL,
+    ZERO_ADDRESS,
+)
 
 process_name = "INDEXER-Delivery"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -288,6 +303,49 @@ class Processor:
                 if amount > sys.maxsize:  # suppress overflow
                     continue
                 block_timestamp = await self.__get_block_timestamp(event=event)
+
+                # Decrypt data field
+                #   {
+                #     "encryption_algorithm": "",
+                #     "encryption_key_ref": "",
+                #     "settlement_service_type": "",
+                #     "data": ""
+                #   }
+                raw_data = args.get("data")
+                try:
+                    raw_data_json = json.loads(raw_data)
+                except JSONDecodeError:
+                    raw_data_json = {
+                        "encryption_algorithm": None,
+                        "encryption_key_ref": None,
+                        "settlement_service_type": None,
+                        "data": None,
+                    }
+
+                _data = raw_data
+                if DVP_DATA_ENCRYPTION_MODE == "aes-256-cbc":
+                    if (
+                        raw_data_json.get("encryption_algorithm") == "aes-256-cbc"
+                        and raw_data_json.get("encryption_key_ref") == "local"
+                        and raw_data_json.get("data") is not None
+                    ):
+                        try:
+                            encrypted_data = base64.b64decode(raw_data_json.get("data"))
+                            aes_iv = encrypted_data[: AES.block_size]
+                            aes_encryption_key = base64.b64decode(
+                                DVP_DATA_ENCRYPTION_KEY
+                            )
+                            aes_cipher = AES.new(
+                                aes_encryption_key, AES.MODE_CBC, aes_iv
+                            )
+                            pad_message = aes_cipher.decrypt(
+                                encrypted_data[AES.block_size :]
+                            )
+                            _data = unpad(pad_message, AES.block_size).decode()
+                        except:
+                            _data = raw_data
+
+                # Record delivery data
                 await self.__sink_on_delivery(
                     db_session=db_session,
                     event_type="Created",
@@ -300,7 +358,7 @@ class Processor:
                     agent_address=args.get("agent", ZERO_ADDRESS),
                     block_timestamp=block_timestamp,
                     transaction_hash=transaction_hash,
-                    data=args.get("data"),
+                    data=_data,
                 )
         except Exception:
             raise
@@ -547,6 +605,35 @@ class Processor:
         :param block_timestamp: block timestamp
         :return: None
         """
+        # Verify account exists
+        _buyer = (
+            await db_session.scalars(
+                select(Account)
+                .where(
+                    and_(
+                        Account.issuer_address == buyer_address,
+                        Account.is_deleted == False,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+        _seller = (
+            await db_session.scalars(
+                select(Account)
+                .where(
+                    and_(
+                        Account.issuer_address == seller_address,
+                        Account.is_deleted == False,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+        if _buyer is None and _seller is None:
+            return
+
+        # Sync event data
         delivery = (
             await db_session.scalars(
                 select(IDXDelivery)
@@ -581,6 +668,24 @@ class Processor:
                 delivery.cancel_transaction_hash = transaction_hash
                 delivery.valid = False
                 delivery.status = DeliveryStatus.DELIVERY_CANCELED
+
+                if _seller is not None:
+                    # Instruct asynchronous DVP processing
+                    dvp_process = DVPAsyncProcess()
+                    dvp_process.issuer_address = seller_address  # issuer account
+                    dvp_process.process_type = DVPAsyncProcessType.CANCEL_DELIVERY
+                    dvp_process.dvp_contract_address = exchange_address
+                    dvp_process.token_address = token_address
+                    dvp_process.seller_address = seller_address
+                    dvp_process.buyer_address = buyer_address
+                    dvp_process.amount = amount
+                    dvp_process.agent_address = agent_address
+                    dvp_process.delivery_id = delivery_id
+                    dvp_process.step = 0
+                    dvp_process.step_tx_hash = transaction_hash
+                    dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.DONE
+                    dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+                    db_session.add(dvp_process)
         elif event_type == "Confirmed":
             if delivery is not None:
                 delivery.confirm_blocktimestamp = datetime.fromtimestamp(
@@ -597,6 +702,24 @@ class Processor:
                 delivery.finish_transaction_hash = transaction_hash
                 delivery.valid = False
                 delivery.status = DeliveryStatus.DELIVERY_FINISHED
+
+                if _buyer is not None:
+                    # Instruct asynchronous DVP processing
+                    dvp_process = DVPAsyncProcess()
+                    dvp_process.issuer_address = buyer_address  # issuer account
+                    dvp_process.process_type = DVPAsyncProcessType.FINISH_DELIVERY
+                    dvp_process.dvp_contract_address = exchange_address
+                    dvp_process.token_address = token_address
+                    dvp_process.seller_address = seller_address
+                    dvp_process.buyer_address = buyer_address
+                    dvp_process.amount = amount
+                    dvp_process.agent_address = agent_address
+                    dvp_process.delivery_id = delivery_id
+                    dvp_process.step = 0
+                    dvp_process.step_tx_hash = transaction_hash
+                    dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.DONE
+                    dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+                    db_session.add(dvp_process)
         elif event_type == "Aborted":
             if delivery is not None:
                 delivery.abort_blocktimestamp = datetime.fromtimestamp(
@@ -605,6 +728,25 @@ class Processor:
                 delivery.abort_transaction_hash = transaction_hash
                 delivery.valid = False
                 delivery.status = DeliveryStatus.DELIVERY_ABORTED
+
+                if _seller is not None:
+                    # Instruct asynchronous DVP processing
+                    dvp_process = DVPAsyncProcess()
+                    dvp_process.issuer_address = seller_address  # issuer account
+                    dvp_process.process_type = DVPAsyncProcessType.ABORT_DELIVERY
+                    dvp_process.dvp_contract_address = exchange_address
+                    dvp_process.token_address = token_address
+                    dvp_process.seller_address = seller_address
+                    dvp_process.buyer_address = buyer_address
+                    dvp_process.amount = amount
+                    dvp_process.agent_address = agent_address
+                    dvp_process.delivery_id = delivery_id
+                    dvp_process.step = 0
+                    dvp_process.step_tx_hash = transaction_hash
+                    dvp_process.step_tx_status = DVPAsyncProcessStepTxStatus.DONE
+                    dvp_process.process_status = DVPAsyncProcessStatus.PROCESSING
+                    db_session.add(dvp_process)
+
         await db_session.merge(delivery)
 
     @staticmethod

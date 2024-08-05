@@ -38,3 +38,8 @@ class FinishDeliveryParams(BaseModel):
 
 class AbortDeliveryParams(BaseModel):
     delivery_id: int
+
+
+class WithdrawPartialParams(BaseModel):
+    token_address: str
+    value: int

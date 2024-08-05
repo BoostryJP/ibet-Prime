@@ -8060,10 +8060,6 @@ paths:
       responses:
         '200':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateDVPDeliveryResponse'
         '404':
           description: Not Found Error
           content:
@@ -8158,11 +8154,11 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
             title: Delivery Id
         - name: issuer-address
           in: header
-          required: false
+          required: true
           schema:
             type: string
             title: Issuer-Address
@@ -9963,6 +9959,7 @@ components:
         - 260403
         - 260404
         - 260501
+        - 260601
         - 300001
         - 300101
         - 300201
@@ -10043,6 +10040,9 @@ components:
         data:
           type: string
           title: Data
+        settlement_service_type:
+          type: string
+          title: Settlement Service Type
       type: object
       required:
         - token_address
@@ -10050,18 +10050,9 @@ components:
         - amount
         - agent_address
         - data
+        - settlement_service_type
       title: CreateDVPDeliveryRequest
       description: DVP delivery create schema (REQUEST)
-    CreateDVPDeliveryResponse:
-      properties:
-        delivery_id:
-          type: integer
-          title: Delivery Id
-      type: object
-      required:
-        - delivery_id
-      title: CreateDVPDeliveryResponse
-      description: Create DVP delivery schema (RESPONSE)
     CreateFreezeLogAccountRequest:
       properties:
         eoa_password:
