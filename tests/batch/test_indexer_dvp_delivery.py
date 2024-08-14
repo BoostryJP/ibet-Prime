@@ -40,6 +40,7 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 from app.model.db import (
     Account,
     DeliveryStatus,
+    DVPAgentAccount,
     DVPAsyncProcess,
     IDXDelivery,
     IDXDeliveryBlockNumber,
@@ -53,7 +54,7 @@ from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.indexer_dvp_delivery import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT
+from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
 web3 = AsyncWeb3Wrapper()
@@ -358,7 +359,7 @@ class TestProcessor:
 
     # <Normal_2_1_1>
     # Event log
-    #   - Exchange: CreateDelivery (from issuer)
+    #   - Exchange: CreateDelivery (seller is related to issuer)
     # No data encryption
     @pytest.mark.asyncio
     async def test_normal_2_1_1(
@@ -511,7 +512,7 @@ class TestProcessor:
 
     # <Normal_2_1_2>
     # Event log
-    #   - Exchange: CreateDelivery (from issuer)
+    #   - Exchange: CreateDelivery (seller is related to issuer)
     # Data encryption
     @mock.patch(
         "batch.indexer_dvp_delivery.DVP_DATA_ENCRYPTION_MODE",
@@ -634,6 +635,189 @@ class TestProcessor:
         assert _delivery.token_address == token_address_1
         assert _delivery.buyer_address == user_address_1
         assert _delivery.seller_address == issuer_address
+        assert _delivery.amount == 30
+        assert _delivery.agent_address == agent_address
+        assert _delivery.data == "test_message"
+        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
+        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+        assert _delivery.create_transaction_hash == tx_hash_1
+        assert _delivery.cancel_blocktimestamp is None
+        assert _delivery.cancel_transaction_hash is None
+        assert _delivery.confirm_blocktimestamp is None
+        assert _delivery.confirm_transaction_hash is None
+        assert _delivery.finish_blocktimestamp is None
+        assert _delivery.finish_transaction_hash is None
+        assert _delivery.abort_blocktimestamp is None
+        assert _delivery.abort_transaction_hash is None
+        assert _delivery.confirmed is False
+        assert _delivery.valid is True
+        assert _delivery.status == DeliveryStatus.DELIVERY_CREATED
+
+        _idx_delivery_block_number = db.scalars(
+            select(IDXDeliveryBlockNumber).limit(1)
+        ).first()
+        assert (
+            _idx_delivery_block_number.exchange_address
+            == ibet_security_token_dvp_contract.address
+        )
+        assert _idx_delivery_block_number.latest_block_number == block_number
+
+        assert (
+            caplog.record_tuples.count(
+                (
+                    LOG.name,
+                    logging.INFO,
+                    f"Syncing from=1, to={block_number}, exchange={ibet_security_token_dvp_contract.address}",
+                )
+            )
+            == 1
+        )
+
+    # <Normal_2_1_3>
+    # Event log
+    #   - Exchange: CreateDelivery (agent is related to DVPAgentAccount)
+    # Data encryption
+    @mock.patch(
+        "batch.indexer_dvp_delivery.DVP_DATA_ENCRYPTION_MODE",
+        "aes-256-cbc",
+    )
+    @mock.patch(
+        "batch.indexer_dvp_delivery.DVP_DATA_ENCRYPTION_KEY",
+        "YFX99ldItl93r9uy2s1lgAY/p9OtcaacM6R+dqvf2Rc=",
+    )
+    @pytest.mark.asyncio
+    async def test_normal_2_1_3(
+        self,
+        processor,
+        db,
+        personal_info_contract,
+        ibet_security_token_dvp_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_1_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_3 = config_eth_account("user3")
+        agent_address = user_3["address"]
+        decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Prepare data : DVPAgentAccount
+        dvp_agent_account = DVPAgentAccount()
+        dvp_agent_account.account_address = agent_address
+        dvp_agent_account.keyfile = "test_keyfile_0"
+        dvp_agent_account.eoa_password = "test_password_0"
+        db.add(dvp_agent_account)
+
+        # Prepare data : Token
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
+        )
+        token_address_1 = token_contract_1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract_1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_09
+        db.add(token_1)
+
+        # Prepare data : Token(processing token)
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.token_address = "test1"
+        token_2.issuer_address = issuer_address
+        token_2.abi = "abi"
+        token_2.tx_hash = "tx_hash"
+        token_2.token_status = 0
+        token_2.version = TokenVersion.V_24_09
+        db.add(token_2)
+
+        # Prepare data : BlockNumber
+        _idx_delivery_block_number = IDXDeliveryBlockNumber()
+        _idx_delivery_block_number.latest_block_number = 0
+        _idx_delivery_block_number.exchange_address = (
+            ibet_security_token_dvp_contract.address
+        )
+        db.add(_idx_delivery_block_number)
+
+        db.commit()
+
+        # Transfer
+        tx = token_contract_1.functions.transferFrom(
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+        tx = token_contract_1.functions.transfer(
+            ibet_security_token_dvp_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, user_1_private_key)
+
+        # CreateDelivery
+        tx = ibet_security_token_dvp_contract.functions.createDelivery(
+            token_address_1,
+            ZERO_ADDRESS,
+            30,
+            agent_address,
+            '{"encryption_algorithm": "aes-256-cbc", "encryption_key_ref": "local", "settlement_service_type": "test_service", "data": "WFeOcAzY6erkNbbAD+m5YCUlw7HA6BxcWKsSPIuk6JY="}',
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, user_1_private_key)
+
+        # Run target process
+        block_number = await web3.eth.block_number
+        await processor.sync_new_logs()
+
+        # Assertion
+        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        assert len(_delivery_list) == 1
+        _delivery = _delivery_list[0]
+        assert _delivery.id == 1
+        assert _delivery.exchange_address == ibet_security_token_dvp_contract.address
+        assert _delivery.token_address == token_address_1
+        assert _delivery.buyer_address == ZERO_ADDRESS
+        assert _delivery.seller_address == user_address_1
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "test_message"
