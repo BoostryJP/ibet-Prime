@@ -531,6 +531,12 @@ async def update_token(
                 f"the operation is not supported in {_token.version}"
             )
 
+    if _token.version < TokenVersion.V_24_09:
+        if update_data.redemption_date is not None or update_data.purpose is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
     # Send transaction
     try:
         token_contract = IbetStraightBondContract(token_address)
@@ -1600,6 +1606,15 @@ async def schedule_new_update_event(
 
     if _token.version < TokenVersion.V_24_06:
         if event_data.data.require_personal_info_registered is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
+    if _token.version < TokenVersion.V_24_09:
+        if (
+            event_data.data.redemption_date is not None
+            or event_data.data.purpose is not None
+        ):
             raise OperationNotSupportedVersionError(
                 f"the operation is not supported in {_token.version}"
             )

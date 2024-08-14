@@ -119,11 +119,13 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         req_param = {
             "face_value": 10000,
             "face_value_currency": "USD",
+            "purpose": "p" * 2000,
             "interest_rate": 0.57,
             "interest_payment_date": ["0101", "0701"],
             "interest_payment_currency": "USD",
             "redemption_value": 11000,
             "redemption_value_currency": "USD",
+            "redemption_date": "20240814",
             "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
@@ -198,11 +200,13 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert operation_log.arguments == {
             "face_value": 10000,
             "face_value_currency": "USD",
+            "purpose": "p" * 2000,
             "interest_rate": 0.57,
             "interest_payment_date": ["0101", "0701"],
             "interest_payment_currency": "USD",
             "redemption_value": 11000,
             "redemption_value_currency": "USD",
+            "redemption_date": "20240814",
             "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
@@ -258,11 +262,13 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         req_param = {
             "face_value": 10000,
             "face_value_currency": "USD",
+            "purpose": "p" * 2000,
             "interest_rate": 3.0,
             "interest_payment_date": ["1201"],
             "interest_payment_currency": "JPY",
             "redemption_value": 0,
             "redemption_value_currency": "",
+            "redemption_date": "",
             "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
@@ -337,11 +343,156 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert operation_log.arguments == {
             "face_value": 10000,
             "face_value_currency": "USD",
+            "purpose": "p" * 2000,
             "interest_rate": 3.0,
             "interest_payment_date": ["1201"],
             "interest_payment_currency": "JPY",
             "redemption_value": 0,
             "redemption_value_currency": "",
+            "redemption_date": "",
+            "base_fx_rate": 123.456789,
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "m" * 10000,
+        }
+        assert operation_log.operation_category == "Update"
+
+    # <Normal_1_3>
+    # Empty str set to redemption date
+    @pytest.mark.asyncio
+    async def test_normal_1_3(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
+        _keyfile = test_account["keyfile_json"]
+
+        # Prepare data : Token
+        token_contract = await deploy_bond_token_contract(
+            _issuer_address, issuer_private_key
+        )
+        _token_address = token_contract.address
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.version = TokenVersion.V_24_09
+        db.add(token)
+
+        db.commit()
+
+        # request target API
+        req_param = {
+            "face_value": 10000,
+            "face_value_currency": "USD",
+            "purpose": "p" * 2000,
+            "interest_rate": 3.0,
+            "interest_payment_date": ["1201"],
+            "interest_payment_currency": "JPY",
+            "redemption_value": 0,
+            "redemption_value_currency": "",
+            "redemption_date": "",
+            "base_fx_rate": 123.456789,
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "m" * 10000,
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 200, resp.json()
+        assert resp.json() is None
+
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate).where(
+                TokenAttrUpdate.token_address == _token_address
+            )
+        ).all()
+        assert len(token_attr_update) == 1
+
+        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        assert update_token is None
+
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.original_contents == {
+            "contract_name": "IbetStraightBond",
+            "token_address": _token_address,
+            "issuer_address": _issuer_address,
+            "name": "token.name",
+            "symbol": "token.symbol",
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "contact_information": "",
+            "privacy_policy": "",
+            "status": True,
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "require_personal_info_registered": True,
+            "transferable": False,
+            "is_offering": False,
+            "transfer_approval_required": False,
+            "face_value": 20,
+            "face_value_currency": "JPY",
+            "interest_rate": 0,
+            "interest_payment_currency": "",
+            "redemption_date": "token.redemption_date",
+            "redemption_value": 30,
+            "redemption_value_currency": "JPY",
+            "return_date": "token.return_date",
+            "return_amount": "token.return_amount",
+            "base_fx_rate": 0.0,
+            "purpose": "token.purpose",
+            "memo": "",
+            "is_redeemed": False,
+            "interest_payment_date": ["", "", "", "", "", "", "", "", "", "", "", ""],
+        }
+        assert operation_log.arguments == {
+            "face_value": 10000,
+            "face_value_currency": "USD",
+            "purpose": "p" * 2000,
+            "interest_rate": 3.0,
+            "interest_payment_date": ["1201"],
+            "interest_payment_currency": "JPY",
+            "redemption_value": 0,
+            "redemption_value_currency": "",
+            "redemption_date": "",
             "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
@@ -1477,7 +1628,21 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
     # <Error_12_2>
     # OperationNotSupportedVersionError: v24.6
-    def test_error_12_2(self, client, db):
+    @pytest.mark.parametrize(
+        "req_param",
+        [
+            {
+                "require_personal_info_registered": True,
+            },
+            {
+                "purpose": "",
+            },
+            {
+                "redemption_date": "",
+            },
+        ],
+    )
+    def test_error_12_2(self, client, db, req_param):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1503,9 +1668,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         db.commit()
 
         # request target API
-        req_param = {
-            "require_personal_info_registered": True,
-        }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
