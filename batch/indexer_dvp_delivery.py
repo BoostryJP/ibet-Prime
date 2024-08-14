@@ -40,6 +40,7 @@ from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
     Account,
     DeliveryStatus,
+    DVPAgentAccount,
     DVPAsyncProcess,
     DVPAsyncProcessStatus,
     DVPAsyncProcessStepTxStatus,
@@ -630,7 +631,15 @@ class Processor:
                 .limit(1)
             )
         ).first()
-        if _buyer is None and _seller is None:
+        _agent = await db_session.scalars(
+            select(DVPAgentAccount).where(
+                and_(
+                    DVPAgentAccount.account_address == agent_address,
+                    DVPAgentAccount.is_deleted == False,
+                )
+            )
+        )
+        if _buyer is None and _seller is None and _agent is None:
             return
 
         # Sync event data
