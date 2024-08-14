@@ -869,6 +869,26 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.purpose is not None:
+            tx = await contract.functions.setPurpose(data.purpose).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
         if data.interest_rate is not None:
             _interest_rate = int(Decimal(str(data.interest_rate)) * Decimal("10000"))
             tx = await contract.functions.setInterestRate(
@@ -963,6 +983,28 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.redemption_value_currency is not None:
             tx = await contract.functions.setRedemptionValueCurrency(
                 data.redemption_value_currency
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.redemption_date is not None:
+            tx = await contract.functions.setRedemptionDate(
+                data.redemption_date
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,

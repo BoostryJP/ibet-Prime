@@ -119,11 +119,13 @@ class IbetStraightBondUpdate(BaseModel):
 
     face_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     face_value_currency: Optional[str] = Field(default=None, min_length=3, max_length=3)
+    purpose: Optional[str] = Field(default=None, max_length=2000)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
     interest_payment_date: Optional[list[MMDD_constr]] = None
     interest_payment_currency: Optional[CURRENCY_str | EMPTY_str] = Field(default=None)
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     redemption_value_currency: Optional[CURRENCY_str | EMPTY_str] = Field(default=None)
+    redemption_date: Optional[YYYYMMDD_constr | EMPTY_str] = None
     base_fx_rate: Optional[float] = Field(default=None, ge=0.000000)
     transferable: Optional[bool] = None
     status: Optional[bool] = None

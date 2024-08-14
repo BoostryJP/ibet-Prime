@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 
+import pytest
 from pytz import timezone as tz
 from sqlalchemy import and_, select
 
@@ -74,11 +75,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         update_data = {
             "face_value": 10000,
             "face_value_currency": "JPY",
+            "purpose": "p" * 2000,
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
             "interest_payment_currency": "JPY",
             "redemption_value": 11000,
             "redemption_value_currency": "JPY",
+            "redemption_date": "",
             "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
@@ -161,11 +164,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         update_data = {
             "face_value": 10000,
             "face_value_currency": "JPY",
+            "purpose": "p" * 2000,
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
             "interest_payment_currency": "JPY",
             "redemption_value": 11000,
             "redemption_value_currency": "JPY",
+            "redemption_date": "",
             "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
@@ -613,7 +618,21 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
 
     # <Error_7_2>
     # OperationNotSupportedVersionError: v24.6
-    def test_error_7_2(self, client, db):
+    @pytest.mark.parametrize(
+        "update_data",
+        [
+            {
+                "require_personal_info_registered": True,
+            },
+            {
+                "purpose": "",
+            },
+            {
+                "redemption_date": "",
+            },
+        ],
+    )
+    def test_error_7_2(self, client, db, update_data):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -641,9 +660,6 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {
-            "require_personal_info_registered": False,
-        }
 
         # request target API
         req_param = {
