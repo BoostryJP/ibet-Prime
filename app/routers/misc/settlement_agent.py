@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 import re
 import secrets
 from datetime import UTC
@@ -357,7 +358,8 @@ async def list_all_dvp_agent_deliveries(
                 "seller_address": _delivery.seller_address,
                 "amount": _delivery.amount,
                 "agent_address": _delivery.agent_address,
-                "data": _delivery.data,
+                "data": json.loads(_delivery.data) if _delivery.data else None,
+                "settlement_service_type": _delivery.settlement_service_type,
                 "create_blocktimestamp": create_blocktimestamp,
                 "create_transaction_hash": _delivery.create_transaction_hash,
                 "cancel_blocktimestamp": cancel_blocktimestamp,

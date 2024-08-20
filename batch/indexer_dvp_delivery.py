@@ -312,7 +312,7 @@ class Processor:
                 #     "settlement_service_type": "",
                 #     "data": ""
                 #   }
-                raw_data = args.get("data")
+                raw_data: str = args.get("data")
                 try:
                     raw_data_json = json.loads(raw_data)
                 except JSONDecodeError:
@@ -323,7 +323,7 @@ class Processor:
                         "data": None,
                     }
 
-                _data = raw_data
+                _data: str = raw_data
                 if DVP_DATA_ENCRYPTION_MODE == "aes-256-cbc":
                     if (
                         raw_data_json.get("encryption_algorithm") == "aes-256-cbc"
@@ -360,6 +360,9 @@ class Processor:
                     block_timestamp=block_timestamp,
                     transaction_hash=transaction_hash,
                     data=_data,
+                    settlement_service_type=raw_data_json.get(
+                        "settlement_service_type", None
+                    ),
                 )
         except Exception:
             raise
@@ -591,19 +594,22 @@ class Processor:
         block_timestamp: int,
         transaction_hash: str,
         data: Optional[str] = None,
+        settlement_service_type: Optional[str] = None,
     ):
         """Update Delivery data in DB
         :param db_session: ORM session
         :param event_type: event type ["Created", "Canceled", "Confirmed", "Finished", "Aborted"]
-        :param token_address: token address
         :param exchange_address: exchange address
         :param delivery_id: delivery id
+        :param token_address: token address
         :param buyer_address: delivery buyer address
         :param seller_address: delivery seller address
         :param amount: delivery amount
         :param agent_address: delivery agent address
-        :param data: optional data (Created)
         :param block_timestamp: block timestamp
+        :param transaction_hash: transaction hash
+        :param data: [optional] data (Created)
+        :param settlement_service_type: [optional] settlement service type (Created)
         :return: None
         """
         # Verify account exists
@@ -662,6 +668,7 @@ class Processor:
                 delivery.amount = amount
                 delivery.agent_address = agent_address
                 delivery.data = data
+                delivery.settlement_service_type = settlement_service_type
                 delivery.create_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
                 )

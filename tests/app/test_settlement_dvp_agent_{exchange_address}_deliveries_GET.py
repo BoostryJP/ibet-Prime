@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 from datetime import UTC, datetime
 
 from app.model.db import DeliveryStatus, IDXDelivery, Token, TokenType, TokenVersion
@@ -98,7 +99,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -115,7 +125,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -134,7 +153,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -153,7 +181,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -174,7 +211,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -197,7 +243,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_2  # other agent
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -225,7 +280,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -248,7 +310,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -271,7 +340,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -294,7 +370,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -317,7 +400,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -377,7 +467,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -394,7 +493,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -413,7 +521,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -432,7 +549,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -453,7 +579,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -476,7 +611,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -507,7 +651,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -530,7 +681,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -553,7 +711,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -576,7 +741,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -599,7 +771,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -659,7 +838,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -676,7 +864,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -695,7 +892,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -714,7 +920,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -735,7 +950,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -758,7 +982,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -789,7 +1022,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -812,7 +1052,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -835,7 +1082,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -858,7 +1112,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -881,7 +1142,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -941,7 +1209,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -958,7 +1235,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -977,7 +1263,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -996,7 +1291,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1017,7 +1321,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1040,7 +1353,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1068,7 +1390,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -1091,7 +1420,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -1151,7 +1487,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1168,7 +1513,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -1187,7 +1541,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1206,7 +1569,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1227,7 +1599,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1250,7 +1631,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1281,7 +1671,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -1341,7 +1738,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1358,7 +1764,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -1377,7 +1792,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1396,7 +1820,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1417,7 +1850,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1440,7 +1882,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1471,7 +1922,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:01+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -1531,7 +1989,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1548,7 +2015,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -1567,7 +2043,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1586,7 +2071,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
@@ -1607,7 +2101,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
@@ -1630,7 +2133,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 5)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1661,7 +2173,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:01+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -1684,7 +2203,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -1744,7 +2270,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1761,7 +2296,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -1780,7 +2324,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1799,7 +2352,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
@@ -1820,7 +2382,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
@@ -1843,7 +2414,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 5)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1875,7 +2455,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:01+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -1935,7 +2522,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -1952,7 +2548,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -1971,7 +2576,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -1990,7 +2604,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
@@ -2011,7 +2634,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
@@ -2034,7 +2666,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -2062,7 +2703,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -2085,7 +2733,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:01+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -2108,7 +2763,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:02+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -2131,7 +2793,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:03+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -2154,7 +2823,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:04+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -2177,7 +2853,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_2,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2024-01-01T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,
@@ -2237,7 +2920,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -2254,7 +2946,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
@@ -2273,7 +2974,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -2292,7 +3002,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -2313,7 +3032,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
@@ -2336,7 +3064,16 @@ class TestListAllDVPDeliveries:
         _idx_delivery.seller_address = seller_address_2
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = self.agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -2364,7 +3101,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": "2023-12-31T15:00:01+00:00",
@@ -2387,7 +3131,14 @@ class TestListAllDVPDeliveries:
                     "seller_address": seller_address_1,
                     "amount": 1,
                     "agent_address": self.agent_address_1,
-                    "data": "",
+                    "data": {
+                        "delivery_type": "offering",
+                        "trade_date": "20240820",
+                        "settlement_date": "20240820",
+                        "settlement_service_account_id": "test_account",
+                        "value": 1,
+                    },
+                    "settlement_service_type": "test_service_type",
                     "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
                     "create_transaction_hash": "tx_hash_1",
                     "cancel_blocktimestamp": None,

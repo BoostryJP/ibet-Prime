@@ -473,6 +473,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -638,6 +639,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "test_message"
+        assert _delivery.settlement_service_type == "test_service"
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -821,6 +823,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "test_message"
+        assert _delivery.settlement_service_type == "test_service"
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -982,6 +985,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -1171,6 +1175,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -1361,6 +1366,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -1563,6 +1569,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -1791,6 +1798,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -2032,6 +2040,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -2246,6 +2255,7 @@ class TestProcessor:
         assert _delivery.amount == 30
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
+        assert _delivery.settlement_service_type is None
         block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
             block["timestamp"], UTC

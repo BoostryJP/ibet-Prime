@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 from datetime import UTC, datetime
 
 from app.model.db import (
@@ -106,7 +107,16 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         _idx_delivery.seller_address = seller_address_1
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = agent_address_1
-        _idx_delivery.data = ""
+        _idx_delivery.data = json.dumps(
+            {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            }
+        )
+        _idx_delivery.settlement_service_type = "test_service_type"
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -154,7 +164,14 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
             },
             "amount": 1,
             "agent_address": agent_address_1,
-            "data": "",
+            "data": {
+                "delivery_type": "offering",
+                "trade_date": "20240820",
+                "settlement_date": "20240820",
+                "settlement_service_account_id": "test_account",
+                "value": 1,
+            },
+            "settlement_service_type": "test_service_type",
             "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
             "create_transaction_hash": "tx_hash_1",
             "cancel_blocktimestamp": None,
@@ -234,6 +251,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         _idx_delivery.amount = 1
         _idx_delivery.agent_address = agent_address_1
         _idx_delivery.data = ""
+        _idx_delivery.settlement_service_type = None
         _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
@@ -263,7 +281,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
             "seller_personal_information": None,
             "amount": 1,
             "agent_address": agent_address_1,
-            "data": "",
+            "data": None,
+            "settlement_service_type": None,
             "create_blocktimestamp": "2023-12-31T15:00:00+00:00",
             "create_transaction_hash": "tx_hash_1",
             "cancel_blocktimestamp": None,

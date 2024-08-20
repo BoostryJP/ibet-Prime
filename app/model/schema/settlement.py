@@ -46,6 +46,14 @@ class DeliveryStatus(IntEnum):
     DELIVERY_ABORTED = 4
 
 
+class DVPDeliveryData(BaseModel):
+    delivery_type: Literal["offering", "primary"]
+    trade_date: str
+    settlement_date: str
+    settlement_service_account_id: str
+    value: int
+
+
 ############################
 # REQUEST
 ############################
@@ -192,7 +200,8 @@ class RetrieveDVPDeliveryResponse(BaseModel):
     seller_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     agent_address: str
-    data: str = Field(examples=["{}", '{"type": "primary"}'])
+    data: DVPDeliveryData | None
+    settlement_service_type: str | None
     create_blocktimestamp: str
     create_transaction_hash: str
     cancel_blocktimestamp: Optional[str] = Field(...)
@@ -225,7 +234,8 @@ class RetrieveDVPAgentDeliveryResponse(BaseModel):
     seller_address: str
     amount: int
     agent_address: str
-    data: str = Field(examples=["{}", '{"type": "primary"}'])
+    data: DVPDeliveryData | None
+    settlement_service_type: str | None
     create_blocktimestamp: str
     create_transaction_hash: str
     cancel_blocktimestamp: Optional[str] = Field(...)
