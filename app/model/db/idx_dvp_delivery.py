@@ -61,6 +61,10 @@ class IDXDelivery(Base):
     agent_address: Mapped[str] = mapped_column(String(42), index=True, nullable=False)
     # Data
     data: Mapped[str] = mapped_column(Text)
+    # Settlement Service Type
+    settlement_service_type: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )
     # Create Delivery Blocktimestamp
     create_blocktimestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     # Create Transaction Hash
@@ -102,6 +106,7 @@ class IDXDelivery(Base):
             "agent_address": self.agent_address,
             "amount": self.amount,
             "data": self.data,
+            "settlement_service_type": self.settlement_service_type,
             "create_blocktimestamp": self.create_blocktimestamp,
             "create_transaction_hash": self.create_transaction_hash,
             "cancel_blocktimestamp": self.cancel_blocktimestamp,
