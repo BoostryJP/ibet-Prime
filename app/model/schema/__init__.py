@@ -110,6 +110,7 @@ from .position import (
 from .scheduled_events import (
     IbetShareScheduledUpdate,
     IbetStraightBondScheduledUpdate,
+    ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
 )

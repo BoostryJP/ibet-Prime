@@ -1560,6 +1560,89 @@ paths:
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                 title: Response 400 Schedule New Update Event Bond Tokens  Token Address  Scheduled
                   Events Post
+  /bond/tokens/{token_address}/scheduled_events/batch:
+    post:
+      tags:
+        - bond
+      summary: Schedule Token Update Events On Batch
+      description: Register new update events on batch
+      operationId: ScheduleBondTokenUpdateEventsBatch
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Token Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/IbetStraightBondScheduledUpdate'
+              title: Event Data List
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledEventIdListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '401':
+          description: Authorization Error
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
+                title: Response 401 Schedulebondtokenupdateeventsbatch
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                title: Response 400 Schedulebondtokenupdateeventsbatch
   /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
     get:
       tags:
@@ -5772,6 +5855,89 @@ paths:
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                 title: Response 400 Schedule New Update Event Share Tokens  Token
                   Address  Scheduled Events Post
+  /share/tokens/{token_address}/scheduled_events/batch:
+    post:
+      tags:
+        - share
+      summary: Schedule New Update Event
+      description: Register new update events on batch
+      operationId: ScheduleShareTokenUpdateEventsBatch
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Token Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/IbetShareScheduledUpdate'
+              title: Event Data List
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledEventIdListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '401':
+          description: Authorization Error
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
+                title: Response 401 Schedulesharetokenupdateeventsbatch
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                title: Response 400 Schedulesharetokenupdateeventsbatch
   /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
     get:
       tags:
@@ -13751,6 +13917,18 @@ components:
         - notice_type
         - metainfo
       title: ScheduleEventErrorNotification
+    ScheduledEventIdListResponse:
+      properties:
+        scheduled_event_id_list:
+          items:
+            type: string
+          type: array
+          title: Scheduled Event Id List
+      type: object
+      required:
+        - scheduled_event_id_list
+      title: ScheduledEventIdListResponse
+      description: scheduled event list (Response)
     ScheduledEventIdResponse:
       properties:
         scheduled_event_id:
