@@ -146,6 +146,7 @@ from app.model.schema import (
     ListTransferHistorySortItem,
     LockEventCategory,
     RegisterPersonalInfoRequest,
+    ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     TokenAddressResponse,
@@ -1580,6 +1581,94 @@ async def schedule_new_update_event(
     await db.commit()
 
     return json_response({"scheduled_event_id": _scheduled_event.event_id})
+
+
+# POST: /share/tokens/{token_address}/scheduled_events/batch
+@router.post(
+    "/tokens/{token_address}/scheduled_events/batch",
+    operation_id="ScheduleShareTokenUpdateEventsBatch",
+    response_model=ScheduledEventIdListResponse,
+    responses=get_routers_responses(
+        422,
+        401,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+        OperationNotSupportedVersionError,
+    ),
+)
+async def schedule_token_update_events_on_batch(
+    db: DBAsyncSession,
+    request: Request,
+    token_address: str,
+    event_data_list: list[IbetShareScheduledUpdate],
+    issuer_address: str = Header(...),
+    eoa_password: Optional[str] = Header(None),
+    auth_token: Optional[str] = Header(None),
+):
+    """Register new update events on batch"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    await check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Verify that the token is issued by the issuer
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    _event_id_list = []
+    for event_data in event_data_list:
+        # Verify that the token version supports the operation
+        if _token.version < TokenVersion.V_24_06:
+            if event_data.data.require_personal_info_registered is not None:
+                raise OperationNotSupportedVersionError(
+                    f"the operation is not supported in {_token.version}"
+                )
+
+        # Register an event
+        _scheduled_event = ScheduledEvents()
+        _scheduled_event.event_id = str(uuid.uuid4())
+        _scheduled_event.issuer_address = issuer_address
+        _scheduled_event.token_address = token_address
+        _scheduled_event.token_type = TokenType.IBET_SHARE.value
+        _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
+        _scheduled_event.event_type = event_data.event_type
+        _scheduled_event.data = event_data.data.model_dump()
+        _scheduled_event.status = 0
+        db.add(_scheduled_event)
+
+        _event_id_list.append(_scheduled_event.event_id)
+
+    await db.commit()
+
+    return json_response({"scheduled_event_id_list": _event_id_list})
 
 
 # GET: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}

@@ -56,6 +56,12 @@ class ScheduledEventIdResponse(BaseModel):
     scheduled_event_id: str
 
 
+class ScheduledEventIdListResponse(BaseModel):
+    """scheduled event list (Response)"""
+
+    scheduled_event_id_list: list[str]
+
+
 class ScheduledEventResponse(BaseModel):
     """scheduled event (Response)"""
 
