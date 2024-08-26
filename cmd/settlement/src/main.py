@@ -109,7 +109,7 @@ def list_deliveries(
             idx_delivery["seller_address"],
             str(idx_delivery["amount"]),
             idx_delivery["agent_address"],
-            idx_delivery["data"],
+            str(idx_delivery["data"]),
             status,
         )
 
