@@ -116,6 +116,8 @@ else:
         if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")
         else 20
     )
+# Average block generation interval
+EXPECTED_BLOCKS_PER_SEC = int(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 1))
 
 
 ####################################################
