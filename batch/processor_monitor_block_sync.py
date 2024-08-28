@@ -38,7 +38,7 @@ from config import (
     BLOCK_SYNC_STATUS_CALC_PERIOD,
     BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
     WEB3_HTTP_PROVIDER,
-    WEB3_HTTP_PROVIDER_STANDBY,
+    WEB3_HTTP_PROVIDER_STANDBY, EXPECTED_BLOCKS_PER_SEC,
 )
 
 """
@@ -49,10 +49,6 @@ Processor for block synchronization monitoring
 
 process_name = "PROCESSOR-Monitor-Block-Sync"
 LOG = batch_log.get_logger(process_name=process_name)
-
-
-# Average block generation interval
-EXPECTED_BLOCKS_PER_SEC = 1
 
 
 class RingBuffer:
