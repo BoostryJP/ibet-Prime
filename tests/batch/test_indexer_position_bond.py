@@ -29,7 +29,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetStraightBondContract
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
@@ -120,6 +123,40 @@ async def deploy_bond_token_contract(
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
+
+
+async def deploy_share_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address,
+    tradable_exchange_contract_address=None,
+    transfer_approval_required=None,
+):
+    arguments = [
+        "token.name",
+        "token.symbol",
+        20,
+        100,
+        3,
+        "token.dividend_record_date",
+        "token.dividend_payment_date",
+        "token.cancellation_date",
+        30,
+    ]
+    share_contract = IbetShareContract()
+    token_address, _, _ = await share_contract.create(arguments, address, private_key)
+    await share_contract.update(
+        data=IbetShareUpdateParams(
+            transferable=True,
+            personal_info_contract_address=personal_info_contract_address,
+            tradable_exchange_contract_address=tradable_exchange_contract_address,
+            transfer_approval_required=transfer_approval_required,
+        ),
+        tx_from=address,
+        private_key=private_key,
+    )
+
+    return ContractUtils.get_contract("IbetShare", token_address)
 
 
 class TestProcessor:
@@ -1624,9 +1661,16 @@ class TestProcessor:
         db.add(token_1)
 
         # Prepare data : Token(share token)
+        token_contract_2 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_exchange_contract.address,
+        )
+        token_address_2 = token_contract_2.address
         token_2 = Token()
         token_2.type = TokenType.IBET_SHARE.value
-        token_2.token_address = "test1"
+        token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
@@ -1648,6 +1692,19 @@ class TestProcessor:
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
+            issuer_address, ibet_exchange_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # Deposit (other token type)
+        tx = token_contract_2.functions.transferFrom(
             issuer_address, ibet_exchange_contract.address, 40
         ).build_transaction(
             {
@@ -2576,9 +2633,16 @@ class TestProcessor:
         db.add(token_1)
 
         # Prepare data : Token(share token)
+        token_contract_2 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
+        )
+        token_address_2 = token_contract_2.address
         token_2 = Token()
         token_2.type = TokenType.IBET_SHARE.value
-        token_2.token_address = "test1"
+        token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
@@ -2600,6 +2664,19 @@ class TestProcessor:
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
+            issuer_address, ibet_security_token_escrow_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # Deposit (other token type)
+        tx = token_contract_2.functions.transferFrom(
             issuer_address, ibet_security_token_escrow_contract.address, 40
         ).build_transaction(
             {
@@ -3031,9 +3108,16 @@ class TestProcessor:
         db.add(token_1)
 
         # Prepare data : Token(share token)
+        token_contract_2 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
+        )
+        token_address_2 = token_contract_2.address
         token_2 = Token()
         token_2.type = TokenType.IBET_SHARE.value
-        token_2.token_address = "test1"
+        token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
@@ -3055,6 +3139,19 @@ class TestProcessor:
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
+            issuer_address, ibet_security_token_dvp_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # Deposit (other token type)
+        tx = token_contract_2.functions.transferFrom(
             issuer_address, ibet_security_token_dvp_contract.address, 40
         ).build_transaction(
             {
