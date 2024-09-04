@@ -24,7 +24,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
-from web3.exceptions import ContractLogicError, InvalidAddress, ValidationError
+from web3.exceptions import ContractLogicError, InvalidAddress, MismatchedABI
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
@@ -168,7 +168,7 @@ class TestRegisterTokenList:
                 tx_from=issuer_address,
                 private_key=private_key,
             )
-        assert isinstance(exc_info.value.args[0], ValidationError)
+        assert isinstance(exc_info.value.args[0], MismatchedABI)
 
     # <Error_2> Invalid argument: token_list_address
     @pytest.mark.asyncio

@@ -30,9 +30,9 @@ from sqlalchemy import select
 from web3.exceptions import (
     ContractLogicError,
     InvalidAddress,
+    MismatchedABI,
     TimeExhausted,
     TransactionNotFound,
-    ValidationError as Web3ValidationError,
 )
 
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -3093,7 +3093,7 @@ class TestGetAccountBalance:
         )
 
         # execute the function
-        with pytest.raises(Web3ValidationError):
+        with pytest.raises(MismatchedABI):
             await share_contract.get_account_balance(issuer_address[:-1])  # short
 
 

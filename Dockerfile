@@ -124,7 +124,7 @@ COPY --from=builder --chown=apl:apl /app/ibet-Prime/ /app/ibet-Prime/
 RUN . ~/.bash_profile
 
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH /app/ibet-Prime:/app/ibet-Prime/cmd
+ENV PYTHONPATH=/app/ibet-Prime:/app/ibet-Prime/cmd
 
 COPY run.sh healthcheck.sh /app/
 
