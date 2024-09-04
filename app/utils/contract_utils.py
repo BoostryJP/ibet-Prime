@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
 from web3.contract import AsyncContract, Contract
 from web3.exceptions import (
-    ABIEventFunctionNotFound,
+    ABIEventNotFound,
     ABIFunctionNotFound,
     BadFunctionCallOutput,
     ContractLogicError,
@@ -284,7 +284,7 @@ class ContractUtils:
                 to_block=block_to,
                 argument_filters=argument_filters,
             )
-        except ABIEventFunctionNotFound:
+        except ABIEventNotFound:
             return []
 
         return result
@@ -607,7 +607,7 @@ class AsyncContractUtils:
                 to_block=block_to,
                 argument_filters=argument_filters,
             )
-        except ABIEventFunctionNotFound:
+        except ABIEventNotFound:
             return []
 
         return result
