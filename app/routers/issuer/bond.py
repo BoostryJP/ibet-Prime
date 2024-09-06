@@ -180,12 +180,13 @@ utc_tz = pytz.timezone("UTC")
 # POST: /bond/tokens
 @router.post(
     "/tokens",
+    operation_id="IssueBondToken",
     response_model=TokenAddressResponse,
     responses=get_routers_responses(
         422, 401, AuthorizationError, SendTransactionError, ContractRevertError
     ),
 )
-async def issue_token(
+async def issue_bond_token(
     db: DBAsyncSession,
     request: Request,
     token: IbetStraightBondCreate,
@@ -356,14 +357,15 @@ async def issue_token(
 # GET: /bond/tokens
 @router.get(
     "/tokens",
+    operation_id="ListAllBondTokens",
     response_model=List[IbetStraightBondResponse],
     responses=get_routers_responses(422),
 )
-async def list_all_tokens(
+async def list_all_bond_tokens(
     db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
 ):
-    """List all issued tokens"""
+    """List all issued bond tokens"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -412,11 +414,12 @@ async def list_all_tokens(
 # GET: /bond/tokens/{token_address}
 @router.get(
     "/tokens/{token_address}",
+    operation_id="RetrieveBondToken",
     response_model=IbetStraightBondResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-async def retrieve_token(db: DBAsyncSession, token_address: str):
-    """Retrieve token"""
+async def retrieve_bond_token(db: DBAsyncSession, token_address: str):
+    """Retrieve the bond token"""
     # Get Token
     _token: Token | None = (
         await db.scalars(
@@ -450,6 +453,7 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
 # POST: /bond/tokens/{token_address}
 @router.post(
     "/tokens/{token_address}",
+    operation_id="UpdateBondToken",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -462,7 +466,7 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
         OperationNotSupportedVersionError,
     ),
 )
-async def update_token(
+async def update_bond_token(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -471,7 +475,7 @@ async def update_token(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Update a token"""
+    """Update the bond token"""
 
     # Validate Headers
     validate_headers(
@@ -567,6 +571,7 @@ async def update_token(
 # GET: /bond/tokens/{token_address}/history
 @router.get(
     "/tokens/{token_address}/history",
+    operation_id="ListBondOperationLogHistory",
     response_model=ListTokenOperationLogHistoryResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
@@ -575,7 +580,7 @@ async def list_bond_operation_log_history(
     token_address: str,
     request_query: ListTokenOperationLogHistoryQuery = Depends(),
 ):
-    """List of token operation log history"""
+    """List all bond token operation log history"""
     stmt = select(TokenUpdateOperationLog).where(
         and_(
             TokenUpdateOperationLog.type == TokenType.IBET_STRAIGHT_BOND,
@@ -656,15 +661,16 @@ async def list_bond_operation_log_history(
 # GET: /bond/tokens/{token_address}/additional_issue
 @router.get(
     "/tokens/{token_address}/additional_issue",
+    operation_id="ListBondAdditionalIssuanceHistory",
     response_model=IssueRedeemHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_additional_issuance_history(
+async def list_bond_additional_issuance_history(
     db: DBAsyncSession,
     token_address: str,
     request_query: ListAdditionalIssuanceHistoryQuery = Depends(),
 ):
-    """List additional issuance history"""
+    """List bond additional issuance history"""
     sort_item = request_query.sort_item
     sort_order = request_query.sort_order
     offset = request_query.offset
@@ -747,6 +753,7 @@ async def list_additional_issuance_history(
 # POST: /bond/tokens/{token_address}/additional_issue
 @router.post(
     "/tokens/{token_address}/additional_issue",
+    operation_id="IssueAdditionalBond",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -758,7 +765,7 @@ async def list_additional_issuance_history(
         ContractRevertError,
     ),
 )
-async def additional_issue(
+async def issue_additional_bond(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -767,7 +774,7 @@ async def additional_issue(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Additional issue"""
+    """Issue additional bonds"""
 
     # Validate Headers
     validate_headers(
@@ -826,15 +833,17 @@ async def additional_issue(
 # GET: /bond/tokens/{token_address}/additional_issue/batch
 @router.get(
     "/tokens/{token_address}/additional_issue/batch",
+    operation_id="ListAllBatchAdditionalBondIssue",
     response_model=ListBatchIssueRedeemUploadResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_additional_issue_upload(
+async def list_all_batch_additional_bond_issue(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListAllAdditionalIssueUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
+    """List all bond batch additional issues"""
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -897,12 +906,13 @@ async def list_all_additional_issue_upload(
 # POST: /bond/tokens/{token_address}/additional_issue/batch
 @router.post(
     "/tokens/{token_address}/additional_issue/batch",
+    operation_id="IssueAdditionalBondsInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-async def additional_issue_in_batch(
+async def issue_additional_bonds_in_batch(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -911,7 +921,7 @@ async def additional_issue_in_batch(
     auth_token: Optional[str] = Header(None),
     eoa_password: Optional[str] = Header(None),
 ):
-    """Additional issue (Batch)"""
+    """Issue additional bonds in batch"""
 
     # Validate Headers
     validate_headers(
@@ -981,16 +991,17 @@ async def additional_issue_in_batch(
 # GET: /bond/tokens/{token_address}/additional_issue/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/additional_issue/batch/{batch_id}",
+    operation_id="RetrieveBatchAdditionalBondIssueStatus",
     response_model=GetBatchIssueRedeemResponse,
     responses=get_routers_responses(422, 404),
 )
-async def retrieve_batch_additional_issue(
+async def retrieve_batch_additional_bond_issue_status(
     db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
 ):
-    """Get Batch status for additional issue"""
+    """Retrieve detailed status of additional bond batch issuance"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1067,15 +1078,16 @@ async def retrieve_batch_additional_issue(
 # GET: /bond/tokens/{token_address}/redeem
 @router.get(
     "/tokens/{token_address}/redeem",
+    operation_id="ListBondRedemptionHistory",
     response_model=IssueRedeemHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_redeem_history(
+async def list_bond_redemption_history(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListRedeemHistoryQuery = Depends(),
 ):
-    """List redemption history"""
+    """List the history of bond redemptions"""
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1153,6 +1165,7 @@ async def list_redeem_history(
 # POST: /bond/tokens/{token_address}/redeem
 @router.post(
     "/tokens/{token_address}/redeem",
+    operation_id="RedeemBond",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -1164,7 +1177,7 @@ async def list_redeem_history(
         ContractRevertError,
     ),
 )
-async def redeem_token(
+async def redeem_bond(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1173,7 +1186,7 @@ async def redeem_token(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Redeem a token"""
+    """Redeem bond token"""
 
     # Validate Headers
     validate_headers(
@@ -1232,15 +1245,17 @@ async def redeem_token(
 # GET: /bond/tokens/{token_address}/redeem/batch
 @router.get(
     "/tokens/{token_address}/redeem/batch",
+    operation_id="ListAllBatchBondRedemption",
     response_model=ListBatchIssueRedeemUploadResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_redeem_upload(
+async def list_all_batch_bond_redemption(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListAllRedeemUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
+    """List all batch bond redemptions"""
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1304,12 +1319,13 @@ async def list_all_redeem_upload(
 # POST: /bond/tokens/{token_address}/redeem/batch
 @router.post(
     "/tokens/{token_address}/redeem/batch",
+    operation_id="RedeemBondsInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-async def redeem_token_in_batch(
+async def redeem_bonds_in_batch(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1318,7 +1334,7 @@ async def redeem_token_in_batch(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Redeem a token (Batch)"""
+    """Redeem bonds in batch"""
 
     # Validate Headers
     validate_headers(
@@ -1388,16 +1404,17 @@ async def redeem_token_in_batch(
 # GET: /bond/tokens/{token_address}/redeem/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/redeem/batch/{batch_id}",
+    operation_id="RetrieveBatchBondRedemptionStatus",
     response_model=GetBatchIssueRedeemResponse,
     responses=get_routers_responses(422, 404),
 )
-async def retrieve_batch_redeem(
+async def retrieve_batch_bond_redemption_status(
     db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
 ):
-    """Get Batch status for additional issue"""
+    """Retrieve detailed status of batch bond redemption"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1474,14 +1491,15 @@ async def retrieve_batch_redeem(
 # GET: /bond/tokens/{token_address}/scheduled_events
 @router.get(
     "/tokens/{token_address}/scheduled_events",
+    operation_id="ListAllScheduledBondTokenUpdateEvents",
     response_model=List[ScheduledEventResponse],
 )
-async def list_all_scheduled_events(
+async def list_all_scheduled_bond_token_update_events(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """List all scheduled update events"""
+    """List all scheduled bond token update events"""
 
     if issuer_address is None:
         _token_events: Sequence[ScheduledEvents] = (
@@ -1537,6 +1555,7 @@ async def list_all_scheduled_events(
 # POST: /bond/tokens/{token_address}/scheduled_events
 @router.post(
     "/tokens/{token_address}/scheduled_events",
+    operation_id="ScheduleBondTokenUpdateEvent",
     response_model=ScheduledEventIdResponse,
     responses=get_routers_responses(
         422,
@@ -1547,7 +1566,7 @@ async def list_all_scheduled_events(
         OperationNotSupportedVersionError,
     ),
 )
-async def schedule_new_update_event(
+async def schedule_bond_token_update_event(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1556,7 +1575,7 @@ async def schedule_new_update_event(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Register a new update event"""
+    """Schedule a new bond token update event"""
 
     # Validate Headers
     validate_headers(
@@ -1639,7 +1658,7 @@ async def schedule_new_update_event(
 # POST: /bond/tokens/{token_address}/scheduled_events/batch
 @router.post(
     "/tokens/{token_address}/scheduled_events/batch",
-    operation_id="ScheduleBondTokenUpdateEventsBatch",
+    operation_id="ScheduleBondTokenUpdateEventsInBatch",
     response_model=ScheduledEventIdListResponse,
     responses=get_routers_responses(
         422,
@@ -1650,7 +1669,7 @@ async def schedule_new_update_event(
         OperationNotSupportedVersionError,
     ),
 )
-async def schedule_token_update_events_on_batch(
+async def schedule_bond_token_update_events_in_batch(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1659,7 +1678,7 @@ async def schedule_token_update_events_on_batch(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Register new update events on batch"""
+    """Schedule bond token update events in batch"""
 
     # Validate Headers
     validate_headers(
@@ -1747,16 +1766,17 @@ async def schedule_token_update_events_on_batch(
 # GET: /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}
 @router.get(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
+    operation_id="RetrieveScheduledBondTokenUpdateEvent",
     response_model=ScheduledEventResponse,
     responses=get_routers_responses(404),
 )
-async def retrieve_token_event(
+async def retrieve_scheduled_bond_token_update_event(
     db: DBAsyncSession,
     scheduled_event_id: str,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve a scheduled token event"""
+    """Retrieve a scheduled bond token update event"""
 
     if issuer_address is None:
         _token_event: ScheduledEvents | None = (
@@ -1813,10 +1833,11 @@ async def retrieve_token_event(
 # DELETE: /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}
 @router.delete(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
+    operation_id="DeleteScheduledBondTokenUpdateEvent",
     response_model=ScheduledEventResponse,
     responses=get_routers_responses(422, 401, 404, AuthorizationError),
 )
-async def delete_scheduled_event(
+async def delete_scheduled_bond_token_update_event(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1825,7 +1846,7 @@ async def delete_scheduled_event(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Delete a scheduled event"""
+    """Delete a scheduled bond token update event"""
 
     # Validate Headers
     validate_headers(
@@ -1884,10 +1905,11 @@ async def delete_scheduled_event(
 # GET: /bond/tokens/{token_address}/holders
 @router.get(
     "/tokens/{token_address}/holders",
+    operation_id="ListAllBondTokenHolders",
     response_model=HoldersResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-async def list_all_holders(
+async def list_all_bond_token_holders(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListAllHoldersQuery = Depends(),
@@ -2137,15 +2159,16 @@ async def list_all_holders(
 # GET: /bond/tokens/{token_address}/holders/count
 @router.get(
     "/tokens/{token_address}/holders/count",
+    operation_id="CountBondTokenHolders",
     response_model=HolderCountResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-async def count_number_of_holders(
+async def count_bond_token_holders(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: str = Header(...),
 ):
-    """Count the number of holders"""
+    """Count the number of bond token holders"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2215,10 +2238,11 @@ async def count_number_of_holders(
 # GET: /bond/tokens/{token_address}/holders/{account_address}
 @router.get(
     "/tokens/{token_address}/holders/{account_address}",
+    operation_id="RetrieveBondTokenHolder",
     response_model=HolderResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-async def retrieve_holder(
+async def retrieve_bond_token_holder(
     db: DBAsyncSession,
     token_address: str,
     account_address: str,
@@ -2363,6 +2387,7 @@ async def retrieve_holder(
 # POST: /bond/tokens/{token_address}/personal_info
 @router.post(
     "/tokens/{token_address}/personal_info",
+    operation_id="RegisterBondTokenHolderPersonalInfo",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -2374,7 +2399,7 @@ async def retrieve_holder(
         ContractRevertError,
     ),
 )
-async def register_holder_personal_info(
+async def register_bond_token_holder_personal_info(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -2383,7 +2408,7 @@ async def register_holder_personal_info(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Register the holder's personal information"""
+    """Register personal information of bond token holders"""
 
     # Validate Headers
     validate_headers(
@@ -2442,16 +2467,17 @@ async def register_holder_personal_info(
 # GET: /bond/tokens/{token_address}/personal_info/batch
 @router.get(
     "/tokens/{token_address}/personal_info/batch",
+    operation_id="ListAllBondTokenBatchPersonalInfoRegistration",
     response_model=ListBatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_all_personal_info_batch_registration_uploads(
+async def list_all_bond_token_batch_personal_info_registration(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: str = Header(...),
     get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
 ):
-    """List all personal information batch registration uploads"""
+    """List all personal information batch registration"""
     # Verify that the token is issued by the issuer_address
     _token: Token | None = (
         await db.scalars(
@@ -2527,12 +2553,13 @@ async def list_all_personal_info_batch_registration_uploads(
 # POST: /bond/tokens/{token_address}/personal_info/batch
 @router.post(
     "/tokens/{token_address}/personal_info/batch",
+    operation_id="InitiateBondTokenBatchPersonalInfoRegistration",
     response_model=BatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-async def batch_register_personal_info(
+async def initiate_bond_token_batch_personal_info_registration(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -2541,7 +2568,7 @@ async def batch_register_personal_info(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Create Batch for register personal information"""
+    """Initiate bond token batch personal information registration"""
 
     # Validate Headers
     validate_headers(
@@ -2613,16 +2640,17 @@ async def batch_register_personal_info(
 # GET: /bond/tokens/{token_address}/personal_info/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/personal_info/batch/{batch_id}",
+    operation_id="RetrieveBondTokenPersonalInfoBatchRegistrationStatus",
     response_model=GetBatchRegisterPersonalInfoResponse,
     responses=get_routers_responses(422, 401, 404),
 )
-async def retrieve_batch_register_personal_info(
+async def retrieve_bond_token_personal_info_batch_registration_status(
     db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
 ):
-    """Get Batch status for register personal information"""
+    """Retrieve the status of bond token personal information batch registration"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2680,16 +2708,18 @@ async def retrieve_batch_register_personal_info(
 # GET: /bond/tokens/{token_address}/lock_events
 @router.get(
     "/tokens/{token_address}/lock_events",
-    summary="List all lock/unlock events related to given bond token",
+    operation_id="ListBondTokenLockUnlockEvents",
     response_model=ListAllTokenLockEventsResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_lock_events_by_bond(
+async def list_bond_token_lock_unlock_events(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllTokenLockEventsQuery = Depends(),
 ):
+    """List all lock/unlock bond token events"""
+
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -2861,6 +2891,7 @@ async def list_all_lock_events_by_bond(
 # POST: /bond/transfers
 @router.post(
     "/transfers",
+    operation_id="TransferBondTokenOwnership",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -2871,7 +2902,7 @@ async def list_all_lock_events_by_bond(
         ContractRevertError,
     ),
 )
-async def transfer_ownership(
+async def transfer_bond_token_ownership(
     db: DBAsyncSession,
     request: Request,
     token: IbetStraightBondTransfer,
@@ -2879,7 +2910,7 @@ async def transfer_ownership(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Transfer token ownership"""
+    """Transfer bond token ownership"""
 
     # Validate Headers
     validate_headers(
@@ -2937,15 +2968,16 @@ async def transfer_ownership(
 # GET: /bond/transfers/{token_address}
 @router.get(
     "/transfers/{token_address}",
+    operation_id="ListBondTokenTransferHistory",
     response_model=TransferHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_transfer_history(
+async def list_bond_token_transfer_history(
     db: DBAsyncSession,
     token_address: str,
     query: ListTransferHistoryQuery = Depends(),
 ):
-    """List token transfer history"""
+    """List bond token transfer history"""
     # Check if the token has been issued
     _token: Token | None = (
         await db.scalars(
@@ -3099,16 +3131,17 @@ async def list_transfer_history(
 # GET: /bond/transfer_approvals
 @router.get(
     "/transfer_approvals",
+    operation_id="ListAllBondTokenTransferApprovalHistory",
     response_model=TransferApprovalsResponse,
     responses=get_routers_responses(422),
 )
-async def list_transfer_approval_history(
+async def list_all_bond_token_transfer_approval_history(
     db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List transfer approval history"""
+    """List all bond token transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
     subquery = aliased(
         IDXTransferApproval,
@@ -3236,15 +3269,16 @@ async def list_transfer_approval_history(
 # GET: /bond/transfer_approvals/{token_address}
 @router.get(
     "/transfer_approvals/{token_address}",
+    operation_id="ListSpecificBondTokenTransferApprovalHistory",
     response_model=TransferApprovalHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_token_transfer_approval_history(
+async def list_specific_bond_token_transfer_approval_history(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListTransferApprovalHistoryQuery = Depends(),
 ):
-    """List token transfer approval history"""
+    """List specific bond token transfer approval history"""
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -3527,6 +3561,7 @@ async def list_token_transfer_approval_history(
 # POST: /bond/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
+    operation_id="UpdateBondTokenTransferApprovalStatus",
     responses=get_routers_responses(
         422,
         401,
@@ -3538,7 +3573,7 @@ async def list_token_transfer_approval_history(
         OperationNotAllowedStateError,
     ),
 )
-async def update_transfer_approval(
+async def update_bond_token_transfer_approval_status(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -3548,7 +3583,7 @@ async def update_transfer_approval(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Update on the status of a bond transfer approval"""
+    """Update bond token transfer approval status"""
 
     # Validate Headers
     validate_headers(
@@ -3761,6 +3796,7 @@ async def update_transfer_approval(
 # GET: /bond/transfer_approvals/{token_address}/{id}
 @router.get(
     "/transfer_approvals/{token_address}/{id}",
+    operation_id="RetrieveBondTokenTransferApprovalStatus",
     response_model=TransferApprovalTokenDetailResponse,
     responses=get_routers_responses(
         422,
@@ -3768,10 +3804,10 @@ async def update_transfer_approval(
         InvalidParameterError,
     ),
 )
-async def retrieve_transfer_approval_history(
+async def retrieve_bond_token_transfer_approval_status(
     db: DBAsyncSession, token_address: str, id: int
 ):
-    """Retrieve bond token transfer approval history"""
+    """Retrieve bond token transfer approval status"""
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -3983,6 +4019,7 @@ async def retrieve_transfer_approval_history(
 # POST: /bond/bulk_transfer
 @router.post(
     "/bulk_transfer",
+    operation_id="BulkTransferBondTokenOwnership",
     response_model=BulkTransferUploadIdResponse,
     responses=get_routers_responses(
         401,
@@ -3994,7 +4031,7 @@ async def retrieve_transfer_approval_history(
         NonTransferableTokenError,
     ),
 )
-async def bulk_transfer_ownership(
+async def bulk_transfer_bond_token_ownership(
     db: DBAsyncSession,
     request: Request,
     transfer_req: IbetStraightBondBulkTransferRequest,
@@ -4002,7 +4039,7 @@ async def bulk_transfer_ownership(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Bulk transfer token ownership
+    """Bulk transfer bond token ownership
 
     - All `token_address` must be the same.
     """
@@ -4087,13 +4124,14 @@ async def bulk_transfer_ownership(
 # GET: /bond/bulk_transfer
 @router.get(
     "/bulk_transfer",
+    operation_id="ListBondTokenBulkTransfers",
     response_model=List[BulkTransferUploadResponse],
     responses=get_routers_responses(422),
 )
-async def list_bulk_transfer_upload(
+async def list_bond_token_bulk_transfers(
     db: DBAsyncSession, issuer_address: Optional[str] = Header(None)
 ):
-    """List bulk transfer uploads"""
+    """List bond token bulk transfers"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -4139,15 +4177,16 @@ async def list_bulk_transfer_upload(
 # GET: /bond/bulk_transfer/{upload_id}
 @router.get(
     "/bulk_transfer/{upload_id}",
+    operation_id="RetrieveBondTokenBulkTransfer",
     response_model=List[BulkTransferResponse],
     responses=get_routers_responses(422, 404),
 )
-async def retrieve_bulk_transfer(
+async def retrieve_bond_token_bulk_transfer(
     db: DBAsyncSession,
     upload_id: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve a bulk transfer upload"""
+    """Retrieve a bond token bulk transfer"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

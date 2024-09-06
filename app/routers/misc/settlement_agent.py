@@ -128,7 +128,7 @@ async def create_account(
 # GET: /settlement/dvp/agent/accounts
 @router.get(
     "/dvp/agent/accounts",
-    operation_id="ListAllDVPAgentAccount",
+    operation_id="ListAllDVPAgentAccounts",
     response_model=ListAllDVPAgentAccountResponse,
 )
 async def list_all_accounts(db: DBAsyncSession):

@@ -41,6 +41,7 @@ utc_tz = pytz.timezone("UTC")
 # GET: /notifications
 @router.get(
     "/notifications",
+    operation_id="ListAllNotifications",
     response_model=ListAllNotificationsResponse,
     responses=get_routers_responses(422),
 )
@@ -109,6 +110,7 @@ async def list_all_notifications(
 # DELETE: /notifications/{notice_id}
 @router.delete(
     "/notifications/{notice_id}",
+    operation_id="DeleteNotification",
     response_model=None,
     responses=get_routers_responses(422, 404),
 )

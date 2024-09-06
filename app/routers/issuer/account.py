@@ -86,11 +86,12 @@ local_tz = pytz.timezone(TZ)
 # POST: /accounts
 @router.post(
     "/accounts",
+    operation_id="CreateIssuerKey",
     response_model=AccountResponse,
     responses=get_routers_responses(422, InvalidParameterError),
 )
-async def create_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
-    """Create Keys"""
+async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
+    """Create Issuer Key"""
     # Check Password Policy
     eoa_password = (
         E2EEUtils.decrypt(data.eoa_password)
@@ -140,9 +141,11 @@ async def create_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
 
 
 # GET: /accounts
-@router.get("/accounts", response_model=List[AccountResponse])
-async def list_all_accounts(db: DBAsyncSession):
-    """List all accounts"""
+@router.get(
+    "/accounts", operation_id="ListAllIssuers", response_model=List[AccountResponse]
+)
+async def list_all_issuers(db: DBAsyncSession):
+    """List all issuer accounts"""
 
     # Register key data to the DB
     _accounts: Sequence[Account] = (
@@ -166,11 +169,12 @@ async def list_all_accounts(db: DBAsyncSession):
 # GET: /accounts/{issuer_address}
 @router.get(
     "/accounts/{issuer_address}",
+    operation_id="RetrieveIssuer",
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-async def retrieve_account(db: DBAsyncSession, issuer_address: str):
-    """Retrieve an account"""
+async def retrieve_issuer(db: DBAsyncSession, issuer_address: str):
+    """Retrieve an issuer account"""
 
     _account = (
         await db.scalars(
@@ -193,11 +197,12 @@ async def retrieve_account(db: DBAsyncSession, issuer_address: str):
 # DELETE: /accounts/{issuer_address}
 @router.delete(
     "/accounts/{issuer_address}",
+    operation_id="DeleteIssuer",
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-async def delete_account(db: DBAsyncSession, issuer_address: str):
-    """Logically delete an account"""
+async def delete_issuer(db: DBAsyncSession, issuer_address: str):
+    """Logically delete an issuer account"""
 
     _account = (
         await db.scalars(
@@ -221,18 +226,82 @@ async def delete_account(db: DBAsyncSession, issuer_address: str):
     )
 
 
+# POST: /accounts/{issuer_address}/eoa_password
+@router.post(
+    "/accounts/{issuer_address}/eoa_password",
+    operation_id="ChangeIssuerEOAPassword",
+    response_model=None,
+    responses=get_routers_responses(422, 404, InvalidParameterError),
+)
+async def change_issuer_eoa_password(
+    db: DBAsyncSession,
+    issuer_address: str,
+    data: AccountChangeEOAPasswordRequest,
+):
+    """Change Issuer's EOA-Password"""
+
+    # Get Account
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
+    ).first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer does not exist")
+
+    # Check Password Policy
+    eoa_password = (
+        E2EEUtils.decrypt(data.eoa_password)
+        if E2EE_REQUEST_ENABLED
+        else data.eoa_password
+    )
+    if not re.match(EOA_PASSWORD_PATTERN, eoa_password):
+        raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
+
+    # Check Old Password
+    old_eoa_password = (
+        E2EEUtils.decrypt(data.old_eoa_password)
+        if E2EE_REQUEST_ENABLED
+        else data.old_eoa_password
+    )
+    correct_eoa_password = E2EEUtils.decrypt(_account.eoa_password)
+    if old_eoa_password != correct_eoa_password:
+        raise InvalidParameterError("old password mismatch")
+
+    # Get Ethereum Key
+    old_keyfile_json = _account.keyfile
+    private_key = eth_keyfile.decode_keyfile_json(
+        raw_keyfile_json=old_keyfile_json, password=old_eoa_password.encode("utf-8")
+    )
+
+    # Create New Ethereum Key File
+    keyfile_json = eth_keyfile.create_keyfile_json(
+        private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
+    )
+
+    # Update data to the DB
+    _account.keyfile = keyfile_json
+    _account.eoa_password = E2EEUtils.encrypt(eoa_password)
+    await db.merge(_account)
+
+    await db.commit()
+
+    return
+
+
 # POST: /accounts/{issuer_address}/rsakey
 @router.post(
     "/accounts/{issuer_address}/rsakey",
+    operation_id="CreateIssuerRSAKey",
     response_model=AccountResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def generate_rsa_key(
+async def create_issuer_rsa_key(
     db: DBAsyncSession,
     issuer_address: str,
     data: AccountGenerateRsaKeyRequest,
 ):
-    """Generate RSA key"""
+    """Create issuer's RSA key"""
 
     # Get Account
     _account = (
@@ -294,80 +363,19 @@ async def generate_rsa_key(
     )
 
 
-# POST: /accounts/{issuer_address}/eoa_password
-@router.post(
-    "/accounts/{issuer_address}/eoa_password",
-    response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
-)
-async def change_eoa_password(
-    db: DBAsyncSession,
-    issuer_address: str,
-    data: AccountChangeEOAPasswordRequest,
-):
-    """Change EOA Password"""
-
-    # Get Account
-    _account = (
-        await db.scalars(
-            select(Account).where(Account.issuer_address == issuer_address).limit(1)
-        )
-    ).first()
-    if _account is None:
-        raise HTTPException(status_code=404, detail="issuer does not exist")
-
-    # Check Password Policy
-    eoa_password = (
-        E2EEUtils.decrypt(data.eoa_password)
-        if E2EE_REQUEST_ENABLED
-        else data.eoa_password
-    )
-    if not re.match(EOA_PASSWORD_PATTERN, eoa_password):
-        raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
-
-    # Check Old Password
-    old_eoa_password = (
-        E2EEUtils.decrypt(data.old_eoa_password)
-        if E2EE_REQUEST_ENABLED
-        else data.old_eoa_password
-    )
-    correct_eoa_password = E2EEUtils.decrypt(_account.eoa_password)
-    if old_eoa_password != correct_eoa_password:
-        raise InvalidParameterError("old password mismatch")
-
-    # Get Ethereum Key
-    old_keyfile_json = _account.keyfile
-    private_key = eth_keyfile.decode_keyfile_json(
-        raw_keyfile_json=old_keyfile_json, password=old_eoa_password.encode("utf-8")
-    )
-
-    # Create New Ethereum Key File
-    keyfile_json = eth_keyfile.create_keyfile_json(
-        private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
-    )
-
-    # Update data to the DB
-    _account.keyfile = keyfile_json
-    _account.eoa_password = E2EEUtils.encrypt(eoa_password)
-    await db.merge(_account)
-
-    await db.commit()
-
-    return
-
-
 # POST: /accounts/{issuer_address}/rsa_passphrase
 @router.post(
     "/accounts/{issuer_address}/rsa_passphrase",
+    operation_id="ChangeIssuerRSAPassphrase",
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def change_rsa_passphrase(
+async def change_issuer_rsa_passphrase(
     db: DBAsyncSession,
     issuer_address: str,
     data: AccountChangeRSAPassphraseRequest,
 ):
-    """Change RSA Passphrase"""
+    """Change issuer's RSA-Passphrase"""
 
     # Get Account
     _account = (
@@ -417,19 +425,20 @@ async def change_rsa_passphrase(
 # POST: /accounts/{issuer_address}/auth_token
 @router.post(
     "/accounts/{issuer_address}/auth_token",
+    operation_id="GenerateIssuerAuthToken",
     response_model=AccountAuthTokenResponse,
     responses=get_routers_responses(
         422, 404, InvalidParameterError, AuthTokenAlreadyExistsError
     ),
 )
-async def create_auth_token(
+async def generate_issuer_auth_token(
     db: DBAsyncSession,
     request: Request,
     data: AccountAuthTokenRequest,
     issuer_address: str,
     eoa_password: Optional[str] = Header(None),
 ):
-    """Create Auth Token"""
+    """Generate issuer's auth token"""
 
     # Validate Headers
     validate_headers(
@@ -505,17 +514,18 @@ async def create_auth_token(
 # DELETE: /accounts/{issuer_address}/auth_token
 @router.delete(
     "/accounts/{issuer_address}/auth_token",
+    operation_id="DeleteIssuerAuthToken",
     response_model=None,
     responses=get_routers_responses(422, 404, AuthorizationError),
 )
-async def delete_auth_token(
+async def delete_issuer_auth_token(
     db: DBAsyncSession,
     request: Request,
     issuer_address: str,
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Delete auth token"""
+    """Delete issuer's auth token"""
 
     # Validate Headers
     validate_headers(
@@ -532,7 +542,7 @@ async def delete_auth_token(
         auth_token=auth_token,
     )
 
-    # Delete auto token
+    # Delete auth token
     _auth_token: Optional[AuthToken] = (
         await db.scalars(
             select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
