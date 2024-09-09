@@ -47,7 +47,10 @@ utc_tz = pytz.timezone("UTC")
 
 # GET: /files
 @router.get(
-    "", response_model=ListAllFilesResponse, responses=get_routers_responses(422)
+    "",
+    operation_id="ListAllUploadFiles",
+    response_model=ListAllFilesResponse,
+    responses=get_routers_responses(422),
 )
 async def list_all_upload_files(
     db: DBAsyncSession,
@@ -58,7 +61,7 @@ async def list_all_upload_files(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all files"""
+    """List all upload files"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -132,7 +135,12 @@ async def list_all_upload_files(
 
 
 # POST: /files
-@router.post("", response_model=FileResponse, responses=get_routers_responses(422))
+@router.post(
+    "",
+    operation_id="UploadFile",
+    response_model=FileResponse,
+    responses=get_routers_responses(422),
+)
 async def upload_file(
     db: DBAsyncSession,
     data: UploadFileRequest,
@@ -178,6 +186,7 @@ async def upload_file(
 # GET: /files/{file_id}
 @router.get(
     "/{file_id}",
+    operation_id="DownloadFile",
     response_model=DownloadFileResponse,
     responses=get_routers_responses(404),
 )
@@ -233,7 +242,10 @@ async def download_file(
 
 # DELETE: /files/{file_id}
 @router.delete(
-    "/{file_id}", response_model=None, responses=get_routers_responses(422, 404)
+    "/{file_id}",
+    operation_id="DeleteFile",
+    response_model=None,
+    responses=get_routers_responses(422, 404),
 )
 async def delete_file(
     db: DBAsyncSession,

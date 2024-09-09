@@ -40,7 +40,7 @@ router = APIRouter(tags=["common"])
 
 
 # GET: /e2ee
-@router.get("/e2ee", response_model=E2EEResponse)
+@router.get("/e2ee", operation_id="GetE2EEncryptionKey", response_model=E2EEResponse)
 async def e2e_encryption_key():
     """Get E2EE public key"""
 
@@ -55,10 +55,12 @@ async def e2e_encryption_key():
 # GET: /healthcheck
 @router.get(
     "/healthcheck",
+    operation_id="ServiceHealthCheck",
     response_model=None,
     responses=get_routers_responses(ServiceUnavailableError),
 )
-async def check_health(db: DBAsyncSession):
+async def service_health_check(db: DBAsyncSession):
+    """Service health check"""
     errors = []
 
     try:
@@ -96,10 +98,11 @@ async def __check_ethereum(errors: list, db: AsyncSession):
 # GET: /block_number
 @router.get(
     "/block_number",
+    operation_id="GetLatestBlockNumber",
     response_model=BlockNumberResponse,
     responses=get_routers_responses(ServiceUnavailableError),
 )
-async def get_block_number():
+async def get_latest_block_number():
     """Get the latest block number"""
     block_number = await web3.eth.block_number
 

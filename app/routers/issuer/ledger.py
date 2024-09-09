@@ -75,6 +75,7 @@ utc_tz = pytz.timezone("UTC")
 # GET: /ledger/{token_address}/history
 @router.get(
     "/{token_address}/history",
+    operation_id="ListAllLedgerHistory",
     response_model=ListAllLedgerHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -85,7 +86,7 @@ async def list_all_ledger_history(
     offset: int = Query(None),
     limit: int = Query(None),
 ):
-    """List all Ledger"""
+    """List all ledger history"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -168,6 +169,7 @@ async def list_all_ledger_history(
 # GET: /ledger/{token_address}/history/{ledger_id}
 @router.get(
     "/{token_address}/history/{ledger_id}",
+    operation_id="RetrieveLedgerHistory",
     response_model=RetrieveLedgerHistoryResponse,
     responses=get_routers_responses(
         422, 404, InvalidParameterError, Integer64bitLimitExceededError
@@ -180,7 +182,7 @@ async def retrieve_ledger_history(
     issuer_address: Optional[str] = Header(None),
     latest_flg: int = Query(..., ge=0, le=1),
 ):
-    """Retrieve Ledger"""
+    """Retrieve ledger history"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -282,6 +284,7 @@ async def retrieve_ledger_history(
 # GET: /ledger/{token_address}/template
 @router.get(
     "/{token_address}/template",
+    operation_id="RetrieveLedgerTemplate",
     response_model=LedgerTemplateResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -290,7 +293,7 @@ async def retrieve_ledger_template(
     token_address: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve Ledger Template"""
+    """Retrieve ledger template"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -371,6 +374,7 @@ async def retrieve_ledger_template(
 # POST: /ledger/{token_address}/template
 @router.post(
     "/{token_address}/template",
+    operation_id="CreateUpdateLedgerTemplate",
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -494,6 +498,7 @@ async def create_update_ledger_template(
 # DELETE: /ledger/{token_address}/template
 @router.delete(
     "/{token_address}/template",
+    operation_id="DeleteLedgerTemplate",
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -502,7 +507,7 @@ async def delete_ledger_template(
     token_address: str,
     issuer_address: str = Header(...),
 ):
-    """Delete Ledger Template"""
+    """Delete ledger template"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -552,6 +557,7 @@ async def delete_ledger_template(
 # GET: /ledger/{token_address}/details_data
 @router.get(
     "/{token_address}/details_data",
+    operation_id="ListAllLedgerDetailsData",
     response_model=ListAllLedgerDetailsDataResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -562,7 +568,7 @@ async def list_all_ledger_details_data(
     offset: int = Query(None),
     limit: int = Query(None),
 ):
-    """List all Ledger Details Data"""
+    """List all ledger details data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -650,6 +656,7 @@ async def list_all_ledger_details_data(
 # POST: /ledger/{token_address}/details_data
 @router.post(
     "/{token_address}/details_data",
+    operation_id="CreateLedgerDetailsData",
     response_model=LedgerDetailsDataResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -659,7 +666,7 @@ async def create_ledger_details_data(
     data_list: List[CreateUpdateLedgerDetailsDataRequest],
     issuer_address: str = Header(...),
 ):
-    """Create Ledger Details Data"""
+    """Create ledger details data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -703,6 +710,7 @@ async def create_ledger_details_data(
 # GET: /ledger/{token_address}/details_data/{data_id}
 @router.get(
     "/{token_address}/details_data/{data_id}",
+    operation_id="RetrieveLedgerDetailsData",
     response_model=List[RetrieveLedgerDetailsDataResponse],
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -712,7 +720,7 @@ async def retrieve_ledger_details_data(
     data_id: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve Ledger Details Data"""
+    """Retrieve ledger details data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -778,6 +786,7 @@ async def retrieve_ledger_details_data(
 # POST: /ledger/{token_address}/details_data/{data_id}
 @router.post(
     "/{token_address}/details_data/{data_id}",
+    operation_id="UpdateLedgerDetailsData",
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -788,7 +797,7 @@ async def update_ledger_details_data(
     data_list: List[CreateUpdateLedgerDetailsDataRequest],
     issuer_address: str = Header(...),
 ):
-    """Update Ledger Details Data"""
+    """Update ledger details data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -843,6 +852,7 @@ async def update_ledger_details_data(
 # DELETE: /ledger/{token_address}/details_data/{data_id}
 @router.delete(
     "/{token_address}/details_data/{data_id}",
+    operation_id="DeleteLedgerDetailsData",
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -852,7 +862,7 @@ async def delete_ledger_details_data(
     data_id: str,
     issuer_address: str = Header(...),
 ):
-    """Delete Ledger Details Data"""
+    """Delete ledger details data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

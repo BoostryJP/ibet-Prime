@@ -181,12 +181,13 @@ utc_tz = pytz.timezone("UTC")
 # POST: /share/tokens
 @router.post(
     "/tokens",
+    operation_id="IssueShareToken",
     response_model=TokenAddressResponse,
     responses=get_routers_responses(
         422, 401, AuthorizationError, SendTransactionError, ContractRevertError
     ),
 )
-async def issue_token(
+async def issue_share_token(
     db: DBAsyncSession,
     request: Request,
     token: IbetShareCreate,
@@ -348,17 +349,19 @@ async def issue_token(
 # GET: /share/tokens
 @router.get(
     "/tokens",
+    operation_id="ListAllShareTokens",
     response_model=List[IbetShareResponse],
     responses=get_routers_responses(422),
 )
-async def list_all_tokens(
+async def list_all_share_tokens(
     db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
 ):
+    """List all issued share tokens"""
+
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    """List all issued tokens"""
     # Get issued token list
     if issuer_address is None:
         tokens: Sequence[Token] = (
@@ -395,11 +398,12 @@ async def list_all_tokens(
 # GET: /share/tokens/{token_address}
 @router.get(
     "/tokens/{token_address}",
+    operation_id="RetrieveShareToken",
     response_model=IbetShareResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-async def retrieve_token(db: DBAsyncSession, token_address: str):
-    """Retrieve token"""
+async def retrieve_share_token(db: DBAsyncSession, token_address: str):
+    """Retrieve the share token"""
     # Get Token
     _token: Token | None = (
         await db.scalars(
@@ -433,6 +437,7 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
 # POST: /share/tokens/{token_address}
 @router.post(
     "/tokens/{token_address}",
+    operation_id="UpdateShareToken",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -445,7 +450,7 @@ async def retrieve_token(db: DBAsyncSession, token_address: str):
         OperationNotSupportedVersionError,
     ),
 )
-async def update_token(
+async def update_share_token(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -454,7 +459,7 @@ async def update_token(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Update a token"""
+    """Update the share token"""
 
     # Validate Headers
     validate_headers(
@@ -533,6 +538,7 @@ async def update_token(
 # GET: /share/tokens/{token_address}/history
 @router.get(
     "/tokens/{token_address}/history",
+    operation_id="ListShareOperationLogHistory",
     response_model=ListTokenOperationLogHistoryResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
@@ -541,7 +547,7 @@ async def list_share_operation_log_history(
     token_address: str,
     request_query: ListTokenOperationLogHistoryQuery = Depends(),
 ):
-    """List of token operation log history"""
+    """List all share token operation log history"""
     stmt = select(TokenUpdateOperationLog).where(
         and_(
             TokenUpdateOperationLog.type == TokenType.IBET_SHARE,
@@ -622,15 +628,16 @@ async def list_share_operation_log_history(
 # GET: /share/tokens/{token_address}/additional_issue
 @router.get(
     "/tokens/{token_address}/additional_issue",
+    operation_id="ListShareAdditionalIssuanceHistory",
     response_model=IssueRedeemHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_additional_issuance_history(
+async def list_share_additional_issuance_history(
     db: DBAsyncSession,
     token_address: str,
     request_query: ListAdditionalIssuanceHistoryQuery = Depends(),
 ):
-    """List additional issuance history"""
+    """List share additional issuance history"""
     sort_item = request_query.sort_item
     sort_order = request_query.sort_order
     offset = request_query.offset
@@ -713,6 +720,7 @@ async def list_additional_issuance_history(
 # POST: /share/tokens/{token_address}/additional_issue
 @router.post(
     "/tokens/{token_address}/additional_issue",
+    operation_id="IssueAdditionalShare",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -724,7 +732,7 @@ async def list_additional_issuance_history(
         ContractRevertError,
     ),
 )
-async def additional_issue(
+async def issuer_additional_share(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -733,7 +741,7 @@ async def additional_issue(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Additional issue"""
+    """Issuer additional shares"""
 
     # Validate Headers
     validate_headers(
@@ -792,15 +800,17 @@ async def additional_issue(
 # GET: /share/tokens/{token_address}/additional_issue/batch
 @router.get(
     "/tokens/{token_address}/additional_issue/batch",
+    operation_id="ListAllBatchAdditionalShareIssue",
     response_model=ListBatchIssueRedeemUploadResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_additional_issue_upload(
+async def list_all_batch_additional_share_issue(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListAllAdditionalIssueUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
+    """List all share batch additional issues"""
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -863,12 +873,13 @@ async def list_all_additional_issue_upload(
 # POST: /share/tokens/{token_address}/additional_issue/batch
 @router.post(
     "/tokens/{token_address}/additional_issue/batch",
+    operation_id="IssueAdditionalSharesInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-async def additional_issue_in_batch(
+async def issue_additional_shares_in_batch(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -877,7 +888,7 @@ async def additional_issue_in_batch(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Additional issue (Batch)"""
+    """Issue additional shares in batch"""
 
     # Validate headers
     validate_headers(
@@ -947,16 +958,17 @@ async def additional_issue_in_batch(
 # GET: /share/tokens/{token_address}/additional_issue/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/additional_issue/batch/{batch_id}",
+    operation_id="RetrieveBatchAdditionalShareIssueStatus",
     response_model=GetBatchIssueRedeemResponse,
     responses=get_routers_responses(422, 404),
 )
-async def retrieve_batch_additional_issue(
+async def retrieve_batch_additional_share_issue_status(
     db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
 ):
-    """Get Batch status for additional issue"""
+    """Retrieve detailed status of additional share batch issuance"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1033,15 +1045,16 @@ async def retrieve_batch_additional_issue(
 # GET: /share/tokens/{token_address}/redeem
 @router.get(
     "/tokens/{token_address}/redeem",
+    operation_id="ListShareRedemptionHistory",
     response_model=IssueRedeemHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_redeem_history(
+async def list_share_redeem_history(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListRedeemHistoryQuery = Depends(),
 ):
-    """List redemption history"""
+    """List share redemption history"""
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1119,6 +1132,7 @@ async def list_redeem_history(
 # POST: /share/tokens/{token_address}/redeem
 @router.post(
     "/tokens/{token_address}/redeem",
+    operation_id="RedeemShare",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -1130,7 +1144,7 @@ async def list_redeem_history(
         ContractRevertError,
     ),
 )
-async def redeem_token(
+async def redeem_share(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1139,7 +1153,7 @@ async def redeem_token(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Redeem a token"""
+    """Redeem share token"""
 
     # Validate Headers
     validate_headers(
@@ -1198,15 +1212,17 @@ async def redeem_token(
 # GET: /share/tokens/{token_address}/redeem/batch
 @router.get(
     "/tokens/{token_address}/redeem/batch",
+    operation_id="ListAllBatchShareRedemption",
     response_model=ListBatchIssueRedeemUploadResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_redeem_upload(
+async def list_all_batch_share_redemption(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListAllRedeemUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
+    """List all batch share redemptions"""
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1270,12 +1286,13 @@ async def list_all_redeem_upload(
 # POST: /share/tokens/{token_address}/redeem/batch
 @router.post(
     "/tokens/{token_address}/redeem/batch",
+    operation_id="RedeemSharesInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-async def redeem_token_in_batch(
+async def redeem_shares_in_batch(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1284,7 +1301,7 @@ async def redeem_token_in_batch(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Redeem a token (Batch)"""
+    """Redeem shares in batch"""
 
     # Validate Headers
     validate_headers(
@@ -1354,6 +1371,7 @@ async def redeem_token_in_batch(
 # GET: /share/tokens/{token_address}/redeem/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/redeem/batch/{batch_id}",
+    operation_id="RetrieveBatchShareRedemptionStatus",
     response_model=GetBatchIssueRedeemResponse,
     responses=get_routers_responses(422, 404),
 )
@@ -1363,7 +1381,7 @@ async def retrieve_batch_redeem(
     batch_id: str,
     issuer_address: str = Header(...),
 ):
-    """Get Batch status for additional issue"""
+    """Retrieve detailed status of batch share redemption"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1440,14 +1458,15 @@ async def retrieve_batch_redeem(
 # GET: /share/tokens/{token_address}/scheduled_events
 @router.get(
     "/tokens/{token_address}/scheduled_events",
+    operation_id="ListAllScheduledShareTokenUpdateEvents",
     response_model=List[ScheduledEventResponse],
 )
-async def list_all_scheduled_events(
+async def list_all_scheduled_share_token_update_events(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """List all scheduled update events"""
+    """List all scheduled share token update events"""
 
     if issuer_address is None:
         _token_events: Sequence[ScheduledEvents] = (
@@ -1503,6 +1522,7 @@ async def list_all_scheduled_events(
 # POST: /share/tokens/{token_address}/scheduled_events
 @router.post(
     "/tokens/{token_address}/scheduled_events",
+    operation_id="ScheduleShareTokenUpdateEvent",
     response_model=ScheduledEventIdResponse,
     responses=get_routers_responses(
         422,
@@ -1513,7 +1533,7 @@ async def list_all_scheduled_events(
         OperationNotSupportedVersionError,
     ),
 )
-async def schedule_new_update_event(
+async def schedule_share_token_update_event(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1522,7 +1542,7 @@ async def schedule_new_update_event(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Register a new update event"""
+    """Schedule a new share token update event"""
 
     # Validate Headers
     validate_headers(
@@ -1586,7 +1606,7 @@ async def schedule_new_update_event(
 # POST: /share/tokens/{token_address}/scheduled_events/batch
 @router.post(
     "/tokens/{token_address}/scheduled_events/batch",
-    operation_id="ScheduleShareTokenUpdateEventsBatch",
+    operation_id="ScheduleShareTokenUpdateEventsInBatch",
     response_model=ScheduledEventIdListResponse,
     responses=get_routers_responses(
         422,
@@ -1597,7 +1617,7 @@ async def schedule_new_update_event(
         OperationNotSupportedVersionError,
     ),
 )
-async def schedule_token_update_events_on_batch(
+async def schedule_share_token_update_events_in_batch(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1606,7 +1626,7 @@ async def schedule_token_update_events_on_batch(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Register new update events on batch"""
+    """Schedule share token update events in batch"""
 
     # Validate Headers
     validate_headers(
@@ -1674,16 +1694,17 @@ async def schedule_token_update_events_on_batch(
 # GET: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
 @router.get(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
+    operation_id="RetrieveScheduledShareTokenUpdateEvent",
     response_model=ScheduledEventResponse,
     responses=get_routers_responses(404),
 )
-async def retrieve_token_event(
+async def retrieve_scheduled_share_token_update_event(
     db: DBAsyncSession,
     token_address: str,
     scheduled_event_id: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve a scheduled token event"""
+    """Retrieve a scheduled share token update event"""
 
     if issuer_address is None:
         _token_event: ScheduledEvents | None = (
@@ -1740,10 +1761,11 @@ async def retrieve_token_event(
 # DELETE: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
 @router.delete(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
+    operation_id="DeleteScheduledShareTokenUpdateEvent",
     response_model=ScheduledEventResponse,
     responses=get_routers_responses(422, 401, 404, AuthorizationError),
 )
-async def delete_scheduled_event(
+async def delete_scheduled_share_token_update_event(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -1752,7 +1774,7 @@ async def delete_scheduled_event(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Delete a scheduled event"""
+    """Delete a scheduled share token update event"""
 
     # Validate Headers
     validate_headers(
@@ -1811,10 +1833,11 @@ async def delete_scheduled_event(
 # GET: /share/tokens/{token_address}/holders
 @router.get(
     "/tokens/{token_address}/holders",
+    operation_id="ListAllShareTokenHolders",
     response_model=HoldersResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-async def list_all_holders(
+async def list_all_share_token_holders(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListAllHoldersQuery = Depends(),
@@ -2064,15 +2087,16 @@ async def list_all_holders(
 # GET: /share/tokens/{token_address}/holders/count
 @router.get(
     "/tokens/{token_address}/holders/count",
+    operation_id="CountShareTokenHolders",
     response_model=HolderCountResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-async def count_number_of_holders(
+async def count_share_token_holders(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: str = Header(...),
 ):
-    """Count the number of holders"""
+    """Count the number of share token holders"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2142,10 +2166,11 @@ async def count_number_of_holders(
 # GET: /share/tokens/{token_address}/holders/{account_address}
 @router.get(
     "/tokens/{token_address}/holders/{account_address}",
+    operation_id="RetrieveShareTokenHolder",
     response_model=HolderResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-async def retrieve_holder(
+async def retrieve_share_token_holder(
     db: DBAsyncSession,
     token_address: str,
     account_address: str,
@@ -2290,6 +2315,7 @@ async def retrieve_holder(
 # POST: /share/tokens/{token_address}/personal_info
 @router.post(
     "/tokens/{token_address}/personal_info",
+    operation_id="RegisterShareTokenHolderPersonalInfo",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -2301,7 +2327,7 @@ async def retrieve_holder(
         ContractRevertError,
     ),
 )
-async def register_holder_personal_info(
+async def register_share_token_holder_personal_info(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -2310,7 +2336,7 @@ async def register_holder_personal_info(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Register the holder's personal information"""
+    """Register personal information of share token holders"""
 
     # Validate Headers
     validate_headers(
@@ -2369,16 +2395,17 @@ async def register_holder_personal_info(
 # GET: /share/tokens/{token_address}/personal_info/batch
 @router.get(
     "/tokens/{token_address}/personal_info/batch",
+    operation_id="ListAllShareTokenBatchPersonalInfoRegistration",
     response_model=ListBatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_all_personal_info_batch_registration_uploads(
+async def list_all_share_token_batch_personal_info_registration(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: str = Header(...),
     get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
 ):
-    """List all personal information batch registration uploads"""
+    """List all personal information batch registration"""
     # Verify that the token is issued by the issuer_address
     _token: Token | None = (
         await db.scalars(
@@ -2454,12 +2481,13 @@ async def list_all_personal_info_batch_registration_uploads(
 # POST: /share/tokens/{token_address}/personal_info/batch
 @router.post(
     "/tokens/{token_address}/personal_info/batch",
+    operation_id="InitiateShareTokenBatchPersonalInfoRegistration",
     response_model=BatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-async def batch_register_personal_info(
+async def initiate_share_token_batch_personal_info_registration(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -2468,7 +2496,7 @@ async def batch_register_personal_info(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Create Batch for register personal information"""
+    """Initiate share token batch personal information registration"""
 
     # Validate Headers
     validate_headers(
@@ -2540,16 +2568,17 @@ async def batch_register_personal_info(
 # GET: /share/tokens/{token_address}/personal_info/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/personal_info/batch/{batch_id}",
+    operation_id="RetrieveShareTokenPersonalInfoBatchRegistrationStatus",
     response_model=GetBatchRegisterPersonalInfoResponse,
     responses=get_routers_responses(422, 404),
 )
-async def retrieve_batch_register_personal_info(
+async def retrieve_share_token_personal_info_batch_registration_status(
     db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
 ):
-    """Get Batch status for register personal information"""
+    """Retrieve the status of share token personal information batch registration"""
 
     # Validate Headers
     validate_headers(
@@ -2609,16 +2638,18 @@ async def retrieve_batch_register_personal_info(
 # GET: /share/tokens/{token_address}/lock_events
 @router.get(
     "/tokens/{token_address}/lock_events",
-    summary="List all lock/unlock events related to given share token",
+    operation_id="ListShareTokenLockUnlockEvents",
     response_model=ListAllTokenLockEventsResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_lock_events_by_share(
+async def list_share_token_lock_unlock_events(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllTokenLockEventsQuery = Depends(),
 ):
+    """List all lock/unlock share token events"""
+
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -2791,6 +2822,7 @@ async def list_all_lock_events_by_share(
 # POST: /share/transfers
 @router.post(
     "/transfers",
+    operation_id="TransferShareTokenOwnership",
     response_model=None,
     responses=get_routers_responses(
         422,
@@ -2802,7 +2834,7 @@ async def list_all_lock_events_by_share(
         ContractRevertError,
     ),
 )
-async def transfer_ownership(
+async def transfer_share_token_ownership(
     db: DBAsyncSession,
     request: Request,
     token: IbetShareTransfer,
@@ -2810,7 +2842,7 @@ async def transfer_ownership(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Transfer token ownership"""
+    """Transfer share token ownership"""
 
     # Validate Headers
     validate_headers(
@@ -2868,15 +2900,16 @@ async def transfer_ownership(
 # GET: /share/transfers/{token_address}
 @router.get(
     "/transfers/{token_address}",
+    operation_id="ListShareTokenTransferHistory",
     response_model=TransferHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_transfer_history(
+async def list_share_token_transfer_history(
     db: DBAsyncSession,
     token_address: str,
     query: ListTransferHistoryQuery = Depends(),
 ):
-    """List token transfer history"""
+    """List share token transfer history"""
     # Check if the token has been issued
     _token: Token | None = (
         await db.scalars(
@@ -3030,16 +3063,17 @@ async def list_transfer_history(
 # GET: /share/transfer_approvals
 @router.get(
     "/transfer_approvals",
+    operation_id="ListAllBondTokenTransferApprovalHistory",
     response_model=TransferApprovalsResponse,
     responses=get_routers_responses(422),
 )
-async def list_transfer_approval_history(
+async def list_all_share_token_transfer_approval_history(
     db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List transfer approval history"""
+    """List all share token transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
     subquery = aliased(
         IDXTransferApproval,
@@ -3165,15 +3199,16 @@ async def list_transfer_approval_history(
 # GET: /share/transfer_approvals/{token_address}
 @router.get(
     "/transfer_approvals/{token_address}",
+    operation_id="ListSpecificShareTokenTransferApprovalHistory",
     response_model=TransferApprovalHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def list_token_transfer_approval_history(
+async def list_specific_share_token_transfer_approval_history(
     db: DBAsyncSession,
     token_address: str,
     get_query: ListTransferApprovalHistoryQuery = Depends(),
 ):
-    """List token transfer approval history"""
+    """List specific share token transfer approval history"""
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -3456,6 +3491,7 @@ async def list_token_transfer_approval_history(
 # POST: /share/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
+    operation_id="UpdateShareTokenTransferApprovalStatus",
     responses=get_routers_responses(
         422,
         401,
@@ -3467,7 +3503,7 @@ async def list_token_transfer_approval_history(
         OperationNotAllowedStateError,
     ),
 )
-async def update_transfer_approval(
+async def update_share_token_transfer_approval_status(
     db: DBAsyncSession,
     request: Request,
     token_address: str,
@@ -3477,7 +3513,7 @@ async def update_transfer_approval(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Update on the status of a share transfer approval"""
+    """Update share token transfer approval status"""
 
     # Validate Headers
     validate_headers(
@@ -3690,15 +3726,16 @@ async def update_transfer_approval(
 # GET: /share/transfer_approvals/{token_address}/{id}
 @router.get(
     "/transfer_approvals/{token_address}/{id}",
+    operation_id="RetrieveShareTokenTransferApprovalStatus",
     response_model=TransferApprovalTokenDetailResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def retrieve_transfer_approval_history(
+async def retrieve_share_token_transfer_approval_status(
     db: DBAsyncSession,
     token_address: str,
     id: int,
 ):
-    """Retrieve share token transfer approval history"""
+    """Retrieve share token transfer approval status"""
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -3911,6 +3948,7 @@ async def retrieve_transfer_approval_history(
 # POST: /share/bulk_transfer
 @router.post(
     "/bulk_transfer",
+    operation_id="BulkTransferShareTokenOwnership",
     response_model=BulkTransferUploadIdResponse,
     responses=get_routers_responses(
         401,
@@ -3922,7 +3960,7 @@ async def retrieve_transfer_approval_history(
         NonTransferableTokenError,
     ),
 )
-async def bulk_transfer_ownership(
+async def bulk_transfer_share_token_ownership(
     db: DBAsyncSession,
     request: Request,
     transfer_req: IbetShareBulkTransferRequest,
@@ -3930,7 +3968,7 @@ async def bulk_transfer_ownership(
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Bulk transfer token ownership
+    """Bulk transfer share token ownership
 
     - All `token_address` must be the same.
     """
@@ -4015,13 +4053,14 @@ async def bulk_transfer_ownership(
 # GET: /share/bulk_transfer
 @router.get(
     "/bulk_transfer",
+    operation_id="ListShareTokenBulkTransfers",
     response_model=List[BulkTransferUploadResponse],
     responses=get_routers_responses(422),
 )
-async def list_bulk_transfer_upload(
+async def list_share_token_bulk_transfers(
     db: DBAsyncSession, issuer_address: Optional[str] = Header(None)
 ):
-    """List bulk transfer uploads"""
+    """List share token bulk transfers"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -4067,15 +4106,16 @@ async def list_bulk_transfer_upload(
 # GET: /share/bulk_transfer/{upload_id}
 @router.get(
     "/bulk_transfer/{upload_id}",
+    operation_id="RetrieveShareTokenBulkTransfer",
     response_model=List[BulkTransferResponse],
     responses=get_routers_responses(422, 404),
 )
-async def retrieve_bulk_transfer(
+async def retrieve_share_token_bulk_transfer(
     db: DBAsyncSession,
     upload_id: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve a bulk transfer upload"""
+    """Retrieve a share token bulk transfer"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

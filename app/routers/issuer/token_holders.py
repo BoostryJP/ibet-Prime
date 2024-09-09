@@ -253,6 +253,7 @@ async def list_all_token_holders_personal_info_history(
 # POST: /token/holders/{token_address}/collection
 @router.post(
     "/holders/{token_address}/collection",
+    operation_id="CreateTokenHoldersCollection",
     response_model=CreateTokenHoldersListResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -346,6 +347,7 @@ async def create_token_holders_collection(
 # GET: /token/holders/{token_address}/collection
 @router.get(
     "/holders/{token_address}/collection",
+    operation_id="ListAllTokenHoldersCollections",
     response_model=ListAllTokenHolderCollectionsResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
@@ -358,6 +360,7 @@ async def list_all_token_holders_collections(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
+    """List all token holders collections"""
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -451,6 +454,7 @@ async def list_all_token_holders_collections(
 # GET: /token/holders/{token_address}/collection/{list_id}
 @router.get(
     "/holders/{token_address}/collection/{list_id}",
+    operation_id="RetrieveTokenHoldersCollection",
     response_model=RetrieveTokenHoldersListResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )

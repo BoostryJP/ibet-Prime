@@ -76,11 +76,11 @@ local_tz = timezone(TZ)
 # GET: /positions/{account_address}
 @router.get(
     "/{account_address}",
-    summary="List all positions in the account",
+    operation_id="ListAllPositions",
     response_model=ListAllPositionResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_position(
+async def list_all_positions(
     db: DBAsyncSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
@@ -89,7 +89,7 @@ async def list_all_position(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all account's position"""
+    """List all positions"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -192,7 +192,7 @@ async def list_all_position(
 # GET: /positions/{account_address}/lock
 @router.get(
     "/{account_address}/lock",
-    summary="List all locked positions in the account",
+    operation_id="ListAllLockedPosition",
     response_model=ListAllLockedPositionResponse,
     responses=get_routers_responses(422),
 )
@@ -204,7 +204,7 @@ async def list_all_locked_position(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all account's locked position"""
+    """List all locked position"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -280,11 +280,11 @@ async def list_all_locked_position(
 # GET: /positions/{account_address}/lock/events
 @router.get(
     "/{account_address}/lock/events",
-    summary="List all lock/unlock events in the account",
+    operation_id="ListAccountLockUnlockEvents",
     response_model=ListAllLockEventsResponse,
     responses=get_routers_responses(422),
 )
-async def list_all_lock_events(
+async def list_account_lock_unlock_events(
     db: DBAsyncSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
@@ -465,7 +465,7 @@ async def list_all_lock_events(
 
 @router.post(
     "/{account_address}/force_unlock",
-    summary="Force unlock the locked position",
+    operation_id="ForceUnlock",
     response_model=None,
     responses=get_routers_responses(
         401,
@@ -555,7 +555,7 @@ async def force_unlock(
 # GET: /positions/{account_address}/{token_address}
 @router.get(
     "/{account_address}/{token_address}",
-    summary="Token position in the account",
+    operation_id="RetrieveTokenPositionForAccount",
     response_model=PositionResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
@@ -565,7 +565,7 @@ async def retrieve_position(
     token_address: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve account's position"""
+    """Retrieve token position for account"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

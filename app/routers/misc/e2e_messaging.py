@@ -84,16 +84,17 @@ utc_tz = pytz.timezone("UTC")
 # POST: /e2e_messaging/accounts
 @router.post(
     "/accounts",
+    operation_id="CreateE2EMessagingAccount",
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(
         422, InvalidParameterError, SendTransactionError, ContractRevertError
     ),
 )
-async def create_account(
+async def create_e2e_messaging_account(
     db: DBAsyncSession,
     data: E2EMessagingAccountCreateRequest,
 ):
-    """Create Account"""
+    """Create E2EMessaging account"""
     # Check Password Policy(EOA password)
     eoa_password = (
         E2EEUtils.decrypt(data.eoa_password)
@@ -187,8 +188,12 @@ async def create_account(
 
 
 # GET: /e2e_messaging/accounts
-@router.get("/accounts", response_model=List[E2EMessagingAccountResponse])
-async def list_all_accounts(db: DBAsyncSession):
+@router.get(
+    "/accounts",
+    operation_id="ListAllE2EMessagingAccounts",
+    response_model=List[E2EMessagingAccountResponse],
+)
+async def list_all_e2e_messaging_accounts(db: DBAsyncSession):
     """List all e2e messaging accounts"""
 
     # Create query to get the latest RSA key
@@ -251,10 +256,11 @@ async def list_all_accounts(db: DBAsyncSession):
 # GET: /e2e_messaging/accounts/{account_address}
 @router.get(
     "/accounts/{account_address}",
+    operation_id="RetrieveE2EMessagingAccount",
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-async def retrieve_account(db: DBAsyncSession, account_address: str):
+async def retrieve_e2e_messaging_account(db: DBAsyncSession, account_address: str):
     """Retrieve an e2e messaging account"""
 
     _account: E2EMessagingAccount | None = (
@@ -295,10 +301,11 @@ async def retrieve_account(db: DBAsyncSession, account_address: str):
 # DELETE: /e2e_messaging/accounts/{account_address}
 @router.delete(
     "/accounts/{account_address}",
+    operation_id="DeleteE2EMessagingAccount",
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-async def delete_account(db: DBAsyncSession, account_address: str):
+async def delete_e2e_messaging_account(db: DBAsyncSession, account_address: str):
     """Logically delete an e2e messaging account"""
 
     _account: E2EMessagingAccount | None = (
@@ -338,10 +345,11 @@ async def delete_account(db: DBAsyncSession, account_address: str):
 # POST: /e2e_messaging/accounts/{account_address}/rsa_key
 @router.post(
     "/accounts/{account_address}/rsa_key",
+    operation_id="UpdateE2EMessagingAccountRSAKey",
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(422, 404),
 )
-async def update_account_rsa_key(
+async def update_e2e_messaging_account_rsa_key(
     db: DBAsyncSession,
     account_address: str,
     data: E2EMessagingAccountUpdateRsaKeyRequest,
@@ -393,15 +401,16 @@ async def update_account_rsa_key(
 # POST: /e2e_messaging/accounts/{account_address}/eoa_password
 @router.post(
     "/accounts/{account_address}/eoa_password",
+    operation_id="ChangeE2EMessagingAccountEOAPassword",
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def change_eoa_password(
+async def change_e2e_messaging_account_eoa_password(
     db: DBAsyncSession,
     account_address: str,
     data: E2EMessagingAccountChangeEOAPasswordRequest,
 ):
-    """Change Account's EOA Password"""
+    """Change E2EMessaging account's EOA password"""
 
     # Get E2E Messaging Account
     _account: E2EMessagingAccount | None = (
@@ -459,15 +468,16 @@ async def change_eoa_password(
 # POST: /e2e_messaging/accounts/{account_address}/rsa_passphrase
 @router.post(
     "/accounts/{account_address}/rsa_passphrase",
+    operation_id="ChangeE2EMessagingAccountRSAPassphrase",
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-async def change_rsa_passphrase(
+async def change_e2e_messaging_account_rsa_passphrase(
     db: DBAsyncSession,
     account_address: str,
     data: E2EMessagingAccountChangeRSAPassphraseRequest,
 ):
-    """Change Account's RSA Passphrase"""
+    """Change E2EMessaging account's RSA passphrase"""
 
     # Get E2E Messaging Account
     _account: E2EMessagingAccount | None = (
@@ -535,6 +545,7 @@ async def change_rsa_passphrase(
 # GET: /e2e_messaging/messages
 @router.get(
     "/messages",
+    operation_id="ListAllE2EMessages",
     response_model=ListAllE2EMessagingResponse,
     responses=get_routers_responses(422),
 )
@@ -547,7 +558,7 @@ async def list_all_e2e_messages(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all e2e message"""
+    """List all e2e messages"""
 
     # Get E2E Messaging
     stmt = select(IDXE2EMessaging).order_by(asc(IDXE2EMessaging.id))
@@ -613,6 +624,7 @@ async def list_all_e2e_messages(
 # GET: /e2e_messaging/messages/{id}
 @router.get(
     "/messages/{id}",
+    operation_id="RetrieveE2EMessage",
     response_model=E2EMessagingResponse,
     responses=get_routers_responses(422, 404),
 )
