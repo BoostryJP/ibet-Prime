@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: ibet Prime
   description: Security token management system for ibet network
-  version: '24.9'
+  version: '24.12'
 paths:
   /:
     get:
@@ -19,7 +19,7 @@ paths:
         - common
       summary: E2E Encryption Key
       description: Get E2EE public key
-      operationId: e2e_encryption_key_e2ee_get
+      operationId: GetE2EEncryptionKey
       responses:
         '200':
           description: Successful Response
@@ -31,8 +31,9 @@ paths:
     get:
       tags:
         - common
-      summary: Check Health
-      operationId: check_health_healthcheck_get
+      summary: Service Health Check
+      description: Service health check
+      operationId: ServiceHealthCheck
       responses:
         '200':
           description: Successful Response
@@ -46,9 +47,9 @@ paths:
     get:
       tags:
         - common
-      summary: Get Block Number
+      summary: Get Latest Block Number
       description: Get the latest block number
-      operationId: get_block_number_block_number_get
+      operationId: GetLatestBlockNumber
       responses:
         '200':
           description: Successful Response
@@ -66,9 +67,9 @@ paths:
     get:
       tags:
         - account
-      summary: List All Accounts
-      description: List all accounts
-      operationId: list_all_accounts_accounts_get
+      summary: List All Issuers
+      description: List all issuer accounts
+      operationId: ListAllIssuers
       responses:
         '200':
           description: Successful Response
@@ -78,13 +79,13 @@ paths:
                 items:
                   $ref: '#/components/schemas/AccountResponse'
                 type: array
-                title: Response List All Accounts Accounts Get
+                title: Response Listallissuers
     post:
       tags:
         - account
-      summary: Create Key
-      description: Create Keys
-      operationId: create_key_accounts_post
+      summary: Create Issuer Key
+      description: Create Issuer Key
+      operationId: CreateIssuerKey
       requestBody:
         content:
           application/json:
@@ -115,9 +116,9 @@ paths:
     get:
       tags:
         - account
-      summary: Retrieve Account
-      description: Retrieve an account
-      operationId: retrieve_account_accounts__issuer_address__get
+      summary: Retrieve Issuer
+      description: Retrieve an issuer account
+      operationId: RetrieveIssuer
       parameters:
         - name: issuer_address
           in: path
@@ -141,9 +142,9 @@ paths:
     delete:
       tags:
         - account
-      summary: Delete Account
-      description: Logically delete an account
-      operationId: delete_account_accounts__issuer_address__delete
+      summary: Delete Issuer
+      description: Logically delete an issuer account
+      operationId: DeleteIssuer
       parameters:
         - name: issuer_address
           in: path
@@ -164,13 +165,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /accounts/{issuer_address}/eoa_password:
+    post:
+      tags:
+        - account
+      summary: Change Issuer Eoa Password
+      description: Change Issuer's EOA-Password
+      operationId: ChangeIssuerEOAPassword
+      parameters:
+        - name: issuer_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Issuer Address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountChangeEOAPasswordRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /accounts/{issuer_address}/rsakey:
     post:
       tags:
         - account
-      summary: Generate Rsa Key
-      description: Generate RSA key
-      operationId: generate_rsa_key_accounts__issuer_address__rsakey_post
+      summary: Create Issuer Rsa Key
+      description: Create issuer's RSA key
+      operationId: CreateIssuerRSAKey
       parameters:
         - name: issuer_address
           in: path
@@ -210,55 +253,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /accounts/{issuer_address}/eoa_password:
-    post:
-      tags:
-        - account
-      summary: Change Eoa Password
-      description: Change EOA Password
-      operationId: change_eoa_password_accounts__issuer_address__eoa_password_post
-      parameters:
-        - name: issuer_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Issuer Address
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AccountChangeEOAPasswordRequest'
-      responses:
-        '200':
-          description: Successful Response
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /accounts/{issuer_address}/rsa_passphrase:
     post:
       tags:
         - account
-      summary: Change Rsa Passphrase
-      description: Change RSA Passphrase
-      operationId: change_rsa_passphrase_accounts__issuer_address__rsa_passphrase_post
+      summary: Change Issuer Rsa Passphrase
+      description: Change issuer's RSA-Passphrase
+      operationId: ChangeIssuerRSAPassphrase
       parameters:
         - name: issuer_address
           in: path
@@ -298,9 +299,9 @@ paths:
     post:
       tags:
         - account
-      summary: Create Auth Token
-      description: Create Auth Token
-      operationId: create_auth_token_accounts__issuer_address__auth_token_post
+      summary: Generate Issuer Auth Token
+      description: Generate issuer's auth token
+      operationId: GenerateIssuerAuthToken
       parameters:
         - name: issuer_address
           in: path
@@ -350,14 +351,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthTokenAlreadyExistsErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Create Auth Token Accounts  Issuer Address  Auth
-                  Token Post
+                title: Response 400 Generateissuerauthtoken
     delete:
       tags:
         - account
-      summary: Delete Auth Token
-      description: Delete auth token
-      operationId: delete_auth_token_accounts__issuer_address__auth_token_delete
+      summary: Delete Issuer Auth Token
+      description: Delete issuer's auth token
+      operationId: DeleteIssuerAuthToken
       parameters:
         - name: issuer_address
           in: path
@@ -406,9 +406,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Issue Token
+      summary: Issue Bond Token
       description: Issue ibetStraightBond token
-      operationId: issue_token_bond_tokens_post
+      operationId: IssueBondToken
       parameters:
         - name: issuer-address
           in: header
@@ -459,7 +459,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Issue Token Bond Tokens Post
+                title: Response 401 Issuebondtoken
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
             Revert Error etc
@@ -469,13 +469,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Issue Token Bond Tokens Post
+                title: Response 400 Issuebondtoken
     get:
       tags:
         - bond
-      summary: List All Tokens
-      description: List all issued tokens
-      operationId: list_all_tokens_bond_tokens_get
+      summary: List All Bond Tokens
+      description: List all issued bond tokens
+      operationId: ListAllBondTokens
       parameters:
         - name: issuer-address
           in: header
@@ -494,7 +494,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/IbetStraightBondResponse'
-                title: Response List All Tokens Bond Tokens Get
+                title: Response Listallbondtokens
         '422':
           description: Validation Error
           content:
@@ -505,9 +505,9 @@ paths:
     get:
       tags:
         - bond
-      summary: Retrieve Token
-      description: Retrieve token
-      operationId: retrieve_token_bond_tokens__token_address__get
+      summary: Retrieve Bond Token
+      description: Retrieve the bond token
+      operationId: RetrieveBondToken
       parameters:
         - name: token_address
           in: path
@@ -538,9 +538,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Update Token
-      description: Update a token
-      operationId: update_token_bond_tokens__token_address__post
+      summary: Update Bond Token
+      description: Update the bond token
+      operationId: UpdateBondToken
       parameters:
         - name: token_address
           in: path
@@ -593,7 +593,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Update Token Bond Tokens  Token Address  Post
+                title: Response 401 Updatebondtoken
         '404':
           description: Not Found Error
           content:
@@ -611,14 +611,14 @@ paths:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Update Token Bond Tokens  Token Address  Post
+                title: Response 400 Updatebondtoken
   /bond/tokens/{token_address}/history:
     get:
       tags:
         - bond
       summary: List Bond Operation Log History
-      description: List of token operation log history
-      operationId: list_bond_operation_log_history_bond_tokens__token_address__history_get
+      description: List all bond token operation log history
+      operationId: ListBondOperationLogHistory
       parameters:
         - name: token_address
           in: path
@@ -732,10 +732,9 @@ paths:
     get:
       tags:
         - bond
-      summary: List Additional Issuance History
-      description: List additional issuance history
-      operationId: 
-        list_additional_issuance_history_bond_tokens__token_address__additional_issue_get
+      summary: List Bond Additional Issuance History
+      description: List bond additional issuance history
+      operationId: ListBondAdditionalIssuanceHistory
       parameters:
         - name: token_address
           in: path
@@ -812,9 +811,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Additional Issue
-      description: Additional issue
-      operationId: additional_issue_bond_tokens__token_address__additional_issue_post
+      summary: Issue Additional Bond
+      description: Issue additional bonds
+      operationId: IssueAdditionalBond
       parameters:
         - name: token_address
           in: path
@@ -867,8 +866,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Additional Issue Bond Tokens  Token Address  Additional
-                  Issue Post
+                title: Response 401 Issueadditionalbond
         '404':
           description: Not Found Error
           content:
@@ -885,15 +883,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Additional Issue Bond Tokens  Token Address  Additional
-                  Issue Post
+                title: Response 400 Issueadditionalbond
   /bond/tokens/{token_address}/additional_issue/batch:
     get:
       tags:
         - bond
-      summary: List All Additional Issue Upload
-      operationId: 
-        list_all_additional_issue_upload_bond_tokens__token_address__additional_issue_batch_get
+      summary: List All Batch Additional Bond Issue
+      description: List all bond batch additional issues
+      operationId: ListAllBatchAdditionalBondIssue
       parameters:
         - name: token_address
           in: path
@@ -965,10 +962,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Additional Issue In Batch
-      description: Additional issue (Batch)
-      operationId: 
-        additional_issue_in_batch_bond_tokens__token_address__additional_issue_batch_post
+      summary: Issue Additional Bonds In Batch
+      description: Issue additional bonds in batch
+      operationId: IssueAdditionalBondsInBatch
       parameters:
         - name: token_address
           in: path
@@ -1028,8 +1024,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Additional Issue In Batch Bond Tokens  Token Address  Additional
-                  Issue Batch Post
+                title: Response 401 Issueadditionalbondsinbatch
         '404':
           description: Not Found Error
           content:
@@ -1047,10 +1042,9 @@ paths:
     get:
       tags:
         - bond
-      summary: Retrieve Batch Additional Issue
-      description: Get Batch status for additional issue
-      operationId: 
-        retrieve_batch_additional_issue_bond_tokens__token_address__additional_issue_batch__batch_id__get
+      summary: Retrieve Batch Additional Bond Issue Status
+      description: Retrieve detailed status of additional bond batch issuance
+      operationId: RetrieveBatchAdditionalBondIssueStatus
       parameters:
         - name: token_address
           in: path
@@ -1093,9 +1087,9 @@ paths:
     get:
       tags:
         - bond
-      summary: List Redeem History
-      description: List redemption history
-      operationId: list_redeem_history_bond_tokens__token_address__redeem_get
+      summary: List Bond Redemption History
+      description: List the history of bond redemptions
+      operationId: ListBondRedemptionHistory
       parameters:
         - name: token_address
           in: path
@@ -1172,9 +1166,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Redeem Token
-      description: Redeem a token
-      operationId: redeem_token_bond_tokens__token_address__redeem_post
+      summary: Redeem Bond
+      description: Redeem bond token
+      operationId: RedeemBond
       parameters:
         - name: token_address
           in: path
@@ -1227,8 +1221,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Redeem Token Bond Tokens  Token Address  Redeem
-                  Post
+                title: Response 401 Redeembond
         '404':
           description: Not Found Error
           content:
@@ -1245,14 +1238,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Redeem Token Bond Tokens  Token Address  Redeem
-                  Post
+                title: Response 400 Redeembond
   /bond/tokens/{token_address}/redeem/batch:
     get:
       tags:
         - bond
-      summary: List All Redeem Upload
-      operationId: list_all_redeem_upload_bond_tokens__token_address__redeem_batch_get
+      summary: List All Batch Bond Redemption
+      description: List all batch bond redemptions
+      operationId: ListAllBatchBondRedemption
       parameters:
         - name: token_address
           in: path
@@ -1324,9 +1317,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Redeem Token In Batch
-      description: Redeem a token (Batch)
-      operationId: redeem_token_in_batch_bond_tokens__token_address__redeem_batch_post
+      summary: Redeem Bonds In Batch
+      description: Redeem bonds in batch
+      operationId: RedeemBondsInBatch
       parameters:
         - name: token_address
           in: path
@@ -1386,8 +1379,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Redeem Token In Batch Bond Tokens  Token Address  Redeem
-                  Batch Post
+                title: Response 401 Redeembondsinbatch
         '404':
           description: Not Found Error
           content:
@@ -1405,9 +1397,9 @@ paths:
     get:
       tags:
         - bond
-      summary: Retrieve Batch Redeem
-      description: Get Batch status for additional issue
-      operationId: retrieve_batch_redeem_bond_tokens__token_address__redeem_batch__batch_id__get
+      summary: Retrieve Batch Bond Redemption Status
+      description: Retrieve detailed status of batch bond redemption
+      operationId: RetrieveBatchBondRedemptionStatus
       parameters:
         - name: token_address
           in: path
@@ -1450,9 +1442,9 @@ paths:
     get:
       tags:
         - bond
-      summary: List All Scheduled Events
-      description: List all scheduled update events
-      operationId: list_all_scheduled_events_bond_tokens__token_address__scheduled_events_get
+      summary: List All Scheduled Bond Token Update Events
+      description: List all scheduled bond token update events
+      operationId: ListAllScheduledBondTokenUpdateEvents
       parameters:
         - name: token_address
           in: path
@@ -1477,14 +1469,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ScheduledEventResponse'
-                title: Response List All Scheduled Events Bond Tokens  Token Address  Scheduled
-                  Events Get
+                title: Response Listallscheduledbondtokenupdateevents
     post:
       tags:
         - bond
-      summary: Schedule New Update Event
-      description: Register a new update event
-      operationId: schedule_new_update_event_bond_tokens__token_address__scheduled_events_post
+      summary: Schedule Bond Token Update Event
+      description: Schedule a new bond token update event
+      operationId: ScheduleBondTokenUpdateEvent
       parameters:
         - name: token_address
           in: path
@@ -1541,8 +1532,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Schedule New Update Event Bond Tokens  Token Address  Scheduled
-                  Events Post
+                title: Response 401 Schedulebondtokenupdateevent
         '404':
           description: Not Found Error
           content:
@@ -1558,15 +1548,14 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                title: Response 400 Schedule New Update Event Bond Tokens  Token Address  Scheduled
-                  Events Post
+                title: Response 400 Schedulebondtokenupdateevent
   /bond/tokens/{token_address}/scheduled_events/batch:
     post:
       tags:
         - bond
-      summary: Schedule Token Update Events On Batch
-      description: Register new update events on batch
-      operationId: ScheduleBondTokenUpdateEventsBatch
+      summary: Schedule Bond Token Update Events In Batch
+      description: Schedule bond token update events in batch
+      operationId: ScheduleBondTokenUpdateEventsInBatch
       parameters:
         - name: token_address
           in: path
@@ -1626,7 +1615,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Schedulebondtokenupdateeventsbatch
+                title: Response 401 Schedulebondtokenupdateeventsinbatch
         '404':
           description: Not Found Error
           content:
@@ -1642,15 +1631,14 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                title: Response 400 Schedulebondtokenupdateeventsbatch
+                title: Response 400 Schedulebondtokenupdateeventsinbatch
   /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
     get:
       tags:
         - bond
-      summary: Retrieve Token Event
-      description: Retrieve a scheduled token event
-      operationId: 
-        retrieve_token_event_bond_tokens__token_address__scheduled_events__scheduled_event_id__get
+      summary: Retrieve Scheduled Bond Token Update Event
+      description: Retrieve a scheduled bond token update event
+      operationId: RetrieveScheduledBondTokenUpdateEvent
       parameters:
         - name: scheduled_event_id
           in: path
@@ -1688,10 +1676,9 @@ paths:
     delete:
       tags:
         - bond
-      summary: Delete Scheduled Event
-      description: Delete a scheduled event
-      operationId: 
-        delete_scheduled_event_bond_tokens__token_address__scheduled_events__scheduled_event_id__delete
+      summary: Delete Scheduled Bond Token Update Event
+      description: Delete a scheduled bond token update event
+      operationId: DeleteScheduledBondTokenUpdateEvent
       parameters:
         - name: token_address
           in: path
@@ -1748,8 +1735,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Delete Scheduled Event Bond Tokens  Token Address  Scheduled
-                  Events  Scheduled Event Id  Delete
+                title: Response 401 Deletescheduledbondtokenupdateevent
         '404':
           description: Not Found Error
           content:
@@ -1760,9 +1746,9 @@ paths:
     get:
       tags:
         - bond
-      summary: List All Holders
+      summary: List All Bond Token Holders
       description: List all bond token holders
-      operationId: list_all_holders_bond_tokens__token_address__holders_get
+      operationId: ListAllBondTokenHolders
       parameters:
         - name: token_address
           in: path
@@ -1977,9 +1963,9 @@ paths:
     get:
       tags:
         - bond
-      summary: Count Number Of Holders
-      description: Count the number of holders
-      operationId: count_number_of_holders_bond_tokens__token_address__holders_count_get
+      summary: Count Bond Token Holders
+      description: Count the number of bond token holders
+      operationId: CountBondTokenHolders
       parameters:
         - name: token_address
           in: path
@@ -2023,9 +2009,9 @@ paths:
     get:
       tags:
         - bond
-      summary: Retrieve Holder
+      summary: Retrieve Bond Token Holder
       description: Retrieve bond token holder
-      operationId: retrieve_holder_bond_tokens__token_address__holders__account_address__get
+      operationId: RetrieveBondTokenHolder
       parameters:
         - name: token_address
           in: path
@@ -2075,9 +2061,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Register Holder Personal Info
-      description: Register the holder's personal information
-      operationId: register_holder_personal_info_bond_tokens__token_address__personal_info_post
+      summary: Register Bond Token Holder Personal Info
+      description: Register personal information of bond token holders
+      operationId: RegisterBondTokenHolderPersonalInfo
       parameters:
         - name: token_address
           in: path
@@ -2130,8 +2116,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Register Holder Personal Info Bond Tokens  Token
-                  Address  Personal Info Post
+                title: Response 401 Registerbondtokenholderpersonalinfo
         '404':
           description: Not Found Error
           content:
@@ -2148,16 +2133,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Register Holder Personal Info Bond Tokens  Token
-                  Address  Personal Info Post
+                title: Response 400 Registerbondtokenholderpersonalinfo
   /bond/tokens/{token_address}/personal_info/batch:
     get:
       tags:
         - bond
-      summary: List All Personal Info Batch Registration Uploads
-      description: List all personal information batch registration uploads
-      operationId: 
-        list_all_personal_info_batch_registration_uploads_bond_tokens__token_address__personal_info_batch_get
+      summary: List All Bond Token Batch Personal Info Registration
+      description: List all personal information batch registration
+      operationId: ListAllBondTokenBatchPersonalInfoRegistration
       parameters:
         - name: token_address
           in: path
@@ -2240,10 +2223,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Batch Register Personal Info
-      description: Create Batch for register personal information
-      operationId: 
-        batch_register_personal_info_bond_tokens__token_address__personal_info_batch_post
+      summary: Initiate Bond Token Batch Personal Info Registration
+      description: Initiate bond token batch personal information registration
+      operationId: InitiateBondTokenBatchPersonalInfoRegistration
       parameters:
         - name: token_address
           in: path
@@ -2303,8 +2285,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Batch Register Personal Info Bond Tokens  Token
-                  Address  Personal Info Batch Post
+                title: Response 401 Initiatebondtokenbatchpersonalinforegistration
         '404':
           description: Not Found Error
           content:
@@ -2322,10 +2303,9 @@ paths:
     get:
       tags:
         - bond
-      summary: Retrieve Batch Register Personal Info
-      description: Get Batch status for register personal information
-      operationId: 
-        retrieve_batch_register_personal_info_bond_tokens__token_address__personal_info_batch__batch_id__get
+      summary: Retrieve Bond Token Personal Info Batch Registration Status
+      description: Retrieve the status of bond token personal information batch registration
+      operationId: RetrieveBondTokenPersonalInfoBatchRegistrationStatus
       parameters:
         - name: token_address
           in: path
@@ -2374,8 +2354,9 @@ paths:
     get:
       tags:
         - bond
-      summary: List all lock/unlock events related to given bond token
-      operationId: list_all_lock_events_by_bond_bond_tokens__token_address__lock_events_get
+      summary: List Bond Token Lock Unlock Events
+      description: List all lock/unlock bond token events
+      operationId: ListBondTokenLockUnlockEvents
       parameters:
         - name: token_address
           in: path
@@ -2500,9 +2481,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Transfer Ownership
-      description: Transfer token ownership
-      operationId: transfer_ownership_bond_transfers_post
+      summary: Transfer Bond Token Ownership
+      description: Transfer bond token ownership
+      operationId: TransferBondTokenOwnership
       parameters:
         - name: issuer-address
           in: header
@@ -2549,7 +2530,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Transfer Ownership Bond Transfers Post
+                title: Response 401 Transferbondtokenownership
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
             Revert Error etc
@@ -2560,14 +2541,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Transfer Ownership Bond Transfers Post
+                title: Response 400 Transferbondtokenownership
   /bond/transfers/{token_address}:
     get:
       tags:
         - bond
-      summary: List Transfer History
-      description: List token transfer history
-      operationId: list_transfer_history_bond_transfers__token_address__get
+      summary: List Bond Token Transfer History
+      description: List bond token transfer history
+      operationId: ListBondTokenTransferHistory
       parameters:
         - name: token_address
           in: path
@@ -2751,9 +2732,9 @@ paths:
     get:
       tags:
         - bond
-      summary: List Transfer Approval History
-      description: List transfer approval history
-      operationId: list_transfer_approval_history_bond_transfer_approvals_get
+      summary: List All Bond Token Transfer Approval History
+      description: List all bond token transfer approval history
+      operationId: ListAllBondTokenTransferApprovalHistory
       parameters:
         - name: offset
           in: query
@@ -2796,9 +2777,9 @@ paths:
     get:
       tags:
         - bond
-      summary: List Token Transfer Approval History
-      description: List token transfer approval history
-      operationId: list_token_transfer_approval_history_bond_transfer_approvals__token_address__get
+      summary: List Specific Bond Token Transfer Approval History
+      description: List specific bond token transfer approval history
+      operationId: ListSpecificBondTokenTransferApprovalHistory
       parameters:
         - name: token_address
           in: path
@@ -2905,9 +2886,9 @@ paths:
     post:
       tags:
         - bond
-      summary: Update Transfer Approval
-      description: Update on the status of a bond transfer approval
-      operationId: update_transfer_approval_bond_transfer_approvals__token_address___id__post
+      summary: Update Bond Token Transfer Approval Status
+      description: Update bond token transfer approval status
+      operationId: UpdateBondTokenTransferApprovalStatus
       parameters:
         - name: token_address
           in: path
@@ -2966,8 +2947,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Update Transfer Approval Bond Transfer Approvals  Token
-                  Address   Id  Post
+                title: Response 401 Updatebondtokentransferapprovalstatus
         '404':
           description: Not Found Error
           content:
@@ -2985,15 +2965,13 @@ paths:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Update Transfer Approval Bond Transfer Approvals  Token
-                  Address   Id  Post
+                title: Response 400 Updatebondtokentransferapprovalstatus
     get:
       tags:
         - bond
-      summary: Retrieve Transfer Approval History
-      description: Retrieve bond token transfer approval history
-      operationId: 
-        retrieve_transfer_approval_history_bond_transfer_approvals__token_address___id__get
+      summary: Retrieve Bond Token Transfer Approval Status
+      description: Retrieve bond token transfer approval status
+      operationId: RetrieveBondTokenTransferApprovalStatus
       parameters:
         - name: token_address
           in: path
@@ -3037,12 +3015,12 @@ paths:
     post:
       tags:
         - bond
-      summary: Bulk Transfer Ownership
+      summary: Bulk Transfer Bond Token Ownership
       description: |-
-        Bulk transfer token ownership
+        Bulk transfer bond token ownership
 
         - All `token_address` must be the same.
-      operationId: bulk_transfer_ownership_bond_bulk_transfer_post
+      operationId: BulkTransferBondTokenOwnership
       parameters:
         - name: issuer-address
           in: header
@@ -3087,7 +3065,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Bulk Transfer Ownership Bond Bulk Transfer Post
+                title: Response 401 Bulktransferbondtokenownership
         '422':
           description: Validation Error
           content:
@@ -3105,13 +3083,13 @@ paths:
                   - $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorResponse'
                   - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                   - $ref: '#/components/schemas/TokenNotExistErrorResponse'
-                title: Response 400 Bulk Transfer Ownership Bond Bulk Transfer Post
+                title: Response 400 Bulktransferbondtokenownership
     get:
       tags:
         - bond
-      summary: List Bulk Transfer Upload
-      description: List bulk transfer uploads
-      operationId: list_bulk_transfer_upload_bond_bulk_transfer_get
+      summary: List Bond Token Bulk Transfers
+      description: List bond token bulk transfers
+      operationId: ListBondTokenBulkTransfers
       parameters:
         - name: issuer-address
           in: header
@@ -3130,7 +3108,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/BulkTransferUploadResponse'
-                title: Response List Bulk Transfer Upload Bond Bulk Transfer Get
+                title: Response Listbondtokenbulktransfers
         '422':
           description: Validation Error
           content:
@@ -3141,9 +3119,9 @@ paths:
     get:
       tags:
         - bond
-      summary: Retrieve Bulk Transfer
-      description: Retrieve a bulk transfer upload
-      operationId: retrieve_bulk_transfer_bond_bulk_transfer__upload_id__get
+      summary: Retrieve Bond Token Bulk Transfer
+      description: Retrieve a bond token bulk transfer
+      operationId: RetrieveBondTokenBulkTransfer
       parameters:
         - name: upload_id
           in: path
@@ -3168,8 +3146,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/BulkTransferResponse'
-                title: Response Retrieve Bulk Transfer Bond Bulk Transfer  Upload
-                  Id  Get
+                title: Response Retrievebondtokenbulktransfer
         '422':
           description: Validation Error
           content:
@@ -3186,9 +3163,9 @@ paths:
     get:
       tags:
         - '[misc] messaging'
-      summary: List All Accounts
+      summary: List All E2E Messaging Accounts
       description: List all e2e messaging accounts
-      operationId: list_all_accounts_e2e_messaging_accounts_get
+      operationId: ListAllE2EMessagingAccounts
       responses:
         '200':
           description: Successful Response
@@ -3198,13 +3175,13 @@ paths:
                 items:
                   $ref: '#/components/schemas/E2EMessagingAccountResponse'
                 type: array
-                title: Response List All Accounts E2E Messaging Accounts Get
+                title: Response Listalle2Emessagingaccounts
     post:
       tags:
         - '[misc] messaging'
-      summary: Create Account
-      description: Create Account
-      operationId: create_account_e2e_messaging_accounts_post
+      summary: Create E2E Messaging Account
+      description: Create E2EMessaging account
+      operationId: CreateE2EMessagingAccount
       requestBody:
         content:
           application/json:
@@ -3234,14 +3211,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Create Account E2E Messaging Accounts Post
+                title: Response 400 Createe2Emessagingaccount
   /e2e_messaging/accounts/{account_address}:
     get:
       tags:
         - '[misc] messaging'
-      summary: Retrieve Account
+      summary: Retrieve E2E Messaging Account
       description: Retrieve an e2e messaging account
-      operationId: retrieve_account_e2e_messaging_accounts__account_address__get
+      operationId: RetrieveE2EMessagingAccount
       parameters:
         - name: account_address
           in: path
@@ -3265,9 +3242,9 @@ paths:
     delete:
       tags:
         - '[misc] messaging'
-      summary: Delete Account
+      summary: Delete E2E Messaging Account
       description: Logically delete an e2e messaging account
-      operationId: delete_account_e2e_messaging_accounts__account_address__delete
+      operationId: DeleteE2EMessagingAccount
       parameters:
         - name: account_address
           in: path
@@ -3292,9 +3269,9 @@ paths:
     post:
       tags:
         - '[misc] messaging'
-      summary: Update Account Rsa Key
+      summary: Update E2E Messaging Account Rsa Key
       description: Update an e2e messaging account rsa key
-      operationId: update_account_rsa_key_e2e_messaging_accounts__account_address__rsa_key_post
+      operationId: UpdateE2EMessagingAccountRSAKey
       parameters:
         - name: account_address
           in: path
@@ -3331,9 +3308,9 @@ paths:
     post:
       tags:
         - '[misc] messaging'
-      summary: Change Eoa Password
-      description: Change Account's EOA Password
-      operationId: change_eoa_password_e2e_messaging_accounts__account_address__eoa_password_post
+      summary: Change E2E Messaging Account Eoa Password
+      description: Change E2EMessaging account's EOA password
+      operationId: ChangeE2EMessagingAccountEOAPassword
       parameters:
         - name: account_address
           in: path
@@ -3373,10 +3350,9 @@ paths:
     post:
       tags:
         - '[misc] messaging'
-      summary: Change Rsa Passphrase
-      description: Change Account's RSA Passphrase
-      operationId: 
-        change_rsa_passphrase_e2e_messaging_accounts__account_address__rsa_passphrase_post
+      summary: Change E2E Messaging Account Rsa Passphrase
+      description: Change E2EMessaging account's RSA passphrase
+      operationId: ChangeE2EMessagingAccountRSAPassphrase
       parameters:
         - name: account_address
           in: path
@@ -3417,8 +3393,8 @@ paths:
       tags:
         - '[misc] messaging'
       summary: List All E2E Messages
-      description: List all e2e message
-      operationId: list_all_e2e_messages_e2e_messaging_messages_get
+      description: List all e2e messages
+      operationId: ListAllE2EMessages
       parameters:
         - name: from_address
           in: query
@@ -3489,7 +3465,7 @@ paths:
         - '[misc] messaging'
       summary: Retrieve E2E Messaging
       description: Retrieve an e2e message
-      operationId: retrieve_e2e_messaging_e2e_messaging_messages__id__get
+      operationId: RetrieveE2EMessage
       parameters:
         - name: id
           in: path
@@ -3521,8 +3497,8 @@ paths:
       tags:
         - utility
       summary: List All Upload Files
-      description: List all files
-      operationId: list_all_upload_files_files_get
+      description: List all upload files
+      operationId: ListAllUploadFiles
       parameters:
         - name: relation
           in: query
@@ -3594,7 +3570,7 @@ paths:
         - utility
       summary: Upload File
       description: Upload file
-      operationId: upload_file_files_post
+      operationId: UploadFile
       parameters:
         - name: issuer-address
           in: header
@@ -3627,7 +3603,7 @@ paths:
         - utility
       summary: Download File
       description: Download file
-      operationId: download_file_files__file_id__get
+      operationId: DownloadFile
       parameters:
         - name: file_id
           in: path
@@ -3661,7 +3637,7 @@ paths:
         - utility
       summary: Delete File
       description: Delete file
-      operationId: delete_file_files__file_id__delete
+      operationId: DeleteFile
       parameters:
         - name: file_id
           in: path
@@ -3695,8 +3671,8 @@ paths:
       tags:
         - token_common
       summary: List All Ledger History
-      description: List all Ledger
-      operationId: list_all_ledger_history_ledger__token_address__history_get
+      description: List all ledger history
+      operationId: ListAllLedgerHistory
       parameters:
         - name: token_address
           in: path
@@ -3755,8 +3731,8 @@ paths:
       tags:
         - token_common
       summary: Retrieve Ledger History
-      description: Retrieve Ledger
-      operationId: retrieve_ledger_history_ledger__token_address__history__ledger_id__get
+      description: Retrieve ledger history
+      operationId: RetrieveLedgerHistory
       parameters:
         - name: token_address
           in: path
@@ -3814,15 +3790,14 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/Integer64bitLimitExceededErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Retrieve Ledger History Ledger  Token Address  History  Ledger
-                  Id  Get
+                title: Response 400 Retrieveledgerhistory
   /ledger/{token_address}/template:
     get:
       tags:
         - token_common
       summary: Retrieve Ledger Template
-      description: Retrieve Ledger Template
-      operationId: retrieve_ledger_template_ledger__token_address__template_get
+      description: Retrieve ledger template
+      operationId: RetrieveLedgerTemplate
       parameters:
         - name: token_address
           in: path
@@ -3869,7 +3844,7 @@ paths:
         - token_common
       summary: Create Update Ledger Template
       description: Create or Update Ledger Template
-      operationId: create_update_ledger_template_ledger__token_address__template_post
+      operationId: CreateUpdateLedgerTemplate
       parameters:
         - name: token_address
           in: path
@@ -3915,8 +3890,8 @@ paths:
       tags:
         - token_common
       summary: Delete Ledger Template
-      description: Delete Ledger Template
-      operationId: delete_ledger_template_ledger__token_address__template_delete
+      description: Delete ledger template
+      operationId: DeleteLedgerTemplate
       parameters:
         - name: token_address
           in: path
@@ -3957,8 +3932,8 @@ paths:
       tags:
         - token_common
       summary: List All Ledger Details Data
-      description: List all Ledger Details Data
-      operationId: list_all_ledger_details_data_ledger__token_address__details_data_get
+      description: List all ledger details data
+      operationId: ListAllLedgerDetailsData
       parameters:
         - name: token_address
           in: path
@@ -4016,8 +3991,8 @@ paths:
       tags:
         - token_common
       summary: Create Ledger Details Data
-      description: Create Ledger Details Data
-      operationId: create_ledger_details_data_ledger__token_address__details_data_post
+      description: Create ledger details data
+      operationId: CreateLedgerDetailsData
       parameters:
         - name: token_address
           in: path
@@ -4071,8 +4046,8 @@ paths:
       tags:
         - token_common
       summary: Retrieve Ledger Details Data
-      description: Retrieve Ledger Details Data
-      operationId: retrieve_ledger_details_data_ledger__token_address__details_data__data_id__get
+      description: Retrieve ledger details data
+      operationId: RetrieveLedgerDetailsData
       parameters:
         - name: token_address
           in: path
@@ -4103,8 +4078,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RetrieveLedgerDetailsDataResponse'
-                title: Response Retrieve Ledger Details Data Ledger  Token Address  Details
-                  Data  Data Id  Get
+                title: Response Retrieveledgerdetailsdata
         '422':
           description: Validation Error
           content:
@@ -4128,8 +4102,8 @@ paths:
       tags:
         - token_common
       summary: Update Ledger Details Data
-      description: Update Ledger Details Data
-      operationId: update_ledger_details_data_ledger__token_address__details_data__data_id__post
+      description: Update ledger details data
+      operationId: UpdateLedgerDetailsData
       parameters:
         - name: token_address
           in: path
@@ -4184,8 +4158,8 @@ paths:
       tags:
         - token_common
       summary: Delete Ledger Details Data
-      description: Delete Ledger Details Data
-      operationId: delete_ledger_details_data_ledger__token_address__details_data__data_id__delete
+      description: Delete ledger details data
+      operationId: DeleteLedgerDetailsData
       parameters:
         - name: token_address
           in: path
@@ -4233,7 +4207,7 @@ paths:
         - notification
       summary: List All Notifications
       description: List all notifications
-      operationId: list_all_notifications_notifications_get
+      operationId: ListAllNotifications
       parameters:
         - name: notice_type
           in: query
@@ -4280,7 +4254,7 @@ paths:
         - notification
       summary: Delete Notification
       description: Delete notification
-      operationId: delete_notification_notifications__notice_id__delete
+      operationId: DeleteNotification
       parameters:
         - name: notice_id
           in: path
@@ -4313,9 +4287,9 @@ paths:
     get:
       tags:
         - token_common
-      summary: List all positions in the account
-      description: List all account's position
-      operationId: list_all_position_positions__account_address__get
+      summary: List All Positions
+      description: List all positions
+      operationId: ListAllPositions
       parameters:
         - name: account_address
           in: path
@@ -4379,9 +4353,9 @@ paths:
     get:
       tags:
         - token_common
-      summary: List all locked positions in the account
-      description: List all account's locked position
-      operationId: list_all_locked_position_positions__account_address__lock_get
+      summary: List All Locked Position
+      description: List all locked position
+      operationId: ListAllLockedPosition
       parameters:
         - name: account_address
           in: path
@@ -4438,9 +4412,9 @@ paths:
     get:
       tags:
         - token_common
-      summary: List all lock/unlock events in the account
+      summary: List Account Lock Unlock Events
       description: List all lock/unlock events in the account
-      operationId: list_all_lock_events_positions__account_address__lock_events_get
+      operationId: ListAccountLockUnlockEvents
       parameters:
         - name: account_address
           in: path
@@ -4575,9 +4549,9 @@ paths:
     post:
       tags:
         - token_common
-      summary: Force unlock the locked position
+      summary: Force Unlock
       description: Force unlock the locked position
-      operationId: force_unlock_positions__account_address__force_unlock_post
+      operationId: ForceUnlock
       parameters:
         - name: account_address
           in: path
@@ -4624,8 +4598,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Force Unlock Positions  Account Address  Force
-                  Unlock Post
+                title: Response 401 Forceunlock
         '422':
           description: Validation Error
           content:
@@ -4642,15 +4615,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Force Unlock Positions  Account Address  Force
-                  Unlock Post
+                title: Response 400 Forceunlock
   /positions/{account_address}/{token_address}:
     get:
       tags:
         - token_common
-      summary: Token position in the account
-      description: Retrieve account's position
-      operationId: retrieve_position_positions__account_address___token_address__get
+      summary: Retrieve Position
+      description: Retrieve token position for account
+      operationId: RetrieveTokenPositionForAccount
       parameters:
         - name: account_address
           in: path
@@ -4702,9 +4674,9 @@ paths:
     post:
       tags:
         - share
-      summary: Issue Token
+      summary: Issue Share Token
       description: Issue ibetShare token
-      operationId: issue_token_share_tokens_post
+      operationId: IssueShareToken
       parameters:
         - name: issuer-address
           in: header
@@ -4755,7 +4727,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Issue Token Share Tokens Post
+                title: Response 401 Issuesharetoken
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
             Revert Error etc
@@ -4765,12 +4737,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Issue Token Share Tokens Post
+                title: Response 400 Issuesharetoken
     get:
       tags:
         - share
-      summary: List All Tokens
-      operationId: list_all_tokens_share_tokens_get
+      summary: List All Share Tokens
+      description: List all issued share tokens
+      operationId: ListAllShareTokens
       parameters:
         - name: issuer-address
           in: header
@@ -4789,7 +4762,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/IbetShareResponse'
-                title: Response List All Tokens Share Tokens Get
+                title: Response Listallsharetokens
         '422':
           description: Validation Error
           content:
@@ -4800,9 +4773,9 @@ paths:
     get:
       tags:
         - share
-      summary: Retrieve Token
-      description: Retrieve token
-      operationId: retrieve_token_share_tokens__token_address__get
+      summary: Retrieve Share Token
+      description: Retrieve the share token
+      operationId: RetrieveShareToken
       parameters:
         - name: token_address
           in: path
@@ -4833,9 +4806,9 @@ paths:
     post:
       tags:
         - share
-      summary: Update Token
-      description: Update a token
-      operationId: update_token_share_tokens__token_address__post
+      summary: Update Share Token
+      description: Update the share token
+      operationId: UpdateShareToken
       parameters:
         - name: token_address
           in: path
@@ -4888,7 +4861,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Update Token Share Tokens  Token Address  Post
+                title: Response 401 Updatesharetoken
         '404':
           description: Not Found Error
           content:
@@ -4906,14 +4879,14 @@ paths:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Update Token Share Tokens  Token Address  Post
+                title: Response 400 Updatesharetoken
   /share/tokens/{token_address}/history:
     get:
       tags:
         - share
       summary: List Share Operation Log History
-      description: List of token operation log history
-      operationId: list_share_operation_log_history_share_tokens__token_address__history_get
+      description: List all share token operation log history
+      operationId: ListShareOperationLogHistory
       parameters:
         - name: token_address
           in: path
@@ -5027,10 +5000,9 @@ paths:
     get:
       tags:
         - share
-      summary: List Additional Issuance History
-      description: List additional issuance history
-      operationId: 
-        list_additional_issuance_history_share_tokens__token_address__additional_issue_get
+      summary: List Share Additional Issuance History
+      description: List share additional issuance history
+      operationId: ListShareAdditionalIssuanceHistory
       parameters:
         - name: token_address
           in: path
@@ -5107,9 +5079,9 @@ paths:
     post:
       tags:
         - share
-      summary: Additional Issue
-      description: Additional issue
-      operationId: additional_issue_share_tokens__token_address__additional_issue_post
+      summary: Issuer Additional Share
+      description: Issuer additional shares
+      operationId: IssueAdditionalShare
       parameters:
         - name: token_address
           in: path
@@ -5162,8 +5134,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Additional Issue Share Tokens  Token Address  Additional
-                  Issue Post
+                title: Response 401 Issueadditionalshare
         '404':
           description: Not Found Error
           content:
@@ -5180,15 +5151,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Additional Issue Share Tokens  Token Address  Additional
-                  Issue Post
+                title: Response 400 Issueadditionalshare
   /share/tokens/{token_address}/additional_issue/batch:
     get:
       tags:
         - share
-      summary: List All Additional Issue Upload
-      operationId: 
-        list_all_additional_issue_upload_share_tokens__token_address__additional_issue_batch_get
+      summary: List All Batch Additional Share Issue
+      description: List all share batch additional issues
+      operationId: ListAllBatchAdditionalShareIssue
       parameters:
         - name: token_address
           in: path
@@ -5260,10 +5230,9 @@ paths:
     post:
       tags:
         - share
-      summary: Additional Issue In Batch
-      description: Additional issue (Batch)
-      operationId: 
-        additional_issue_in_batch_share_tokens__token_address__additional_issue_batch_post
+      summary: Issue Additional Shares In Batch
+      description: Issue additional shares in batch
+      operationId: IssueAdditionalSharesInBatch
       parameters:
         - name: token_address
           in: path
@@ -5323,8 +5292,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Additional Issue In Batch Share Tokens  Token
-                  Address  Additional Issue Batch Post
+                title: Response 401 Issueadditionalsharesinbatch
         '404':
           description: Not Found Error
           content:
@@ -5342,10 +5310,9 @@ paths:
     get:
       tags:
         - share
-      summary: Retrieve Batch Additional Issue
-      description: Get Batch status for additional issue
-      operationId: 
-        retrieve_batch_additional_issue_share_tokens__token_address__additional_issue_batch__batch_id__get
+      summary: Retrieve Batch Additional Share Issue Status
+      description: Retrieve detailed status of additional share batch issuance
+      operationId: RetrieveBatchAdditionalShareIssueStatus
       parameters:
         - name: token_address
           in: path
@@ -5388,9 +5355,9 @@ paths:
     get:
       tags:
         - share
-      summary: List Redeem History
-      description: List redemption history
-      operationId: list_redeem_history_share_tokens__token_address__redeem_get
+      summary: List Share Redeem History
+      description: List share redemption history
+      operationId: ListShareRedemptionHistory
       parameters:
         - name: token_address
           in: path
@@ -5467,9 +5434,9 @@ paths:
     post:
       tags:
         - share
-      summary: Redeem Token
-      description: Redeem a token
-      operationId: redeem_token_share_tokens__token_address__redeem_post
+      summary: Redeem Share
+      description: Redeem share token
+      operationId: RedeemShare
       parameters:
         - name: token_address
           in: path
@@ -5522,8 +5489,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Redeem Token Share Tokens  Token Address  Redeem
-                  Post
+                title: Response 401 Redeemshare
         '404':
           description: Not Found Error
           content:
@@ -5540,14 +5506,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Redeem Token Share Tokens  Token Address  Redeem
-                  Post
+                title: Response 400 Redeemshare
   /share/tokens/{token_address}/redeem/batch:
     get:
       tags:
         - share
-      summary: List All Redeem Upload
-      operationId: list_all_redeem_upload_share_tokens__token_address__redeem_batch_get
+      summary: List All Batch Share Redemption
+      description: List all batch share redemptions
+      operationId: ListAllBatchShareRedemption
       parameters:
         - name: token_address
           in: path
@@ -5619,9 +5585,9 @@ paths:
     post:
       tags:
         - share
-      summary: Redeem Token In Batch
-      description: Redeem a token (Batch)
-      operationId: redeem_token_in_batch_share_tokens__token_address__redeem_batch_post
+      summary: Redeem Shares In Batch
+      description: Redeem shares in batch
+      operationId: RedeemSharesInBatch
       parameters:
         - name: token_address
           in: path
@@ -5681,8 +5647,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Redeem Token In Batch Share Tokens  Token Address  Redeem
-                  Batch Post
+                title: Response 401 Redeemsharesinbatch
         '404':
           description: Not Found Error
           content:
@@ -5701,8 +5666,8 @@ paths:
       tags:
         - share
       summary: Retrieve Batch Redeem
-      description: Get Batch status for additional issue
-      operationId: retrieve_batch_redeem_share_tokens__token_address__redeem_batch__batch_id__get
+      description: Retrieve detailed status of batch share redemption
+      operationId: RetrieveBatchShareRedemptionStatus
       parameters:
         - name: token_address
           in: path
@@ -5745,9 +5710,9 @@ paths:
     get:
       tags:
         - share
-      summary: List All Scheduled Events
-      description: List all scheduled update events
-      operationId: list_all_scheduled_events_share_tokens__token_address__scheduled_events_get
+      summary: List All Scheduled Share Token Update Events
+      description: List all scheduled share token update events
+      operationId: ListAllScheduledShareTokenUpdateEvents
       parameters:
         - name: token_address
           in: path
@@ -5772,14 +5737,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ScheduledEventResponse'
-                title: Response List All Scheduled Events Share Tokens  Token Address  Scheduled
-                  Events Get
+                title: Response Listallscheduledsharetokenupdateevents
     post:
       tags:
         - share
-      summary: Schedule New Update Event
-      description: Register a new update event
-      operationId: schedule_new_update_event_share_tokens__token_address__scheduled_events_post
+      summary: Schedule Share Token Update Event
+      description: Schedule a new share token update event
+      operationId: ScheduleShareTokenUpdateEvent
       parameters:
         - name: token_address
           in: path
@@ -5836,8 +5800,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Schedule New Update Event Share Tokens  Token
-                  Address  Scheduled Events Post
+                title: Response 401 Schedulesharetokenupdateevent
         '404':
           description: Not Found Error
           content:
@@ -5853,15 +5816,14 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                title: Response 400 Schedule New Update Event Share Tokens  Token
-                  Address  Scheduled Events Post
+                title: Response 400 Schedulesharetokenupdateevent
   /share/tokens/{token_address}/scheduled_events/batch:
     post:
       tags:
         - share
-      summary: Schedule New Update Event
-      description: Register new update events on batch
-      operationId: ScheduleShareTokenUpdateEventsBatch
+      summary: Schedule Share Token Update Events In Batch
+      description: Schedule share token update events in batch
+      operationId: ScheduleShareTokenUpdateEventsInBatch
       parameters:
         - name: token_address
           in: path
@@ -5921,7 +5883,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Schedulesharetokenupdateeventsbatch
+                title: Response 401 Schedulesharetokenupdateeventsinbatch
         '404':
           description: Not Found Error
           content:
@@ -5937,15 +5899,14 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                title: Response 400 Schedulesharetokenupdateeventsbatch
+                title: Response 400 Schedulesharetokenupdateeventsinbatch
   /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}:
     get:
       tags:
         - share
-      summary: Retrieve Token Event
-      description: Retrieve a scheduled token event
-      operationId: 
-        retrieve_token_event_share_tokens__token_address__scheduled_events__scheduled_event_id__get
+      summary: Retrieve Scheduled Share Token Update Event
+      description: Retrieve a scheduled share token update event
+      operationId: RetrieveScheduledShareTokenUpdateEvent
       parameters:
         - name: token_address
           in: path
@@ -5983,10 +5944,9 @@ paths:
     delete:
       tags:
         - share
-      summary: Delete Scheduled Event
-      description: Delete a scheduled event
-      operationId: 
-        delete_scheduled_event_share_tokens__token_address__scheduled_events__scheduled_event_id__delete
+      summary: Delete Scheduled Share Token Update Event
+      description: Delete a scheduled share token update event
+      operationId: DeleteScheduledShareTokenUpdateEvent
       parameters:
         - name: token_address
           in: path
@@ -6043,8 +6003,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Delete Scheduled Event Share Tokens  Token Address  Scheduled
-                  Events  Scheduled Event Id  Delete
+                title: Response 401 Deletescheduledsharetokenupdateevent
         '404':
           description: Not Found Error
           content:
@@ -6055,9 +6014,9 @@ paths:
     get:
       tags:
         - share
-      summary: List All Holders
+      summary: List All Share Token Holders
       description: List all share token holders
-      operationId: list_all_holders_share_tokens__token_address__holders_get
+      operationId: ListAllShareTokenHolders
       parameters:
         - name: token_address
           in: path
@@ -6272,9 +6231,9 @@ paths:
     get:
       tags:
         - share
-      summary: Count Number Of Holders
-      description: Count the number of holders
-      operationId: count_number_of_holders_share_tokens__token_address__holders_count_get
+      summary: Count Share Token Holders
+      description: Count the number of share token holders
+      operationId: CountShareTokenHolders
       parameters:
         - name: token_address
           in: path
@@ -6318,9 +6277,9 @@ paths:
     get:
       tags:
         - share
-      summary: Retrieve Holder
+      summary: Retrieve Share Token Holder
       description: Retrieve share token holder
-      operationId: retrieve_holder_share_tokens__token_address__holders__account_address__get
+      operationId: RetrieveShareTokenHolder
       parameters:
         - name: token_address
           in: path
@@ -6370,9 +6329,9 @@ paths:
     post:
       tags:
         - share
-      summary: Register Holder Personal Info
-      description: Register the holder's personal information
-      operationId: register_holder_personal_info_share_tokens__token_address__personal_info_post
+      summary: Register Share Token Holder Personal Info
+      description: Register personal information of share token holders
+      operationId: RegisterShareTokenHolderPersonalInfo
       parameters:
         - name: token_address
           in: path
@@ -6425,8 +6384,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Register Holder Personal Info Share Tokens  Token
-                  Address  Personal Info Post
+                title: Response 401 Registersharetokenholderpersonalinfo
         '404':
           description: Not Found Error
           content:
@@ -6443,16 +6401,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Register Holder Personal Info Share Tokens  Token
-                  Address  Personal Info Post
+                title: Response 400 Registersharetokenholderpersonalinfo
   /share/tokens/{token_address}/personal_info/batch:
     get:
       tags:
         - share
-      summary: List All Personal Info Batch Registration Uploads
-      description: List all personal information batch registration uploads
-      operationId: 
-        list_all_personal_info_batch_registration_uploads_share_tokens__token_address__personal_info_batch_get
+      summary: List All Share Token Batch Personal Info Registration
+      description: List all personal information batch registration
+      operationId: ListAllShareTokenBatchPersonalInfoRegistration
       parameters:
         - name: token_address
           in: path
@@ -6535,10 +6491,9 @@ paths:
     post:
       tags:
         - share
-      summary: Batch Register Personal Info
-      description: Create Batch for register personal information
-      operationId: 
-        batch_register_personal_info_share_tokens__token_address__personal_info_batch_post
+      summary: Initiate Share Token Batch Personal Info Registration
+      description: Initiate share token batch personal information registration
+      operationId: InitiateShareTokenBatchPersonalInfoRegistration
       parameters:
         - name: token_address
           in: path
@@ -6598,8 +6553,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Batch Register Personal Info Share Tokens  Token
-                  Address  Personal Info Batch Post
+                title: Response 401 Initiatesharetokenbatchpersonalinforegistration
         '404':
           description: Not Found Error
           content:
@@ -6617,10 +6571,9 @@ paths:
     get:
       tags:
         - share
-      summary: Retrieve Batch Register Personal Info
-      description: Get Batch status for register personal information
-      operationId: 
-        retrieve_batch_register_personal_info_share_tokens__token_address__personal_info_batch__batch_id__get
+      summary: Retrieve Share Token Personal Info Batch Registration Status
+      description: Retrieve the status of share token personal information batch registration
+      operationId: RetrieveShareTokenPersonalInfoBatchRegistrationStatus
       parameters:
         - name: token_address
           in: path
@@ -6663,8 +6616,9 @@ paths:
     get:
       tags:
         - share
-      summary: List all lock/unlock events related to given share token
-      operationId: list_all_lock_events_by_share_share_tokens__token_address__lock_events_get
+      summary: List Share Token Lock Unlock Events
+      description: List all lock/unlock share token events
+      operationId: ListShareTokenLockUnlockEvents
       parameters:
         - name: token_address
           in: path
@@ -6789,9 +6743,9 @@ paths:
     post:
       tags:
         - share
-      summary: Transfer Ownership
-      description: Transfer token ownership
-      operationId: transfer_ownership_share_transfers_post
+      summary: Transfer Share Token Ownership
+      description: Transfer share token ownership
+      operationId: TransferShareTokenOwnership
       parameters:
         - name: issuer-address
           in: header
@@ -6838,7 +6792,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Transfer Ownership Share Transfers Post
+                title: Response 401 Transfersharetokenownership
         '404':
           description: Not Found Error
           content:
@@ -6855,14 +6809,14 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Transfer Ownership Share Transfers Post
+                title: Response 400 Transfersharetokenownership
   /share/transfers/{token_address}:
     get:
       tags:
         - share
-      summary: List Transfer History
-      description: List token transfer history
-      operationId: list_transfer_history_share_transfers__token_address__get
+      summary: List Share Token Transfer History
+      description: List share token transfer history
+      operationId: ListShareTokenTransferHistory
       parameters:
         - name: token_address
           in: path
@@ -7046,9 +7000,9 @@ paths:
     get:
       tags:
         - share
-      summary: List Transfer Approval History
-      description: List transfer approval history
-      operationId: list_transfer_approval_history_share_transfer_approvals_get
+      summary: List All Share Token Transfer Approval History
+      description: List all share token transfer approval history
+      operationId: ListAllShareTokenTransferApprovalHistory
       parameters:
         - name: offset
           in: query
@@ -7091,10 +7045,9 @@ paths:
     get:
       tags:
         - share
-      summary: List Token Transfer Approval History
-      description: List token transfer approval history
-      operationId: 
-        list_token_transfer_approval_history_share_transfer_approvals__token_address__get
+      summary: List Specific Share Token Transfer Approval History
+      description: List specific share token transfer approval history
+      operationId: ListSpecificShareTokenTransferApprovalHistory
       parameters:
         - name: token_address
           in: path
@@ -7201,9 +7154,9 @@ paths:
     post:
       tags:
         - share
-      summary: Update Transfer Approval
-      description: Update on the status of a share transfer approval
-      operationId: update_transfer_approval_share_transfer_approvals__token_address___id__post
+      summary: Update Share Token Transfer Approval Status
+      description: Update share token transfer approval status
+      operationId: UpdateShareTokenTransferApprovalStatus
       parameters:
         - name: token_address
           in: path
@@ -7262,8 +7215,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Update Transfer Approval Share Transfer Approvals  Token
-                  Address   Id  Post
+                title: Response 401 Updatesharetokentransferapprovalstatus
         '404':
           description: Not Found Error
           content:
@@ -7281,15 +7233,13 @@ paths:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Update Transfer Approval Share Transfer Approvals  Token
-                  Address   Id  Post
+                title: Response 400 Updatesharetokentransferapprovalstatus
     get:
       tags:
         - share
-      summary: Retrieve Transfer Approval History
-      description: Retrieve share token transfer approval history
-      operationId: 
-        retrieve_transfer_approval_history_share_transfer_approvals__token_address___id__get
+      summary: Retrieve Share Token Transfer Approval Status
+      description: Retrieve share token transfer approval status
+      operationId: RetrieveShareTokenTransferApprovalStatus
       parameters:
         - name: token_address
           in: path
@@ -7333,12 +7283,12 @@ paths:
     post:
       tags:
         - share
-      summary: Bulk Transfer Ownership
+      summary: Bulk Transfer Share Token Ownership
       description: |-
-        Bulk transfer token ownership
+        Bulk transfer share token ownership
 
         - All `token_address` must be the same.
-      operationId: bulk_transfer_ownership_share_bulk_transfer_post
+      operationId: BulkTransferShareTokenOwnership
       parameters:
         - name: issuer-address
           in: header
@@ -7383,7 +7333,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Bulk Transfer Ownership Share Bulk Transfer Post
+                title: Response 401 Bulktransfersharetokenownership
         '422':
           description: Validation Error
           content:
@@ -7401,13 +7351,13 @@ paths:
                   - $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorResponse'
                   - $ref: '#/components/schemas/NonTransferableTokenErrorResponse'
                   - $ref: '#/components/schemas/TokenNotExistErrorResponse'
-                title: Response 400 Bulk Transfer Ownership Share Bulk Transfer Post
+                title: Response 400 Bulktransfersharetokenownership
     get:
       tags:
         - share
-      summary: List Bulk Transfer Upload
-      description: List bulk transfer uploads
-      operationId: list_bulk_transfer_upload_share_bulk_transfer_get
+      summary: List Share Token Bulk Transfers
+      description: List share token bulk transfers
+      operationId: ListShareTokenBulkTransfers
       parameters:
         - name: issuer-address
           in: header
@@ -7426,7 +7376,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/BulkTransferUploadResponse'
-                title: Response List Bulk Transfer Upload Share Bulk Transfer Get
+                title: Response Listsharetokenbulktransfers
         '422':
           description: Validation Error
           content:
@@ -7437,9 +7387,9 @@ paths:
     get:
       tags:
         - share
-      summary: Retrieve Bulk Transfer
-      description: Retrieve a bulk transfer upload
-      operationId: retrieve_bulk_transfer_share_bulk_transfer__upload_id__get
+      summary: Retrieve Share Token Bulk Transfer
+      description: Retrieve a share token bulk transfer
+      operationId: RetrieveShareTokenBulkTransfer
       parameters:
         - name: upload_id
           in: path
@@ -7464,8 +7414,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/BulkTransferResponse'
-                title: Response Retrieve Bulk Transfer Share Bulk Transfer  Upload
-                  Id  Get
+                title: Response Retrievesharetokenbulktransfer
         '422':
           description: Validation Error
           content:
@@ -7725,7 +7674,7 @@ paths:
         - token_common
       summary: Create Token Holders Collection
       description: Create token holders collection
-      operationId: create_token_holders_collection_token_holders__token_address__collection_post
+      operationId: CreateTokenHoldersCollection
       parameters:
         - name: token_address
           in: path
@@ -7777,7 +7726,8 @@ paths:
       tags:
         - token_common
       summary: List All Token Holders Collections
-      operationId: list_all_token_holders_collections_token_holders__token_address__collection_get
+      description: List all token holders collections
+      operationId: ListAllTokenHoldersCollections
       parameters:
         - name: token_address
           in: path
@@ -7860,8 +7810,7 @@ paths:
         - token_common
       summary: Retrieve Token Holders Collection
       description: Retrieve token holders collection
-      operationId: 
-        retrieve_token_holders_collection_token_holders__token_address__collection__list_id__get
+      operationId: RetrieveTokenHoldersCollection
       parameters:
         - name: token_address
           in: path
@@ -8375,808 +8324,8 @@ paths:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatedvpdelivery
-  /settlement/dvp/agent/accounts:
-    get:
-      tags:
-        - '[misc] settlement_agent'
-      summary: List All Accounts
-      description: List all DVP-Payment Agent accounts
-      operationId: ListAllDVPAgentAccount
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListAllDVPAgentAccountResponse'
-    post:
-      tags:
-        - '[misc] settlement_agent'
-      summary: Create Account
-      description: Create DVP-Payment Agent Account
-      operationId: CreateDVPAgentAccount
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateDVPAgentAccountRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DVPAgentAccountResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /settlement/dvp/agent/account/{account_address}:
-    delete:
-      tags:
-        - '[misc] settlement_agent'
-      summary: Delete Account
-      description: Logically delete an DVP-Payment Agent Account
-      operationId: DeleteDVPAgentAccount
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DVPAgentAccountResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /settlement/dvp/agent/account/{account_address}/eoa_password:
-    post:
-      tags:
-        - '[misc] settlement_agent'
-      summary: Change Eoa Password
-      description: Change Agent's EOA Password
-      operationId: ChangeDVPAgentAccountPassword
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DVPAgentAccountChangeEOAPasswordRequest'
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /settlement/dvp/agent/{exchange_address}/deliveries:
-    get:
-      tags:
-        - '[misc] settlement_agent'
-      summary: List All Dvp Agent Deliveries
-      description: List all DVP deliveries for paying agent
-      operationId: ListAllDVPAgentDeliveries
-      parameters:
-        - name: exchange_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Exchange Address
-        - name: agent_address
-          in: query
-          required: true
-          schema:
-            type: string
-            description: Agent address
-            title: Agent Address
-          description: Agent address
-        - name: token_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: Token address
-            title: Token Address
-          description: Token address
-        - name: seller_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: Seller address
-            title: Seller Address
-          description: Seller address
-        - name: buyer_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: Buyer address
-            title: Buyer Address
-          description: Buyer address
-        - name: valid
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: boolean
-              - type: 'null'
-            description: Valid flag
-            title: Valid
-          description: Valid flag
-        - name: status
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/DeliveryStatus'
-              - type: 'null'
-            description: Delivery status
-            title: Status
-          description: Delivery status
-        - name: create_blocktimestamp_from
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-                format: date-time
-              - type: 'null'
-            description: Create block timestamp filter(From)
-            title: Create Blocktimestamp From
-          description: Create block timestamp filter(From)
-        - name: create_blocktimestamp_to
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-                format: date-time
-              - type: 'null'
-            description: Create block timestamp filter(To)
-            title: Create Blocktimestamp To
-          description: Create block timestamp filter(To)
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListAllDVPAgentDeliveriesResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}:
-    post:
-      tags:
-        - '[misc] settlement_agent'
-      summary: Update Dvp Agent Delivery
-      description: Finish/Abort DVP delivery
-      operationId: UpdateDVPAgentDelivery
-      parameters:
-        - name: exchange_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Exchange Address
-        - name: delivery_id
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Delivery Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              anyOf:
-                - $ref: '#/components/schemas/FinishDVPDeliveryRequest'
-                - $ref: '#/components/schemas/AbortDVPDeliveryRequest'
-              title: Data
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatedvpagentdelivery
-  /blockchain_explorer/block_data:
-    get:
-      tags:
-        - '[misc] blockchain_explorer'
-      summary: '[ibet Blockchain Explorer] List block data'
-      description: |-
-        Returns a list of block data within the specified block number range.
-        The maximum number of search results is 1000.
-      operationId: ListBlockData
-      parameters:
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
-        - name: from_block_number
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            title: From Block Number
-        - name: to_block_number
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            title: To Block Number
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/SortOrder'
-              - type: 'null'
-            description: 'sort order(0: ASC, 1: DESC)'
-            default: 0
-            title: Sort Order
-          description: 'sort order(0: ASC, 1: DESC)'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockDataListResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseLimitExceededErrorResponse'
-  /blockchain_explorer/block_data/{block_number}:
-    get:
-      tags:
-        - '[misc] blockchain_explorer'
-      summary: '[ibet Blockchain Explorer] Retrieve block data'
-      description: Returns block data in the specified block number.
-      operationId: GetBlockData
-      parameters:
-        - name: block_number
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 0
-            description: Block number
-            title: Block Number
-          description: Block number
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockDataResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /blockchain_explorer/tx_data:
-    get:
-      tags:
-        - '[misc] blockchain_explorer'
-      summary: '[ibet Blockchain Explorer] List tx data'
-      description: |-
-        Returns a list of transactions by various search parameters.
-        The maximum number of search results is 10000.
-      operationId: ListTxData
-      parameters:
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
-        - name: block_number
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: block number
-            title: Block Number
-          description: block number
-        - name: from_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: tx from
-            title: From Address
-          description: tx from
-        - name: to_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: tx to
-            title: To Address
-          description: tx to
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TxDataListResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseLimitExceededErrorResponse'
-  /blockchain_explorer/tx_data/{hash}:
-    get:
-      tags:
-        - '[misc] blockchain_explorer'
-      summary: '[ibet Blockchain Explorer] Retrieve transaction data'
-      description: Searching for the transaction by transaction hash
-      operationId: GetTxData
-      parameters:
-        - name: hash
-          in: path
-          required: true
-          schema:
-            type: string
-            description: Transaction hash
-            title: Hash
-          description: Transaction hash
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TxDataResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /freeze_log/accounts:
-    get:
-      tags:
-        - '[misc] freeze_log'
-      summary: List All Accounts
-      description: List all freeze-logging accounts
-      operationId: ListAllFreezeLogAccount
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListAllFreezeLogAccountResponse'
-    post:
-      tags:
-        - '[misc] freeze_log'
-      summary: Create Account
-      description: Create Freeze-Logging Account
-      operationId: CreateFreezeLogAccount
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateFreezeLogAccountRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FreezeLogAccountResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /freeze_log/accounts/{account_address}:
-    delete:
-      tags:
-        - '[misc] freeze_log'
-      summary: Delete Account
-      description: Logically delete an freeze-logging account
-      operationId: DeleteFreezeLogAccount
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FreezeLogAccountResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-  /freeze_log/accounts/{account_address}/eoa_password:
-    post:
-      tags:
-        - '[misc] freeze_log'
-      summary: Change Eoa Password
-      description: Change Account's EOA Password
-      operationId: ChangeFreezeLogAccountPassword
-      parameters:
-        - name: account_address
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Account Address
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FreezeLogAccountChangeEOAPasswordRequest'
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
-  /freeze_log/logs:
-    post:
-      tags:
-        - '[misc] freeze_log'
-      summary: Record New Log
-      operationId: RecordNewFreezeLog
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RecordNewFreezeLogRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RecordNewFreezeLogResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Recordnewfreezelog
-  /freeze_log/logs/{log_index}:
-    post:
-      tags:
-        - '[misc] freeze_log'
-      summary: Update Log
-      operationId: UpdateFreezeLog
-      parameters:
-        - name: log_index
-          in: path
-          required: true
-          schema:
-            type: integer
-            description: Log index
-            title: Log Index
-          description: Log index
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateFreezeLogRequest'
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatefreezelog
-    get:
-      tags:
-        - '[misc] freeze_log'
-      summary: Retrieve Log
-      operationId: RetrieveFreezeLog
-      parameters:
-        - name: log_index
-          in: path
-          required: true
-          schema:
-            type: integer
-            description: Log index
-            title: Log Index
-          description: Log index
-        - name: account_address
-          in: query
-          required: true
-          schema:
-            type: string
-            description: Logging account address
-            title: Account Address
-          description: Logging account address
-      responses:
-        '200':
-          description: Successful Response
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
 components:
   schemas:
-    AbortDVPDeliveryRequest:
-      properties:
-        operation_type:
-          type: string
-          enum:
-            - Abort
-          const: Abort
-          title: Operation Type
-        account_address:
-          type: string
-          title: Account Address
-          description: Agent account address
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: Agent account key file password
-      type: object
-      required:
-        - operation_type
-        - account_address
-        - eoa_password
-      title: AbortDVPDeliveryRequest
-      description: DVP delivery abort schema (REQUEST)
     AccountAuthTokenRequest:
       properties:
         valid_duration:
@@ -9626,148 +8775,6 @@ components:
         - failed
       title: BatchRegisterPersonalInfoUploadStatus
       description: Batch Register PersonalInfo Upload Status
-    BlockData:
-      properties:
-        number:
-          type: integer
-          minimum: 0.0
-          title: Number
-          description: Block number
-        hash:
-          type: string
-          title: Hash
-          description: Block hash
-        transactions:
-          items:
-            type: string
-          type: array
-          title: Transactions
-          description: Transaction list
-        timestamp:
-          type: integer
-          title: Timestamp
-        gas_limit:
-          type: integer
-          title: Gas Limit
-        gas_used:
-          type: integer
-          title: Gas Used
-        size:
-          type: integer
-          minimum: 0.0
-          title: Size
-      type: object
-      required:
-        - number
-        - hash
-        - transactions
-        - timestamp
-        - gas_limit
-        - gas_used
-        - size
-      title: BlockData
-    BlockDataDetail:
-      properties:
-        number:
-          type: integer
-          minimum: 0.0
-          title: Number
-          description: Block number
-        parent_hash:
-          type: string
-          title: Parent Hash
-        sha3_uncles:
-          type: string
-          title: Sha3 Uncles
-        miner:
-          type: string
-          title: Miner
-        state_root:
-          type: string
-          title: State Root
-        transactions_root:
-          type: string
-          title: Transactions Root
-        receipts_root:
-          type: string
-          title: Receipts Root
-        logs_bloom:
-          type: string
-          title: Logs Bloom
-        difficulty:
-          type: integer
-          title: Difficulty
-        gas_limit:
-          type: integer
-          title: Gas Limit
-        gas_used:
-          type: integer
-          title: Gas Used
-        timestamp:
-          type: integer
-          title: Timestamp
-        proof_of_authority_data:
-          type: string
-          title: Proof Of Authority Data
-        mix_hash:
-          type: string
-          title: Mix Hash
-        nonce:
-          type: string
-          title: Nonce
-        hash:
-          type: string
-          title: Hash
-          description: Block hash
-        size:
-          type: integer
-          minimum: 0.0
-          title: Size
-        transactions:
-          items:
-            type: string
-          type: array
-          title: Transactions
-          description: Transaction list
-      type: object
-      required:
-        - number
-        - parent_hash
-        - sha3_uncles
-        - miner
-        - state_root
-        - transactions_root
-        - receipts_root
-        - logs_bloom
-        - difficulty
-        - gas_limit
-        - gas_used
-        - timestamp
-        - proof_of_authority_data
-        - mix_hash
-        - nonce
-        - hash
-        - size
-        - transactions
-      title: BlockDataDetail
-    BlockDataListResponse:
-      properties:
-        result_set:
-          $ref: '#/components/schemas/ResultSet'
-        block_data:
-          items:
-            $ref: '#/components/schemas/BlockData'
-          type: array
-          title: Block Data
-      type: object
-      required:
-        - result_set
-        - block_data
-      title: BlockDataListResponse
-    BlockDataResponse:
-      allOf:
-        - $ref: '#/components/schemas/BlockDataDetail'
-      title: BlockDataResponse
     BlockNumberResponse:
       properties:
         block_number:
@@ -10176,17 +9183,6 @@ components:
 
         - Error code: https://github.com/BoostryJP/ibet-SmartContract/blob/master/docs/Errors.md
         - If contract doesn't throw error code, 0 is returned.
-    CreateDVPAgentAccountRequest:
-      properties:
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: EOA keyfile password
-      type: object
-      required:
-        - eoa_password
-      title: CreateDVPAgentAccountRequest
-      description: DVP agent account create schema (REQUEST)
     CreateDVPDeliveryRequest:
       properties:
         token_address:
@@ -10219,17 +9215,6 @@ components:
         - settlement_service_type
       title: CreateDVPDeliveryRequest
       description: DVP delivery create schema (REQUEST)
-    CreateFreezeLogAccountRequest:
-      properties:
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: EOA keyfile password
-      type: object
-      required:
-        - eoa_password
-      title: CreateFreezeLogAccountRequest
-      description: Freeze-Logging account create schema (REQUEST)
     CreateLedgerInfoMetaInfo:
       properties:
         token_address:
@@ -10440,36 +9425,6 @@ components:
         - details
       title: CreateUpdateLedgerTemplateRequest
       description: Create or Update Ledger Template schema (Request)
-    DVPAgentAccountChangeEOAPasswordRequest:
-      properties:
-        old_eoa_password:
-          type: string
-          title: Old Eoa Password
-          description: EOA keyfile password (old)
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: EOA keyfile password (new)
-      type: object
-      required:
-        - old_eoa_password
-        - eoa_password
-      title: DVPAgentAccountChangeEOAPasswordRequest
-      description: DVP agent account change EOA password schema (REQUEST)
-    DVPAgentAccountResponse:
-      properties:
-        account_address:
-          type: string
-          title: Account Address
-        is_deleted:
-          type: boolean
-          title: Is Deleted
-      type: object
-      required:
-        - account_address
-        - is_deleted
-      title: DVPAgentAccountResponse
-      description: DVP agent account reference schema (RESPONSE)
     DVPDeliveryData:
       properties:
         delivery_type:
@@ -10949,29 +9904,6 @@ components:
         - created
       title: FileResponse
       description: File schema (Response)
-    FinishDVPDeliveryRequest:
-      properties:
-        operation_type:
-          type: string
-          enum:
-            - Finish
-          const: Finish
-          title: Operation Type
-        account_address:
-          type: string
-          title: Account Address
-          description: Agent account address
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: Agent account key file password
-      type: object
-      required:
-        - operation_type
-        - account_address
-        - eoa_password
-      title: FinishDVPDeliveryRequest
-      description: DVP delivery finish schema (REQUEST)
     ForceUnlockRequest:
       properties:
         token_address:
@@ -10998,36 +9930,6 @@ components:
         - recipient_address
         - value
       title: ForceUnlockRequest
-    FreezeLogAccountChangeEOAPasswordRequest:
-      properties:
-        old_eoa_password:
-          type: string
-          title: Old Eoa Password
-          description: EOA keyfile password (old)
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: EOA keyfile password (new)
-      type: object
-      required:
-        - old_eoa_password
-        - eoa_password
-      title: FreezeLogAccountChangeEOAPasswordRequest
-      description: Freeze-Logging account change EOA password schema (REQUEST)
-    FreezeLogAccountResponse:
-      properties:
-        account_address:
-          type: string
-          title: Account Address
-        is_deleted:
-          type: boolean
-          title: Is Deleted
-      type: object
-      required:
-        - account_address
-        - is_deleted
-      title: FreezeLogAccountResponse
-      description: Freeze-logging account reference schema (RESPONSE)
     GetBatchIssueRedeemResponse:
       properties:
         processed:
@@ -12426,27 +11328,6 @@ components:
         - footers
       title: LedgerTemplateResponse
       description: Ledger Template schema (Response)
-    ListAllDVPAgentAccountResponse:
-      items:
-        $ref: '#/components/schemas/DVPAgentAccountResponse'
-      type: array
-      title: ListAllDVPAgentAccountResponse
-      description: DVP agent account list reference schema (RESPONSE)
-    ListAllDVPAgentDeliveriesResponse:
-      properties:
-        result_set:
-          $ref: '#/components/schemas/ResultSet'
-        deliveries:
-          items:
-            $ref: '#/components/schemas/RetrieveDVPAgentDeliveryResponse'
-          type: array
-          title: Deliveries
-      type: object
-      required:
-        - result_set
-        - deliveries
-      title: ListAllDVPAgentDeliveriesResponse
-      description: List all DVP delivery schema for paying agent (Response)
     ListAllDVPDeliveriesResponse:
       properties:
         result_set:
@@ -12492,12 +11373,6 @@ components:
         - files
       title: ListAllFilesResponse
       description: List All Files schema (Response)
-    ListAllFreezeLogAccountResponse:
-      items:
-        $ref: '#/components/schemas/FreezeLogAccountResponse'
-      type: array
-      title: ListAllFreezeLogAccountResponse
-      description: Freeze-logging account list reference schema (RESPONSE)
     ListAllHoldersSortItem:
       type: string
       enum:
@@ -13276,43 +12151,6 @@ components:
         - $ref: '#/components/schemas/Position'
       title: PositionResponse
       description: Position schema (Response)
-    RecordNewFreezeLogRequest:
-      properties:
-        account_address:
-          type: string
-          title: Account Address
-          description: Logging account address
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: Logging account key file password
-        log_message:
-          type: string
-          title: Log Message
-          description: Log message
-        freezing_grace_block_count:
-          type: integer
-          exclusiveMinimum: 0.0
-          title: Freezing Grace Block Count
-          description: Freezing grace block count
-      type: object
-      required:
-        - account_address
-        - eoa_password
-        - log_message
-        - freezing_grace_block_count
-      title: RecordNewFreezeLogRequest
-      description: Record new freeze log schema (REQUEST)
-    RecordNewFreezeLogResponse:
-      properties:
-        log_index:
-          type: integer
-          title: Log Index
-      type: object
-      required:
-        - log_index
-      title: RecordNewFreezeLogResponse
-      description: New freeze-log recording schema (RESPONSE)
     RegisterPersonalInfoRequest:
       properties:
         name:
@@ -13362,41 +12200,6 @@ components:
         - key_manager
       title: RegisterPersonalInfoRequest
       description: Register Personal Information schema (REQUEST)
-    ResponseLimitExceededErrorCode:
-      type: integer
-      enum:
-        - 4
-      const: 4
-      title: ResponseLimitExceededErrorCode
-    ResponseLimitExceededErrorMetainfo:
-      properties:
-        code:
-          allOf:
-            - $ref: '#/components/schemas/ResponseLimitExceededErrorCode'
-          examples:
-            - 4
-        title:
-          type: string
-          title: Title
-          examples:
-            - ResponseLimitExceededError
-      type: object
-      required:
-        - code
-        - title
-      title: ResponseLimitExceededErrorMetainfo
-    ResponseLimitExceededErrorResponse:
-      properties:
-        meta:
-          $ref: '#/components/schemas/ResponseLimitExceededErrorMetainfo'
-        detail:
-          type: string
-          title: Detail
-      type: object
-      required:
-        - meta
-        - detail
-      title: ResponseLimitExceededErrorResponse
     ResultSet:
       properties:
         count:
@@ -13427,118 +12230,6 @@ components:
         - total
       title: ResultSet
       description: result set for pagination
-    RetrieveDVPAgentDeliveryResponse:
-      properties:
-        exchange_address:
-          type: string
-          title: Exchange Address
-        delivery_id:
-          type: integer
-          title: Delivery Id
-        token_address:
-          type: string
-          title: Token Address
-        buyer_address:
-          type: string
-          title: Buyer Address
-        seller_address:
-          type: string
-          title: Seller Address
-        amount:
-          type: integer
-          title: Amount
-        agent_address:
-          type: string
-          title: Agent Address
-        data:
-          anyOf:
-            - $ref: '#/components/schemas/DVPDeliveryData'
-            - type: 'null'
-        settlement_service_type:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Settlement Service Type
-        create_blocktimestamp:
-          type: string
-          title: Create Blocktimestamp
-        create_transaction_hash:
-          type: string
-          title: Create Transaction Hash
-        cancel_blocktimestamp:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Cancel Blocktimestamp
-        cancel_transaction_hash:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Cancel Transaction Hash
-        confirm_blocktimestamp:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Confirm Blocktimestamp
-        confirm_transaction_hash:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Confirm Transaction Hash
-        finish_blocktimestamp:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Finish Blocktimestamp
-        finish_transaction_hash:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Finish Transaction Hash
-        abort_blocktimestamp:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Abort Blocktimestamp
-        abort_transaction_hash:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Abort Transaction Hash
-        confirmed:
-          type: boolean
-          title: Confirmed
-        valid:
-          type: boolean
-          title: Valid
-        status:
-          $ref: '#/components/schemas/DeliveryStatus'
-      type: object
-      required:
-        - exchange_address
-        - delivery_id
-        - token_address
-        - buyer_address
-        - seller_address
-        - amount
-        - agent_address
-        - data
-        - settlement_service_type
-        - create_blocktimestamp
-        - create_transaction_hash
-        - cancel_blocktimestamp
-        - cancel_transaction_hash
-        - confirm_blocktimestamp
-        - confirm_transaction_hash
-        - finish_blocktimestamp
-        - finish_transaction_hash
-        - abort_blocktimestamp
-        - abort_transaction_hash
-        - confirmed
-        - valid
-        - status
-      title: RetrieveDVPAgentDeliveryResponse
-      description: Retrieve DVP delivery schema for paying agent (Response)
     RetrieveDVPDeliveryResponse:
       properties:
         exchange_address:
@@ -14559,130 +13250,6 @@ components:
         - Transfer
         - Unlock
       title: TransferSourceEventType
-    TxData:
-      properties:
-        hash:
-          type: string
-          title: Hash
-          description: Transaction hash
-        block_hash:
-          type: string
-          title: Block Hash
-        block_number:
-          type: integer
-          minimum: 0.0
-          title: Block Number
-        transaction_index:
-          type: integer
-          minimum: 0.0
-          title: Transaction Index
-        from_address:
-          type: string
-          title: From Address
-        to_address:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: To Address
-      type: object
-      required:
-        - hash
-        - block_hash
-        - block_number
-        - transaction_index
-        - from_address
-        - to_address
-      title: TxData
-    TxDataDetail:
-      properties:
-        hash:
-          type: string
-          title: Hash
-          description: Transaction hash
-        block_hash:
-          type: string
-          title: Block Hash
-        block_number:
-          type: integer
-          minimum: 0.0
-          title: Block Number
-        transaction_index:
-          type: integer
-          minimum: 0.0
-          title: Transaction Index
-        from_address:
-          type: string
-          title: From Address
-        to_address:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: To Address
-        contract_name:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Contract Name
-        contract_function:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Contract Function
-        contract_parameters:
-          anyOf:
-            - type: object
-            - type: 'null'
-          title: Contract Parameters
-        gas:
-          type: integer
-          minimum: 0.0
-          title: Gas
-        gas_price:
-          type: integer
-          minimum: 0.0
-          title: Gas Price
-        value:
-          type: integer
-          minimum: 0.0
-          title: Value
-        nonce:
-          type: integer
-          minimum: 0.0
-          title: Nonce
-      type: object
-      required:
-        - hash
-        - block_hash
-        - block_number
-        - transaction_index
-        - from_address
-        - to_address
-        - contract_name
-        - contract_function
-        - contract_parameters
-        - gas
-        - gas_price
-        - value
-        - nonce
-      title: TxDataDetail
-    TxDataListResponse:
-      properties:
-        result_set:
-          $ref: '#/components/schemas/ResultSet'
-        tx_data:
-          items:
-            $ref: '#/components/schemas/TxData'
-          type: array
-          title: Tx Data
-      type: object
-      required:
-        - result_set
-        - tx_data
-      title: TxDataListResponse
-    TxDataResponse:
-      allOf:
-        - $ref: '#/components/schemas/TxDataDetail'
-      title: TxDataResponse
     UnlockInfoMetaInfo:
       properties:
         token_address:
@@ -14753,27 +13320,6 @@ components:
         - notice_type
         - metainfo
       title: UnlockInfoNotification
-    UpdateFreezeLogRequest:
-      properties:
-        account_address:
-          type: string
-          title: Account Address
-          description: Logging account address
-        eoa_password:
-          type: string
-          title: Eoa Password
-          description: Logging account key file password
-        log_message:
-          type: string
-          title: Log Message
-          description: Log message
-      type: object
-      required:
-        - account_address
-        - eoa_password
-        - log_message
-      title: UpdateFreezeLogRequest
-      description: Update freeze log schema (REQUEST)
     UpdateTransferApprovalOperationType:
       type: string
       enum:
@@ -14874,9 +13420,3 @@ tags:
     description: Utility functions
   - name: '[misc] messaging'
     description: Messaging functions with external systems
-  - name: '[misc] settlement_agent'
-    description: Settlement related features for paying agent
-  - name: '[misc] blockchain_explorer'
-    description: Blockchain explorer
-  - name: '[misc] freeze_log'
-    description: Freeze log contract

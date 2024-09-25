@@ -3063,7 +3063,7 @@ async def list_share_token_transfer_history(
 # GET: /share/transfer_approvals
 @router.get(
     "/transfer_approvals",
-    operation_id="ListAllBondTokenTransferApprovalHistory",
+    operation_id="ListAllShareTokenTransferApprovalHistory",
     response_model=TransferApprovalsResponse,
     responses=get_routers_responses(422),
 )
