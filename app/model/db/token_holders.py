@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -41,7 +41,7 @@ class TokenHoldersList(Base):
     batch_status: Mapped[str | None] = mapped_column(String(256))
 
 
-class TokenHolderBatchStatus(str, Enum):
+class TokenHolderBatchStatus(StrEnum):
     PENDING = "pending"
     DONE = "done"
     FAILED = "failed"

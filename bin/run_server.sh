@@ -43,19 +43,19 @@ function start () {
   WORKER_MAX_REQUESTS_JITTER=${WORKER_MAX_REQUESTS_JITTER:-200}
   KEEP_ALIVE=${KEEP_ALIVE:-2}
 
-  gunicorn --worker-class server.AppUvicornWorker \
-           --workers ${WORKER_COUNT} \
-           --bind :5000 \
-           --timeout ${WORKER_TIMEOUT} \
-           --max-requests ${WORKER_MAX_REQUESTS} \
-           --max-requests-jitter ${WORKER_MAX_REQUESTS_JITTER} \
-           --keep-alive ${KEEP_ALIVE} \
-           --limit-request-line 0 \
-           app.main:app
+  python run.py --worker-class server.AppUvicornWorker \
+                --workers ${WORKER_COUNT} \
+                --bind :5000 \
+                --timeout ${WORKER_TIMEOUT} \
+                --max-requests ${WORKER_MAX_REQUESTS} \
+                --max-requests-jitter ${WORKER_MAX_REQUESTS_JITTER} \
+                --keep-alive ${KEEP_ALIVE} \
+                --limit-request-line 0 \
+                app.main:app
 }
 
 function stop () {
-  ps -ef | grep gunicorn | awk '{print $2}' | xargs kill -9
+  ps -ef | grep "[p]ython run.py" | awk '{print $2}' | xargs kill -9
 }
 
 case "$1" in

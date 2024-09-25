@@ -32,7 +32,7 @@ from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
 from config import CHAIN_ID, DATABASE_URL, INDEXER_SYNC_INTERVAL
 
 process_name = "INDEXER-BLOCK_TX_DATA"
@@ -119,7 +119,7 @@ class Processor:
                 await self.__set_indexed_block_number(local_session, block_number)
 
                 await local_session.commit()
-        except Exception as e:
+        except Exception:
             await local_session.rollback()
             raise
         finally:

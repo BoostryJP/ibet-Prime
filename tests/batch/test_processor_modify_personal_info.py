@@ -17,6 +17,9 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
+import logging
+
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import func, select
@@ -55,7 +58,13 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 @pytest.fixture(scope="function")
 def processor(db):
-    return Processor()
+    LOG = logging.getLogger("background")
+    default_log_level = LOG.level
+    LOG.setLevel(logging.DEBUG)
+    LOG.propagate = True
+    return Processor(asyncio.Event())
+    LOG.propagate = False
+    LOG.setLevel(default_log_level)
 
 
 def deploy_personal_info_contract(issuer_user):
@@ -96,7 +105,9 @@ async def set_personal_info_contract(
         ContractUtils.send_transaction(tx, private_key)
 
         if sender["data"]:
-            personal_info = PersonalInfoContract(issuer_account, contract_address)
+            personal_info = PersonalInfoContract(
+                logging.getLogger("unittest"), issuer_account, contract_address
+            )
             await personal_info.modify_info(sender["user"]["address"], sender["data"])
 
 
@@ -178,7 +189,7 @@ class TestProcessor:
     # Execute Batch Run 2nd: changed RSA
     # Execute Batch Run 3rd: modified PersonalInfo
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db):
+    async def test_normal_1(self, processor, db, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
@@ -214,7 +225,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = token_contract_address_1
         token_1.abi = "abi"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
@@ -227,7 +238,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address_1
         token_2.token_address = token_contract_address_2
         token_2.abi = "abi"
-        token_2.version = TokenVersion.V_24_06
+        token_2.version = TokenVersion.V_24_09
         db.add(token_2)
 
         token_contract_address_3 = await deploy_bond_token_contract(user_1, None)
@@ -237,7 +248,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address_1
         token_3.token_address = token_contract_address_3
         token_3.abi = "abi"
-        token_3.version = TokenVersion.V_24_06
+        token_3.version = TokenVersion.V_24_09
         db.add(token_3)
 
         token_contract_address_4 = await deploy_share_token_contract(user_1, None)
@@ -247,7 +258,7 @@ class TestProcessor:
         token_4.issuer_address = issuer_address_1
         token_4.token_address = token_contract_address_4
         token_4.abi = "abi"
-        token_4.version = TokenVersion.V_24_06
+        token_4.version = TokenVersion.V_24_09
         db.add(token_4)
 
         # PersonalInfo
@@ -345,7 +356,7 @@ class TestProcessor:
         assert temporary.rsa_passphrase == rsa_passphrase
 
         _personal_info_1 = PersonalInfoContract(
-            account, personal_info_contract_address_1
+            logging.getLogger("unittest"), account, personal_info_contract_address_1
         )
         assert (
             await _personal_info_1.get_info(personal_user_1["address"])
@@ -370,7 +381,7 @@ class TestProcessor:
             "tax_category": None,
         }
         _personal_info_2 = PersonalInfoContract(
-            account, personal_info_contract_address_2
+            logging.getLogger("unittest"), account, personal_info_contract_address_2
         )
         assert (await _personal_info_2.get_info(personal_user_3["address"])) == {
             "key_manager": None,
@@ -425,7 +436,7 @@ class TestProcessor:
         assert temporary.rsa_passphrase == rsa_passphrase
 
         _personal_info_1 = PersonalInfoContract(
-            account, personal_info_contract_address_1
+            logging.getLogger("unittest"), account, personal_info_contract_address_1
         )
         assert (await _personal_info_1.get_info(personal_user_1["address"])) == {
             "key_manager": "key_manager_user1",
@@ -448,7 +459,7 @@ class TestProcessor:
             "tax_category": None,
         }
         _personal_info_2 = PersonalInfoContract(
-            account, personal_info_contract_address_2
+            logging.getLogger("unittest"), account, personal_info_contract_address_2
         )
         assert (await _personal_info_2.get_info(personal_user_3["address"])) == {
             "key_manager": None,
@@ -476,6 +487,13 @@ class TestProcessor:
         await processor.process()
 
         # assertion(Run 3rd)
+        assert "Failed to decrypt" not in caplog.text
+        assert (
+            "background",
+            logging.INFO,
+            f"Modify personal info process is completed: issuer={user_1['address']}",
+        ) in caplog.record_tuples
+
         db.rollback()
         _account = db.scalars(select(Account).limit(1)).first()
         assert _account.issuer_address == user_1["address"]
@@ -492,7 +510,7 @@ class TestProcessor:
         assert _temporary_count == 0
 
         _personal_info_1 = PersonalInfoContract(
-            account, personal_info_contract_address_1
+            logging.getLogger("unittest"), account, personal_info_contract_address_1
         )
         assert (await _personal_info_1.get_info(personal_user_1["address"])) == {
             "key_manager": "key_manager_user1",
@@ -515,7 +533,7 @@ class TestProcessor:
             "tax_category": None,
         }
         _personal_info_2 = PersonalInfoContract(
-            account, personal_info_contract_address_2
+            logging.getLogger("unittest"), account, personal_info_contract_address_2
         )
         assert (await _personal_info_2.get_info(personal_user_3["address"])) == {
             "key_manager": None,

@@ -27,6 +27,7 @@ from pydantic.dataclasses import dataclass
 
 from app.model import EthereumAddress
 from app.model.schema.base import ResultSet, SortOrder
+from app.model.schema.personal_info import PersonalInfo
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
 
@@ -43,6 +44,14 @@ class DeliveryStatus(IntEnum):
     DELIVERY_CONFIRMED = 2
     DELIVERY_FINISHED = 3
     DELIVERY_ABORTED = 4
+
+
+class DVPDeliveryData(BaseModel):
+    delivery_type: Literal["offering", "primary"]
+    trade_date: str
+    settlement_date: str
+    settlement_service_account_id: str
+    value: int
 
 
 ############################
@@ -106,6 +115,30 @@ class ListAllDVPDeliveriesQuery:
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
+@dataclass
+class ListAllDVPAgentDeliveriesQuery:
+    agent_address: Annotated[str, Query(description="Agent address")]
+    token_address: Annotated[Optional[str], Query(description="Token address")] = None
+    seller_address: Annotated[Optional[str], Query(description="Seller address")] = None
+    buyer_address: Annotated[Optional[str], Query(description="Buyer address")] = None
+    valid: Annotated[Optional[bool], Query(description="Valid flag")] = None
+    status: Annotated[
+        Optional[DeliveryStatus], Query(description="Delivery status")
+    ] = None
+    create_blocktimestamp_from: Annotated[
+        Optional[datetime], Query(description="Create block timestamp filter(From)")
+    ] = None
+    create_blocktimestamp_to: Annotated[
+        Optional[datetime], Query(description="Create block timestamp filter(To)")
+    ] = None
+
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
 class CreateDVPDeliveryRequest(BaseModel):
     """DVP delivery create schema (REQUEST)"""
 
@@ -114,6 +147,7 @@ class CreateDVPDeliveryRequest(BaseModel):
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
     agent_address: EthereumAddress
     data: str
+    settlement_service_type: str
 
 
 class CancelDVPDeliveryRequest(BaseModel):
@@ -161,10 +195,13 @@ class RetrieveDVPDeliveryResponse(BaseModel):
     delivery_id: int
     token_address: str
     buyer_address: str
+    buyer_personal_information: Optional[PersonalInfo] = Field(...)
     seller_address: str
+    seller_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     agent_address: str
-    data: str = Field(examples=["{}", '{"type": "primary"}'])
+    data: DVPDeliveryData | None
+    settlement_service_type: str | None
     create_blocktimestamp: str
     create_transaction_hash: str
     cancel_blocktimestamp: Optional[str] = Field(...)
@@ -185,3 +222,37 @@ class ListAllDVPDeliveriesResponse(BaseModel):
 
     result_set: ResultSet
     deliveries: list[RetrieveDVPDeliveryResponse]
+
+
+class RetrieveDVPAgentDeliveryResponse(BaseModel):
+    """Retrieve DVP delivery schema for paying agent (Response)"""
+
+    exchange_address: str
+    delivery_id: int
+    token_address: str
+    buyer_address: str
+    seller_address: str
+    amount: int
+    agent_address: str
+    data: DVPDeliveryData | None
+    settlement_service_type: str | None
+    create_blocktimestamp: str
+    create_transaction_hash: str
+    cancel_blocktimestamp: Optional[str] = Field(...)
+    cancel_transaction_hash: Optional[str] = Field(...)
+    confirm_blocktimestamp: Optional[str] = Field(...)
+    confirm_transaction_hash: Optional[str] = Field(...)
+    finish_blocktimestamp: Optional[str] = Field(...)
+    finish_transaction_hash: Optional[str] = Field(...)
+    abort_blocktimestamp: Optional[str] = Field(...)
+    abort_transaction_hash: Optional[str] = Field(...)
+    confirmed: bool
+    valid: bool
+    status: DeliveryStatus
+
+
+class ListAllDVPAgentDeliveriesResponse(BaseModel):
+    """List all DVP delivery schema for paying agent (Response)"""
+
+    result_set: ResultSet
+    deliveries: list[RetrieveDVPAgentDeliveryResponse]

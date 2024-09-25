@@ -88,6 +88,17 @@ class UnlockInfoMetaInfo(BaseModel):
     data: dict
 
 
+class DVPDeliveryInfoMetaInfo(BaseModel):
+    exchange_address: str
+    delivery_id: int
+    token_address: str
+    token_type: TokenType
+    seller_address: str
+    buyer_address: str
+    agent_address: str
+    amount: int
+
+
 class Notification(BaseModel):
     notice_id: str
     issuer_address: str
@@ -211,6 +222,21 @@ class UnlockInfoNotification(Notification):
     metainfo: UnlockInfoMetaInfo
 
 
+class DVPDeliveryInfoNotification(Notification):
+    notice_type: Literal[NotificationType.DVP_DELIVERY_INFO]
+    notice_code: Annotated[
+        int,
+        Field(
+            ge=0,
+            le=1,
+            description=" notice_type: DVPDeliveryInfo\n"
+            " - 0: Delivery is confirmed\n"
+            " - 1: Delivery is finished",
+        ),
+    ]
+    metainfo: DVPDeliveryInfoMetaInfo
+
+
 ############################
 # REQUEST
 ############################
@@ -233,6 +259,7 @@ class NotificationsListResponse(
             BatchIssueRedeemProcessedNotification,
             LockInfoNotification,
             UnlockInfoNotification,
+            DVPDeliveryInfoNotification,
         ]
     ]
 ):

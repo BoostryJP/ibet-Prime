@@ -43,7 +43,7 @@ from app.model.db import (
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
 from config import (
     E2E_MESSAGING_CONTRACT_ADDRESS,
     INDEXER_BLOCK_LOT_MAX_SIZE,
@@ -212,7 +212,7 @@ class Processor:
                     message=message,
                     block_timestamp=block_timestamp,
                 )
-        except Exception as e:
+        except Exception:
             raise
 
     @staticmethod

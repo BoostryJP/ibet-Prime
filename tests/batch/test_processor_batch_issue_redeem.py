@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import logging
 import uuid
 from typing import List, Sequence
@@ -43,7 +44,9 @@ from app.model.db import (
     BatchIssueRedeemUpload,
     Notification,
     NotificationType,
+    Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_batch_issue_redeem import LOG, Processor
@@ -56,7 +59,7 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield Processor()
+    yield Processor(asyncio.Event())
     log.propagate = False
     log.setLevel(default_log_level)
 
@@ -95,6 +98,15 @@ class TestProcessor:
         _account.rsa_status = 3
         db.add(_account)
 
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
@@ -113,23 +125,35 @@ class TestProcessor:
         _upload_data.status = 0
         db.add(_upload_data)
 
+        _upload_data = BatchIssueRedeem()
+        _upload_data.upload_id = upload_id
+        _upload_data.account_address = target_address
+        _upload_data.amount = target_amount
+        _upload_data.status = 0
+        db.add(_upload_data)
+
         db.commit()
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.blockchain.token.IbetStraightBondContract.bulk_additional_issue",
             return_value="mock_tx_hash",
-        ) as IbetStraightBondContract_additional_issue:
+        ) as IbetStraightBondContract_bulk_additional_issue:
             await processor.process()
 
-            # Assertion: contract
-            IbetStraightBondContract_additional_issue.assert_called_with(
-                data=IbetStraightBondAdditionalIssueParams(
+        # Assertion: contract
+        IbetStraightBondContract_bulk_additional_issue.assert_called_with(
+            data=[
+                IbetStraightBondAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
-                tx_from=issuer_address,
-                private_key=issuer_pk,
-            )
+                IbetStraightBondAdditionalIssueParams(
+                    account_address=target_address, amount=target_amount
+                ),
+            ],
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
 
         # Assertion: DB
         _upload_after: BatchIssueRedeemUpload = db.scalars(
@@ -142,8 +166,9 @@ class TestProcessor:
         _upload_data_after: List[BatchIssueRedeem] = db.scalars(
             select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
         ).all()
-        assert len(_upload_data_after) == 1
+        assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
+        assert _upload_data_after[1].status == 1
 
         # Assertion: Log
         assert (
@@ -197,6 +222,15 @@ class TestProcessor:
         _account.rsa_status = 3
         db.add(_account)
 
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
@@ -215,20 +249,32 @@ class TestProcessor:
         _upload_data.status = 0
         db.add(_upload_data)
 
+        _upload_data = BatchIssueRedeem()
+        _upload_data.upload_id = upload_id
+        _upload_data.account_address = target_address
+        _upload_data.amount = target_amount
+        _upload_data.status = 0
+        db.add(_upload_data)
+
         db.commit()
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.redeem",
+            target="app.model.blockchain.token.IbetStraightBondContract.bulk_redeem",
             return_value="mock_tx_hash",
-        ) as IbetStraightBondContract_redeem:
+        ) as IbetStraightBondContract_bulk_redeem:
             await processor.process()
 
         # Assertion: contract
-        IbetStraightBondContract_redeem.assert_called_with(
-            data=IbetStraightBondRedeemParams(
-                account_address=target_address, amount=target_amount
-            ),
+        IbetStraightBondContract_bulk_redeem.assert_called_with(
+            data=[
+                IbetStraightBondRedeemParams(
+                    account_address=target_address, amount=target_amount
+                ),
+                IbetStraightBondRedeemParams(
+                    account_address=target_address, amount=target_amount
+                ),
+            ],
             tx_from=issuer_address,
             private_key=issuer_pk,
         )
@@ -244,8 +290,9 @@ class TestProcessor:
         _upload_data_after: List[BatchIssueRedeem] = db.scalars(
             select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
         ).all()
-        assert len(_upload_data_after) == 1
+        assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
+        assert _upload_data_after[1].status == 1
 
         # Assertion: Log
         assert (
@@ -299,6 +346,15 @@ class TestProcessor:
         _account.rsa_status = 3
         db.add(_account)
 
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
@@ -317,20 +373,32 @@ class TestProcessor:
         _upload_data.status = 0
         db.add(_upload_data)
 
+        _upload_data = BatchIssueRedeem()
+        _upload_data.upload_id = upload_id
+        _upload_data.account_address = target_address
+        _upload_data.amount = target_amount
+        _upload_data.status = 0
+        db.add(_upload_data)
+
         db.commit()
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.additional_issue",
+            target="app.model.blockchain.token.IbetShareContract.bulk_additional_issue",
             return_value="mock_tx_hash",
-        ) as IbetShareContract_additional_issue:
+        ) as IbetShareContract_bulk_additional_issue:
             await processor.process()
 
         # Assertion: contract
-        IbetShareContract_additional_issue.assert_called_with(
-            data=IbetShareAdditionalIssueParams(
-                account_address=target_address, amount=target_amount
-            ),
+        IbetShareContract_bulk_additional_issue.assert_called_with(
+            data=[
+                IbetShareAdditionalIssueParams(
+                    account_address=target_address, amount=target_amount
+                ),
+                IbetShareAdditionalIssueParams(
+                    account_address=target_address, amount=target_amount
+                ),
+            ],
             tx_from=issuer_address,
             private_key=issuer_pk,
         )
@@ -346,8 +414,9 @@ class TestProcessor:
         _upload_data_after: List[BatchIssueRedeem] = db.scalars(
             select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
         ).all()
-        assert len(_upload_data_after) == 1
+        assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
+        assert _upload_data_after[1].status == 1
 
         # Assertion: Log
         assert (
@@ -401,6 +470,15 @@ class TestProcessor:
         _account.rsa_status = 3
         db.add(_account)
 
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
@@ -419,20 +497,32 @@ class TestProcessor:
         _upload_data.status = 0
         db.add(_upload_data)
 
+        _upload_data = BatchIssueRedeem()
+        _upload_data.upload_id = upload_id
+        _upload_data.account_address = target_address
+        _upload_data.amount = target_amount
+        _upload_data.status = 0
+        db.add(_upload_data)
+
         db.commit()
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.redeem",
+            target="app.model.blockchain.token.IbetShareContract.bulk_redeem",
             return_value="mock_tx_hash",
-        ) as IbetShareContract_redeem:
+        ) as IbetShareContract_bulk_redeem:
             await processor.process()
 
         # Assertion: contract
-        IbetShareContract_redeem.assert_called_with(
-            data=IbetShareRedeemParams(
-                account_address=target_address, amount=target_amount
-            ),
+        IbetShareContract_bulk_redeem.assert_called_with(
+            data=[
+                IbetShareRedeemParams(
+                    account_address=target_address, amount=target_amount
+                ),
+                IbetShareRedeemParams(
+                    account_address=target_address, amount=target_amount
+                ),
+            ],
             tx_from=issuer_address,
             private_key=issuer_pk,
         )
@@ -448,8 +538,9 @@ class TestProcessor:
         _upload_data_after: List[BatchIssueRedeem] = db.scalars(
             select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
         ).all()
-        assert len(_upload_data_after) == 1
+        assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
+        assert _upload_data_after[1].status == 1
 
         # Assertion: Log
         assert (
@@ -493,6 +584,15 @@ class TestProcessor:
         target_amount = 10
 
         # Prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
@@ -515,13 +615,13 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.blockchain.token.IbetStraightBondContract.bulk_additional_issue",
             return_value="mock_tx_hash",
-        ) as IbetStraightBondContract_additional_issue:
+        ) as IbetStraightBondContract_bulk_additional_issue:
             await processor.process()
 
         # Assertion: contract
-        IbetStraightBondContract_additional_issue.assert_not_called()
+        IbetStraightBondContract_bulk_additional_issue.assert_not_called()
 
         # Assertion: DB
         _upload_after: BatchIssueRedeemUpload = db.scalars(
@@ -584,6 +684,15 @@ class TestProcessor:
         _account.rsa_status = 3
         db.add(_account)
 
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
@@ -606,13 +715,13 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.blockchain.token.IbetStraightBondContract.bulk_additional_issue",
             return_value="mock_tx_hash",
-        ) as IbetStraightBondContract_additional_issue:
+        ) as IbetStraightBondContract_bulk_additional_issue:
             await processor.process()
 
         # Assertion: contract
-        IbetStraightBondContract_additional_issue.assert_not_called()
+        IbetStraightBondContract_bulk_additional_issue.assert_not_called()
 
         # Assertion: DB
         _upload_after: BatchIssueRedeemUpload = db.scalars(
@@ -675,6 +784,15 @@ class TestProcessor:
         _account.rsa_status = 3
         db.add(_account)
 
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
@@ -686,27 +804,27 @@ class TestProcessor:
         _upload.processed = 0
         db.add(_upload)
 
-        _upload_data_1 = BatchIssueRedeem()
-        _upload_data_1.upload_id = upload_id
-        _upload_data_1.account_address = target_address
-        _upload_data_1.amount = target_amount
-        _upload_data_1.status = 0
-        db.add(_upload_data_1)
+        _upload_data = BatchIssueRedeem()
+        _upload_data.upload_id = upload_id
+        _upload_data.account_address = target_address
+        _upload_data.amount = target_amount
+        _upload_data.status = 0
+        db.add(_upload_data)
 
-        _upload_data_2 = BatchIssueRedeem()
-        _upload_data_2.upload_id = upload_id
-        _upload_data_2.account_address = target_address
-        _upload_data_2.amount = target_amount
-        _upload_data_2.status = 0
-        db.add(_upload_data_2)
+        _upload_data = BatchIssueRedeem()
+        _upload_data.upload_id = upload_id
+        _upload_data.account_address = target_address
+        _upload_data.amount = target_amount
+        _upload_data.status = 0
+        db.add(_upload_data)
 
         db.commit()
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.blockchain.token.IbetStraightBondContract.bulk_additional_issue",
             side_effect=SendTransactionError(),
-        ) as IbetStraightBondContract_additional_issue:
+        ):
             await processor.process()
 
         # Assertion: DB
@@ -729,7 +847,7 @@ class TestProcessor:
             caplog.record_tuples.count(
                 (LOG.name, logging.WARNING, "Failed to send transaction: -")
             )
-            == 2
+            == 1
         )
 
         _notification_list = db.scalars(select(Notification)).all()
@@ -774,6 +892,15 @@ class TestProcessor:
         _account.rsa_status = 3
         db.add(_account)
 
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.abi = {}
+        _token.tx_hash = ""
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
         upload_1_id = str(uuid.uuid4())
 
         _upload_1 = BatchIssueRedeemUpload()
@@ -813,12 +940,15 @@ class TestProcessor:
         db.commit()
 
         # mock
-        with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
-            side_effect=ContractRevertError("999999"),
-        ), patch(
-            target="app.model.blockchain.token.IbetShareContract.additional_issue",
-            side_effect=ContractRevertError("999999"),
+        with (
+            patch(
+                target="app.model.blockchain.token.IbetStraightBondContract.bulk_additional_issue",
+                side_effect=ContractRevertError("999999"),
+            ),
+            patch(
+                target="app.model.blockchain.token.IbetShareContract.bulk_additional_issue",
+                side_effect=ContractRevertError("999999"),
+            ),
         ):
             await processor.process()
 

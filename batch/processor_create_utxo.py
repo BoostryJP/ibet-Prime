@@ -36,7 +36,7 @@ from app.model.db import UTXO, Account, Token, TokenType, UTXOBlockNumber
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.ledger_utils import create_ledger
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
 from config import (
     CREATE_UTXO_BLOCK_LOT_MAX_SIZE,
     CREATE_UTXO_INTERVAL,
@@ -300,9 +300,7 @@ class Processor:
                 block_number = event["block_number"]
                 block_timestamp = datetime.fromtimestamp(
                     (await web3.eth.get_block(block_number))["timestamp"], UTC
-                ).replace(
-                    tzinfo=None
-                )  # UTC
+                ).replace(tzinfo=None)  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True
@@ -374,9 +372,7 @@ class Processor:
                 block_number = event["blockNumber"]
                 block_timestamp = datetime.fromtimestamp(
                     (await web3.eth.get_block(block_number))["timestamp"], UTC
-                ).replace(
-                    tzinfo=None
-                )  # UTC
+                ).replace(tzinfo=None)  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True
@@ -436,9 +432,7 @@ class Processor:
                 block_number = event["blockNumber"]
                 block_timestamp = datetime.fromtimestamp(
                     (await web3.eth.get_block(block_number))["timestamp"], UTC
-                ).replace(
-                    tzinfo=None
-                )  # UTC
+                ).replace(tzinfo=None)  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True

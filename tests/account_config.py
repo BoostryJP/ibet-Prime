@@ -31,7 +31,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 # Account Address(from local config)
 def config_eth_account(name):
-    account_config = yaml.safe_load(open(f"tests/data/account_config.yml", "r"))
+    account_config = yaml.safe_load(open("tests/data/account_config.yml", "r"))
     account_config[name]["keyfile_json"] = json.loads(
         account_config[name]["keyfile_json"]
     )

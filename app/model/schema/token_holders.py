@@ -27,8 +27,9 @@ from pydantic.dataclasses import dataclass
 
 from app.model import ValidatedDatetimeStr
 from app.model.db import TokenHolderBatchStatus
-from app.model.schema.base import ResultSet, SortOrder
+from app.model.schema.base import ResultSet, SortOrder, ValueOperator
 from app.model.schema.personal_info import (
+    PersonalInfo,
     PersonalInfoEventType,
     PersonalInfoHistory,
     PersonalInfoIndex,
@@ -138,6 +139,49 @@ class CreateTokenHoldersListRequest(BaseModel):
         return v
 
 
+class RetrieveTokenHoldersCollectionSortItem(StrEnum):
+    account_address = "account_address"
+    hold_balance = "hold_balance"
+    locked_balance = "locked_balance"
+    key_manager = "key_manager"
+    holder_name = "tax_category"
+
+
+@dataclass
+class RetrieveTokenHoldersCollectionQuery:
+    hold_balance: Annotated[
+        Optional[int], Query(description="number of hold balance")
+    ] = None
+    hold_balance_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="search condition of hold balance(0:equal, 1:greater than or equal, 2:less than or equal）",
+        ),
+    ] = ValueOperator.EQUAL
+    locked_balance: Annotated[
+        Optional[int], Query(description="number of locked balance")
+    ] = None
+    locked_balance_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="search condition of locked balance(0:equal, 1:greater than or equal, 2:less than or equal）",
+        ),
+    ] = ValueOperator.EQUAL
+    account_address: Annotated[
+        Optional[str], Query(description="account address(partial match)")
+    ] = None
+    key_manager: Annotated[
+        Optional[str], Query(description="key manager(partial match)")
+    ] = None
+    tax_category: Annotated[Optional[int], Query(description="tax category")] = None
+    sort_item: Annotated[
+        RetrieveTokenHoldersCollectionSortItem, Query(description="Sort Item")
+    ] = RetrieveTokenHoldersCollectionSortItem.account_address
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = SortOrder.ASC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
 ############################
 # RESPONSE
 ############################
@@ -195,11 +239,13 @@ class TokenHoldersCollectionHolder(BaseModel):
         "This includes balance/pending_transfer/exchange_balance/exchange_commitment."
     )
     locked_balance: int = Field(description="Amount of locked balance.")
+    personal_information: PersonalInfo
 
 
 class RetrieveTokenHoldersListResponse(BaseModel):
     """Retrieve Token Holders List schema (RESPONSE)"""
 
+    result_set: ResultSet
     status: TokenHolderBatchStatus
     holders: List[TokenHoldersCollectionHolder]
     model_config = ConfigDict(

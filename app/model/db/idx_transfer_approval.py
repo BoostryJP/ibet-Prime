@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import BigInteger, Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -85,7 +85,7 @@ class IDXTransferApproval(Base):
         }
 
 
-class IDXTransferApprovalsSortItem(str, Enum):
+class IDXTransferApprovalsSortItem(StrEnum):
     ID = "id"
     EXCHANGE_ADDRESS = "exchange_address"
     APPLICATION_ID = "application_id"

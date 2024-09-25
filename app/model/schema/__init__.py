@@ -110,6 +110,7 @@ from .position import (
 from .scheduled_events import (
     IbetShareScheduledUpdate,
     IbetStraightBondScheduledUpdate,
+    ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
 )
@@ -122,8 +123,11 @@ from .settlement import (
     DVPAgentAccountResponse,
     FinishDVPDeliveryRequest,
     ListAllDVPAgentAccountResponse,
+    ListAllDVPAgentDeliveriesQuery,
+    ListAllDVPAgentDeliveriesResponse,
     ListAllDVPDeliveriesQuery,
     ListAllDVPDeliveriesResponse,
+    RetrieveDVPAgentDeliveryResponse,
     RetrieveDVPDeliveryResponse,
 )
 from .token import (
@@ -162,6 +166,8 @@ from .token_holders import (
     ListTokenHoldersPersonalInfoHistoryResponse,
     ListTokenHoldersPersonalInfoQuery,
     ListTokenHoldersPersonalInfoResponse,
+    RetrieveTokenHoldersCollectionQuery,
+    RetrieveTokenHoldersCollectionSortItem,
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (

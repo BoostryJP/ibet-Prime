@@ -42,10 +42,10 @@ from app.model.blockchain.tx_params.ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransfer,
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransfer,
+    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
     RedeemParams as IbetSecurityTokenRedeemParams,
-    TransferParams as IbetSecurityTokenTransferParams,
 )
 from app.model.blockchain.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
@@ -179,8 +179,11 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
     ):
         super().__init__(contract_address, contract_name)
 
-    async def transfer(
-        self, data: IbetSecurityTokenTransferParams, tx_from: str, private_key: bytes
+    async def forced_transfer(
+        self,
+        data: IbetSecurityTokenForcedTransferParams,
+        tx_from: str,
+        private_key: bytes,
     ):
         """Transfer ownership"""
         try:
@@ -192,6 +195,48 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             _amount = data.amount
             tx = await contract.functions.transferFrom(
                 _from, _to, _amount
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+        return tx_hash
+
+    async def bulk_forced_transfer(
+        self,
+        data: list[IbetSecurityTokenForcedTransferParams],
+        tx_from: str,
+        private_key: bytes,
+    ):
+        """Bulk transfer ownership"""
+        from_list = []
+        to_list = []
+        amounts = []
+
+        for _d in data:
+            from_list.append(_d.from_address)
+            to_list.append(_d.to_address)
+            amounts.append(_d.amount)
+
+        try:
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+            tx = await contract.functions.bulkTransferFrom(
+                from_list, to_list, amounts
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
@@ -284,8 +329,63 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
+        finally:
+            await db_session.close()
+
+        return tx_hash
+
+    async def bulk_additional_issue(
+        self,
+        data: list[IbetSecurityTokenAdditionalIssueParams],
+        tx_from: str,
+        private_key: bytes,
+    ):
+        """Bulk additional issue"""
+        target_address_list = []
+        lock_address_list = []
+        amounts = []
+
+        for _d in data:
+            target_address_list.append(_d.account_address)
+            lock_address_list.append(ZERO_ADDRESS)
+            amounts.append(_d.amount)
+
+        try:
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+            tx = await contract.functions.bulkIssueFrom(
+                target_address_list, lock_address_list, amounts
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
+        try:
+            await self.record_attr_update(db_session)
+            await self.delete_cache(db_session)
+            await db_session.commit()
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -327,8 +427,63 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
+        finally:
+            await db_session.close()
+
+        return tx_hash
+
+    async def bulk_redeem(
+        self,
+        data: list[IbetSecurityTokenRedeemParams],
+        tx_from: str,
+        private_key: bytes,
+    ):
+        """Redeem a token"""
+        target_address_list = []
+        lock_address_list = []
+        amounts = []
+
+        for _d in data:
+            target_address_list.append(_d.account_address)
+            lock_address_list.append(ZERO_ADDRESS)
+            amounts.append(_d.amount)
+
+        try:
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+            tx = await contract.functions.bulkRedeemFrom(
+                target_address_list, lock_address_list, amounts
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
+        try:
+            await self.record_attr_update(db_session)
+            await self.delete_cache(db_session)
+            await db_session.commit()
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -497,7 +652,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         else:
             raise SendTransactionError("contract is already deployed")
 
-    async def get(self):
+    T = TypeVar("T")
+
+    async def get(self) -> T:
         """Get token attributes"""
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
@@ -712,6 +869,26 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.purpose is not None:
+            tx = await contract.functions.setPurpose(data.purpose).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
         if data.interest_rate is not None:
             _interest_rate = int(Decimal(str(data.interest_rate)) * Decimal("10000"))
             tx = await contract.functions.setInterestRate(
@@ -806,6 +983,28 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.redemption_value_currency is not None:
             tx = await contract.functions.setRedemptionValueCurrency(
                 data.redemption_value_currency
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                await AsyncContractUtils.send_transaction(
+                    transaction=tx, private_key=private_key
+                )
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.redemption_date is not None:
+            tx = await contract.functions.setRedemptionDate(
+                data.redemption_date
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
@@ -1089,8 +1288,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()
 
@@ -1572,7 +1772,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             await self.record_attr_update(db_session)
             await self.delete_cache(db_session)
             await db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
+        except Exception:
+            LOG.exception("Failed to update database")
+            pass
         finally:
             await db_session.close()

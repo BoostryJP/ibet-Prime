@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import logging
 from datetime import datetime
 
 import pytest
@@ -135,7 +136,9 @@ def deploy_personal_info_contract(address: str, private_key: bytes):
 async def register_personal_info(
     contract_address: str, issuer_account: Account, investor_list: list
 ):
-    personal_info = PersonalInfoContract(issuer_account, contract_address)
+    personal_info = PersonalInfoContract(
+        logging.getLogger("unittest"), issuer_account, contract_address
+    )
     for investor in investor_list:
         await personal_info.register_info(investor["address"], investor["data"])
 
@@ -231,7 +234,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -667,7 +670,7 @@ class TestCreateLedger:
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
-        user_private_key_2 = decode_keyfile_json(
+        decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
@@ -717,7 +720,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -1198,7 +1201,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -1524,7 +1527,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -1958,7 +1961,7 @@ class TestCreateLedger:
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
-        user_private_key_2 = decode_keyfile_json(
+        decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
@@ -2008,7 +2011,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -2487,7 +2490,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         # Prepare data: UTXO
@@ -2751,7 +2754,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
         db.commit()
 
@@ -2791,7 +2794,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         db.commit()

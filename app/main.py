@@ -25,27 +25,36 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from pydantic_core import ArgsKwargs, ErrorDetails
+from starlette import status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.exceptions import *
+from app.exceptions import (
+    AuthorizationError,
+    BadRequestError,
+    ContractRevertError,
+    ServiceUnavailableError,
+)
 from app.log import output_access_log
-from app.routers import (
+from app.routers.issuer import (
     account,
-    bc_explorer,
     bond,
     common,
-    e2e_messaging,
     file,
-    freeze_log,
     ledger,
     notification,
     position,
-    settlement,
+    settlement_issuer,
     share,
     token_holders,
 )
+from app.routers.misc import bc_explorer, e2e_messaging, freeze_log, settlement_agent
 from app.utils.docs_utils import custom_openapi
-from config import SERVER_NAME
+from config import (
+    BC_EXPLORER_ENABLED,
+    DVP_AGENT_FEATURE_ENABLED,
+    FREEZE_LOG_FEATURE_ENABLED,
+    SERVER_NAME,
+)
 
 tags_metadata = [
     {"name": "root", "description": ""},
@@ -55,15 +64,37 @@ tags_metadata = [
     {"name": "token_common", "description": "Common functions for tokens"},
     {"name": "bond", "description": "Bond token management"},
     {"name": "share", "description": "Share token management"},
+    {"name": "settlement", "description": "Settlement related features"},
     {"name": "utility", "description": "Utility functions"},
-    {"name": "messaging", "description": "Messaging functions with external systems"},
-    {"name": "blockchain_explorer", "description": "Blockchain explorer"},
+    {
+        "name": "[misc] messaging",
+        "description": "Messaging functions with external systems",
+    },
 ]
+
+if DVP_AGENT_FEATURE_ENABLED:
+    tags_metadata.append(
+        {
+            "name": "[misc] settlement_agent",
+            "description": "Settlement related features for paying agent",
+        }
+    )
+
+if BC_EXPLORER_ENABLED:
+    tags_metadata.append(
+        {"name": "[misc] blockchain_explorer", "description": "Blockchain explorer"}
+    )
+
+if FREEZE_LOG_FEATURE_ENABLED:
+    tags_metadata.append(
+        {"name": "[misc] freeze_log", "description": "Freeze log contract"}
+    )
+
 
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="24.6",
+    version="24.9",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -104,10 +135,16 @@ app.include_router(notification.router)
 app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
-app.include_router(bc_explorer.router)
-app.include_router(freeze_log.router)
-app.include_router(settlement.router)
+app.include_router(settlement_issuer.router)
 
+if DVP_AGENT_FEATURE_ENABLED:
+    app.include_router(settlement_agent.router)
+
+if BC_EXPLORER_ENABLED:
+    app.include_router(bc_explorer.router)
+
+if FREEZE_LOG_FEATURE_ENABLED:
+    app.include_router(freeze_log.router)
 
 ###############################################################
 # EXCEPTION
@@ -164,84 +201,21 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
     )
 
 
-# 400:InvalidParameterError
-@app.exception_handler(InvalidParameterError)
-async def invalid_parameter_error_handler(request: Request, exc: InvalidParameterError):
-    meta = {"code": 1, "title": "InvalidParameterError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
+# 400:BadRequestError
+@app.exception_handler(BadRequestError)
+async def bad_request_error_handler(request: Request, exc: BadRequestError):
+    meta = {"code": exc.code, "title": exc.__class__.__name__}
 
-
-# 400:SendTransactionError
-@app.exception_handler(SendTransactionError)
-async def send_transaction_error_handler(request: Request, exc: SendTransactionError):
-    meta = {"code": 2, "title": "SendTransactionError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:AuthTokenAlreadyExistsError
-@app.exception_handler(AuthTokenAlreadyExistsError)
-async def auth_token_already_exists_error_handler(
-    request: Request, exc: AuthTokenAlreadyExistsError
-):
-    meta = {"code": 3, "title": "AuthTokenAlreadyExistsError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta}),
-    )
-
-
-# 400:ResponseLimitExceededError
-@app.exception_handler(ResponseLimitExceededError)
-async def response_limit_exceeded_error_handler(
-    request: Request, exc: ResponseLimitExceededError
-):
-    meta = {"code": 4, "title": "ResponseLimitExceededError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:Integer64bitLimitExceededError
-@app.exception_handler(Integer64bitLimitExceededError)
-async def response_limit_exceeded_error_handler(
-    request: Request, exc: Integer64bitLimitExceededError
-):
-    meta = {"code": 5, "title": "Integer64bitLimitExceededError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:OperationNotSupportedVersionError
-@app.exception_handler(OperationNotSupportedVersionError)
-async def operation_not_supported_version_error_handler(
-    request: Request, exc: OperationNotSupportedVersionError
-):
-    meta = {"code": 6, "title": "OperationNotSupportedVersionError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
-
-
-# 400:OperationNotAllowedStateError
-@app.exception_handler(OperationNotAllowedStateError)
-async def operation_not_permitted_error_handler(
-    request: Request, exc: OperationNotAllowedStateError
-):
-    meta = {"code": exc.code, "title": "OperationNotAllowedStateError"}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-    )
+    if len(exc.args) > 0:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+        )
+    else:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=jsonable_encoder({"meta": meta}),
+        )
 
 
 # 400:ContractRevertError

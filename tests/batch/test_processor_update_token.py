@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 from datetime import UTC, datetime
 from unittest.mock import ANY, call, patch
 
@@ -48,7 +49,7 @@ from tests.account_config import config_eth_account
 
 @pytest.fixture(scope="function")
 def processor(db):
-    return Processor()
+    return Processor(is_shutdown=asyncio.Event())
 
 
 class TestProcessor:
@@ -84,7 +85,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -125,7 +126,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -185,19 +186,24 @@ class TestProcessor:
             "number": 12345,
             "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
         }
-        with patch(
-            target="app.model.blockchain.token.IbetShareContract.update",
-            return_value=None,
-        ) as IbetShareContract_update, patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.update",
-            return_value=None,
-        ) as IbetStraightBondContract_update, patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
-            return_value=None,
-        ) as TokenListContract_register, patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
-            return_value=mock_block,
-        ) as ContractUtils_get_block_by_transaction_hash:
+        with (
+            patch(
+                target="app.model.blockchain.token.IbetShareContract.update",
+                return_value=None,
+            ) as IbetShareContract_update,
+            patch(
+                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                return_value=None,
+            ) as IbetStraightBondContract_update,
+            patch(
+                target="app.model.blockchain.token_list.TokenListContract.register",
+                return_value=None,
+            ) as TokenListContract_register,
+            patch(
+                target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+                return_value=mock_block,
+            ) as ContractUtils_get_block_by_transaction_hash,
+        ):
             # Execute batch
             await processor.process()
 
@@ -365,7 +371,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -403,7 +409,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -498,30 +504,33 @@ class TestProcessor:
         assert _notification.priority == 1
         assert _notification.type == NotificationType.ISSUE_ERROR
         assert _notification.code == 0
-        assert _notification.metainfo == {
-            "token_address": _token_address_1,
-            "token_type": TokenType.IBET_SHARE.value,
-            "arguments": {
-                "name": "name_test1",
-                "symbol": "symbol_test1",
-                "issue_price": 1000,
-                "total_supply": 10000,
-                "dividends": 123.45,
-                "dividend_record_date": "20211231",
-                "dividend_payment_date": "20211231",
-                "cancellation_date": "20221231",
-                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "transferable": False,  # update
-                "status": False,  # update
-                "is_offering": True,  # update
-                "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test",  # update
-                "transfer_approval_required": True,  # update
-                "principal_value": 1000,
-                "is_canceled": True,  # update
-            },
-        }
+        assert (
+            _notification.metainfo
+            == {
+                "token_address": _token_address_1,
+                "token_type": TokenType.IBET_SHARE.value,
+                "arguments": {
+                    "name": "name_test1",
+                    "symbol": "symbol_test1",
+                    "issue_price": 1000,
+                    "total_supply": 10000,
+                    "dividends": 123.45,
+                    "dividend_record_date": "20211231",
+                    "dividend_payment_date": "20211231",
+                    "cancellation_date": "20221231",
+                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                    "transferable": False,  # update
+                    "status": False,  # update
+                    "is_offering": True,  # update
+                    "contact_information": "contact info test",  # update
+                    "privacy_policy": "privacy policy test",  # update
+                    "transfer_approval_required": True,  # update
+                    "principal_value": 1000,
+                    "is_canceled": True,  # update
+                },
+            }
+        )
         _notification = _notification_list[1]
         assert _notification.id == 2
         assert _notification.notice_id is not None
@@ -529,32 +538,35 @@ class TestProcessor:
         assert _notification.priority == 1
         assert _notification.type == NotificationType.ISSUE_ERROR
         assert _notification.code == 0
-        assert _notification.metainfo == {
-            "token_address": _token_address_2,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "arguments": {
-                "name": "name_test1",
-                "symbol": "symbol_test1",
-                "total_supply": 2000,
-                "face_value": 200,
-                "redemption_date": "redemption_date_test1",
-                "redemption_value": 4000,
-                "return_date": "return_date_test1",
-                "return_amount": "return_amount_test1",
-                "purpose": "purpose_test1",
-                "interest_rate": 0.0001,  # update
-                "interest_payment_date": ["0331", "0930"],  # update
-                "transferable": False,  # update
-                "status": False,  # update
-                "is_offering": True,  # update
-                "is_redeemed": True,  # update
-                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test",  # update
-                "transfer_approval_required": True,  # update
-            },
-        }
+        assert (
+            _notification.metainfo
+            == {
+                "token_address": _token_address_2,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "arguments": {
+                    "name": "name_test1",
+                    "symbol": "symbol_test1",
+                    "total_supply": 2000,
+                    "face_value": 200,
+                    "redemption_date": "redemption_date_test1",
+                    "redemption_value": 4000,
+                    "return_date": "return_date_test1",
+                    "return_amount": "return_amount_test1",
+                    "purpose": "purpose_test1",
+                    "interest_rate": 0.0001,  # update
+                    "interest_payment_date": ["0331", "0930"],  # update
+                    "transferable": False,  # update
+                    "status": False,  # update
+                    "is_offering": True,  # update
+                    "is_redeemed": True,  # update
+                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                    "contact_information": "contact info test",  # update
+                    "privacy_policy": "privacy policy test",  # update
+                    "transfer_approval_required": True,  # update
+                },
+            }
+        )
 
     # <Error_2>
     # Issuing: Fail to get the private key
@@ -582,7 +594,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -620,7 +632,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -715,30 +727,33 @@ class TestProcessor:
         assert _notification.priority == 1
         assert _notification.type == NotificationType.ISSUE_ERROR
         assert _notification.code == 1
-        assert _notification.metainfo == {
-            "token_address": _token_address_1,
-            "token_type": TokenType.IBET_SHARE.value,
-            "arguments": {
-                "name": "name_test1",
-                "symbol": "symbol_test1",
-                "issue_price": 1000,
-                "total_supply": 10000,
-                "dividends": 123.45,
-                "dividend_record_date": "20211231",
-                "dividend_payment_date": "20211231",
-                "cancellation_date": "20221231",
-                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "transferable": False,  # update
-                "status": False,  # update
-                "is_offering": True,  # update
-                "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test",  # update
-                "transfer_approval_required": True,  # update
-                "principal_value": 1000,
-                "is_canceled": True,  # update
-            },
-        }
+        assert (
+            _notification.metainfo
+            == {
+                "token_address": _token_address_1,
+                "token_type": TokenType.IBET_SHARE.value,
+                "arguments": {
+                    "name": "name_test1",
+                    "symbol": "symbol_test1",
+                    "issue_price": 1000,
+                    "total_supply": 10000,
+                    "dividends": 123.45,
+                    "dividend_record_date": "20211231",
+                    "dividend_payment_date": "20211231",
+                    "cancellation_date": "20221231",
+                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                    "transferable": False,  # update
+                    "status": False,  # update
+                    "is_offering": True,  # update
+                    "contact_information": "contact info test",  # update
+                    "privacy_policy": "privacy policy test",  # update
+                    "transfer_approval_required": True,  # update
+                    "principal_value": 1000,
+                    "is_canceled": True,  # update
+                },
+            }
+        )
         _notification = _notification_list[1]
         assert _notification.id == 2
         assert _notification.notice_id is not None
@@ -746,32 +761,35 @@ class TestProcessor:
         assert _notification.priority == 1
         assert _notification.type == NotificationType.ISSUE_ERROR
         assert _notification.code == 1
-        assert _notification.metainfo == {
-            "token_address": _token_address_2,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "arguments": {
-                "name": "name_test1",
-                "symbol": "symbol_test1",
-                "total_supply": 2000,
-                "face_value": 200,
-                "redemption_date": "redemption_date_test1",
-                "redemption_value": 4000,
-                "return_date": "return_date_test1",
-                "return_amount": "return_amount_test1",
-                "purpose": "purpose_test1",
-                "interest_rate": 0.0001,  # update
-                "interest_payment_date": ["0331", "0930"],  # update
-                "transferable": False,  # update
-                "status": False,  # update
-                "is_offering": True,  # update
-                "is_redeemed": True,  # update
-                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test",  # update
-                "transfer_approval_required": True,  # update
-            },
-        }
+        assert (
+            _notification.metainfo
+            == {
+                "token_address": _token_address_2,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "arguments": {
+                    "name": "name_test1",
+                    "symbol": "symbol_test1",
+                    "total_supply": 2000,
+                    "face_value": 200,
+                    "redemption_date": "redemption_date_test1",
+                    "redemption_value": 4000,
+                    "return_date": "return_date_test1",
+                    "return_amount": "return_amount_test1",
+                    "purpose": "purpose_test1",
+                    "interest_rate": 0.0001,  # update
+                    "interest_payment_date": ["0331", "0930"],  # update
+                    "transferable": False,  # update
+                    "status": False,  # update
+                    "is_offering": True,  # update
+                    "is_redeemed": True,  # update
+                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                    "contact_information": "contact info test",  # update
+                    "privacy_policy": "privacy policy test",  # update
+                    "transfer_approval_required": True,  # update
+                },
+            }
+        )
 
     # <Error_3>
     # Issuing: Send transaction error(token update)
@@ -799,7 +817,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -837,7 +855,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -892,13 +910,16 @@ class TestProcessor:
 
         db.commit()
 
-        with patch(
-            target="app.model.blockchain.token.IbetShareContract.update",
-            rside_effect=SendTransactionError(),
-        ) as IbetShareContract_update, patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.update",
-            side_effect=SendTransactionError(),
-        ) as IbetStraightBondContract_update:
+        with (
+            patch(
+                target="app.model.blockchain.token.IbetShareContract.update",
+                rside_effect=SendTransactionError(),
+            ),
+            patch(
+                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                side_effect=SendTransactionError(),
+            ),
+        ):
             # Execute batch
             await processor.process()
 
@@ -939,30 +960,33 @@ class TestProcessor:
             assert _notification.priority == 1
             assert _notification.type == NotificationType.ISSUE_ERROR
             assert _notification.code == 2
-            assert _notification.metainfo == {
-                "token_address": _token_address_1,
-                "token_type": TokenType.IBET_SHARE.value,
-                "arguments": {
-                    "name": "name_test1",
-                    "symbol": "symbol_test1",
-                    "issue_price": 1000,
-                    "total_supply": 10000,
-                    "dividends": 123.45,
-                    "dividend_record_date": "20211231",
-                    "dividend_payment_date": "20211231",
-                    "cancellation_date": "20221231",
-                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                    "transferable": False,  # update
-                    "status": False,  # update
-                    "is_offering": True,  # update
-                    "contact_information": "contact info test",  # update
-                    "privacy_policy": "privacy policy test",  # update
-                    "transfer_approval_required": True,  # update
-                    "principal_value": 1000,
-                    "is_canceled": True,  # update
-                },
-            }
+            assert (
+                _notification.metainfo
+                == {
+                    "token_address": _token_address_1,
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "arguments": {
+                        "name": "name_test1",
+                        "symbol": "symbol_test1",
+                        "issue_price": 1000,
+                        "total_supply": 10000,
+                        "dividends": 123.45,
+                        "dividend_record_date": "20211231",
+                        "dividend_payment_date": "20211231",
+                        "cancellation_date": "20221231",
+                        "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                        "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                        "transferable": False,  # update
+                        "status": False,  # update
+                        "is_offering": True,  # update
+                        "contact_information": "contact info test",  # update
+                        "privacy_policy": "privacy policy test",  # update
+                        "transfer_approval_required": True,  # update
+                        "principal_value": 1000,
+                        "is_canceled": True,  # update
+                    },
+                }
+            )
             _notification = _notification_list[1]
             assert _notification.id == 2
             assert _notification.notice_id is not None
@@ -970,32 +994,35 @@ class TestProcessor:
             assert _notification.priority == 1
             assert _notification.type == NotificationType.ISSUE_ERROR
             assert _notification.code == 2
-            assert _notification.metainfo == {
-                "token_address": _token_address_2,
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                "arguments": {
-                    "name": "name_test1",
-                    "symbol": "symbol_test1",
-                    "total_supply": 2000,
-                    "face_value": 200,
-                    "redemption_date": "redemption_date_test1",
-                    "redemption_value": 4000,
-                    "return_date": "return_date_test1",
-                    "return_amount": "return_amount_test1",
-                    "purpose": "purpose_test1",
-                    "interest_rate": 0.0001,  # update
-                    "interest_payment_date": ["0331", "0930"],  # update
-                    "transferable": False,  # update
-                    "status": False,  # update
-                    "is_offering": True,  # update
-                    "is_redeemed": True,  # update
-                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                    "contact_information": "contact info test",  # update
-                    "privacy_policy": "privacy policy test",  # update
-                    "transfer_approval_required": True,  # update
-                },
-            }
+            assert (
+                _notification.metainfo
+                == {
+                    "token_address": _token_address_2,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "arguments": {
+                        "name": "name_test1",
+                        "symbol": "symbol_test1",
+                        "total_supply": 2000,
+                        "face_value": 200,
+                        "redemption_date": "redemption_date_test1",
+                        "redemption_value": 4000,
+                        "return_date": "return_date_test1",
+                        "return_amount": "return_amount_test1",
+                        "purpose": "purpose_test1",
+                        "interest_rate": 0.0001,  # update
+                        "interest_payment_date": ["0331", "0930"],  # update
+                        "transferable": False,  # update
+                        "status": False,  # update
+                        "is_offering": True,  # update
+                        "is_redeemed": True,  # update
+                        "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                        "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                        "contact_information": "contact info test",  # update
+                        "privacy_policy": "privacy policy test",  # update
+                        "transfer_approval_required": True,  # update
+                    },
+                }
+            )
 
     # <Error_4>
     # Issuing: Send transaction error(TokenList register)
@@ -1023,7 +1050,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_24_06
+        _token_1.version = TokenVersion.V_24_09
         db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -1061,7 +1088,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_24_06
+        _token_2.version = TokenVersion.V_24_09
         db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -1116,16 +1143,20 @@ class TestProcessor:
 
         db.commit()
 
-        with patch(
-            target="app.model.blockchain.token.IbetShareContract.update",
-            return_value=None,
-        ) as IbetShareContract_update, patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.update",
-            return_value=None,
-        ) as IbetStraightBondContract_update, patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
-            side_effect=SendTransactionError(),
-        ) as TokenListContract_register:
+        with (
+            patch(
+                target="app.model.blockchain.token.IbetShareContract.update",
+                return_value=None,
+            ) as IbetShareContract_update,
+            patch(
+                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                return_value=None,
+            ) as IbetStraightBondContract_update,
+            patch(
+                target="app.model.blockchain.token_list.TokenListContract.register",
+                side_effect=SendTransactionError(),
+            ),
+        ):
             # Execute batch
             await processor.process()
 
@@ -1205,30 +1236,33 @@ class TestProcessor:
             assert _notification.priority == 1
             assert _notification.type == NotificationType.ISSUE_ERROR
             assert _notification.code == 2
-            assert _notification.metainfo == {
-                "token_address": _token_address_1,
-                "token_type": TokenType.IBET_SHARE.value,
-                "arguments": {
-                    "name": "name_test1",
-                    "symbol": "symbol_test1",
-                    "issue_price": 1000,
-                    "total_supply": 10000,
-                    "dividends": 123.45,
-                    "dividend_record_date": "20211231",
-                    "dividend_payment_date": "20211231",
-                    "cancellation_date": "20221231",
-                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                    "transferable": False,  # update
-                    "status": False,  # update
-                    "is_offering": True,  # update
-                    "contact_information": "contact info test",  # update
-                    "privacy_policy": "privacy policy test",  # update
-                    "transfer_approval_required": True,  # update
-                    "principal_value": 1000,
-                    "is_canceled": True,  # update
-                },
-            }
+            assert (
+                _notification.metainfo
+                == {
+                    "token_address": _token_address_1,
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "arguments": {
+                        "name": "name_test1",
+                        "symbol": "symbol_test1",
+                        "issue_price": 1000,
+                        "total_supply": 10000,
+                        "dividends": 123.45,
+                        "dividend_record_date": "20211231",
+                        "dividend_payment_date": "20211231",
+                        "cancellation_date": "20221231",
+                        "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                        "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                        "transferable": False,  # update
+                        "status": False,  # update
+                        "is_offering": True,  # update
+                        "contact_information": "contact info test",  # update
+                        "privacy_policy": "privacy policy test",  # update
+                        "transfer_approval_required": True,  # update
+                        "principal_value": 1000,
+                        "is_canceled": True,  # update
+                    },
+                }
+            )
             _notification = _notification_list[1]
             assert _notification.id == 2
             assert _notification.notice_id is not None
@@ -1236,29 +1270,32 @@ class TestProcessor:
             assert _notification.priority == 1
             assert _notification.type == NotificationType.ISSUE_ERROR
             assert _notification.code == 2
-            assert _notification.metainfo == {
-                "token_address": _token_address_2,
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                "arguments": {
-                    "name": "name_test1",
-                    "symbol": "symbol_test1",
-                    "total_supply": 2000,
-                    "face_value": 200,
-                    "redemption_date": "redemption_date_test1",
-                    "redemption_value": 4000,
-                    "return_date": "return_date_test1",
-                    "return_amount": "return_amount_test1",
-                    "purpose": "purpose_test1",
-                    "interest_rate": 0.0001,  # update
-                    "interest_payment_date": ["0331", "0930"],  # update
-                    "transferable": False,  # update
-                    "status": False,  # update
-                    "is_offering": True,  # update
-                    "is_redeemed": True,  # update
-                    "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                    "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                    "contact_information": "contact info test",  # update
-                    "privacy_policy": "privacy policy test",  # update
-                    "transfer_approval_required": True,  # update
-                },
-            }
+            assert (
+                _notification.metainfo
+                == {
+                    "token_address": _token_address_2,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "arguments": {
+                        "name": "name_test1",
+                        "symbol": "symbol_test1",
+                        "total_supply": 2000,
+                        "face_value": 200,
+                        "redemption_date": "redemption_date_test1",
+                        "redemption_value": 4000,
+                        "return_date": "return_date_test1",
+                        "return_amount": "return_amount_test1",
+                        "purpose": "purpose_test1",
+                        "interest_rate": 0.0001,  # update
+                        "interest_payment_date": ["0331", "0930"],  # update
+                        "transferable": False,  # update
+                        "status": False,  # update
+                        "is_offering": True,  # update
+                        "is_redeemed": True,  # update
+                        "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                        "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                        "contact_information": "contact info test",  # update
+                        "privacy_policy": "privacy policy test",  # update
+                        "transfer_approval_required": True,  # update
+                    },
+                }
+            )

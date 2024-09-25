@@ -21,7 +21,7 @@ from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersBondBulkTransferGET:
+class TestRetrieveBondTokenBulkTransfer:
     # target API endpoint
     test_url = "/bond/bulk_transfer/{}"
 

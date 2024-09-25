@@ -50,7 +50,7 @@ from app.model.db import (
 from app.utils.asyncio_utils import SemaphoreTaskGroup
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
 
 process_name = "INDEXER-Position-Bond"
@@ -853,6 +853,8 @@ class Processor:
                 # Update position
                 for _account in account_list:
                     token_address = _account["token_address"]
+                    if self.token_list.get(token_address) is None:
+                        continue
                     account_address = _account["account_address"]
                     (
                         exchange_balance,
@@ -961,6 +963,8 @@ class Processor:
                 # Update position
                 for _account in account_list:
                     token_address = _account["token_address"]
+                    if self.token_list.get(token_address) is None:
+                        continue
                     account_address = _account["account_address"]
                     (
                         exchange_balance,
@@ -1086,6 +1090,8 @@ class Processor:
                 # Update position
                 for _account in account_list:
                     token_address = _account["token_address"]
+                    if self.token_list.get(token_address) is None:
+                        continue
                     account_address = _account["account_address"]
                     (
                         exchange_balance,

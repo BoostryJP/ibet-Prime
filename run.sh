@@ -21,21 +21,43 @@ RUN_MODE=${RUN_MODE:-server}
 cd /app/ibet-Prime
 
 if [ "${RUN_MODE}" == "server" ]; then
-  ./bin/run_server.sh start
+  ./bin/run_server.sh start &
 elif [ "${RUN_MODE}" == "batch" ]; then
   ./bin/run_indexer.sh &
   ./bin/run_processor.sh &
-  tail -f /dev/null
 elif [ "${RUN_MODE}" == "batch_indexer" ]; then
-  ./bin/run_indexer.sh
+  ./bin/run_indexer.sh &
 elif [ "${RUN_MODE}" == "batch_processor" ]; then
-  ./bin/run_processor.sh
+  ./bin/run_processor.sh &
 elif [ "${RUN_MODE}" == "all" ]; then
   ./bin/run_server.sh start &
   ./bin/run_indexer.sh &
   ./bin/run_processor.sh &
-  tail -f /dev/null
 else
   echo "RUN_MODE is invalid value." >&2
   exit 1
 fi
+
+function trap_sigterm() {
+  echo "$0: Shutdown."
+  if [ "${RUN_MODE}" == "server" ]; then
+    PIDS=$(ps -ef | grep "[p]ython run.py" | awk '{print $2}')
+  else
+    PIDS=$(ps -ef | grep "[p]ython batch" | awk '{print $2}')
+  fi
+
+  for PID in $PIDS; do
+    echo "Sending SIGTERM to PID $PID"
+    kill -15 $PID
+  done
+  for PID in $PIDS; do
+    tail --pid=$PID -f /dev/null
+    echo "$PID is shutdown"
+  done
+  exit 0
+}
+trap trap_sigterm INT TERM
+
+while :; do
+  sleep 5
+done

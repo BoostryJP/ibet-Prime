@@ -55,11 +55,6 @@ from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_transfer_approval import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
-from tests.contract_utils import (
-    IbetSecurityTokenContractTestUtils as STContractUtils,
-    IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
-    PersonalInfoContractTestUtils,
-)
 
 web3 = Web3Wrapper()
 
@@ -177,7 +172,7 @@ class TestProcessor:
         token_1.abi = "abi"
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -224,7 +219,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -235,7 +230,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_06
+        token_2.version = TokenVersion.V_24_09
         db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -300,7 +295,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -311,7 +306,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_06
+        token_2.version = TokenVersion.V_24_09
         db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -433,7 +428,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -571,7 +566,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -708,7 +703,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -852,7 +847,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -999,7 +994,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -1010,7 +1005,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_06
+        token_2.version = TokenVersion.V_24_09
         db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -1168,7 +1163,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -1228,7 +1223,7 @@ class TestProcessor:
                 "gasPrice": 0,
             }
         )
-        _, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
+        ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1322,7 +1317,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -1507,7 +1502,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -1534,7 +1529,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_24_06
+        token_2.version = TokenVersion.V_24_09
         db.add(token_2)
 
         db.commit()
@@ -1585,18 +1580,20 @@ class TestProcessor:
         token.issuer_address = issuer_address
         token.abi = token_contract.abi
         token.tx_hash = "tx_hash"
-        token.version = TokenVersion.V_24_06
+        token.version = TokenVersion.V_24_09
         db.add(token)
 
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch(
-            "batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncWeb3Wrapper().eth,
+                "contract",
+                side_effect=ServiceUnavailableError(),
+            ),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.record_tuples.count(
@@ -1605,12 +1602,12 @@ class TestProcessor:
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy Error
-        with patch(
-            "batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncSession, "commit", side_effect=SQLAlchemyError(code="dbapi")
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncSession, "commit", side_effect=SQLAlchemyError(code="dbapi")
+            ),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert "A database error has occurred: code=dbapi" in caplog.text

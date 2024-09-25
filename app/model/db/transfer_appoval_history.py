@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
 from sqlalchemy import JSON, BigInteger, String
@@ -59,6 +59,6 @@ class TransferApprovalHistory(Base):
         }
 
 
-class TransferApprovalOperationType(str, Enum):
+class TransferApprovalOperationType(StrEnum):
     APPROVE = "approve"
     CANCEL = "cancel"

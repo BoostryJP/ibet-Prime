@@ -105,7 +105,7 @@ async def issue_bond_token(issuer: dict, exchange_address: str):
         "リターン内容",
         "発行目的",
     ]
-    token_contract_address, abi, tx_hash = await IbetStraightBondContract().create(
+    token_contract_address, _, _ = await IbetStraightBondContract().create(
         args=arguments, tx_from=issuer_address, private_key=issuer_pk
     )
     token_contract = ContractUtils.get_contract(
@@ -458,9 +458,8 @@ class TestApproveTransfer:
         )
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             MagicMock(side_effect=ContractLogicError("execution reverted")),

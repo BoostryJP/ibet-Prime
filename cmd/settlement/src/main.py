@@ -63,7 +63,7 @@ def list_deliveries(
     ] = "http://localhost:5000",
 ):
     resp = httpx.get(
-        url=f"{api_url}/settlement/dvp/{exchange_address}/deliveries",
+        url=f"{api_url}/settlement/dvp/agent/{exchange_address}/deliveries",
         params={
             "agent_address": agent_address,
             "status": DeliveryStatus[status.upper()].value,
@@ -109,7 +109,7 @@ def list_deliveries(
             idx_delivery["seller_address"],
             str(idx_delivery["amount"]),
             idx_delivery["agent_address"],
-            idx_delivery["data"],
+            str(idx_delivery["data"]),
             status,
         )
 
@@ -145,7 +145,7 @@ def finish(
     )
 
     resp = httpx.post(
-        url=f"{api_url}/settlement/dvp/{exchange_address}/delivery/{delivery_id}",
+        url=f"{api_url}/settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}",
         json=json.loads(finish_params.model_dump_json()),
     )
 
@@ -185,7 +185,7 @@ def abort(
     )
 
     resp = httpx.post(
-        url=f"{api_url}/settlement/dvp/{exchange_address}/delivery/{delivery_id}",
+        url=f"{api_url}/settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}",
         json=json.loads(abort_params.model_dump_json()),
     )
 

@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -39,7 +39,7 @@ class BatchRegisterPersonalInfoUpload(Base):
     status: Mapped[str] = mapped_column(String, nullable=False, index=True)
 
 
-class BatchRegisterPersonalInfoUploadStatus(str, Enum):
+class BatchRegisterPersonalInfoUploadStatus(StrEnum):
     """Batch Register PersonalInfo Upload Status"""
 
     PENDING = "pending"

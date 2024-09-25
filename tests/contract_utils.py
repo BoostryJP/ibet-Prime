@@ -67,7 +67,7 @@ class IbetStandardTokenUtils:
             args["contactInformation"],
             args["privacyPolicy"],
         ]
-        contract_address, abi, _ = ContractUtils.deploy_contract(
+        contract_address, _, _ = ContractUtils.deploy_contract(
             contract_name="IbetStandardToken",
             args=arguments,
             deployer=tx_from,
@@ -385,82 +385,6 @@ class IbetSecurityTokenEscrowContractTestUtils:
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
         )
         return escrow_contract.functions.latestEscrowId().call()
-
-
-class IbetSecurityTokenDVPContractTestUtils:
-    @staticmethod
-    def balance_of(contract_address: str, account_address: str, token_address: str):
-        dvp_contract = ContractUtils.get_contract(
-            contract_name="IbetSecurityTokenDVP", contract_address=contract_address
-        )
-        return dvp_contract.functions.balanceOf(account_address, token_address).call()
-
-    @staticmethod
-    def create_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
-    ):
-        dvp_contract = ContractUtils.get_contract(
-            contract_name="IbetSecurityTokenDVP", contract_address=contract_address
-        )
-        tx = dvp_contract.functions.createDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
-        )
-        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
-    @staticmethod
-    def cancel_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
-    ):
-        dvp_contract = ContractUtils.get_contract(
-            contract_name="IbetSecurityTokenDVP", contract_address=contract_address
-        )
-        tx = dvp_contract.functions.cancelDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
-        )
-        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
-    @staticmethod
-    def confirm_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
-    ):
-        dvp_contract = ContractUtils.get_contract(
-            contract_name="IbetSecurityTokenDVP", contract_address=contract_address
-        )
-        tx = dvp_contract.functions.confirmDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
-        )
-        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
-    @staticmethod
-    def finish_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
-    ):
-        dvp_contract = ContractUtils.get_contract(
-            contract_name="IbetSecurityTokenDVP", contract_address=contract_address
-        )
-        tx = dvp_contract.functions.finishDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
-        )
-        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
-    @staticmethod
-    def abort_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
-    ):
-        dvp_contract = ContractUtils.get_contract(
-            contract_name="IbetSecurityTokenDVP", contract_address=contract_address
-        )
-        tx = dvp_contract.functions.abortDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
-        )
-        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
-    @staticmethod
-    def get_latest_delivery_id(contract_address: str):
-        escrow_contract = ContractUtils.get_contract(
-            contract_name="IbetSecurityTokenDVP", contract_address=contract_address
-        )
-        return escrow_contract.functions.latestDeliveryId().call()
 
 
 class IbetSecurityTokenDVPContractTestUtils:

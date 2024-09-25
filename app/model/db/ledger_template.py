@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -66,6 +66,6 @@ class LedgerDetailsTemplate(Base):
     data_source: Mapped[str | None] = mapped_column(String(42))
 
 
-class LedgerDetailsDataType(str, Enum):
+class LedgerDetailsDataType(StrEnum):
     IBET_FIN = "ibetfin"
     DB = "db"

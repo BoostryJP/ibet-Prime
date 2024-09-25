@@ -44,11 +44,11 @@ if APP_ENV != "live":
 else:
     if NETWORK == "IBET":  # ibet
         INI_FILE = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), f"conf/live.ini"
+            os.path.dirname(os.path.realpath(__file__)), "conf/live.ini"
         )
     else:  # ibet for Fin
         INI_FILE = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), f"conf/live_fin.ini"
+            os.path.dirname(os.path.realpath(__file__)), "conf/live_fin.ini"
         )
 CONFIG = configparser.ConfigParser()
 CONFIG.read(INI_FILE)
@@ -116,6 +116,8 @@ else:
         if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")
         else 20
     )
+# Average block generation interval
+EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 1))
 
 
 ####################################################
@@ -157,7 +159,6 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 TOKEN_LIST_CONTRACT_ADDRESS = os.environ.get("TOKEN_LIST_CONTRACT_ADDRESS")
 E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get("E2E_MESSAGING_CONTRACT_ADDRESS")
-FREEZE_LOG_CONTRACT_ADDRESS = os.environ.get("FREEZE_LOG_CONTRACT_ADDRESS")
 
 # Token data cache
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
@@ -175,7 +176,10 @@ TOKEN_CACHE_TTL_JITTER = (
 ####################################################
 # Batch settings
 ####################################################
+
+# =============================
 # Indexer
+# =============================
 INDEXER_SYNC_INTERVAL = 10
 INDEXER_BLOCK_LOT_MAX_SIZE = (
     int(os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE"))
@@ -183,7 +187,17 @@ INDEXER_BLOCK_LOT_MAX_SIZE = (
     else 1000000
 )
 
+# =============================
 # Processor
+# =============================
+
+# Bulk Tx
+BULK_TX_LOT_SIZE = (
+    int(os.environ.get("BULK_TX_LOT_SIZE"))
+    if os.environ.get("BULK_TX_LOT_SIZE")
+    else 100
+)
+
 # Bulk Transfer
 BULK_TRANSFER_INTERVAL = (
     int(os.environ.get("BULK_TRANSFER_INTERVAL"))
@@ -338,9 +352,30 @@ E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" el
 ####################################################
 # Blockchain explorer settings
 ####################################################
-# Blockchain Explorer
 BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
 
+
+####################################################
+# Freeze log option settings
+####################################################
+FREEZE_LOG_FEATURE_ENABLED = (
+    True if os.environ.get("FREEZE_LOG_FEATURE_ENABLED") == "1" else False
+)
+FREEZE_LOG_CONTRACT_ADDRESS = os.environ.get("FREEZE_LOG_CONTRACT_ADDRESS")
+
+
+####################################################
+# DvP option settings
+####################################################
+# For paying agent
+DVP_AGENT_FEATURE_ENABLED = (
+    True if os.environ.get("DVP_AGENT_FEATURE_ENABLED") == "1" else False
+)
+
+# Data encryption mode
+# - "aes-256-cbc"
+DVP_DATA_ENCRYPTION_MODE = os.environ.get("DVP_DATA_ENCRYPTION_MODE") or None
+DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
 
 ####################################################
 # Other settings

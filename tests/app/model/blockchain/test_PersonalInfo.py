@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import base64
 import json
+import logging
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -63,7 +64,9 @@ def initialize(issuer, db):
     )
 
     personal_info_contract = PersonalInfoContract(
-        issuer=_account, contract_address=contract_address
+        logger=logging.getLogger("unittest"),
+        issuer=_account,
+        contract_address=contract_address,
     )
     return personal_info_contract
 
@@ -668,9 +671,8 @@ class TestModifyInfo:
         }
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             MagicMock(side_effect=ContractLogicError("execution reverted")),

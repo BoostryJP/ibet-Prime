@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import uuid
+from asyncio import Event
 from typing import List, Sequence
 
 import uvloop
@@ -35,30 +36,26 @@ from app.exceptions import (
     ServiceUnavailableError,
 )
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
-    BulkTransferParams as IbetShareBulkTransferParams,
-    TransferParams as IbetShareTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    BulkTransferParams as IbetStraightBondBulkTransferParams,
-    TransferParams as IbetStraightBondTransferParams,
-)
+from app.model.blockchain.tx_params.ibet_security_token import ForcedTransferParams
 from app.model.db import (
     Account,
     BulkTransfer,
     BulkTransferUpload,
     Notification,
     NotificationType,
+    Token,
     TokenType,
+    TokenVersion,
 )
-from app.utils.asyncio_utils import SemaphoreTaskGroup
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import (
     BULK_TRANSFER_INTERVAL,
     BULK_TRANSFER_WORKER_COUNT,
     BULK_TRANSFER_WORKER_LOT_SIZE,
+    BULK_TX_LOT_SIZE,
 )
 
 """
@@ -75,9 +72,11 @@ web3 = AsyncWeb3Wrapper()
 
 class Processor:
     worker_num: int
+    is_shutdown: Event
 
-    def __init__(self, worker_num):
+    def __init__(self, worker_num, is_shutdown: Event):
         self.worker_num: int = worker_num
+        self.is_shutdown = is_shutdown
 
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
@@ -86,7 +85,13 @@ class Processor:
             if len(upload_list) < 1:
                 return
 
-            for _upload in upload_list:
+            for _d in upload_list:
+                if self.is_shutdown.is_set():
+                    return
+
+                _upload = _d[0]
+                _token_version = _d[1]
+
                 LOG.info(
                     f"<{self.worker_num}> Process start: upload_id={_upload.upload_id}"
                 )
@@ -147,49 +152,43 @@ class Processor:
                     continue
 
                 # Transfer
+                # - ~v24.6: Forced transfer individually
+                # - v24.9~: Bulk forced transfer
                 transfer_list = await self.__get_transfer_data(
                     db_session=db_session, upload_id=_upload.upload_id, status=0
                 )
-                if _upload.transaction_compression is True:
+                if (
+                    _token_version is not None
+                    and _token_version >= TokenVersion.V_24_09
+                ):
                     # Split the original transfer list into sub-lists
                     chunked_transfer_list: list[list[BulkTransfer]] = list(
-                        self.__split_list(list(transfer_list), 100)
+                        self.__split_list(list(transfer_list), BULK_TX_LOT_SIZE)
                     )
-                    # Execute bulkTransfer for each sub-list
+                    # Execute bulk forced transfer for each sub-list
                     for _transfer_list in chunked_transfer_list:
-                        _token_type = _transfer_list[0].token_type
-                        _token_addr = _transfer_list[0].token_address
-                        _from_addr = _transfer_list[0].from_address
-
-                        _to_addr_list = []
-                        _amount_list = []
-                        for _transfer in _transfer_list:
-                            _to_addr_list.append(_transfer.to_address)
-                            _amount_list.append(_transfer.amount)
+                        if self.is_shutdown.is_set():
+                            LOG.info(
+                                f"<{self.worker_num}> Process pause for graceful shutdown: upload_id={_upload.upload_id}"
+                            )
+                            return
 
                         try:
-                            if _token_type == TokenType.IBET_SHARE.value:
-                                _transfer_data = IbetShareBulkTransferParams(
-                                    to_address_list=_to_addr_list,
-                                    amount_list=_amount_list,
+                            _transfer_data_list = [
+                                ForcedTransferParams(
+                                    from_address=_transfer.from_address,
+                                    to_address=_transfer.to_address,
+                                    amount=_transfer.amount,
                                 )
-                                await IbetShareContract(_token_addr).bulk_transfer(
-                                    data=_transfer_data,
-                                    tx_from=_from_addr,
-                                    private_key=private_key,
-                                )
-                            elif _token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                                _transfer_data = IbetStraightBondBulkTransferParams(
-                                    to_address_list=_to_addr_list,
-                                    amount_list=_amount_list,
-                                )
-                                await IbetStraightBondContract(
-                                    _token_addr
-                                ).bulk_transfer(
-                                    data=_transfer_data,
-                                    tx_from=_from_addr,
-                                    private_key=private_key,
-                                )
+                                for _transfer in _transfer_list
+                            ]
+                            await self.__bulk_forced_transfer(
+                                token_address=_upload.token_address,
+                                token_type=_upload.token_type,
+                                transfer_data_list=_transfer_data_list,
+                                tx_from=_upload.issuer_address,
+                                tx_from_pk=private_key,
+                            )
                             for _transfer in _transfer_list:
                                 await self.__sink_on_finish_transfer_process(
                                     db_session=db_session,
@@ -221,34 +220,23 @@ class Processor:
                         await db_session.commit()
                 else:
                     for _transfer in transfer_list:
-                        token = {
-                            "token_address": _transfer.token_address,
-                            "from_address": _transfer.from_address,
-                            "to_address": _transfer.to_address,
-                            "amount": _transfer.amount,
-                        }
+                        if self.is_shutdown.is_set():
+                            return
+
+                        # Execute bulk forced transfer
                         try:
-                            if _transfer.token_type == TokenType.IBET_SHARE.value:
-                                _transfer_data = IbetShareTransferParams(**token)
-                                await IbetShareContract(
-                                    _transfer.token_address
-                                ).transfer(
-                                    data=_transfer_data,
-                                    tx_from=_transfer.issuer_address,
-                                    private_key=private_key,
-                                )
-                            elif (
-                                _transfer.token_type
-                                == TokenType.IBET_STRAIGHT_BOND.value
-                            ):
-                                _transfer_data = IbetStraightBondTransferParams(**token)
-                                await IbetStraightBondContract(
-                                    _transfer.token_address
-                                ).transfer(
-                                    data=_transfer_data,
-                                    tx_from=_transfer.issuer_address,
-                                    private_key=private_key,
-                                )
+                            _transfer_data = ForcedTransferParams(
+                                from_address=_transfer.from_address,
+                                to_address=_transfer.to_address,
+                                amount=_transfer.amount,
+                            )
+                            await self.__forced_transfer(
+                                token_address=_transfer.token_address,
+                                token_type=_transfer.token_type,
+                                transfer_data=_transfer_data,
+                                tx_from=_upload.issuer_address,
+                                tx_from_pk=private_key,
+                            )
                             await self.__sink_on_finish_transfer_process(
                                 db_session=db_session, record_id=_transfer.id, status=1
                             )
@@ -311,7 +299,9 @@ class Processor:
         finally:
             await db_session.close()
 
-    async def __get_uploads(self, db_session: AsyncSession) -> List[BulkTransferUpload]:
+    async def __get_uploads(
+        self, db_session: AsyncSession
+    ) -> list[tuple[BulkTransferUpload, TokenVersion]]:
         # NOTE:
         # - Only one issuer can be processed in the same thread.
         # - The maximum number of uploads that can be processed in one batch cycle is the number defined by BULK_TRANSFER_WORKER_LOT_SIZE.
@@ -329,66 +319,111 @@ class Processor:
 
             # Retrieve one target data
             # NOTE: Priority is given to issuers that are not being processed by other threads.
-            upload_1: BulkTransferUpload | None = (
-                await db_session.scalars(
-                    select(BulkTransferUpload)
-                    .where(
-                        and_(
-                            BulkTransferUpload.upload_id.notin_(locked_update_id),
-                            BulkTransferUpload.status == 0,
-                            BulkTransferUpload.issuer_address.notin_(exclude_issuer),
+            upload_1: tuple[BulkTransferUpload, TokenVersion | None] | None = (
+                (
+                    await db_session.execute(
+                        select(BulkTransferUpload, Token.version)
+                        .outerjoin(
+                            Token,
+                            and_(
+                                BulkTransferUpload.issuer_address
+                                == Token.issuer_address,
+                                BulkTransferUpload.token_address == Token.token_address,
+                            ),
                         )
-                    )
-                    .order_by(BulkTransferUpload.created)
-                    .limit(1)
-                )
-            ).first()
-            if upload_1 is None:
-                # If there are no targets, then all issuers will be retrieved.
-                upload_1: BulkTransferUpload | None = (
-                    await db_session.scalars(
-                        select(BulkTransferUpload)
                         .where(
                             and_(
                                 BulkTransferUpload.upload_id.notin_(locked_update_id),
                                 BulkTransferUpload.status == 0,
+                                BulkTransferUpload.issuer_address.notin_(
+                                    exclude_issuer
+                                ),
+                                BulkTransferUpload.token_address != None,
                             )
                         )
                         .order_by(BulkTransferUpload.created)
                         .limit(1)
                     )
-                ).first()
-
-            # Issuer to be processed => upload_1.issuer_address
-            # Retrieve the data of the Issuer to be processed
-            upload_list = []
-            if upload_1 is not None:
-                upload_list = [upload_1]
-                if BULK_TRANSFER_WORKER_LOT_SIZE > 1:
-                    upload_list += (
-                        await db_session.scalars(
-                            select(BulkTransferUpload)
+                )
+                .tuples()
+                .first()
+            )
+            if upload_1 is None:
+                # If there are no targets, then all issuers will be retrieved.
+                upload_1: tuple[BulkTransferUpload, TokenVersion | None] | None = (
+                    (
+                        await db_session.execute(
+                            select(BulkTransferUpload, Token.version)
+                            .outerjoin(
+                                Token,
+                                and_(
+                                    BulkTransferUpload.issuer_address
+                                    == Token.issuer_address,
+                                    BulkTransferUpload.token_address
+                                    == Token.token_address,
+                                ),
+                            )
                             .where(
                                 and_(
                                     BulkTransferUpload.upload_id.notin_(
                                         locked_update_id
                                     ),
                                     BulkTransferUpload.status == 0,
-                                    BulkTransferUpload.issuer_address
-                                    == upload_1.issuer_address,
+                                    BulkTransferUpload.token_address != None,
                                 )
                             )
                             .order_by(BulkTransferUpload.created)
-                            .offset(1)
-                            .limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1)
+                            .limit(1)
                         )
-                    ).all()
+                    )
+                    .tuples()
+                    .first()
+                )
+
+            # Issuer to be processed => upload_1.issuer_address
+            # Retrieve the data of the Issuer to be processed
+            upload_list: list[tuple[BulkTransferUpload, TokenVersion | None]] = []
+            if upload_1 is not None:
+                upload_list = [upload_1]
+                if BULK_TRANSFER_WORKER_LOT_SIZE > 1:
+                    upload_list += (
+                        (
+                            await db_session.execute(
+                                select(BulkTransferUpload, Token.version)
+                                .outerjoin(
+                                    Token,
+                                    and_(
+                                        BulkTransferUpload.issuer_address
+                                        == Token.issuer_address,
+                                        BulkTransferUpload.token_address
+                                        == Token.token_address,
+                                    ),
+                                )
+                                .where(
+                                    and_(
+                                        BulkTransferUpload.upload_id.notin_(
+                                            locked_update_id
+                                        ),
+                                        BulkTransferUpload.status == 0,
+                                        BulkTransferUpload.issuer_address
+                                        == upload_1[0].issuer_address,
+                                        BulkTransferUpload.token_address != None,
+                                    )
+                                )
+                                .order_by(BulkTransferUpload.created)
+                                .offset(1)
+                                .limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1)
+                            )
+                        )
+                        .tuples()
+                        .all()
+                    )
 
             processing_issuer[self.worker_num] = {}
             for upload in upload_list:
-                processing_issuer[self.worker_num][
-                    upload.upload_id
-                ] = upload.issuer_address
+                processing_issuer[self.worker_num][upload[0].upload_id] = upload[
+                    0
+                ].issuer_address
         return upload_list
 
     @staticmethod
@@ -417,6 +452,55 @@ class Processor:
         """Pop from the list of processing issuers"""
         async with lock:
             processing_issuer[self.worker_num].pop(upload_id, None)
+
+    @staticmethod
+    async def __bulk_forced_transfer(
+        token_address: str,
+        token_type: str,
+        transfer_data_list: list[ForcedTransferParams],
+        tx_from: str,
+        tx_from_pk: bytes,
+    ):
+        """
+        Bulk forced transfer
+        - Forced transfers in batch
+        """
+        if token_type == TokenType.IBET_SHARE.value:
+            await IbetShareContract(token_address).bulk_forced_transfer(
+                data=transfer_data_list,
+                tx_from=tx_from,
+                private_key=tx_from_pk,
+            )
+        elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
+            await IbetStraightBondContract(token_address).bulk_forced_transfer(
+                data=transfer_data_list,
+                tx_from=tx_from,
+                private_key=tx_from_pk,
+            )
+
+    @staticmethod
+    async def __forced_transfer(
+        token_address: str,
+        token_type: str,
+        transfer_data: ForcedTransferParams,
+        tx_from: str,
+        tx_from_pk: bytes,
+    ):
+        """
+        Forced transfer individually
+        """
+        if token_type == TokenType.IBET_SHARE.value:
+            await IbetShareContract(token_address).forced_transfer(
+                data=transfer_data,
+                tx_from=tx_from,
+                private_key=tx_from_pk,
+            )
+        elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
+            await IbetStraightBondContract(token_address).forced_transfer(
+                data=transfer_data,
+                tx_from=tx_from,
+                private_key=tx_from_pk,
+            )
 
     @staticmethod
     async def __sink_on_finish_upload_process(
@@ -476,12 +560,13 @@ processing_issuer = {}
 
 
 class Worker:
-    def __init__(self, worker_num: int):
-        processor = Processor(worker_num=worker_num)
+    def __init__(self, worker_num: int, is_shutdown: Event):
+        processor = Processor(worker_num=worker_num, is_shutdown=is_shutdown)
         self.processor = processor
+        self.is_shutdown = is_shutdown
 
     async def run(self):
-        while True:
+        while not self.is_shutdown.is_set():
             try:
                 await self.processor.process()
             except ServiceUnavailableError:
@@ -491,21 +576,29 @@ class Worker:
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"
                 )
 
-            await asyncio.sleep(BULK_TRANSFER_INTERVAL)
+            for _ in range(BULK_TRANSFER_INTERVAL):
+                if self.is_shutdown.is_set():
+                    break
+                await asyncio.sleep(1)
 
 
 async def main():
     LOG.info("Service started successfully")
 
-    workers = [Worker(i) for i in range(BULK_TRANSFER_WORKER_COUNT)]
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
+
+    workers = [
+        asyncio.create_task(Worker(worker_num=i, is_shutdown=is_shutdown).run())
+        for i in range(BULK_TRANSFER_WORKER_COUNT)
+    ]
     try:
-        await SemaphoreTaskGroup.run(
-            *[worker.run() for worker in workers],
-            max_concurrency=BULK_TRANSFER_WORKER_COUNT,
-        )
-    except ExceptionGroup:
-        LOG.exception("Processor went down")
-        sys.exit(1)
+        while not is_shutdown.is_set():
+            await asyncio.sleep(1)
+    finally:
+        # Ensure that all workers is shutdown
+        await asyncio.gather(*workers)
+        LOG.info("Service is shutdown")
 
 
 if __name__ == "__main__":

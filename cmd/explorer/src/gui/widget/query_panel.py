@@ -20,11 +20,6 @@ SPDX-License-Identifier: Apache-2.0
 from typing import TYPE_CHECKING, cast
 
 from rich.markdown import Markdown
-from src.gui.consts import ID
-from src.gui.widget.base import TuiWidget
-from src.gui.widget.block_list_table import BlockListTable
-from src.gui.widget.block_list_view import BlockListQueryPanel
-from src.gui.widget.choice import Choices
 from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -33,6 +28,11 @@ from textual.widgets import Button, Input, Label
 
 from app.model.schema import ListBlockDataQuery
 from app.model.schema.base import SortOrder
+from src.gui.consts import ID
+from src.gui.widget.base import TuiWidget
+from src.gui.widget.block_list_table import BlockListTable
+from src.gui.widget.block_list_view import BlockListQueryPanel
+from src.gui.widget.choice import Choices
 
 if TYPE_CHECKING:
     from src.gui.explorer import ExplorerApp
@@ -201,11 +201,11 @@ class QuerySetting(TuiWidget):
             )
 
             item = "ASC" if query.sort_order.value == 0 else "DESC"
-            self.query_one(f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices).index = (
-                self.query_one(
-                    f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
-                ).choices.index(item)
-            )
+            self.query_one(
+                f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
+            ).index = self.query_one(
+                f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
+            ).choices.index(item)
 
     def hide(self) -> None:
         self.remove_class("visible")

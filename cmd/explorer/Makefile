@@ -1,15 +1,4 @@
-.PHONY: isort black test run
-
-format: isort black
-
-isort:
-	isort src/.
-
-black:
-	poetry run black src
-
-test:
-	pytest .
+.PHONY: console dev run
 
 console:
 	textual console

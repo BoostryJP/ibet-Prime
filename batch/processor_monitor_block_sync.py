@@ -25,18 +25,19 @@ import uvloop
 from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
+from web3 import AsyncHTTPProvider, AsyncWeb3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import Node
-from batch import batch_log
+from batch.utils import batch_log
 from config import (
     BLOCK_GENERATION_SPEED_THRESHOLD,
     BLOCK_SYNC_REMAINING_THRESHOLD,
     BLOCK_SYNC_STATUS_CALC_PERIOD,
     BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
+    EXPECTED_BLOCKS_PER_SEC,
     WEB3_HTTP_PROVIDER,
     WEB3_HTTP_PROVIDER_STANDBY,
 )
@@ -49,10 +50,6 @@ Processor for block synchronization monitoring
 
 process_name = "PROCESSOR-Monitor-Block-Sync"
 LOG = batch_log.get_logger(process_name=process_name)
-
-
-# Average block generation interval
-EXPECTED_BLOCKS_PER_SEC = 1
 
 
 class RingBuffer:

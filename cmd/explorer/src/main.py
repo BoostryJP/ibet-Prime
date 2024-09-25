@@ -24,6 +24,7 @@ logging.getLogger("asyncio").setLevel(logging.WARNING)
 logging.getLogger("psycopg").setLevel(logging.WARNING)
 
 import typer
+
 from src.gui.explorer import ExplorerApp
 
 app = typer.Typer(pretty_exceptions_show_locals=False)

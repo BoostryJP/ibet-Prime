@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+import logging
 import sys
+from asyncio import Event
 from typing import Sequence, Set
 
 import uvloop
@@ -42,7 +44,8 @@ from app.model.db import (
     TokenType,
 )
 from app.utils.contract_utils import AsyncContractUtils
-from batch import batch_log
+from batch.utils import batch_log
+from batch.utils.signal_handler import setup_signal_handler
 from config import ZERO_ADDRESS
 
 """
@@ -56,12 +59,32 @@ process_name = "PROCESSOR-Modify-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
+class SupressDecryptFailedLogFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord):
+        if (
+            record.levelname == "ERROR"
+            and isinstance(record.msg, str)
+            and "Failed to decrypt" in record.msg
+        ):
+            return False
+        return True
+
+
+LOG.addFilter(SupressDecryptFailedLogFilter())
+
+
 class Processor:
+    def __init__(self, is_shutdown: Event):
+        self.is_shutdown = is_shutdown
+
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
             temporary_list = await self.__get_temporary_list(db_session=db_session)
             for temporary in temporary_list:
+                if self.is_shutdown.is_set():
+                    return
+
                 LOG.info(f"Process start: issuer={temporary.issuer_address}")
 
                 contract_accessor_list = (
@@ -82,7 +105,14 @@ class Processor:
                 count = len(idx_personal_info_list)
                 completed_count = 0
                 for idx_personal_info in idx_personal_info_list:
+                    if self.is_shutdown.is_set():
+                        LOG.info(
+                            f"Process pause for graceful shutdown: issuer={temporary.issuer_address}"
+                        )
+                        return
+
                     # Get target PersonalInfo contract accessor
+                    target_contract_accessor = None
                     for contract_accessor in contract_accessor_list:
                         is_registered = await AsyncContractUtils.call_function(
                             contract=contract_accessor.personal_info_contract,
@@ -97,6 +127,9 @@ class Processor:
                             target_contract_accessor = contract_accessor
                             break
 
+                    if target_contract_accessor is None:
+                        continue
+
                     is_modify = await self.__modify_personal_info(
                         temporary=temporary,
                         idx_personal_info=idx_personal_info,
@@ -110,6 +143,9 @@ class Processor:
                 # Once all investors' personal information has been updated,
                 # update the status of the issuer's RSA key.
                 if count == completed_count:
+                    LOG.info(
+                        f"Modify personal info process is completed: issuer={temporary.issuer_address}"
+                    )
                     await self.__sink_on_account(
                         db_session=db_session, issuer_address=temporary.issuer_address
                     )
@@ -181,6 +217,7 @@ class Processor:
                 ).first()
                 personal_info_contract_list.add(
                     PersonalInfoContract(
+                        logger=LOG,
                         issuer=issuer_account,
                         contract_address=contract_address,
                     )
@@ -261,19 +298,28 @@ class Processor:
 
 async def main():
     LOG.info("Service started successfully")
-    processor = Processor()
 
-    while True:
-        try:
-            await processor.process()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
-        except SQLAlchemyError as sa_err:
-            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.exception(ex)
+    is_shutdown = asyncio.Event()
+    setup_signal_handler(logger=LOG, is_shutdown=is_shutdown)
 
-        await asyncio.sleep(10)
+    processor = Processor(is_shutdown)
+
+    try:
+        while not is_shutdown.is_set():
+            try:
+                await processor.process()
+            except ServiceUnavailableError:
+                LOG.warning("An external service was unavailable")
+            except SQLAlchemyError as sa_err:
+                LOG.error(
+                    f"A database error has occurred: code={sa_err.code}\n{sa_err}"
+                )
+            except Exception as ex:
+                LOG.exception(ex)
+
+            await asyncio.sleep(10)
+    finally:
+        LOG.info("Service is shutdown")
 
 
 if __name__ == "__main__":

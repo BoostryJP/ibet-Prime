@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-24.6-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.9-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -118,6 +118,12 @@ $ npm install
         <td>True</td>
         <td nowrap>E2EMessaging コントラクトアドレス</td>
         <td>0x0000000000000000000000000000000000000000</td>
+    </tr>
+    <tr>
+        <td>BC_EXPLORER_ENABLED</td>
+        <td>False</td>
+        <td nowrap>BCエクスプローラの機能を利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
     </tr>
     <tr>
         <td>TZ</td>

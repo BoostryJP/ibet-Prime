@@ -1,4 +1,4 @@
-.PHONY: format isort black doc test test_migrations run
+.PHONY: format doc test test_migrations run
 
 install:
 	poetry install --no-root --all-extras
@@ -7,13 +7,11 @@ install:
 update:
 	poetry update
 
-format: isort black
+format:
+	poetry run ruff format && poetry run ruff check --fix --select I
 
-isort:
-	isort .
-
-black:
-	black .
+lint:
+	poetry run ruff check --fix
 
 doc:
 	poetry run python docs/generate_openapi_doc.py

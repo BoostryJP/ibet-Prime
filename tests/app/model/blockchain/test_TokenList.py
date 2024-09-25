@@ -24,7 +24,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
-from web3.exceptions import ContractLogicError, InvalidAddress, ValidationError
+from web3.exceptions import ContractLogicError, InvalidAddress, MismatchedABI
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
@@ -48,7 +48,7 @@ def contract_list(db):
         raw_keyfile_json=test_account.get("keyfile_json"),
         password=test_account.get("password").encode("utf-8"),
     )
-    contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+    contract_address, _, _ = ContractUtils.deploy_contract(
         contract_name="TokenList",
         args=[],
         deployer=deployer_address,
@@ -85,7 +85,7 @@ class TestRegisterTokenList:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_token_address, abi, tx_hash = await share_contract.create(
+        share_token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -117,7 +117,7 @@ class TestRegisterTokenList:
             "リターン内容",
             "発行目的",
         ]
-        bond_token_address, abi, tx_hash = await IbetStraightBondContract().create(
+        bond_token_address, _, _ = await IbetStraightBondContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -168,7 +168,7 @@ class TestRegisterTokenList:
                 tx_from=issuer_address,
                 private_key=private_key,
             )
-        assert isinstance(exc_info.value.args[0], ValidationError)
+        assert isinstance(exc_info.value.args[0], MismatchedABI)
 
     # <Error_2> Invalid argument: token_list_address
     @pytest.mark.asyncio
@@ -260,9 +260,8 @@ class TestRegisterTokenList:
         )
 
         # mock
-        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
-        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
-        #         geth: ContractLogicError("execution reverted")
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
             "web3.eth.async_eth.AsyncEth.call",
             MagicMock(side_effect=ContractLogicError("execution reverted: 100001")),

@@ -169,7 +169,7 @@ class TestProcessor:
         token_1.abi = "abi"
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
         db.commit()
 
@@ -211,7 +211,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -262,7 +262,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -338,7 +338,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -414,7 +414,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -490,7 +490,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -565,7 +565,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -687,7 +687,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
@@ -712,7 +712,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract_2.abi
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_24_06
+        token_2.version = TokenVersion.V_24_09
         db.add(token_2)
 
         db.commit()
@@ -765,18 +765,20 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_06
+        token_1.version = TokenVersion.V_24_09
         db.add(token_1)
 
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch(
-            "batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None),
+            patch.object(
+                AsyncWeb3Wrapper().eth,
+                "contract",
+                side_effect=ServiceUnavailableError(),
+            ),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.record_tuples.count(
@@ -785,12 +787,10 @@ class TestProcessor:
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
-        with patch(
-            "batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncSession, "execute", side_effect=InvalidRequestError()
-        ), pytest.raises(
-            TypeError
+        with (
+            patch("batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None),
+            patch.object(AsyncSession, "execute", side_effect=InvalidRequestError()),
+            pytest.raises(TypeError),
         ):
             await main_func()
         assert 1 == caplog.text.count("A database error has occurred")

@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from sqlalchemy import BigInteger, Boolean, Integer, String
+from sqlalchemy import BigInteger, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -34,8 +34,8 @@ class BulkTransferUpload(Base):
     issuer_address: Mapped[str] = mapped_column(String(42), nullable=False, index=True)
     # token type
     token_type: Mapped[str] = mapped_column(String(40), nullable=False)
-    # transaction compression
-    transaction_compression: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    # token address
+    token_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
     # processing status (pending:0, succeeded:1, failed:2)
     status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
 

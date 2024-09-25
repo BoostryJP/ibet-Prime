@@ -31,7 +31,7 @@ def ethereum_address_validator(
     """Validator for ethereum address"""
     if value is not None:
         if not isinstance(value, str):
-            raise ValueError(f"value must be of string")
+            raise ValueError("value must be of string")
         if not Web3.is_address(value):
             raise ValueError("invalid ethereum address")
     return value
@@ -51,14 +51,14 @@ def datetime_string_validator(
         datetime_format = "%Y-%m-%d %H:%M:%S"
 
         if not isinstance(value, str):
-            raise ValueError(f"value must be of string datetime format")
+            raise ValueError("value must be of string datetime format")
 
         try:
             converted = datetime.strptime(value, datetime_format)
             if value != converted.strftime(datetime_format):
-                raise ValueError(f"value must be string datetime format")
+                raise ValueError("value must be string datetime format")
         except ValueError:
-            raise ValueError(f"value must be of string datetime format")
+            raise ValueError("value must be of string datetime format")
     return value
 
 

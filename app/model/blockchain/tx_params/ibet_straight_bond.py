@@ -30,21 +30,23 @@ from .ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
+    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
     RedeemParams as IbetSecurityTokenRedeemParams,
-    TransferParams as IbetSecurityTokenTransferParams,
 )
 
 
 class UpdateParams(BaseModel):
     face_value: Optional[int] = None
     face_value_currency: Optional[str] = None
+    purpose: Optional[str] = None
     interest_rate: Optional[float] = None
     interest_payment_date: Optional[List[str]] = None
     interest_payment_currency: Optional[str] = None
     redemption_value: Optional[int] = None
     redemption_value_currency: Optional[str] = None
+    redemption_date: Optional[str] = None
     base_fx_rate: Optional[float] = None
     transferable: Optional[bool] = None
     status: Optional[bool] = None
@@ -88,7 +90,7 @@ class UpdateParams(BaseModel):
         return v
 
 
-class TransferParams(IbetSecurityTokenTransferParams):
+class ForcedTransferParams(IbetSecurityTokenForcedTransferParams):
     pass
 
 

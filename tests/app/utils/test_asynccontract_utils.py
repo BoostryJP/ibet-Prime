@@ -25,7 +25,7 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from web3 import Web3
-from web3.exceptions import ContractLogicError, Web3Exception
+from web3.exceptions import ContractLogicError, TimeExhausted, Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -118,9 +118,9 @@ class TestDeployContract:
     @pytest.mark.asyncio
     async def test_normal_1(self, db):
         (
-            rtn_contract_address,
+            _,
             rtn_abi,
-            rtn_tx_hash,
+            _,
         ) = await AsyncContractUtils.deploy_contract(
             contract_name=self.test_contract_name,
             args=self.test_arg,
@@ -398,6 +398,161 @@ class TestSendTransaction:
         assert ex_info.typename == "SendTransactionError"
 
         db.rollback()
+
+
+class TestSendTransactionNoWait:
+    test_account = config_eth_account("user1")
+    eoa_password = "password"
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=test_account["keyfile_json"],
+        password=eoa_password.encode("utf-8"),
+    )
+
+    test_contract_name = "IbetCoupon"
+    test_arg = [
+        "test_coupon_name",
+        "TEST",
+        100,
+        ZERO_ADDRESS,
+        "test_details",
+        "test_return_details",
+        "test_memo",
+        "20210531",
+        True,
+        "test_contract_information",
+        "test_privacy_policy",
+    ]
+    contract_file = f"contracts/{test_contract_name}.json"
+    contract_json = json.load(open(contract_file, "r"))
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+    # <Normal_1>
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db: Session):
+        # Contract
+        contract = web3.eth.contract(
+            abi=self.contract_json["abi"],
+            bytecode=self.contract_json["bytecode"],
+            bytecode_runtime=self.contract_json["deployedBytecode"],
+        )
+
+        # Build transaction
+        tx = contract.constructor(*self.test_arg).build_transaction(
+            transaction={
+                "chainId": CHAIN_ID,
+                "from": self.test_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+
+        # Call send_transaction_no_wait
+        rtn_tx_hash = await AsyncContractUtils.send_transaction_no_wait(
+            transaction=tx, private_key=self.private_key
+        )
+        assert rtn_tx_hash is not None
+
+        # Call wait_for_transaction_receipt
+        rtn_receipt = await AsyncContractUtils.wait_for_transaction_receipt(rtn_tx_hash)
+        assert rtn_tx_hash == rtn_receipt["transactionHash"].to_0x_hex()
+        assert rtn_receipt["status"] == 1
+        assert rtn_receipt["to"] is None
+        assert rtn_receipt["from"] == self.test_account["address"]
+        assert web3.is_address(rtn_receipt["contractAddress"])
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # send_transaction_no_wait
+    # Lock timeout
+    @pytest.mark.asyncio
+    async def test_error_1(self, db: Session):
+        # prepare data : TX lock
+        _tx_mng = TransactionLock()
+        _tx_mng.tx_from = self.test_account["address"]
+        db.add(_tx_mng)
+        db.commit()
+
+        # Contract
+        contract = web3.eth.contract(
+            abi=self.contract_json["abi"],
+            bytecode=self.contract_json["bytecode"],
+            bytecode_runtime=self.contract_json["deployedBytecode"],
+        )
+
+        # Build transaction
+        tx = contract.constructor(*self.test_arg).build_transaction(
+            transaction={
+                "chainId": CHAIN_ID,
+                "from": self.test_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+
+        # Transaction Lock
+        db.scalars(
+            select(TransactionLock)
+            .where(TransactionLock.tx_from == self.test_account["address"])
+            .limit(1)
+            .with_for_update()
+        ).first()
+
+        # Call send_transaction_no_wait
+        with pytest.raises(SendTransactionError):
+            await AsyncContractUtils.send_transaction_no_wait(
+                transaction=tx, private_key=self.private_key
+            )
+
+        db.rollback()
+
+    # <Error_2>
+    # wait_for_transaction_receipt
+    # TimeExhausted
+    @pytest.mark.asyncio
+    async def test_error_2(self, db: Session):
+        # prepare data : TX lock
+        _tx_mng = TransactionLock()
+        _tx_mng.tx_from = self.test_account["address"]
+        db.add(_tx_mng)
+        db.commit()
+
+        # Contract
+        contract = web3.eth.contract(
+            abi=self.contract_json["abi"],
+            bytecode=self.contract_json["bytecode"],
+            bytecode_runtime=self.contract_json["deployedBytecode"],
+        )
+
+        # Build transaction
+        tx = contract.constructor(*self.test_arg).build_transaction(
+            transaction={
+                "chainId": CHAIN_ID,
+                "from": self.test_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+
+        # Call send_transaction_no_wait
+        rtn_tx_hash = await AsyncContractUtils.send_transaction_no_wait(
+            transaction=tx, private_key=self.private_key
+        )
+        assert rtn_tx_hash is not None
+
+        mocked_wait_for_tx = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted(),
+        )
+
+        # Call wait_for_transaction_receipt
+        with mocked_wait_for_tx:
+            with pytest.raises(TimeExhausted):
+                await AsyncContractUtils.wait_for_transaction_receipt(rtn_tx_hash)
 
 
 class TestGetBlockByTransactionHash:
