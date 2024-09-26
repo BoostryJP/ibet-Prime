@@ -44,11 +44,11 @@ class TestProcessor:
     ###########################################################################
 
     # <Normal_1>
-    # Execute Batch Run 1st: synced
-    # Execute Batch Run 2nd: block generation speed down(same the previous)
-    # Execute Batch Run 3rd: synced
-    # Execute Batch Run 4th: node syncing(DIFF:over 2)
-    # Execute Batch Run 5th: node syncing(DIFF:2) == synced
+    # Run 1st: Normal state
+    # Run 2nd: Abnormal state - Setting BLOCK_GENERATION_SPEED_THRESHOLD to 100% will trigger an error.
+    # Run 3rd: Return to normal state
+    # Run 4th: Abnormal state - An error occurs when the difference between highestBlock and currentBlock exceeds a threshold.
+    # Run 5th: Return to normal state - Since the difference between highestBlock and currentBlock is within the threshold, no error occurs.
     @mock.patch(
         "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER",
         WEB3_HTTP_PROVIDER,
@@ -57,7 +57,7 @@ class TestProcessor:
     async def test_normal_1(self, processor, db):
         await processor.initial_setup()
 
-        # Run 1st: synced
+        # Run 1st: Normal state
         await processor.process()
 
         db.rollback()
@@ -67,7 +67,8 @@ class TestProcessor:
         assert _node.priority == 0
         assert _node.is_synced == True
 
-        # Run 2nd: block generation speed down(same the previous)
+        # Run 2nd: Abnormal state
+        # - Setting BLOCK_GENERATION_SPEED_THRESHOLD to 100% will trigger an error.
         with mock.patch(
             "batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100
         ):
@@ -77,14 +78,15 @@ class TestProcessor:
         _node = db.scalars(select(Node).limit(1)).first()
         assert _node.is_synced == False
 
-        # Run 3rd: synced
+        # Run 3rd: Return to normal state
         await processor.process()
 
         db.rollback()
         _node = db.scalars(select(Node).limit(1)).first()
         assert _node.is_synced == True
 
-        # Run 4th: node syncing(DIFF:over 2)
+        # Run 4th: Abnormal state
+        # - An error occurs when the difference between highestBlock and currentBlock exceeds a threshold.
         block_number = web3.eth.block_number
         is_syncing_mock = AsyncMock()
         is_syncing_mock.return_value = {
@@ -98,7 +100,8 @@ class TestProcessor:
         _node = db.scalars(select(Node).limit(1)).first()
         assert _node.is_synced == False
 
-        # Run 5th: node syncing(DIFF:2) == synced
+        # Run 5th: Return to normal state
+        # - Since the difference between highestBlock and currentBlock is within the threshold, no error occurs.
         block_number = web3.eth.block_number
         is_syncing_mock = AsyncMock()
         is_syncing_mock.return_value = {

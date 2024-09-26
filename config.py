@@ -117,7 +117,7 @@ else:
         else 20
     )
 # Average block generation interval
-EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 1))
+EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 0.1))
 
 
 ####################################################
