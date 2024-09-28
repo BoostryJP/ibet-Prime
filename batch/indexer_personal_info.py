@@ -41,6 +41,7 @@ from app.model.db import (
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber,
     IDXPersonalInfoHistory,
+    PersonalInfoDataSource,
     PersonalInfoEventType,
     Token,
     TokenType,
@@ -278,6 +279,7 @@ class Processor:
                         == to_checksum_address(account_address),
                         IDXPersonalInfo.issuer_address
                         == to_checksum_address(issuer_address),
+                        IDXPersonalInfo.data_source == PersonalInfoDataSource.ON_CHAIN,
                     )
                 )
                 .limit(1)
@@ -295,6 +297,7 @@ class Processor:
             _personal_info.account_address = account_address
             _personal_info.issuer_address = issuer_address
             _personal_info.personal_info = personal_info
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             _personal_info.created = timestamp
             _personal_info.modified = timestamp
             db_session.add(_personal_info)

@@ -21,7 +21,7 @@ from unittest import mock
 
 import pytest
 
-from app.model.db import IDXPersonalInfo
+from app.model.db import IDXPersonalInfo, PersonalInfoDataSource
 from tests.account_config import config_eth_account
 
 
@@ -75,6 +75,7 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -135,6 +136,7 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -150,6 +152,7 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -165,6 +168,7 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -258,6 +262,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 09:00:00"
         personal_info_idx.modified = "2024-05-14 09:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -275,6 +280,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 12:00:00"
         personal_info_idx.modified = "2024-05-14 12:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -292,6 +298,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 15:00:00"
         personal_info_idx.modified = "2024-05-14 15:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -356,6 +363,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 09:00:00"
         personal_info_idx.modified = "2024-05-14 09:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -373,6 +381,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 12:00:00"
         personal_info_idx.modified = "2024-05-14 12:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -390,6 +399,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 15:00:00"
         personal_info_idx.modified = "2024-05-14 15:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -455,6 +465,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 09:00:00"
         personal_info_idx.modified = "2024-05-14 09:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -472,6 +483,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 12:00:00"
         personal_info_idx.modified = "2024-05-14 12:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -489,6 +501,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2024-05-13 15:00:00"
         personal_info_idx.modified = "2024-05-14 15:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -555,6 +568,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2023-10-23 00:00:00"
         personal_info_idx.modified = "2023-10-24 00:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -572,6 +586,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2023-10-23 00:00:01"
         personal_info_idx.modified = "2023-10-24 00:00:01"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -589,6 +604,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2023-10-23 00:00:02"
         personal_info_idx.modified = "2023-10-24 00:00:02"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -683,6 +699,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.created = "2023-10-23 00:00:02"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -699,6 +716,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.created = "2023-10-23 00:00:01"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -715,6 +733,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.created = "2023-10-23 00:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -810,6 +829,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2023-10-23 00:00:00"
         personal_info_idx.modified = "2023-10-24 00:00:02"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -827,6 +847,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2023-10-23 00:00:01"
         personal_info_idx.modified = "2023-10-24 00:00:01"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -844,6 +865,7 @@ class TestListTokenHoldersPersonalInfo:
         }
         personal_info_idx.created = "2023-10-23 00:00:02"
         personal_info_idx.modified = "2023-10-24 00:00:00"
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()
@@ -936,6 +958,7 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -951,6 +974,7 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
@@ -966,6 +990,7 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
+        personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(personal_info_idx)
 
         db.commit()

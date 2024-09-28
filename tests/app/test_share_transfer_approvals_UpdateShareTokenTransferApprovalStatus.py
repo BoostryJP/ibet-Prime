@@ -39,6 +39,7 @@ from app.model.db import (
     AuthToken,
     IDXPersonalInfo,
     IDXTransferApproval,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -125,6 +126,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -140,6 +142,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -263,6 +266,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -278,6 +282,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -400,6 +405,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -415,6 +421,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -542,6 +549,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -557,6 +565,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1297,6 +1306,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1312,6 +1322,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1390,6 +1401,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1405,6 +1417,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1502,6 +1515,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1517,6 +1531,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1596,6 +1611,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1611,6 +1627,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1700,6 +1717,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1715,6 +1733,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1793,6 +1812,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1808,6 +1828,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1959,6 +1980,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         db.commit()

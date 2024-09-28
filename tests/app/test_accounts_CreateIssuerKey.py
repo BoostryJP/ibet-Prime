@@ -22,7 +22,7 @@ from unittest import mock
 
 from sqlalchemy import select
 
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import Account, AccountRsaStatus, ChildAccountIndex, TransactionLock
 from app.utils.e2ee_utils import E2EEUtils
 from config import EOA_PASSWORD_PATTERN_MSG
 
@@ -55,11 +55,12 @@ class TestCreateIssuerKey:
         assert resp.json()["is_deleted"] is False
 
         accounts_after = db.scalars(select(Account)).all()
-
         assert 0 == len(accounts_before)
         assert 1 == len(accounts_after)
+
         account_1 = accounts_after[0]
         assert account_1.issuer_address == resp.json()["issuer_address"]
+        assert account_1.issuer_public_key is not None
         assert account_1.keyfile is not None
         assert E2EEUtils.decrypt(account_1.eoa_password) == password
         assert account_1.rsa_private_key is None
@@ -67,6 +68,13 @@ class TestCreateIssuerKey:
         assert account_1.rsa_passphrase is None
         assert account_1.rsa_status == AccountRsaStatus.UNSET.value
         assert account_1.is_deleted is False
+
+        child_idx = db.scalars(select(ChildAccountIndex).limit(1)).first()
+        assert child_idx.issuer_address == account_1.issuer_address
+        assert child_idx.latest_index == 1
+
+        tx_lock = db.scalars(select(TransactionLock).limit(1)).first()
+        assert tx_lock.tx_from == account_1.issuer_address
 
     # <Normal_2>
     # AWS KMS
@@ -96,11 +104,12 @@ class TestCreateIssuerKey:
         assert resp.json()["is_deleted"] is False
 
         accounts_after = db.scalars(select(Account)).all()
-
         assert 0 == len(accounts_before)
         assert 1 == len(accounts_after)
+
         account_1 = accounts_after[0]
         assert account_1.issuer_address == resp.json()["issuer_address"]
+        assert account_1.issuer_public_key is not None
         assert account_1.keyfile is not None
         assert E2EEUtils.decrypt(account_1.eoa_password) == password
         assert account_1.rsa_private_key is None
@@ -108,6 +117,13 @@ class TestCreateIssuerKey:
         assert account_1.rsa_passphrase is None
         assert account_1.rsa_status == AccountRsaStatus.UNSET.value
         assert account_1.is_deleted is False
+
+        child_idx = db.scalars(select(ChildAccountIndex).limit(1)).first()
+        assert child_idx.issuer_address == account_1.issuer_address
+        assert child_idx.latest_index == 1
+
+        tx_lock = db.scalars(select(TransactionLock).limit(1)).first()
+        assert tx_lock.tx_from == account_1.issuer_address
 
     ###########################################################################
     # Error Case

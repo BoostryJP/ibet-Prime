@@ -87,6 +87,12 @@ class MultipleTokenTransferNotAllowedError(BadRequestError):
     code = 9
 
 
+class OperationNotPermittedForOlderIssuers(BadRequestError):
+    """An operation not permitted for older issuers"""
+
+    code = 10
+
+
 class OperationNotAllowedStateError(BadRequestError):
     """
     Error returned when server-side data is not ready to process the request

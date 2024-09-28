@@ -25,6 +25,7 @@ import config
 from app.model.db import (
     IDXPersonalInfo,
     IDXTransferApproval,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -35,7 +36,7 @@ from app.model.db import (
 local_tz = timezone(config.TZ)
 
 
-class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
+class TestRetrieveShareTokenTransferApprovalStatus:
     # target API endpoint
     base_url = "/share/transfer_approvals/{}/{}"
 
@@ -113,6 +114,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -128,6 +130,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         # prepare data: IDXTransferApproval
@@ -513,6 +516,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -528,6 +532,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         # prepare data: IDXTransferApproval
@@ -852,6 +857,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -867,6 +873,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         # prepare data: IDXTransferApproval

@@ -26,6 +26,7 @@ from app.model.db import (
     IDXPersonalInfo,
     IDXTransfer,
     IDXTransferSourceEventType,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -165,6 +166,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -180,6 +182,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
@@ -619,6 +622,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -634,6 +638,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -724,6 +729,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -739,6 +745,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1520,6 +1527,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1535,6 +1543,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1649,6 +1658,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1664,6 +1674,7 @@ class TestAppRoutersBondTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()

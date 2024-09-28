@@ -17,7 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from .account import Account, AccountRsaKeyTemporary, AccountRsaStatus
+from .account import (
+    Account,
+    AccountRsaKeyTemporary,
+    AccountRsaStatus,
+    ChildAccount,
+    ChildAccountIndex,
+)
 from .auth_token import AuthToken
 from .base import Base
 from .batch_issue_redeem import (
@@ -55,6 +61,7 @@ from .idx_personal_info import (
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber,
     IDXPersonalInfoHistory,
+    PersonalInfoDataSource,
     PersonalInfoEventType,
 )
 from .idx_position import (
