@@ -76,6 +76,7 @@ quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
 skip-magic-trailing-comma = false
+exclude = ["tests/app/utils/test_sealed_tx_utils.py"]
 
 [tool.ruff.lint]
 preview = true

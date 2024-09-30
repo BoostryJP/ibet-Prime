@@ -47,7 +47,13 @@ from app.routers.issuer import (
     share,
     token_holders,
 )
-from app.routers.misc import bc_explorer, e2e_messaging, freeze_log, settlement_agent
+from app.routers.misc import (
+    bc_explorer,
+    e2e_messaging,
+    freeze_log,
+    sealed_tx,
+    settlement_agent,
+)
 from app.utils.docs_utils import custom_openapi
 from config import (
     BC_EXPLORER_ENABLED,
@@ -69,6 +75,10 @@ tags_metadata = [
     {
         "name": "[misc] messaging",
         "description": "Messaging functions with external systems",
+    },
+    {
+        "name": "[misc] sealed_tx",
+        "description": "Sealed transaction",
     },
 ]
 
@@ -136,6 +146,7 @@ app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
 app.include_router(settlement_issuer.router)
+app.include_router(sealed_tx.router)
 
 if DVP_AGENT_FEATURE_ENABLED:
     app.include_router(settlement_agent.router)

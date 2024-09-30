@@ -8523,6 +8523,35 @@ paths:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatedvpdelivery
+  /sealed_tx/personal_info/register:
+    post:
+      tags:
+        - '[misc] sealed_tx'
+      summary: Sealed Tx Register Personal Info
+      operationId: SealedTxRegisterPersonalInfo
+      parameters:
+        - name: X-SealedTx-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            title: X-Sealedtx-Signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SealedTxRegisterPersonalInfoRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400Model'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -10991,6 +11020,44 @@ components:
         - send_timestamp
       title: E2EMessagingResponse
       description: E2E Messaging schema (Response)
+    Error400MetaModel:
+      properties:
+        code:
+          type: integer
+          title: Code
+          examples:
+            - 0
+            - 1
+            - 2
+            - 100001
+        title:
+          type: string
+          title: Title
+          examples:
+            - InvalidParameterError
+            - SendTransactionError
+            - ContractRevertError
+      type: object
+      required:
+        - code
+        - title
+      title: Error400MetaModel
+    Error400Model:
+      properties:
+        meta:
+          $ref: '#/components/schemas/Error400MetaModel'
+        detail:
+          type: string
+          title: Detail
+          examples:
+            - this token is temporarily unavailable
+            - failed to register token address token list
+            - The address has already been registered.
+      type: object
+      required:
+        - meta
+        - detail
+      title: Error400Model
     Error401MetaModel:
       properties:
         code:
@@ -14273,6 +14340,64 @@ components:
         - Update
       const: Update
       title: ScheduledEventType
+    SealedTxPersonalInfoInput:
+      properties:
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+        postal_code:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Postal Code
+        address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Address
+        email:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Email
+        birth:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Birth
+        is_corporate:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Corporate
+        tax_category:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Tax Category
+        key_manager:
+          type: string
+          title: Key Manager
+      type: object
+      required:
+        - key_manager
+      title: SealedTxPersonalInfoInput
+      description: Personal Information Input schema for sealed tx
+    SealedTxRegisterPersonalInfoRequest:
+      properties:
+        link_address:
+          type: string
+          title: Link Address
+        personal_information:
+          $ref: '#/components/schemas/SealedTxPersonalInfoInput'
+      type: object
+      required:
+        - link_address
+        - personal_information
+      title: SealedTxRegisterPersonalInfoRequest
+      description: Schema for personal information registration using sealed tx(REQUEST)
     SendTransactionErrorCode:
       type: integer
       enum:
@@ -15165,6 +15290,8 @@ tags:
     description: Utility functions
   - name: '[misc] messaging'
     description: Messaging functions with external systems
+  - name: '[misc] sealed_tx'
+    description: Sealed transaction
   - name: '[misc] settlement_agent'
     description: Settlement related features for paying agent
   - name: '[misc] blockchain_explorer'

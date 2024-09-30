@@ -119,6 +119,7 @@ from .scheduled_events import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
 )
+from .sealed_tx import SealedTxRegisterPersonalInfoRequest
 from .settlement import (
     AbortDVPDeliveryRequest,
     CancelDVPDeliveryRequest,
