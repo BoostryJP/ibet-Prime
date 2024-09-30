@@ -18,13 +18,38 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from fastapi import Query
+from pydantic import BaseModel, Field, RootModel, field_validator
+from pydantic.dataclasses import dataclass
 
 from app.model.db import AccountRsaStatus
+from app.model.schema.base import ResultSet, SortOrder
+from app.model.schema.personal_info import PersonalInfo, PersonalInfoInput
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
+
+
+############################
+# COMMON
+############################
+class Account(BaseModel):
+    """Account schema"""
+
+    issuer_address: str
+    rsa_public_key: Optional[str] = Field(...)
+    rsa_status: AccountRsaStatus
+    is_deleted: bool
+
+
+class ChildAccount(BaseModel):
+    """Child account schema"""
+
+    issuer_address: str
+    child_account_index: int
+    child_account_address: str
+    personal_information: PersonalInfo | None
 
 
 ############################
@@ -106,18 +131,29 @@ class AccountAuthTokenRequest(BaseModel):
     )  # The maximum valid duration shall be 3 days.
 
 
+class CreateUpdateChildAccountRequest(BaseModel):
+    """Create or update a issuer's child account schema (REQUEST)"""
+
+    personal_information: PersonalInfoInput
+
+
+@dataclass
+class ListAllChildAccountQuery:
+    sort_order: Annotated[
+        SortOrder,
+        Query(description="The sort order of the child_account_index. 0:asc, 1:desc"),
+    ] = SortOrder.ASC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
 ############################
 # RESPONSE
 ############################
-
-
-class AccountResponse(BaseModel):
+class AccountResponse(RootModel[Account]):
     """Account schema (Response)"""
 
-    issuer_address: str
-    rsa_public_key: Optional[str] = Field(...)
-    rsa_status: AccountRsaStatus
-    is_deleted: bool
+    pass
 
 
 class AccountAuthTokenResponse(BaseModel):
@@ -126,3 +162,22 @@ class AccountAuthTokenResponse(BaseModel):
     auth_token: str
     usage_start: datetime
     valid_duration: int
+
+
+class CreateChildAccountResponse(BaseModel):
+    """Create a issuer's child account schema (RESPONSE)"""
+
+    child_account_index: int
+
+
+class ListAllChildAccountResponse(BaseModel):
+    """List all child accounts schema (RESPONSE)"""
+
+    result_set: ResultSet
+    child_accounts: list[ChildAccount]
+
+
+class ChildAccountResponse(RootModel[ChildAccount]):
+    """Child account schema (Response)"""
+
+    pass

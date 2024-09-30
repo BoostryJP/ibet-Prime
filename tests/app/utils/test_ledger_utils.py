@@ -50,6 +50,7 @@ from app.model.db import (
     LedgerTemplate,
     Notification,
     NotificationType,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -219,6 +220,7 @@ class TestCreateLedger:
             "name": "name_test_db_1",
             "address": "address_test_db_1",
         }
+        _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_idx_personal_info_1)
 
         # Prepare data: Token
@@ -1512,6 +1514,7 @@ class TestCreateLedger:
             "name": "name_test_db_1",
             "address": "address_test_db_1",
         }
+        _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_idx_personal_info_1)
 
         # Prepare data: Token

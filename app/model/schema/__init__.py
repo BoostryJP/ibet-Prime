@@ -25,6 +25,11 @@ from .account import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
     AccountResponse,
+    ChildAccountResponse,
+    CreateChildAccountResponse,
+    CreateUpdateChildAccountRequest,
+    ListAllChildAccountQuery,
+    ListAllChildAccountResponse,
 )
 from .batch_issue_redeem import (
     BatchIssueRedeemUploadIdResponse,

@@ -24,6 +24,7 @@ from app.model.db import (
     IDXLockedPosition,
     IDXPersonalInfo,
     IDXPosition,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -155,6 +156,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -259,6 +261,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -346,6 +349,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -512,6 +516,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -616,6 +621,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         idx_position_2 = IDXPosition()
@@ -650,6 +656,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -794,6 +801,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -881,6 +889,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -986,6 +995,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1073,6 +1083,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1197,6 +1208,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1284,6 +1296,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1408,6 +1421,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1495,6 +1509,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1600,6 +1615,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1687,6 +1703,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1811,6 +1828,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1898,6 +1916,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2022,6 +2041,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2109,6 +2129,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2214,6 +2235,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2301,6 +2323,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2426,6 +2449,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2513,6 +2537,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         # prepare data: account_address_4
@@ -2667,6 +2692,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2754,6 +2780,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2862,6 +2889,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2949,6 +2977,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3076,6 +3105,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3163,6 +3193,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3290,6 +3321,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3377,6 +3409,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3482,6 +3515,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3569,6 +3603,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3693,6 +3728,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3780,6 +3816,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3886,6 +3923,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3975,6 +4013,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4119,6 +4158,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4208,6 +4248,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4352,6 +4393,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4441,6 +4483,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4585,6 +4628,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4674,6 +4718,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4818,6 +4863,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4907,6 +4953,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -5051,6 +5098,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5140,6 +5188,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -5285,6 +5334,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5374,6 +5424,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         # prepare data: account_address_4
@@ -5550,6 +5601,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5639,6 +5691,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         # prepare data: account_address_4
@@ -5813,6 +5866,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5900,6 +5954,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -6024,6 +6079,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -6111,6 +6167,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()

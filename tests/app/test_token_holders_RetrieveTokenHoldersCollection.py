@@ -28,6 +28,7 @@ from web3.middleware import ExtraDataToPOAMiddleware
 import config
 from app.model.db import (
     IDXPersonalInfo,
+    PersonalInfoDataSource,
     Token,
     TokenHolder,
     TokenHolderBatchStatus,
@@ -208,6 +209,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -286,6 +288,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -364,6 +367,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -442,6 +446,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -520,6 +525,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -598,6 +604,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -676,6 +683,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -753,6 +761,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -828,6 +837,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {
@@ -915,6 +925,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 "is_corporate": True,
                 "tax_category": i + 1,
             }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             db.add(_personal_info)
             holders.append(
                 {

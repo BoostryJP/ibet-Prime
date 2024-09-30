@@ -24,6 +24,7 @@ from app.model.db import (
     DeliveryStatus,
     IDXDelivery,
     IDXPersonalInfo,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -81,6 +82,7 @@ class TestRetrieveDVPDelivery:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info)
 
         _personal_info = IDXPersonalInfo()
@@ -96,6 +98,7 @@ class TestRetrieveDVPDelivery:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info)
 
         # prepare data: IDXDelivery(Created)
@@ -224,6 +227,7 @@ class TestRetrieveDVPDelivery:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info)
 
         _personal_info = IDXPersonalInfo()
@@ -239,6 +243,7 @@ class TestRetrieveDVPDelivery:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info)
 
         # prepare data: IDXDelivery(Created)

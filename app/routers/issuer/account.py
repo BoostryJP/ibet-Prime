@@ -29,22 +29,30 @@ import pytz
 from coincurve import PublicKey
 from Crypto.PublicKey import RSA
 from eth_utils import keccak, to_checksum_address
-from fastapi import APIRouter, Header, Request
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.exceptions import HTTPException
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError as SAIntegrityError
+from sqlalchemy import and_, asc, desc, func, select
+from sqlalchemy.exc import IntegrityError as SAIntegrityError, OperationalError
 
 from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
     AuthTokenAlreadyExistsError,
     InvalidParameterError,
+    OperationNotPermittedForOlderIssuers,
+    ServiceUnavailableError,
 )
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
     AccountRsaStatus,
     AuthToken,
+    ChildAccount,
+    ChildAccountIndex,
+    IDXPersonalInfo,
+    IDXPersonalInfoHistory,
+    PersonalInfoDataSource,
+    PersonalInfoEventType,
     TransactionLock,
 )
 from app.model.schema import (
@@ -55,6 +63,11 @@ from app.model.schema import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
     AccountResponse,
+    ChildAccountResponse,
+    CreateChildAccountResponse,
+    CreateUpdateChildAccountRequest,
+    ListAllChildAccountQuery,
+    ListAllChildAccountResponse,
 )
 from app.utils.check_utils import (
     address_is_valid_address,
@@ -108,8 +121,8 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
         private_key = keccak(result.get("Plaintext"))
     else:
         private_key = keccak(secrets.token_bytes(32))
-    public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
-    addr = to_checksum_address(keccak(public_key)[-20:])
+    public_key = PublicKey.from_valid_secret(private_key)
+    addr = to_checksum_address(keccak(public_key.format(compressed=False)[1:])[-20:])
     keyfile_json = eth_keyfile.create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
@@ -117,13 +130,20 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
     # Register key data to the DB
     _account = Account()
     _account.issuer_address = addr
+    _account.issuer_public_key = public_key.format().hex()
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     _account.rsa_status = AccountRsaStatus.UNSET.value
     _account.is_deleted = False
     db.add(_account)
 
-    # Insert initial transaction execution management record
+    # Insert an initial record for the child account index.
+    _child_idx = ChildAccountIndex()
+    _child_idx.issuer_address = addr
+    _child_idx.next_index = 1
+    db.add(_child_idx)
+
+    # Insert an initial record for transaction execution management.
     _tm = TransactionLock()
     _tm.tx_from = addr
     db.add(_tm)
@@ -553,4 +573,375 @@ async def delete_issuer_auth_token(
 
     await db.delete(_auth_token)
     await db.commit()
+    return
+
+
+# POST: /accounts/{issuer_address}/child_accounts
+@router.post(
+    "/accounts/{issuer_address}/child_accounts",
+    operation_id="CreateChildAccount",
+    response_model=CreateChildAccountResponse,
+    responses=get_routers_responses(
+        404, OperationNotPermittedForOlderIssuers, ServiceUnavailableError
+    ),
+)
+async def create_child_account(
+    db: DBAsyncSession,
+    issuer_address: str,
+    account_req: CreateUpdateChildAccountRequest,
+):
+    """Create the child account"""
+
+    # Check if the issuer exists.
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
+    ).first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer does not exist")
+
+    # Check if the issuer was created in version 24.12 or later.
+    if _account.issuer_public_key is None:
+        raise OperationNotPermittedForOlderIssuers
+
+    issuer_pk = PublicKey(data=bytes.fromhex(_account.issuer_public_key))
+
+    # Lock child account index table
+    try:
+        _child_index = (
+            await db.scalars(
+                select(ChildAccountIndex)
+                .where(ChildAccountIndex.issuer_address == issuer_address)
+                .limit(1)
+                .with_for_update(nowait=True)
+            )
+        ).first()
+    except OperationalError:
+        await db.rollback()
+        await db.close()
+        raise ServiceUnavailableError(
+            "Creation of child accounts for this issuer is temporarily unavailable"
+        )
+
+    index = _child_index.next_index
+    index_sk = int(index).to_bytes(32)
+    index_pk = PublicKey.from_valid_secret(index_sk)
+
+    # Derive the child address
+    child_pk = PublicKey.combine_keys([issuer_pk, index_pk])
+    child_addr = to_checksum_address(
+        keccak(child_pk.format(compressed=False)[1:])[-20:]
+    )
+
+    # Insert child account record and update index
+    _child_account = ChildAccount()
+    _child_account.issuer_address = _account.issuer_address
+    _child_account.child_account_index = index
+    _child_account.child_account_address = child_addr
+    db.add(_child_account)
+
+    _child_index.next_index = index + 1
+    await db.merge(_child_index)
+
+    # Insert offchain personal information
+    personal_info = account_req.personal_information.model_dump()
+    personal_info["key_manager"] = "SELF"
+    _off_personal_info = IDXPersonalInfo()
+    _off_personal_info.issuer_address = _account.issuer_address
+    _off_personal_info.account_address = child_addr
+    _off_personal_info.personal_info = personal_info
+    _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
+    db.add(_off_personal_info)
+
+    # Insert personal information history
+    _personal_info_history = IDXPersonalInfoHistory()
+    _personal_info_history.issuer_address = issuer_address
+    _personal_info_history.account_address = child_addr
+    _personal_info_history.event_type = PersonalInfoEventType.REGISTER
+    _personal_info_history.personal_info = personal_info
+    db.add(_personal_info_history)
+
+    await db.commit()
+
+    return json_response({"child_account_index": index})
+
+
+# GET: /accounts/{issuer_address}/child_accounts
+@router.get(
+    "/accounts/{issuer_address}/child_accounts",
+    operation_id="ListAllChildAccount",
+    response_model=ListAllChildAccountResponse,
+    responses=get_routers_responses(404),
+)
+async def list_all_child_account(
+    db: DBAsyncSession,
+    issuer_address: str,
+    get_query: ListAllChildAccountQuery = Depends(),
+):
+    """List all child accounts"""
+
+    # Check if the issuer exists.
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
+    ).first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer does not exist")
+
+    # Search child accounts
+    stmt = (
+        select(ChildAccount, IDXPersonalInfo)
+        .where(ChildAccount.issuer_address == issuer_address)
+        .outerjoin(
+            IDXPersonalInfo,
+            and_(
+                ChildAccount.issuer_address == IDXPersonalInfo.issuer_address,
+                ChildAccount.child_account_address == IDXPersonalInfo.account_address,
+                IDXPersonalInfo.data_source == PersonalInfoDataSource.OFF_CHAIN,
+            ),
+        )
+    )
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = total
+
+    # Sort
+    if get_query.sort_order == 0:  # ASC
+        stmt = stmt.order_by(asc(ChildAccount.child_account_index))
+    else:  # DESC
+        stmt = stmt.order_by(desc(ChildAccount.child_account_index))
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    _tmp_child_accounts: Sequence[tuple[ChildAccount, IDXPersonalInfo | None]] = (
+        (await db.execute(stmt)).tuples().all()
+    )
+
+    child_accounts = []
+    for _tmp_child_account in _tmp_child_accounts:
+        child_accounts.append(
+            {
+                "issuer_address": _tmp_child_account[0].issuer_address,
+                "child_account_index": _tmp_child_account[0].child_account_index,
+                "child_account_address": _tmp_child_account[0].child_account_address,
+                "personal_information": _tmp_child_account[1].personal_info
+                if _tmp_child_account[1] is not None
+                else None,
+            }
+        )
+
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "total": total,
+                "limit": get_query.limit,
+                "offset": get_query.offset,
+            },
+            "child_accounts": child_accounts,
+        }
+    )
+
+
+# GET: /accounts/{issuer_address}/child_accounts/{child_account_index}
+@router.get(
+    "/accounts/{issuer_address}/child_accounts/{child_account_index}",
+    operation_id="RetrieveChildAccount",
+    response_model=ChildAccountResponse,
+    responses=get_routers_responses(404),
+)
+async def retrieve_child_account(
+    db: DBAsyncSession, issuer_address: str, child_account_index: int
+):
+    """Retrieve the child account"""
+
+    # Check if the issuer exists.
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
+    ).first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer does not exist")
+
+    # Search child accounts
+    _child_account = (
+        (
+            await db.execute(
+                select(ChildAccount, IDXPersonalInfo)
+                .where(
+                    and_(
+                        ChildAccount.issuer_address == issuer_address,
+                        ChildAccount.child_account_index == child_account_index,
+                    )
+                )
+                .outerjoin(
+                    IDXPersonalInfo,
+                    and_(
+                        ChildAccount.issuer_address == IDXPersonalInfo.issuer_address,
+                        ChildAccount.child_account_address
+                        == IDXPersonalInfo.account_address,
+                        IDXPersonalInfo.data_source == PersonalInfoDataSource.OFF_CHAIN,
+                    ),
+                )
+                .limit(1)
+            )
+        )
+        .tuples()
+        .first()
+    )
+    if _child_account is None:
+        raise HTTPException(status_code=404, detail="child account does not exist")
+
+    return json_response(
+        {
+            "issuer_address": _child_account[0].issuer_address,
+            "child_account_index": _child_account[0].child_account_index,
+            "child_account_address": _child_account[0].child_account_address,
+            "personal_information": _child_account[1].personal_info
+            if _child_account[1] is not None
+            else None,
+        }
+    )
+
+
+# POST: /accounts/{issuer_address}/child_accounts/{child_account_index}
+@router.post(
+    "/accounts/{issuer_address}/child_accounts/{child_account_index}",
+    operation_id="UpdateChildAccount",
+    response_model=None,
+    responses=get_routers_responses(404),
+)
+async def update_child_account(
+    db: DBAsyncSession,
+    issuer_address: str,
+    child_account_index: int,
+    account_req: CreateUpdateChildAccountRequest,
+):
+    """Update the personal information of the child account"""
+
+    # Check if the issuer exists.
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
+    ).first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer does not exist")
+
+    # Check if the child account exists.
+    _child_account = (
+        await db.scalars(
+            select(ChildAccount)
+            .where(
+                and_(
+                    ChildAccount.issuer_address == issuer_address,
+                    ChildAccount.child_account_index == child_account_index,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _child_account is None:
+        raise HTTPException(status_code=404, detail="child account does not exist")
+
+    # Update offchain personal information
+    _offchain_personal_info = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                    IDXPersonalInfo.account_address
+                    == _child_account.child_account_address,
+                    IDXPersonalInfo.data_source == PersonalInfoDataSource.OFF_CHAIN,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _offchain_personal_info is not None:
+        personal_info = account_req.personal_information.model_dump()
+        personal_info["key_manager"] = "SELF"
+        _offchain_personal_info.personal_info = personal_info
+        await db.merge(_offchain_personal_info)
+
+        # Insert personal information history
+        _personal_info_history = IDXPersonalInfoHistory()
+        _personal_info_history.issuer_address = issuer_address
+        _personal_info_history.account_address = _child_account.child_account_address
+        _personal_info_history.event_type = PersonalInfoEventType.MODIFY
+        _personal_info_history.personal_info = personal_info
+        db.add(_personal_info_history)
+
+    await db.commit()
+
+    return
+
+
+# DELETE: /accounts/{issuer_address}/child_accounts/{child_account_index}
+@router.delete(
+    "/accounts/{issuer_address}/child_accounts/{child_account_index}",
+    operation_id="DeleteChildAccount",
+    response_model=None,
+    responses=get_routers_responses(404),
+)
+async def delete_child_account(
+    db: DBAsyncSession, issuer_address: str, child_account_index: int
+):
+    """Delete the child account and its off-chain personal information"""
+
+    # Check if the issuer exists.
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
+    ).first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer does not exist")
+
+    # Check if the child account exists.
+    _child_account = (
+        await db.scalars(
+            select(ChildAccount)
+            .where(
+                and_(
+                    ChildAccount.issuer_address == issuer_address,
+                    ChildAccount.child_account_index == child_account_index,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _child_account is None:
+        raise HTTPException(status_code=404, detail="child account does not exist")
+
+    # Delete child account
+    await db.delete(_child_account)
+
+    # Delete offchain personal information
+    _offchain_personal_info = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                    IDXPersonalInfo.account_address
+                    == _child_account.child_account_address,
+                    IDXPersonalInfo.data_source == PersonalInfoDataSource.OFF_CHAIN,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _offchain_personal_info is not None:
+        await db.delete(_offchain_personal_info)
+
+    await db.commit()
+
     return

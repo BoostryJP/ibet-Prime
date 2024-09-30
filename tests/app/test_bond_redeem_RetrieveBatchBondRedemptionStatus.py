@@ -23,6 +23,7 @@ from app.model.db import (
     BatchIssueRedeemProcessingCategory,
     BatchIssueRedeemUpload,
     IDXPersonalInfo,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -31,7 +32,7 @@ from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
+class TestRetrieveBatchBondRedemptionStatus:
     # target API endpoint
     base_url = "/bond/tokens/{}/redeem/batch/{}"
 
@@ -103,6 +104,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -190,6 +192,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -277,6 +280,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         batch_record = BatchIssueRedeem()

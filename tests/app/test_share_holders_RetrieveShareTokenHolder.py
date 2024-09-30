@@ -24,6 +24,7 @@ from app.model.db import (
     IDXLockedPosition,
     IDXPersonalInfo,
     IDXPosition,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -77,6 +78,7 @@ class TestRetrieveShareTokenHolder:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -158,6 +160,7 @@ class TestRetrieveShareTokenHolder:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -260,6 +263,7 @@ class TestRetrieveShareTokenHolder:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -398,6 +402,7 @@ class TestRetrieveShareTokenHolder:
             "birth": "birth_test1",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
