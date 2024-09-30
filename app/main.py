@@ -57,6 +57,7 @@ from app.routers.misc import (
 from app.utils.docs_utils import custom_openapi
 from config import (
     BC_EXPLORER_ENABLED,
+    DEDICATED_SEALED_TX_MODE,
     DVP_AGENT_FEATURE_ENABLED,
     FREEZE_LOG_FEATURE_ENABLED,
     SERVER_NAME,
@@ -135,27 +136,30 @@ async def root():
     return {"server": SERVER_NAME}
 
 
-app.include_router(common.router)
-app.include_router(account.router)
-app.include_router(bond.router)
-app.include_router(e2e_messaging.router)
-app.include_router(file.router)
-app.include_router(ledger.router)
-app.include_router(notification.router)
-app.include_router(position.router)
-app.include_router(share.router)
-app.include_router(token_holders.router)
-app.include_router(settlement_issuer.router)
-app.include_router(sealed_tx.router)
+if DEDICATED_SEALED_TX_MODE:
+    app.include_router(sealed_tx.router)
+else:
+    app.include_router(common.router)
+    app.include_router(account.router)
+    app.include_router(bond.router)
+    app.include_router(e2e_messaging.router)
+    app.include_router(file.router)
+    app.include_router(ledger.router)
+    app.include_router(notification.router)
+    app.include_router(position.router)
+    app.include_router(share.router)
+    app.include_router(token_holders.router)
+    app.include_router(settlement_issuer.router)
+    app.include_router(sealed_tx.router)
 
-if DVP_AGENT_FEATURE_ENABLED:
-    app.include_router(settlement_agent.router)
+    if DVP_AGENT_FEATURE_ENABLED:
+        app.include_router(settlement_agent.router)
 
-if BC_EXPLORER_ENABLED:
-    app.include_router(bc_explorer.router)
+    if BC_EXPLORER_ENABLED:
+        app.include_router(bc_explorer.router)
 
-if FREEZE_LOG_FEATURE_ENABLED:
-    app.include_router(freeze_log.router)
+    if FREEZE_LOG_FEATURE_ENABLED:
+        app.include_router(freeze_log.router)
 
 ###############################################################
 # EXCEPTION
