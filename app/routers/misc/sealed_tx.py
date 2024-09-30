@@ -23,6 +23,7 @@ from fastapi import APIRouter
 from starlette.requests import Request
 
 from app.database import DBAsyncSession
+from app.exceptions import InvalidParameterError
 from app.model.db import (
     IDXPersonalInfo,
     IDXPersonalInfoHistory,
@@ -45,7 +46,7 @@ router = APIRouter(prefix="/sealed_tx", tags=["[misc] sealed_tx"])
     "/personal_info/register",
     operation_id="SealedTxRegisterPersonalInfo",
     response_model=None,
-    responses=get_routers_responses(400),
+    responses=get_routers_responses(InvalidParameterError),
 )
 async def sealed_tx_register_personal_info(
     db: DBAsyncSession,

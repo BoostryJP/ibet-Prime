@@ -350,13 +350,20 @@ E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" el
 
 
 ####################################################
-# Blockchain explorer settings
+# Settings for the "BlockchainExplorer"
 ####################################################
 BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
 
 
 ####################################################
-# Freeze log option settings
+# Settings for the "SealedTx" feature
+####################################################
+DEDICATED_SEALED_TX_MODE = (
+    True if os.environ.get("DEDICATED_SEALED_TX_MODE") == "1" else False
+)
+
+####################################################
+# Settings for the "FreezeLog" feature
 ####################################################
 FREEZE_LOG_FEATURE_ENABLED = (
     True if os.environ.get("FREEZE_LOG_FEATURE_ENABLED") == "1" else False
@@ -365,7 +372,7 @@ FREEZE_LOG_CONTRACT_ADDRESS = os.environ.get("FREEZE_LOG_CONTRACT_ADDRESS")
 
 
 ####################################################
-# DvP option settings
+# Settings for the "DvP" feature
 ####################################################
 # For paying agent
 DVP_AGENT_FEATURE_ENABLED = (

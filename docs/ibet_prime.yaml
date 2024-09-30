@@ -8551,7 +8551,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error400Model'
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -11020,44 +11020,6 @@ components:
         - send_timestamp
       title: E2EMessagingResponse
       description: E2E Messaging schema (Response)
-    Error400MetaModel:
-      properties:
-        code:
-          type: integer
-          title: Code
-          examples:
-            - 0
-            - 1
-            - 2
-            - 100001
-        title:
-          type: string
-          title: Title
-          examples:
-            - InvalidParameterError
-            - SendTransactionError
-            - ContractRevertError
-      type: object
-      required:
-        - code
-        - title
-      title: Error400MetaModel
-    Error400Model:
-      properties:
-        meta:
-          $ref: '#/components/schemas/Error400MetaModel'
-        detail:
-          type: string
-          title: Detail
-          examples:
-            - this token is temporarily unavailable
-            - failed to register token address token list
-            - The address has already been registered.
-      type: object
-      required:
-        - meta
-        - detail
-      title: Error400Model
     Error401MetaModel:
       properties:
         code:
