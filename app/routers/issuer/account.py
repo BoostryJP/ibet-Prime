@@ -140,7 +140,7 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
     # Insert an initial record for the child account index.
     _child_idx = ChildAccountIndex()
     _child_idx.issuer_address = addr
-    _child_idx.latest_index = 1
+    _child_idx.next_index = 1
     db.add(_child_idx)
 
     # Insert an initial record for transaction execution management.
@@ -624,7 +624,7 @@ async def create_child_account(
             "Creation of child accounts for this issuer is temporarily unavailable"
         )
 
-    index = _child_index.latest_index
+    index = _child_index.next_index
     index_sk = int(index).to_bytes(32)
     index_pk = PublicKey.from_valid_secret(index_sk)
 
@@ -641,7 +641,7 @@ async def create_child_account(
     _child_account.child_account_address = child_addr
     db.add(_child_account)
 
-    _child_index.latest_index = index + 1
+    _child_index.next_index = index + 1
     await db.merge(_child_index)
 
     # Insert offchain personal information

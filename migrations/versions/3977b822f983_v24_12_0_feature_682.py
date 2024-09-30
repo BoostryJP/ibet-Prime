@@ -25,7 +25,7 @@ def upgrade():
     op.create_table(
         "child_account_index",
         sa.Column("issuer_address", sa.String(length=42), nullable=False),
-        sa.Column("latest_index", sa.BigInteger(), nullable=False),
+        sa.Column("next_index", sa.BigInteger(), nullable=False),
         sa.Column("created", sa.DateTime(), nullable=True),
         sa.Column("modified", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("issuer_address"),

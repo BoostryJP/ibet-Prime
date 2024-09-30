@@ -85,7 +85,7 @@ class TestCreateChildAccount:
 
         _child_index = ChildAccountIndex()
         _child_index.issuer_address = self.issuer_address
-        _child_index.latest_index = 1
+        _child_index.next_index = 1
         db.add(_child_index)
 
         db.commit()
@@ -125,7 +125,7 @@ class TestCreateChildAccount:
             .where(ChildAccountIndex.issuer_address == self.issuer_address)
             .limit(1)
         ).first()
-        assert _child_index.latest_index == 2
+        assert _child_index.next_index == 2
 
         _off_personal_info = db.scalars(
             select(IDXPersonalInfo)
@@ -177,7 +177,7 @@ class TestCreateChildAccount:
 
         _child_index = ChildAccountIndex()
         _child_index.issuer_address = self.issuer_address
-        _child_index.latest_index = 1
+        _child_index.next_index = 1
         db.add(_child_index)
 
         db.commit()
@@ -206,7 +206,7 @@ class TestCreateChildAccount:
             .where(ChildAccountIndex.issuer_address == self.issuer_address)
             .limit(1)
         ).first()
-        assert _child_index.latest_index == 2
+        assert _child_index.next_index == 2
 
         _off_personal_info = db.scalars(
             select(IDXPersonalInfo)
@@ -340,7 +340,7 @@ class TestCreateChildAccount:
 
         _child_index = ChildAccountIndex()
         _child_index.issuer_address = self.issuer_address
-        _child_index.latest_index = 2
+        _child_index.next_index = 2
         db.add(_child_index)
 
         db.commit()

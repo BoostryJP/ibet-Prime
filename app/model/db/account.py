@@ -87,8 +87,8 @@ class ChildAccountIndex(Base):
 
     # issuer address
     issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)
-    # latest index
-    latest_index: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # next index
+    next_index: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
 class ChildAccount(Base):

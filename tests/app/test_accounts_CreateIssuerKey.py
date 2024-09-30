@@ -71,7 +71,7 @@ class TestCreateIssuerKey:
 
         child_idx = db.scalars(select(ChildAccountIndex).limit(1)).first()
         assert child_idx.issuer_address == account_1.issuer_address
-        assert child_idx.latest_index == 1
+        assert child_idx.next_index == 1
 
         tx_lock = db.scalars(select(TransactionLock).limit(1)).first()
         assert tx_lock.tx_from == account_1.issuer_address
@@ -120,7 +120,7 @@ class TestCreateIssuerKey:
 
         child_idx = db.scalars(select(ChildAccountIndex).limit(1)).first()
         assert child_idx.issuer_address == account_1.issuer_address
-        assert child_idx.latest_index == 1
+        assert child_idx.next_index == 1
 
         tx_lock = db.scalars(select(TransactionLock).limit(1)).first()
         assert tx_lock.tx_from == account_1.issuer_address
