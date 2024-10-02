@@ -734,6 +734,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "upload_id": self.upload_id_list[0],
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": self.bulk_transfer_token[0],
             "error_transfer_id": [],
         }
 
@@ -782,6 +783,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "upload_id": self.upload_id_list[0],
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": self.bulk_transfer_token[0],
             "error_transfer_id": [],
         }
 
@@ -864,6 +866,7 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
                 "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "token_address": self.bulk_transfer_token[0],
                 "error_transfer_id": [1],
             }
 
@@ -951,6 +954,7 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
                 "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "token_address": self.bulk_transfer_token[0],
                 "error_transfer_id": [1],
             }
 
@@ -1173,5 +1177,6 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
                 "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "token_address": self.bulk_transfer_token[0],
                 "error_transfer_id": [3],
             }

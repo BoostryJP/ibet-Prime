@@ -35,6 +35,7 @@ class IssueErrorMetaInfo(BaseModel):
 class BulkTransferErrorMetaInfo(BaseModel):
     upload_id: str
     token_type: TokenType
+    token_address: Optional[str] = None
     error_transfer_id: list[int]
 
 
