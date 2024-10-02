@@ -109,8 +109,8 @@ from app.model.db import (
 from app.model.schema import (
     BatchIssueRedeemUploadIdResponse,
     BatchRegisterPersonalInfoUploadResponse,
-    BulkTransferResponse,
     BulkTransferUploadIdResponse,
+    BulkTransferUploadRecordResponse,
     BulkTransferUploadResponse,
     GetBatchIssueRedeemResponse,
     GetBatchRegisterPersonalInfoResponse,
@@ -137,6 +137,7 @@ from app.model.schema import (
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
+    ListBulkTransferQuery,
     ListRedeemHistoryQuery,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
@@ -4125,38 +4126,45 @@ async def bulk_transfer_bond_token_ownership(
 @router.get(
     "/bulk_transfer",
     operation_id="ListBondTokenBulkTransfers",
-    response_model=List[BulkTransferUploadResponse],
+    response_model=BulkTransferUploadResponse,
     responses=get_routers_responses(422),
 )
 async def list_bond_token_bulk_transfers(
-    db: DBAsyncSession, issuer_address: Optional[str] = Header(None)
+    db: DBAsyncSession,
+    issuer_address: Optional[str] = Header(None),
+    get_query: ListBulkTransferQuery = Depends(),
 ):
     """List bond token bulk transfers"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get bulk transfer upload list
+    # Select statement
     if issuer_address is None:
-        _uploads: Sequence[BulkTransferUpload] = (
-            await db.scalars(
-                select(BulkTransferUpload)
-                .where(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND)
-                .order_by(BulkTransferUpload.issuer_address)
-            )
-        ).all()
+        stmt = (
+            select(BulkTransferUpload)
+            .where(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND)
+            .order_by(BulkTransferUpload.issuer_address)
+        )
     else:
-        _uploads: Sequence[BulkTransferUpload] = (
-            await db.scalars(
-                select(BulkTransferUpload).where(
-                    and_(
-                        BulkTransferUpload.issuer_address == issuer_address,
-                        BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND,
-                    )
-                )
+        stmt = select(BulkTransferUpload).where(
+            and_(
+                BulkTransferUpload.issuer_address == issuer_address,
+                BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND,
             )
-        ).all()
+        )
 
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = total
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    # Get bulk transfer upload list
+    _uploads: Sequence[BulkTransferUpload] = (await db.scalars(stmt)).all()
     uploads = []
     for _upload in _uploads:
         created_utc = pytz.timezone("UTC").localize(_upload.created)
@@ -4171,55 +4179,116 @@ async def list_bond_token_bulk_transfers(
             }
         )
 
-    return json_response(uploads)
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
+                "total": total,
+            },
+            "bulk_transfer_uploads": uploads,
+        }
+    )
 
 
 # GET: /bond/bulk_transfer/{upload_id}
 @router.get(
     "/bulk_transfer/{upload_id}",
     operation_id="RetrieveBondTokenBulkTransfer",
-    response_model=List[BulkTransferResponse],
+    response_model=BulkTransferUploadRecordResponse,
     responses=get_routers_responses(422, 404),
 )
 async def retrieve_bond_token_bulk_transfer(
     db: DBAsyncSession,
     upload_id: str,
     issuer_address: Optional[str] = Header(None),
+    get_query: ListBulkTransferQuery = Depends(),
 ):
-    """Retrieve a bond token bulk transfer"""
+    """Retrieve bond token bulk transfer upload records"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get bulk transfer upload list
+    # Select statement
+    from_address_personal_info = aliased(IDXPersonalInfo)
+    to_address_personal_info = aliased(IDXPersonalInfo)
     if issuer_address is None:
-        _bulk_transfers: Sequence[BulkTransfer] = (
-            await db.scalars(
-                select(BulkTransfer)
-                .where(
-                    and_(
-                        BulkTransfer.upload_id == upload_id,
-                        BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
-                    )
+        stmt = (
+            select(BulkTransfer, from_address_personal_info, to_address_personal_info)
+            .where(
+                and_(
+                    BulkTransfer.upload_id == upload_id,
+                    BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
                 )
-                .order_by(BulkTransfer.issuer_address)
             )
-        ).all()
+            .outerjoin(
+                from_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == from_address_personal_info.issuer_address,
+                    BulkTransfer.from_address
+                    == from_address_personal_info.account_address,
+                ),
+            )
+            .outerjoin(
+                to_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == to_address_personal_info.issuer_address,
+                    BulkTransfer.to_address == to_address_personal_info.account_address,
+                ),
+            )
+            .order_by(BulkTransfer.issuer_address)
+        )
     else:
-        _bulk_transfers: Sequence[BulkTransfer] = (
-            await db.scalars(
-                select(BulkTransfer).where(
-                    and_(
-                        BulkTransfer.issuer_address == issuer_address,
-                        BulkTransfer.upload_id == upload_id,
-                        BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
-                    )
+        stmt = (
+            select(BulkTransfer, from_address_personal_info, to_address_personal_info)
+            .where(
+                and_(
+                    BulkTransfer.issuer_address == issuer_address,
+                    BulkTransfer.upload_id == upload_id,
+                    BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
                 )
             )
-        ).all()
+            .outerjoin(
+                from_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == from_address_personal_info.issuer_address,
+                    BulkTransfer.from_address
+                    == from_address_personal_info.account_address,
+                ),
+            )
+            .outerjoin(
+                to_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == to_address_personal_info.issuer_address,
+                    BulkTransfer.to_address == to_address_personal_info.account_address,
+                ),
+            )
+        )
 
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = total
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    # Get bulk transfer upload list
+    _bulk_transfers: Sequence[
+        tuple[BulkTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
+    ] = (await db.execute(stmt)).all()
     bulk_transfers = []
-    for _bulk_transfer in _bulk_transfers:
+    for (
+        _bulk_transfer,
+        _from_address_personal_info,
+        _to_address_personal_info,
+    ) in _bulk_transfers:
         bulk_transfers.append(
             {
                 "issuer_address": _bulk_transfer.issuer_address,
@@ -4227,7 +4296,17 @@ async def retrieve_bond_token_bulk_transfer(
                 "upload_id": _bulk_transfer.upload_id,
                 "token_address": _bulk_transfer.token_address,
                 "from_address": _bulk_transfer.from_address,
+                "from_address_personal_information": (
+                    _from_address_personal_info.personal_info
+                    if _from_address_personal_info is not None
+                    else None
+                ),
                 "to_address": _bulk_transfer.to_address,
+                "to_address_personal_information": (
+                    _to_address_personal_info.personal_info
+                    if _to_address_personal_info is not None
+                    else None
+                ),
                 "amount": _bulk_transfer.amount,
                 "status": _bulk_transfer.status,
                 "transaction_error_code": _bulk_transfer.transaction_error_code,
@@ -4238,4 +4317,14 @@ async def retrieve_bond_token_bulk_transfer(
     if len(bulk_transfers) < 1:
         raise HTTPException(status_code=404, detail="bulk transfer not found")
 
-    return json_response(bulk_transfers)
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
+                "total": total,
+            },
+            "bulk_transfer_upload_records": bulk_transfers,
+        }
+    )

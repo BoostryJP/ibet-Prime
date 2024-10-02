@@ -93,20 +93,22 @@ class TestListBondTokenBulkTransfers:
 
         # assertion
         assert resp.status_code == 200
-        assumed_response = [
-            {
-                "issuer_address": self.upload_issuer_list[1]["address"],
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                "token_address": self.test_token_address,
-                "upload_id": self.upload_id_list[1],
-                "status": 1,
-                "created": pytz.timezone("UTC")
-                .localize(utc_now)
-                .astimezone(local_tz)
-                .isoformat(),
-            }
-        ]
-        assert resp.json() == assumed_response
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
+            "bulk_transfer_uploads": [
+                {
+                    "issuer_address": self.upload_issuer_list[1]["address"],
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_address": self.test_token_address,
+                    "upload_id": self.upload_id_list[1],
+                    "status": 1,
+                    "created": pytz.timezone("UTC")
+                    .localize(utc_now)
+                    .astimezone(local_tz)
+                    .isoformat(),
+                }
+            ],
+        }
 
     # <Normal_2>
     # No issuer specified
@@ -131,6 +133,13 @@ class TestListBondTokenBulkTransfers:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json()["result_set"] == {
+            "count": 3,
+            "offset": None,
+            "limit": None,
+            "total": 3,
+        }
+
         assumed_response = []
         for i in range(0, 3):
             assumed_response.append(
@@ -146,10 +155,62 @@ class TestListBondTokenBulkTransfers:
                     .isoformat(),
                 }
             )
-
-        sorted_resp = sorted(resp.json(), key=lambda x: x["upload_id"])
         sorted_assumed = sorted(assumed_response, key=lambda x: x["upload_id"])
+        sorted_resp = sorted(
+            resp.json()["bulk_transfer_uploads"], key=lambda x: x["upload_id"]
+        )
         assert sorted_resp == sorted_assumed
+
+    # <Normal_3>
+    # offset / limit
+    @pytest.mark.freeze_time("2021-05-20 12:34:56")
+    def test_normal_3(self, client, db):
+        # prepare data : Account(Issuer)
+        for _issuer in self.upload_issuer_list:
+            account = Account()
+            account.issuer_address = _issuer["address"]
+            account.keyfile = _issuer["keyfile"]
+            db.add(account)
+
+        # prepare data : BulkTransferUpload
+        utc_now = datetime.now(UTC).replace(tzinfo=None)
+        for i in range(0, 3):
+            bulk_transfer_upload = BulkTransferUpload()
+            bulk_transfer_upload.issuer_address = self.upload_issuer_list[1]["address"]
+            bulk_transfer_upload.upload_id = self.upload_id_list[i]
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer_upload.token_address = self.test_token_address
+            bulk_transfer_upload.status = i
+            bulk_transfer_upload.created = utc_now
+            db.add(bulk_transfer_upload)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.test_url,
+            headers={"issuer-address": self.upload_issuer_list[1]["address"]},
+            params={"offset": 1, "limit": 1},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 3, "offset": 1, "limit": 1, "total": 3},
+            "bulk_transfer_uploads": [
+                {
+                    "issuer_address": self.upload_issuer_list[1]["address"],
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_address": self.test_token_address,
+                    "upload_id": self.upload_id_list[1],
+                    "status": 1,
+                    "created": pytz.timezone("UTC")
+                    .localize(utc_now)
+                    .astimezone(local_tz)
+                    .isoformat(),
+                }
+            ],
+        }
 
     ###########################################################################
     # Error Case
