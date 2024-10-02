@@ -48,11 +48,12 @@ from .bc_explorer import (
     TxDataResponse,
 )
 from .bulk_transfer import (
-    BulkTransferResponse,
     BulkTransferUploadIdResponse,
+    BulkTransferUploadRecordResponse,
     BulkTransferUploadResponse,
     IbetShareBulkTransferRequest,
     IbetStraightBondBulkTransferRequest,
+    ListBulkTransferQuery,
 )
 from .e2e_messaging import (
     E2EMessagingAccountChangeEOAPasswordRequest,

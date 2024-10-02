@@ -3290,6 +3290,28 @@ paths:
       description: List bond token bulk transfers
       operationId: ListBondTokenBulkTransfers
       parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: issuer-address
           in: header
           required: false
@@ -3304,10 +3326,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BulkTransferUploadResponse'
-                title: Response Listbondtokenbulktransfers
+                $ref: '#/components/schemas/BulkTransferUploadResponse'
         '422':
           description: Validation Error
           content:
@@ -3319,7 +3338,7 @@ paths:
       tags:
         - bond
       summary: Retrieve Bond Token Bulk Transfer
-      description: Retrieve a bond token bulk transfer
+      description: Retrieve bond token bulk transfer upload records
       operationId: RetrieveBondTokenBulkTransfer
       parameters:
         - name: upload_id
@@ -3328,6 +3347,28 @@ paths:
           schema:
             type: string
             title: Upload Id
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: issuer-address
           in: header
           required: false
@@ -3342,10 +3383,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BulkTransferResponse'
-                title: Response Retrievebondtokenbulktransfer
+                $ref: '#/components/schemas/BulkTransferUploadRecordResponse'
         '422':
           description: Validation Error
           content:
@@ -7558,6 +7596,28 @@ paths:
       description: List share token bulk transfers
       operationId: ListShareTokenBulkTransfers
       parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: issuer-address
           in: header
           required: false
@@ -7572,10 +7632,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BulkTransferUploadResponse'
-                title: Response Listsharetokenbulktransfers
+                $ref: '#/components/schemas/BulkTransferUploadResponse'
         '422':
           description: Validation Error
           content:
@@ -7587,7 +7644,7 @@ paths:
       tags:
         - share
       summary: Retrieve Share Token Bulk Transfer
-      description: Retrieve a share token bulk transfer
+      description: Retrieve share token bulk transfer upload records
       operationId: RetrieveShareTokenBulkTransfer
       parameters:
         - name: upload_id
@@ -7596,6 +7653,28 @@ paths:
           schema:
             type: string
             title: Upload Id
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: issuer-address
           in: header
           required: false
@@ -7610,10 +7689,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BulkTransferResponse'
-                title: Response Retrievesharetokenbulktransfer
+                $ref: '#/components/schemas/BulkTransferUploadRecordResponse'
         '422':
           description: Validation Error
           content:
@@ -10019,78 +10095,7 @@ components:
         - notice_type
         - metainfo
       title: BulkTransferErrorNotification
-    BulkTransferResponse:
-      properties:
-        upload_id:
-          type: string
-          title: Upload Id
-          description: Upload id
-        issuer_address:
-          type: string
-          title: Issuer Address
-          description: Issuer account address
-        token_address:
-          type: string
-          title: Token Address
-          description: Token address
-        token_type:
-          allOf:
-            - $ref: '#/components/schemas/TokenType'
-          description: Token type
-        from_address:
-          type: string
-          title: From Address
-          description: Transfer source address
-        to_address:
-          type: string
-          title: To Address
-          description: Transfer destination address
-        amount:
-          type: integer
-          title: Amount
-          description: Transfer amount
-        status:
-          type: integer
-          title: Status
-          description: Transfer status
-        transaction_error_code:
-          anyOf:
-            - type: integer
-            - type: 'null'
-          title: Transaction Error Code
-          description: Transfer error code
-        transaction_error_message:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Transaction Error Message
-          description: Transfer error message
-      type: object
-      required:
-        - upload_id
-        - issuer_address
-        - token_address
-        - token_type
-        - from_address
-        - to_address
-        - amount
-        - status
-        - transaction_error_code
-        - transaction_error_message
-      title: BulkTransferResponse
-      description: bulk transfer data
-    BulkTransferUploadIdResponse:
-      properties:
-        upload_id:
-          type: string
-          title: Upload Id
-          description: Upload id
-      type: object
-      required:
-        - upload_id
-      title: BulkTransferUploadIdResponse
-      description: bulk transfer upload id
-    BulkTransferUploadResponse:
+    BulkTransferUpload:
       properties:
         upload_id:
           type: string
@@ -10126,8 +10131,122 @@ components:
         - token_address
         - status
         - created
+      title: BulkTransferUpload
+      description: Bulk transfer upload
+    BulkTransferUploadIdResponse:
+      properties:
+        upload_id:
+          type: string
+          title: Upload Id
+          description: Upload id
+      type: object
+      required:
+        - upload_id
+      title: BulkTransferUploadIdResponse
+      description: bulk transfer upload id
+    BulkTransferUploadRecord:
+      properties:
+        upload_id:
+          type: string
+          title: Upload Id
+          description: Upload id
+        issuer_address:
+          type: string
+          title: Issuer Address
+          description: Issuer account address
+        token_address:
+          type: string
+          title: Token Address
+          description: Token address
+        token_type:
+          allOf:
+            - $ref: '#/components/schemas/TokenType'
+          description: Token type
+        from_address:
+          type: string
+          title: From Address
+          description: Transfer source address
+        from_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+          description: Personal information of the from_address
+        to_address:
+          type: string
+          title: To Address
+          description: Transfer destination address
+        to_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+          description: Personal information of the to_address
+        amount:
+          type: integer
+          title: Amount
+          description: Transfer amount
+        status:
+          type: integer
+          title: Status
+          description: Transfer status
+        transaction_error_code:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Transaction Error Code
+          description: Transfer error code
+        transaction_error_message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Transaction Error Message
+          description: Transfer error message
+      type: object
+      required:
+        - upload_id
+        - issuer_address
+        - token_address
+        - token_type
+        - from_address
+        - from_address_personal_information
+        - to_address
+        - to_address_personal_information
+        - amount
+        - status
+        - transaction_error_code
+        - transaction_error_message
+      title: BulkTransferUploadRecord
+      description: Bulk transfer upload record
+    BulkTransferUploadRecordResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        bulk_transfer_upload_records:
+          items:
+            $ref: '#/components/schemas/BulkTransferUploadRecord'
+          type: array
+          title: Bulk Transfer Upload Records
+      type: object
+      required:
+        - result_set
+        - bulk_transfer_upload_records
+      title: BulkTransferUploadRecordResponse
+      description: Bulk transfer upload records
+    BulkTransferUploadResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        bulk_transfer_uploads:
+          items:
+            $ref: '#/components/schemas/BulkTransferUpload'
+          type: array
+          title: Bulk Transfer Uploads
+          description: Bulk transfer uploads
+          default: []
+      type: object
+      required:
+        - result_set
       title: BulkTransferUploadResponse
-      description: bulk transfer upload
+      description: Bulk transfer uploads
     CancelDVPDeliveryRequest:
       properties:
         operation_type:

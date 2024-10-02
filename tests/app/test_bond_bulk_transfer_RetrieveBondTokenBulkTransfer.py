@@ -28,9 +28,9 @@ from app.model.db import (
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersShareBulkTransferGET:
+class TestRetrieveBondTokenBulkTransfer:
     # target API endpoint
-    test_url = "/share/bulk_transfer/{}"
+    test_url = "/bond/bulk_transfer/{}"
 
     upload_issuer_list = [
         {
@@ -75,7 +75,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i
             db.add(bulk_transfer_upload)
 
@@ -83,7 +83,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
@@ -106,7 +106,7 @@ class TestAppRoutersShareBulkTransferGET:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "upload_id": self.upload_id_list[1],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -137,7 +137,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i
             db.add(bulk_transfer_upload)
 
@@ -145,7 +145,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
@@ -201,7 +201,7 @@ class TestAppRoutersShareBulkTransferGET:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "upload_id": self.upload_id_list[1],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -242,7 +242,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i
             db.add(bulk_transfer_upload)
 
@@ -250,7 +250,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
@@ -272,7 +272,7 @@ class TestAppRoutersShareBulkTransferGET:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[0]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "upload_id": self.upload_id_list[0],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -294,7 +294,7 @@ class TestAppRoutersShareBulkTransferGET:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 2
         db.add(bulk_transfer_upload)
 
@@ -302,13 +302,13 @@ class TestAppRoutersShareBulkTransferGET:
         bulk_transfer = BulkTransfer()
         bulk_transfer.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer.upload_id = self.upload_id_list[0]
-        bulk_transfer.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer.token_address = self.bulk_transfer_token
         bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
         bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
         bulk_transfer.amount = 10
         bulk_transfer.status = 2
-        bulk_transfer.transaction_error_code = 110503
+        bulk_transfer.transaction_error_code = 120601
         bulk_transfer.transaction_error_message = (
             "Transfer amount is greater than from address balance."
         )
@@ -328,7 +328,7 @@ class TestAppRoutersShareBulkTransferGET:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[0]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "upload_id": self.upload_id_list[0],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -337,7 +337,7 @@ class TestAppRoutersShareBulkTransferGET:
                     "to_address_personal_information": None,
                     "amount": 10,
                     "status": 2,
-                    "transaction_error_code": 110503,
+                    "transaction_error_code": 120601,
                     "transaction_error_message": "Transfer amount is greater than from address balance.",
                 }
             ],
@@ -357,7 +357,7 @@ class TestAppRoutersShareBulkTransferGET:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = self.upload_issuer_list[1]["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[1]
-        bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 1
         db.add(bulk_transfer_upload)
 
@@ -366,7 +366,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.upload_id = self.upload_id_list[1]
-            bulk_transfer.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
@@ -390,7 +390,7 @@ class TestAppRoutersShareBulkTransferGET:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "upload_id": self.upload_id_list[1],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -461,7 +461,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i
             db.add(bulk_transfer_upload)
 
@@ -469,7 +469,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]

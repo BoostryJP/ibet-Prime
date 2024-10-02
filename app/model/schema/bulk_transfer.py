@@ -17,10 +17,52 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from pydantic import BaseModel, Field
+from typing import Annotated, Optional
 
-from .base import TokenType
+from fastapi import Query
+from pydantic import BaseModel, Field, NonNegativeInt
+from pydantic.dataclasses import dataclass
+
+from .base import ResultSet, TokenType
+from .personal_info import PersonalInfo
 from .token import IbetShareTransfer, IbetStraightBondTransfer
+
+
+############################
+# COMMON
+############################
+class BulkTransferUpload(BaseModel):
+    """Bulk transfer upload"""
+
+    upload_id: str = Field(..., description="Upload id")
+    issuer_address: str = Field(..., description="Issuer account address")
+    token_type: TokenType = Field(..., description="Token type")
+    token_address: str | None = Field(..., description="Token address")
+    status: int = Field(..., description="Processing status")
+    created: str = Field(..., description="Upload created datetime (ISO8601)")
+
+
+class BulkTransferUploadRecord(BaseModel):
+    """Bulk transfer upload record"""
+
+    upload_id: str = Field(..., description="Upload id")
+    issuer_address: str = Field(..., description="Issuer account address")
+    token_address: str = Field(..., description="Token address")
+    token_type: TokenType = Field(..., description="Token type")
+    from_address: str = Field(..., description="Transfer source address")
+    from_address_personal_information: Optional[PersonalInfo] = Field(
+        ..., description="Personal information of the from_address"
+    )
+    to_address: str = Field(..., description="Transfer destination address")
+    to_address_personal_information: Optional[PersonalInfo] = Field(
+        ..., description="Personal information of the to_address"
+    )
+    amount: int = Field(..., description="Transfer amount")
+    status: int = Field(..., description="Transfer status")
+    transaction_error_code: int | None = Field(..., description="Transfer error code")
+    transaction_error_message: str | None = Field(
+        ..., description="Transfer error message"
+    )
 
 
 ############################
@@ -44,6 +86,16 @@ class IbetShareBulkTransferRequest(BaseModel):
     )
 
 
+@dataclass
+class ListBulkTransferQuery:
+    offset: Annotated[
+        Optional[NonNegativeInt], Query(description="Offset for pagination")
+    ] = None
+    limit: Annotated[
+        Optional[NonNegativeInt], Query(description="Limit for pagination")
+    ] = None
+
+
 ############################
 # RESPONSE
 ############################
@@ -54,28 +106,16 @@ class BulkTransferUploadIdResponse(BaseModel):
 
 
 class BulkTransferUploadResponse(BaseModel):
-    """bulk transfer upload"""
+    """Bulk transfer uploads"""
 
-    upload_id: str = Field(..., description="Upload id")
-    issuer_address: str = Field(..., description="Issuer account address")
-    token_type: TokenType = Field(..., description="Token type")
-    token_address: str | None = Field(..., description="Token address")
-    status: int = Field(..., description="Processing status")
-    created: str = Field(..., description="Upload created datetime (ISO8601)")
-
-
-class BulkTransferResponse(BaseModel):
-    """bulk transfer data"""
-
-    upload_id: str = Field(..., description="Upload id")
-    issuer_address: str = Field(..., description="Issuer account address")
-    token_address: str = Field(..., description="Token address")
-    token_type: TokenType = Field(..., description="Token type")
-    from_address: str = Field(..., description="Transfer source address")
-    to_address: str = Field(..., description="Transfer destination address")
-    amount: int = Field(..., description="Transfer amount")
-    status: int = Field(..., description="Transfer status")
-    transaction_error_code: int | None = Field(..., description="Transfer error code")
-    transaction_error_message: str | None = Field(
-        ..., description="Transfer error message"
+    result_set: ResultSet
+    bulk_transfer_uploads: list[BulkTransferUpload] = Field(
+        default=[], description="Bulk transfer uploads"
     )
+
+
+class BulkTransferUploadRecordResponse(BaseModel):
+    """Bulk transfer upload records"""
+
+    result_set: ResultSet
+    bulk_transfer_upload_records: list[BulkTransferUploadRecord]
