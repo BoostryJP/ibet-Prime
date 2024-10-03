@@ -18,6 +18,38 @@ jobs:
     name: 'Unit tests (PostgreSQL)'
     runs-on: ubuntu-latest
     needs: build
+    strategy:
+      fail-fast: true
+      matrix:
+        test_target: [
+          'tests/app/',
+          'tests/batch/',
+        ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-test-image
+      - name: build image on compose
+        run: docker compose build
+      - name: Change owner of output directory
+        run: |
+          sudo chown runner:docker /home/runner/work/ibet-Prime/ibet-Prime/cov
+          sudo chmod 777 /home/runner/work/ibet-Prime/ibet-Prime/cov
+      - name: run unit test using postgres
+        run: docker compose run -e TEST_TARGET="${{ matrix.test_target }}" ibet-prime-postgres
+      - run: mv cov/.coverage cov/.coverage-${{ strategy.job-index }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: .coverage-${{ strategy.job-index }}
+          path: cov/.coverage-${{ strategy.job-index }}
+          include-hidden-files: true
+      - run: mv cov/pytest.xml cov/pytest-${{ strategy.job-index }}.xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ strategy.job-index }}
+          path: cov/pytest-${{ strategy.job-index }}.xml
+  collect_coverage:
+    runs-on: ubuntu-latest
+    needs: unit-test-postgres
     permissions:
       actions: read
       contents: read
@@ -26,23 +58,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-test-image
-      - name: Collect Workflow Telemetry
-        uses: catchpoint/workflow-telemetry-action@v2
-        with:
-          comment_on_pr: false
+      - name: build image on compose
+        run: docker compose build
       - name: Change owner of output directory
         run: |
-          sudo chown -R runner:docker /home/runner/work/ibet-Prime/ibet-Prime/cov
+          sudo chown runner:docker /home/runner/work/ibet-Prime/ibet-Prime/cov
           sudo chmod 777 /home/runner/work/ibet-Prime/ibet-Prime/cov
-      - name: run unit test using postgres
-        run: docker compose run ibet-prime-postgres
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '.coverage-*'
+          path: cov/
+          merge-multiple: true
+      - name: combine coverage files
+        run: docker compose run -w /app/ibet-Prime/cov ibet-prime-postgres bash --login -c 'poetry run coverage combine .coverage-*'
+      - name: generate coverage xml file
+        run: docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'poetry run coverage xml --data-file=cov/.coverage -o cov/coverage.xml'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: 'pytest-*'
+          path: cov/
+          merge-multiple: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install junit-report-merger
+        run: npm install -g junit-report-merger
+      - name: Merge reports
+        run: jrm cov/pytest.xml "cov/pytest-*.xml"
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
+          report-only-changed-files: true
           pytest-xml-coverage-path: cov/coverage.xml
           junitxml-path: cov/pytest.xml
-          report-only-changed-files: true
+      - name: Count test cases in repository
+        id: countTest
+        run: |
+          RESULT=$(docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'poetry run pytest --collect-only | grep -e "<Function" -e "<Coroutine"' | wc -l)
+          echo "test_count=${RESULT}" >> $GITHUB_OUTPUT
+      - run: echo ${{ steps.coverageComment.outputs.tests }}
+      - run: echo ${{ steps.countTest.outputs.test_count }}
+      - name: Check the count of test cases in CI
+        if: steps.coverageComment.outputs.tests != steps.countTest.outputs.test_count
+        run: exit 1
+
   migration-test-postgres:
     name: 'Migration tests (PostgreSQL)'
     runs-on: ubuntu-latest

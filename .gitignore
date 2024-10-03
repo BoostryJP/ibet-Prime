@@ -25,3 +25,4 @@ node_modules/
 # Project
 cov/coverage.xml
 cov/pytest.xml
+cov/.coverage

@@ -104,9 +104,21 @@ exclude = ["migrations/*"]
 [tool.ruff.lint.isort]
 combine-as-imports = true
 
+[tool.pytest.ini_options]
+addopts = "-m 'not alembic'"
+markers = [
+    "alembic: tests for alembic",
+]
+
 [tool.coverage.run]
 branch = true
 concurrency = ["thread", "greenlet"]
+include = [
+    "app/routers/**/*",
+    "app/model/**/*",
+    "app/utils/**/*",
+    "batch/**/*",
+]
 
 [build-system]
 requires = ["poetry-core"]

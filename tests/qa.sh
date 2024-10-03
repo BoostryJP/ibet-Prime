@@ -21,16 +21,19 @@ source ~/.bash_profile
 
 cd /app/ibet-Prime
 
+TEST_TARGET=${TEST_TARGET:-tests/}
+
 sleep 10
 
 # Test
-poetry run pytest -v --cov=app/routers/ --cov=app/model/ --cov=app/utils/ --cov=batch/ --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch tests/
+poetry run pytest -v --cov=. --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch $TEST_TARGET
 
 status_code=$?
 
 # Move coverage files
 mv coverage.xml cov/
 mv pytest.xml cov/
+mv .coverage cov/
 
 if [ $status_code -ne 0 ]; then
   exit 1
