@@ -3290,6 +3290,16 @@ paths:
       description: List bond token bulk transfers
       operationId: ListBondTokenBulkTransfers
       parameters:
+        - name: token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Token address (**this affects total number**)
+            title: Token Address
+          description: Token address (**this affects total number**)
         - name: offset
           in: query
           required: false
@@ -7596,6 +7606,16 @@ paths:
       description: List share token bulk transfers
       operationId: ListShareTokenBulkTransfers
       parameters:
+        - name: token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Token address (**this affects total number**)
+            title: Token Address
+          description: Token address (**this affects total number**)
         - name: offset
           in: query
           required: false
