@@ -54,6 +54,7 @@ from .bulk_transfer import (
     IbetShareBulkTransferRequest,
     IbetStraightBondBulkTransferRequest,
     ListBulkTransferQuery,
+    ListBulkTransferUploadQuery,
 )
 from .e2e_messaging import (
     E2EMessagingAccountChangeEOAPasswordRequest,

@@ -34,6 +34,7 @@ from sqlalchemy import (
     cast,
     column,
     desc,
+    distinct,
     func,
     literal,
     literal_column,
@@ -139,6 +140,7 @@ from app.model.schema import (
     ListBatchIssueRedeemUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
     ListBulkTransferQuery,
+    ListBulkTransferUploadQuery,
     ListRedeemHistoryQuery,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
@@ -4061,7 +4063,7 @@ async def bulk_transfer_share_token_ownership(
 async def list_share_token_bulk_transfers(
     db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
-    get_query: ListBulkTransferQuery = Depends(),
+    get_query: ListBulkTransferUploadQuery = Depends(),
 ):
     """List share token bulk transfers"""
 
@@ -4081,6 +4083,17 @@ async def list_share_token_bulk_transfers(
                 BulkTransferUpload.issuer_address == issuer_address,
                 BulkTransferUpload.token_type == TokenType.IBET_SHARE,
             )
+        )
+
+    if get_query.token_address is not None:
+        upload_id_subquery = (
+            select(distinct(BulkTransfer.upload_id).label("upload_id"))
+            .where(BulkTransfer.token_address == get_query.token_address)
+            .subquery()
+        )
+        stmt = stmt.join(
+            upload_id_subquery,
+            upload_id_subquery.c.upload_id == BulkTransferUpload.upload_id,
         )
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))

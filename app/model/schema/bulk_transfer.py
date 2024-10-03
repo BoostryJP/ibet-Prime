@@ -87,6 +87,20 @@ class IbetShareBulkTransferRequest(BaseModel):
 
 
 @dataclass
+class ListBulkTransferUploadQuery:
+    token_address: Annotated[
+        Optional[str],
+        Query(description="Token address (**this affects total number**)"),
+    ] = None
+    offset: Annotated[
+        Optional[NonNegativeInt], Query(description="Offset for pagination")
+    ] = None
+    limit: Annotated[
+        Optional[NonNegativeInt], Query(description="Limit for pagination")
+    ] = None
+
+
+@dataclass
 class ListBulkTransferQuery:
     offset: Annotated[
         Optional[NonNegativeInt], Query(description="Offset for pagination")
