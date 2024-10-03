@@ -41,6 +41,8 @@ class TestListAllNotifications:
     # <Normal_1>
     # Non filtered
     def test_normal_1(self, client, db):
+        test_token_address = "test_token_address"
+
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -56,6 +58,7 @@ class TestListAllNotifications:
         _notification_1.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": test_token_address,
             "error_transfer_id": [],
         }
         _notification_1.created = datetime.strptime(
@@ -241,6 +244,7 @@ class TestListAllNotifications:
                     "metainfo": {
                         "upload_id": ANY,
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                        "token_address": test_token_address,
                         "error_transfer_id": [],
                     },
                     "created": "2022-01-02T00:20:30+09:00",
@@ -378,6 +382,8 @@ class TestListAllNotifications:
     # <Normal_2>
     # filtered
     def test_normal_2(self, client, db):
+        test_token_address = "test_token_address"
+
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -393,6 +399,7 @@ class TestListAllNotifications:
         _notification_1.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": test_token_address,
             "error_transfer_id": [],
         }
         _notification_1.created = datetime.strptime(
@@ -424,6 +431,7 @@ class TestListAllNotifications:
         _notification_3.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": test_token_address,
             "error_transfer_id": [],
         }
         _notification_3.created = datetime.strptime(
@@ -483,6 +491,8 @@ class TestListAllNotifications:
     # <Normal_3>
     # limit-offset
     def test_normal_3(self, client, db):
+        test_token_address = "test_token_address"
+
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -498,6 +508,7 @@ class TestListAllNotifications:
         _notification_1.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": test_token_address,
             "error_transfer_id": [],
         }
         _notification_1.created = datetime.strptime(

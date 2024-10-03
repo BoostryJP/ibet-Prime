@@ -120,6 +120,7 @@ class Processor:
                             code=0,
                             upload_id=_upload.upload_id,
                             token_type=_upload.token_type,
+                            token_address=_upload.token_address,
                             error_transfer_id=[],
                         )
                         await db_session.commit()
@@ -145,6 +146,7 @@ class Processor:
                         code=1,
                         upload_id=_upload.upload_id,
                         token_type=_upload.token_type,
+                        token_address=_upload.token_address,
                         error_transfer_id=[],
                     )
                     await db_session.commit()
@@ -285,6 +287,7 @@ class Processor:
                         code=2,
                         upload_id=_upload.upload_id,
                         token_type=_upload.token_type,
+                        token_address=_upload.token_address,
                         error_transfer_id=error_transfer_id,
                     )
 
@@ -537,6 +540,7 @@ class Processor:
         code: int,
         upload_id: str,
         token_type: str,
+        token_address: str | None,
         error_transfer_id: List[int],
     ):
         notification = Notification()
@@ -548,6 +552,7 @@ class Processor:
         notification.metainfo = {
             "upload_id": upload_id,
             "token_type": token_type,
+            "token_address": token_address,
             "error_transfer_id": error_transfer_id,
         }
         db_session.add(notification)

@@ -10043,6 +10043,11 @@ components:
           title: Upload Id
         token_type:
           $ref: '#/components/schemas/TokenType'
+        token_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Token Address
         error_transfer_id:
           items:
             type: integer
