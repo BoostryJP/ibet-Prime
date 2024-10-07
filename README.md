@@ -18,7 +18,7 @@ English | [日本語](./README_JA.md)
 - ibet-Prime is an API service that enables the issuance and management of security tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network).
 - It supports tokens and various smart contracts developed by the [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract) project.
 - As a security token ledger management system, ibet-Prime provides a variety of functions required under Japanese regulations.
-- By calling the ibet-Prime API from your own front-end application, you can easily build a security token management service.
+- By integrating the ibet-Prime API into your front-end application, you can easily build a security token management service.
 
 ## Dependencies
 
@@ -39,14 +39,14 @@ English | [日本語](./README_JA.md)
 
 ### Prerequisites
 
-- Need to set up a Python runtime environment.
-- Need to create the DB on PostgreSQL beforehand.
-  - By default, the following settings are required.
+- A Python runtime environment must be set up.
+- The database must be created on PostgreSQL beforehand.
+  - By default, the following settings are required:
     - User: issuerapi
     - Password: issuerapipass
-    - DB: issuerapidb
-    - DB for test use: issuerapidb_test
-- TokenList and E2EMessaging contract of the ibet-SmartContract must have been deployed beforehand.
+    - Database: issuerapidb
+    - Test database: issuerapidb_test
+- The TokenList and E2EMessaging contracts from the ibet-SmartContract project must be deployed in advance.
 
 ### Install packages
 
