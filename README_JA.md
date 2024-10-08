@@ -24,7 +24,7 @@
 ## 依存
 
 - [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.12
-- [PostgreSQL](https://www.postgresql.org/) - バージョン 15
+- [PostgreSQL](https://www.postgresql.org/) - バージョン 16
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。
   - 最新の [hardhat network](https://hardhat.org/hardhat-network/) をローカル開発およびユニットテストで利用しています。
