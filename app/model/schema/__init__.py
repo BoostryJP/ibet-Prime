@@ -63,12 +63,14 @@ from .e2e_messaging import (
     E2EMessagingAccountResponse,
     E2EMessagingAccountUpdateRsaKeyRequest,
     E2EMessagingResponse,
+    ListAllE2EMessagesQuery,
     ListAllE2EMessagingResponse,
 )
 from .file import (
     DownloadFileResponse,
     FileResponse,
     ListAllFilesResponse,
+    ListAllUploadFilesQuery,
     UploadFileRequest,
 )
 from .freeze_log import (
@@ -179,6 +181,7 @@ from .token_holders import (
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
+    ListSpecificTokenTransferApprovalHistoryQuery,
     ListTransferApprovalHistoryQuery,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,

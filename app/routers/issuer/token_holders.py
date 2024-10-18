@@ -19,10 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Annotated, Optional, Sequence
 
 import pytz
-from fastapi import APIRouter, Depends, Header, Path, Query
+from fastapi import APIRouter, Header, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
 
@@ -74,8 +74,8 @@ utc_tz = pytz.timezone("UTC")
 )
 async def list_all_token_holders_personal_info(
     db: DBAsyncSession,
-    issuer_address: str = Header(...),
-    get_query: ListTokenHoldersPersonalInfoQuery = Depends(),
+    issuer_address: Annotated[str, Header()],
+    get_query: Annotated[ListTokenHoldersPersonalInfoQuery, Query()],
 ):
     """Lists the personal information of all registered holders linked to the token issuer"""
 
@@ -166,8 +166,8 @@ async def list_all_token_holders_personal_info(
 )
 async def list_all_token_holders_personal_info_history(
     db: DBAsyncSession,
-    issuer_address: str = Header(...),
-    get_query: ListTokenHoldersPersonalInfoHistoryQuery = Depends(),
+    issuer_address: Annotated[str, Header()],
+    get_query: Annotated[ListTokenHoldersPersonalInfoHistoryQuery, Query()],
 ):
     """List personal information historical data"""
 
@@ -460,14 +460,16 @@ async def list_all_token_holders_collections(
 )
 async def retrieve_token_holders_collection(
     db: DBAsyncSession,
-    token_address: str = Path(...),
-    list_id: str = Path(
-        ...,
-        examples=["cfd83622-34dc-4efe-a68b-2cc275d3d824"],
-        description="UUID v4 required",
-    ),
-    issuer_address: str = Header(...),
-    get_query: RetrieveTokenHoldersCollectionQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    list_id: Annotated[
+        str,
+        Path(
+            examples=["cfd83622-34dc-4efe-a68b-2cc275d3d824"],
+            description="UUID v4 required",
+        ),
+    ],
+    issuer_address: Annotated[str, Header()],
+    get_query: Annotated[RetrieveTokenHoldersCollectionQuery, Query()],
 ):
     """Retrieve token holders collection"""
 

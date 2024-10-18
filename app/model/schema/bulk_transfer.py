@@ -17,13 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Annotated, Optional
+from typing import Optional
 
-from fastapi import Query
-from pydantic import BaseModel, Field, NonNegativeInt
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Field
 
-from .base import ResultSet, TokenType
+from .base import BasePaginationQuery, ResultSet, TokenType
 from .personal_info import PersonalInfo
 from .token import IbetShareTransfer, IbetStraightBondTransfer
 
@@ -86,28 +84,14 @@ class IbetShareBulkTransferRequest(BaseModel):
     )
 
 
-@dataclass
-class ListBulkTransferUploadQuery:
-    token_address: Annotated[
-        Optional[str],
-        Query(description="Token address (**this affects total number**)"),
-    ] = None
-    offset: Annotated[
-        Optional[NonNegativeInt], Query(description="Offset for pagination")
-    ] = None
-    limit: Annotated[
-        Optional[NonNegativeInt], Query(description="Limit for pagination")
-    ] = None
+class ListBulkTransferUploadQuery(BasePaginationQuery):
+    token_address: Optional[str] = Field(
+        None, description="Token address (**this affects total number**)"
+    )
 
 
-@dataclass
-class ListBulkTransferQuery:
-    offset: Annotated[
-        Optional[NonNegativeInt], Query(description="Offset for pagination")
-    ] = None
-    limit: Annotated[
-        Optional[NonNegativeInt], Query(description="Limit for pagination")
-    ] = None
+class ListBulkTransferQuery(BasePaginationQuery):
+    pass
 
 
 ############################

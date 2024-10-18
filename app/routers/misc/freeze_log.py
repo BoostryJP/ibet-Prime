@@ -19,13 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 
 import re
 import secrets
-from typing import Sequence
+from typing import Annotated, Sequence
 
 import boto3
 import eth_keyfile
 from coincurve import PublicKey
 from eth_utils import keccak, to_checksum_address
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import select
 
 from app.database import DBAsyncSession
@@ -145,7 +145,7 @@ async def list_all_accounts(db: DBAsyncSession):
     response_model=FreezeLogAccountResponse,
     responses=get_routers_responses(404),
 )
-async def delete_account(db: DBAsyncSession, account_address: str):
+async def delete_account(db: DBAsyncSession, account_address: Annotated[str, Path()]):
     """Logically delete an freeze-logging account"""
 
     # Search for an account
@@ -181,7 +181,7 @@ async def delete_account(db: DBAsyncSession, account_address: str):
 )
 async def change_eoa_password(
     db: DBAsyncSession,
-    account_address: str,
+    account_address: Annotated[str, Path()],
     change_req: FreezeLogAccountChangeEOAPasswordRequest,
 ):
     """Change Account's EOA Password"""
@@ -297,7 +297,7 @@ async def record_new_log(
 async def update_log(
     db: DBAsyncSession,
     req: UpdateFreezeLogRequest,
-    log_index: int = Path(..., description="Log index"),
+    log_index: Annotated[int, Path(description="Log index")],
 ):
     # Search for an account
     log_account: FreezeLogAccount | None = (
@@ -344,8 +344,8 @@ async def update_log(
 )
 async def retrieve_log(
     db: DBAsyncSession,
-    log_index: int = Path(..., description="Log index"),
-    req_query: RetrieveFreezeLogQuery = Depends(),
+    log_index: Annotated[int, Path(description="Log index")],
+    req_query: Annotated[RetrieveFreezeLogQuery, Query()],
 ):
     # Search for an account
     log_account: FreezeLogAccount | None = (

@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.model.schema.base import ResultSet
+from app.model.schema.base import BasePaginationQuery, ResultSet
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
 
@@ -111,6 +111,13 @@ class E2EMessagingAccountChangeRSAPassphraseRequest(BaseModel):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("rsa_passphrase", v)
         return v
+
+
+class ListAllE2EMessagesQuery(BasePaginationQuery):
+    from_address: Optional[str] = Field(None)
+    to_address: Optional[str] = Field(None)
+    type: Optional[str] = Field(None, alias="type")
+    message: Optional[str] = Field(None, description="partial match")
 
 
 ############################

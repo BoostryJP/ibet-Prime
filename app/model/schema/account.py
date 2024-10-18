@@ -18,14 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Optional
 
-from fastapi import Query
 from pydantic import BaseModel, Field, RootModel, field_validator
-from pydantic.dataclasses import dataclass
 
 from app.model.db import AccountRsaStatus
-from app.model.schema.base import ResultSet, SortOrder
+from app.model.schema.base import BasePaginationQuery, ResultSet, SortOrder
 from app.model.schema.personal_info import PersonalInfo, PersonalInfoInput
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
@@ -137,14 +135,11 @@ class CreateUpdateChildAccountRequest(BaseModel):
     personal_information: PersonalInfoInput
 
 
-@dataclass
-class ListAllChildAccountQuery:
-    sort_order: Annotated[
-        SortOrder,
-        Query(description="The sort order of the child_account_index. 0:asc, 1:desc"),
-    ] = SortOrder.ASC
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+class ListAllChildAccountQuery(BasePaginationQuery):
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.ASC,
+        description="The sort order of the child_account_index. 0:asc, 1:desc",
+    )
 
 
 ############################

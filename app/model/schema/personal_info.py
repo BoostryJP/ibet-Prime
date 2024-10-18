@@ -19,16 +19,14 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, List, Optional
+from typing import List, Optional
 
-from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic.dataclasses import dataclass
 
 from app.model import EthereumAddress
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
 
-from .base import ResultSet, SortOrder
+from .base import BasePaginationQuery, ResultSet, SortOrder
 
 
 class PersonalInfoEventType(StrEnum):
@@ -90,14 +88,11 @@ class RegisterPersonalInfoRequest(PersonalInfoInput):
     key_manager: str
 
 
-@dataclass
-class ListAllPersonalInfoBatchRegistrationUploadQuery:
-    status: Annotated[Optional[str], Query()] = None
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+class ListAllPersonalInfoBatchRegistrationUploadQuery(BasePaginationQuery):
+    status: Optional[str] = Field(None)
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
     )
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
 ############################

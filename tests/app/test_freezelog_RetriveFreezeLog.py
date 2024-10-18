@@ -129,7 +129,7 @@ class TestRetrieveFreezeLog:
                     "type": "missing",
                     "loc": ["query", "account_address"],
                     "msg": "Field required",
-                    "input": None,
+                    "input": {},
                 }
             ],
         }

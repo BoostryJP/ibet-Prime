@@ -25,11 +25,11 @@ from typing import Annotated, Optional, Self
 
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
-from pydantic.dataclasses import dataclass
 
 from app.model import EthereumAddress, ValidatedDatetimeStr
 
 from .base import (
+    BasePaginationQuery,
     CURRENCY_str,
     EMPTY_str,
     IbetShareContractVersion,
@@ -315,48 +315,36 @@ class IssueRedeemSortItem(StrEnum):
     AMOUNT = "amount"
 
 
-@dataclass
-class ListAdditionalIssuanceHistoryQuery:
-    sort_item: Annotated[IssueRedeemSortItem, Query()] = (
+class ListAdditionalIssuanceHistoryQuery(BasePaginationQuery):
+    sort_item: Optional[IssueRedeemSortItem] = Field(
         IssueRedeemSortItem.BLOCK_TIMESTAMP
     )
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
     )
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
-@dataclass
-class ListAllAdditionalIssueUploadQuery:
-    processed: Annotated[Optional[bool], Query()] = None
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+class ListAllAdditionalIssueUploadQuery(BasePaginationQuery):
+    processed: Optional[bool] = Field(None, description="Process status")
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
     )
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
-@dataclass
-class ListRedeemHistoryQuery:
-    sort_item: Annotated[IssueRedeemSortItem, Query()] = (
+class ListRedeemHistoryQuery(BasePaginationQuery):
+    sort_item: Optional[IssueRedeemSortItem] = Field(
         IssueRedeemSortItem.BLOCK_TIMESTAMP
     )
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
     )
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
-@dataclass
-class ListAllRedeemUploadQuery:
-    processed: Annotated[Optional[bool], Query()] = None
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+class ListAllRedeemUploadQuery(BasePaginationQuery):
+    processed: Optional[bool] = Field(None, description="Process status")
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
     )
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
 class ListAllHoldersSortItem(StrEnum):
@@ -370,59 +358,43 @@ class ListAllHoldersSortItem(StrEnum):
     holder_name = "holder_name"
 
 
-@dataclass
-class ListAllHoldersQuery:
-    include_former_holder: Annotated[bool, Query()] = False
-    balance: Annotated[Optional[int], Query(description="number of balance")] = None
-    balance_operator: Annotated[
-        Optional[ValueOperator],
-        Query(
-            description="search condition of balance(0:equal, 1:greater than or equal, 2:less than or equal）",
-        ),
-    ] = ValueOperator.EQUAL
-    pending_transfer: Annotated[
-        Optional[int], Query(description="number of pending transfer amount")
-    ] = None
-    pending_transfer_operator: Annotated[
-        Optional[ValueOperator],
-        Query(
-            description="search condition of pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
-        ),
-    ] = ValueOperator.EQUAL
-    locked: Annotated[Optional[int], Query(description="number of locked amount")] = (
-        None
+class ListAllHoldersQuery(BasePaginationQuery):
+    include_former_holder: bool = Field(default=False)
+    balance: Optional[int] = Field(None, description="Token balance")
+    balance_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Search condition of balance(0:equal, 1:greater than or equal, 2:less than or equal）",
     )
-    locked_operator: Annotated[
-        Optional[ValueOperator],
-        Query(
-            description="search condition of locked amount(0:equal, 1:greater than or equal, 2:less than or equal）",
-        ),
-    ] = ValueOperator.EQUAL
-    balance_and_pending_transfer: Annotated[
-        Optional[int],
-        Query(description="number of balance plus pending transfer amount"),
-    ] = None
-    balance_and_pending_transfer_operator: Annotated[
-        Optional[ValueOperator],
-        Query(
-            description="search condition of balance plus pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
-        ),
-    ] = ValueOperator.EQUAL
-    account_address: Annotated[
-        Optional[str], Query(description="account address(partial match)")
-    ] = None
-    holder_name: Annotated[
-        Optional[str], Query(description="holder name(partial match)")
-    ] = None
-    key_manager: Annotated[
-        Optional[str], Query(description="key manager(partial match)")
-    ] = None
+    pending_transfer: Optional[int] = Field(None, description="Pending transfer amount")
+    pending_transfer_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Search condition of pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
+    )
+    locked: Optional[int] = Field(None, description="Locked amount")
+    locked_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="search condition of locked amount(0:equal, 1:greater than or equal, 2:less than or equal）",
+    )
+
+    balance_and_pending_transfer: Optional[int] = Field(
+        None, description="number of balance plus pending transfer amount"
+    )
+    balance_and_pending_transfer_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="search condition of balance plus pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
+    )
+    account_address: Optional[str] = Field(
+        None, description="account address(partial match)"
+    )
+    holder_name: Optional[str] = Field(None, description="holder name(partial match)")
+    key_manager: Optional[str] = Field(None, description="key manager(partial match)")
+
     sort_item: Annotated[ListAllHoldersSortItem, Query(description="Sort Item")] = (
         ListAllHoldersSortItem.created
     )
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = SortOrder.ASC
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.ASC, description=SortOrder.__doc__
+    )
 
 
 class ListAllTokenLockEventsSortItem(StrEnum):
@@ -433,29 +405,19 @@ class ListAllTokenLockEventsSortItem(StrEnum):
     block_timestamp = "block_timestamp"
 
 
-@dataclass
-class ListAllTokenLockEventsQuery:
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+class ListAllTokenLockEventsQuery(BasePaginationQuery):
+    account_address: Optional[str] = Field(None, description="Account address")
+    msg_sender: Optional[str] = Field(None, description="Msg sender")
+    lock_address: Optional[str] = Field(None, description="Lock address")
+    recipient_address: Optional[str] = Field(None, description="Recipient address")
+    category: Optional[LockEventCategory] = Field(None, description="Event category")
 
-    account_address: Annotated[Optional[str], Query(description="Account address")] = (
-        None
+    sort_item: Optional[ListAllTokenLockEventsSortItem] = Field(
+        ListAllTokenLockEventsSortItem.block_timestamp, description="Sort item"
     )
-    msg_sender: Annotated[Optional[str], Query(description="Msg sender")] = None
-    lock_address: Annotated[Optional[str], Query(description="Lock address")] = None
-    recipient_address: Annotated[
-        Optional[str], Query(description="Recipient address")
-    ] = None
-    category: Annotated[
-        Optional[LockEventCategory], Query(description="Event category")
-    ] = None
-
-    sort_item: Annotated[
-        ListAllTokenLockEventsSortItem, Query(description="Sort item")
-    ] = ListAllTokenLockEventsSortItem.block_timestamp
-    sort_order: Annotated[
-        SortOrder, Query(description="Sort order(0: ASC, 1: DESC)")
-    ] = SortOrder.DESC
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
+    )
 
 
 class TokenUpdateOperationCategory(StrEnum):
@@ -472,28 +434,26 @@ class ListTokenHistorySortItem(StrEnum):
     operation_category = "operation_category"
 
 
-@dataclass
-class ListTokenOperationLogHistoryQuery:
-    modified_contents: Annotated[
-        Optional[str], Query(description="Modified contents query")
-    ] = None
-    operation_category: Annotated[
-        Optional[TokenUpdateOperationCategory], Query(description="Trigger of change")
-    ] = None
-    created_from: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
-    ] = None
-    created_to: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="created datetime (To)")
-    ] = None
-    sort_item: Annotated[ListTokenHistorySortItem, Query(description="Sort item")] = (
-        ListTokenHistorySortItem.created
+class ListTokenOperationLogHistoryQuery(BasePaginationQuery):
+    modified_contents: Optional[str] = Field(
+        None, description="Modified contents query"
     )
-    sort_order: Annotated[
-        SortOrder, Query(description="Sort order(0: ASC, 1: DESC)")
-    ] = SortOrder.DESC
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+    operation_category: Optional[TokenUpdateOperationCategory] = Field(
+        None, description="Trigger of change"
+    )
+    created_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (From)"
+    )
+    created_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (To)"
+    )
+
+    sort_item: Optional[ListTokenHistorySortItem] = Field(
+        ListTokenHistorySortItem.created, description="Sort item"
+    )
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
+    )
 
 
 ############################
