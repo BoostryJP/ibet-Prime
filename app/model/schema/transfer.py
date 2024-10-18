@@ -19,14 +19,16 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import IntEnum, StrEnum
-from typing import Annotated, List, Optional
+from typing import List, Optional
 
-from fastapi import Query
-from pydantic import BaseModel, Field, NonNegativeInt
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Field
 
-from app.model.schema.base import ResultSet, SortOrder
-from app.model.schema.base.base import ValueOperator
+from app.model.schema.base import (
+    BasePaginationQuery,
+    ResultSet,
+    SortOrder,
+    ValueOperator,
+)
 
 from .personal_info import PersonalInfo
 
@@ -61,49 +63,36 @@ class ListTransferHistorySortItem(StrEnum):
     AMOUNT = "amount"
 
 
-@dataclass
-class ListTransferHistoryQuery:
-    block_timestamp_from: Annotated[
-        Optional[datetime], Query(description="block timestamp (From)")
-    ] = None
-    block_timestamp_to: Annotated[
-        Optional[datetime], Query(descriptio0n="block timestamp (To)")
-    ] = None
-    from_address: Annotated[
-        Optional[str], Query(description="transfer source address")
-    ] = None
-    to_address: Annotated[
-        Optional[str], Query(description="transfer destination address")
-    ] = None
-    from_address_name: Annotated[
-        Optional[str], Query(description="name of transfer source address")
-    ] = None
-    to_address_name: Annotated[
-        Optional[str], Query(description="name of transfer destination address")
-    ] = None
-    amount: Annotated[Optional[int], Query(description="transfer amount")] = None
-    amount_operator: Annotated[
-        Optional[ValueOperator],
-        Query(
-            description="value filter condition(0: equal, 1: greater than, 2: less than)",
-        ),
-    ] = ValueOperator.EQUAL
-    source_event: Annotated[
-        Optional[TransferSourceEventType], Query(description="source event of transfer")
-    ] = None
-    data: Annotated[Optional[str], Query(description="source event data")] = None
+class ListTransferHistoryQuery(BasePaginationQuery):
+    block_timestamp_from: Optional[datetime] = Field(
+        None, description="Block timestamp (From)"
+    )
+    block_timestamp_to: Optional[datetime] = Field(
+        None, description="Block timestamp (To)"
+    )
+    from_address: Optional[str] = Field(None, description="Transfer source address")
+    to_address: Optional[str] = Field(None, description="Transfer destination address")
+    from_address_name: Optional[str] = Field(
+        None, description="Name of transfer source address"
+    )
+    to_address_name: Optional[str] = Field(
+        None, description="Name of transfer destination address"
+    )
+    amount: Optional[int] = Field(None, description="Transfer amount")
+    amount_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Value filter condition(0: equal, 1: greater than, 2: less than)",
+    )
+    source_event: Optional[TransferSourceEventType] = Field(
+        None, description="Source event of transfer"
+    )
+    data: Optional[str] = Field(None, description="source event data")
 
-    sort_item: Annotated[
-        ListTransferHistorySortItem, Query(description="sort item")
-    ] = ListTransferHistorySortItem.BLOCK_TIMESTAMP
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+    sort_item: Optional[ListTransferHistorySortItem] = Field(
+        ListTransferHistorySortItem.BLOCK_TIMESTAMP, description="Sort item"
     )
-    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
-        None
-    )
-    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
-        None
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
     )
 
 
@@ -130,25 +119,22 @@ class ListTransferApprovalHistorySortItem(StrEnum):
     STATUS = "status"
 
 
-@dataclass
-class ListTransferApprovalHistoryQuery:
-    from_address: Annotated[Optional[str], Query()] = None
-    to_address: Annotated[Optional[str], Query()] = None
-    status: Annotated[
-        Optional[List[TransferApprovalStatus]],
-        Query(description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"),
-    ] = None
-    sort_item: Annotated[Optional[ListTransferApprovalHistorySortItem], Query()] = (
+class ListTransferApprovalHistoryQuery(BasePaginationQuery):
+    pass
+
+
+class ListSpecificTokenTransferApprovalHistoryQuery(BasePaginationQuery):
+    from_address: Optional[str] = Field(None, description="Transfer from")
+    to_address: Optional[str] = Field(None, description="Transfer to")
+    status: Optional[List[TransferApprovalStatus]] = Field(
+        None, description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"
+    )
+
+    sort_item: Optional[ListTransferApprovalHistorySortItem] = Field(
         ListTransferApprovalHistorySortItem.ID
     )
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
-    )
-    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
-        None
-    )
-    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
-        None
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
     )
 
 

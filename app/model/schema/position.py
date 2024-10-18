@@ -18,21 +18,18 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
-from typing import Annotated, List, Optional
+from typing import List, Optional
 
-from fastapi import Query
 from pydantic import BaseModel, Field, PositiveInt, RootModel
-from pydantic.dataclasses import dataclass
 
 from app.model import EthereumAddress
 
-from .base import ResultSet, SortOrder, TokenType
+from .base import BasePaginationQuery, ResultSet, SortOrder, TokenType
+
 
 ############################
 # COMMON
 ############################
-
-
 class Position(BaseModel):
     """Position"""
 
@@ -86,8 +83,6 @@ class LockEvent(BaseModel):
 ############################
 # REQUEST
 ############################
-
-
 class ListAllLockEventsSortItem(StrEnum):
     token_address = "token_address"
     lock_address = "lock_address"
@@ -96,28 +91,20 @@ class ListAllLockEventsSortItem(StrEnum):
     block_timestamp = "block_timestamp"
 
 
-@dataclass
-class ListAllLockEventsQuery:
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+class ListAllLockEventsQuery(BasePaginationQuery):
+    token_address: Optional[str] = Field(None, description="Token address")
+    token_type: Optional[TokenType] = Field(None, description="Token type")
+    msg_sender: Optional[str] = Field(None, description="Msg sender")
+    lock_address: Optional[str] = Field(None, description="Lock address")
+    recipient_address: Optional[str] = Field(None, description="Recipient address")
+    category: Optional[LockEventCategory] = Field(None, description="Event category")
 
-    token_address: Annotated[Optional[str], Query(description="Token address")] = None
-    token_type: Annotated[Optional[TokenType], Query(description="Token type")] = None
-    msg_sender: Annotated[Optional[str], Query(description="Msg sender")] = None
-    lock_address: Annotated[Optional[str], Query(description="Lock address")] = None
-    recipient_address: Annotated[
-        Optional[str], Query(description="Recipient address")
-    ] = None
-    category: Annotated[
-        Optional[LockEventCategory], Query(description="Event category")
-    ] = None
-
-    sort_item: Annotated[ListAllLockEventsSortItem, Query(description="Sort item")] = (
-        ListAllLockEventsSortItem.block_timestamp
+    sort_item: Optional[ListAllLockEventsSortItem] = Field(
+        ListAllLockEventsSortItem.block_timestamp, description="Sort item"
     )
-    sort_order: Annotated[
-        SortOrder, Query(description="Sort order(0: ASC, 1: DESC)")
-    ] = SortOrder.DESC
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
+    )
 
 
 class ForceUnlockRequest(BaseModel):

@@ -4169,13 +4169,6 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "enum",
-                    "loc": ["query", "status", 0],
-                    "msg": "Input should be 0, 1, 2 or 3",
-                    "input": "a",
-                    "ctx": {"expected": "0, 1, 2 or 3"},
-                },
-                {
                     "type": "int_parsing",
                     "loc": ["query", "offset"],
                     "msg": "Input should be a valid integer, unable to parse string as an integer",
@@ -4186,6 +4179,13 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                     "loc": ["query", "limit"],
                     "msg": "Input should be a valid integer, unable to parse string as an integer",
                     "input": "d",
+                },
+                {
+                    "type": "enum",
+                    "loc": ["query", "status", 0],
+                    "msg": "Input should be 0, 1, 2 or 3",
+                    "input": "a",
+                    "ctx": {"expected": "0, 1, 2 or 3"},
                 },
             ],
         }

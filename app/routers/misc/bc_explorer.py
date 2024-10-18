@@ -17,10 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Any, Dict, Sequence, Tuple
+from typing import Annotated, Any, Dict, Sequence, Tuple
 
 from eth_utils import to_checksum_address
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import desc, func, select
 from web3.contract.contract import ContractFunction
 
@@ -63,7 +63,7 @@ router = APIRouter(prefix="/blockchain_explorer", tags=["[misc] blockchain_explo
 )
 async def list_block_data(
     db: DBAsyncSession,
-    request_query: ListBlockDataQuery = Depends(),
+    get_query: Annotated[ListBlockDataQuery, Query()],
 ):
     """
     Returns a list of block data within the specified block number range.
@@ -73,12 +73,6 @@ async def list_block_data(
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
-
-    offset = request_query.offset
-    limit = request_query.limit
-    from_block_number = request_query.from_block_number
-    to_block_number = request_query.to_block_number
-    sort_order = request_query.sort_order  # default: asc
 
     # NOTE: The more data, the slower the SELECT COUNT(1) query becomes.
     #       To get total number of block data, latest block number where block data synced is used here.
@@ -94,8 +88,8 @@ async def list_block_data(
             {
                 "result_set": {
                     "count": 0,
-                    "offset": offset,
-                    "limit": limit,
+                    "offset": get_query.offset,
+                    "limit": get_query.limit,
                     "total": 0,
                 },
                 "block_data": [],
@@ -107,29 +101,32 @@ async def list_block_data(
     stmt = select(IDXBlockData)
 
     # Search Filter
-    if from_block_number is not None and to_block_number is not None:
+    if (
+        get_query.from_block_number is not None
+        and get_query.to_block_number is not None
+    ):
         stmt = stmt.where(
-            IDXBlockData.number >= from_block_number,
-            IDXBlockData.number <= to_block_number,
+            IDXBlockData.number >= get_query.from_block_number,
+            IDXBlockData.number <= get_query.to_block_number,
         )
-    elif from_block_number is not None:
-        stmt = stmt.where(IDXBlockData.number >= from_block_number)
-    elif to_block_number is not None:
-        stmt = stmt.where(IDXBlockData.number <= to_block_number)
+    elif get_query.from_block_number is not None:
+        stmt = stmt.where(IDXBlockData.number >= get_query.from_block_number)
+    elif get_query.to_block_number is not None:
+        stmt = stmt.where(IDXBlockData.number <= get_query.to_block_number)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_order == 0:
+    if get_query.sort_order == 0:
         stmt = stmt.order_by(IDXBlockData.number)
     else:
         stmt = stmt.order_by(desc(IDXBlockData.number))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     res_count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
     if res_count > BLOCK_RESPONSE_LIMIT:
@@ -154,8 +151,8 @@ async def list_block_data(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "block_data": block_data,
@@ -175,7 +172,7 @@ async def list_block_data(
 )
 async def get_block_data(
     db: DBAsyncSession,
-    block_number: int = Path(description="Block number", ge=0),
+    block_number: Annotated[int, Path(description="Block number", ge=0)],
 ):
     """
     Returns block data in the specified block number.
@@ -229,7 +226,7 @@ async def get_block_data(
 )
 async def list_tx_data(
     db: DBAsyncSession,
-    request_query: ListTxDataQuery = Depends(),
+    get_query: Annotated[ListTxDataQuery, Query()],
 ):
     """
     Returns a list of transactions by various search parameters.
@@ -240,22 +237,20 @@ async def list_tx_data(
             status_code=404, detail="This URL is not available in the current settings"
         )
 
-    offset = request_query.offset
-    limit = request_query.limit
-    block_number = request_query.block_number
-    from_address = request_query.from_address
-    to_address = request_query.to_address
-
     stmt = select(IDXTxData)
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
-    if block_number is not None:
-        stmt = stmt.where(IDXTxData.block_number == block_number)
-    if from_address is not None:
-        stmt = stmt.where(IDXTxData.from_address == to_checksum_address(from_address))
-    if to_address is not None:
-        stmt = stmt.where(IDXTxData.to_address == to_checksum_address(to_address))
+    if get_query.block_number is not None:
+        stmt = stmt.where(IDXTxData.block_number == get_query.block_number)
+    if get_query.from_address is not None:
+        stmt = stmt.where(
+            IDXTxData.from_address == to_checksum_address(get_query.from_address)
+        )
+    if get_query.to_address is not None:
+        stmt = stmt.where(
+            IDXTxData.to_address == to_checksum_address(get_query.to_address)
+        )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
@@ -263,10 +258,10 @@ async def list_tx_data(
     stmt = stmt.order_by(desc(IDXTxData.created))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     res_count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
     if res_count > TX_RESPONSE_LIMIT:
@@ -290,8 +285,8 @@ async def list_tx_data(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "tx_data": tx_data,
@@ -310,8 +305,7 @@ async def list_tx_data(
     responses=get_routers_responses(404),
 )
 async def get_tx_data(
-    db: DBAsyncSession,
-    hash: str = Path(description="Transaction hash"),
+    db: DBAsyncSession, hash: Annotated[str, Path(description="Transaction hash")]
 ):
     """
     Searching for the transaction by transaction hash

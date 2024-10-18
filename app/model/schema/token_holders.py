@@ -19,15 +19,18 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from enum import StrEnum
-from typing import Annotated, List, Optional
+from typing import List, Optional
 
-from fastapi import Query
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.model import ValidatedDatetimeStr
 from app.model.db import TokenHolderBatchStatus
-from app.model.schema.base import ResultSet, SortOrder, ValueOperator
+from app.model.schema.base import (
+    BasePaginationQuery,
+    ResultSet,
+    SortOrder,
+    ValueOperator,
+)
 from app.model.schema.personal_info import (
     PersonalInfo,
     PersonalInfoEventType,
@@ -45,71 +48,47 @@ class ListTokenHoldersPersonalInfoSortItem(StrEnum):
     modified = "modified"
 
 
-@dataclass
-class ListTokenHoldersPersonalInfoQuery:
-    account_address: Annotated[Optional[str], Query(description="account address")] = (
-        None
+class ListTokenHoldersPersonalInfoQuery(BasePaginationQuery):
+    account_address: Optional[str] = Field(None, description="Account address")
+    created_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (From)"
     )
-    created_from: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
-    ] = None
-    created_to: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="created datetime (To)")
-    ] = None
-    modified_from: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="modified datetime (From)")
-    ] = None
-    modified_to: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="modified datetime (To)")
-    ] = None
-
-    sort_item: Annotated[
-        ListTokenHoldersPersonalInfoSortItem, Query(description="sort item")
-    ] = ListTokenHoldersPersonalInfoSortItem.created
-    sort_order: Annotated[
-        Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
-    ] = SortOrder.ASC
-
-    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
-        None
+    created_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (To)"
     )
-    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
-        None
+    modified_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Modified datetime (From)"
+    )
+    modified_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Modified datetime (To)"
+    )
+
+    sort_item: Optional[ListTokenHoldersPersonalInfoSortItem] = Field(
+        ListTokenHoldersPersonalInfoSortItem.created, description="Sort item"
+    )
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.ASC, description=SortOrder.__doc__
     )
 
 
-@dataclass
-class ListTokenHoldersPersonalInfoHistoryQuery:
-    account_address: Annotated[Optional[str], Query(description="account address")] = (
-        None
+class ListTokenHoldersPersonalInfoHistoryQuery(BasePaginationQuery):
+    account_address: Optional[str] = Field(None, description="Account address")
+    event_type: Optional[PersonalInfoEventType] = Field(None, description="event type")
+    block_timestamp_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="block timestamp datetime (From)"
     )
-    event_type: Annotated[
-        Optional[PersonalInfoEventType], Query(description="event type")
-    ] = None
-    block_timestamp_from: Annotated[
-        Optional[ValidatedDatetimeStr],
-        Query(description="block timestamp datetime (From)"),
-    ] = None
-    block_timestamp_to: Annotated[
-        Optional[ValidatedDatetimeStr],
-        Query(description="block timestamp datetime (To)"),
-    ] = None
-    created_from: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="created datetime (From)")
-    ] = None
-    created_to: Annotated[
-        Optional[ValidatedDatetimeStr], Query(description="created datetime (To)")
-    ] = None
-
-    sort_order: Annotated[
-        Optional[SortOrder], Query(description="sort order (0: ASC, 1: DESC)")
-    ] = SortOrder.ASC
-
-    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
-        None
+    block_timestamp_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="block timestamp datetime (To)"
     )
-    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
-        None
+    created_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (From)"
+    )
+    created_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (To)"
+    )
+
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.ASC, description=SortOrder.__doc__
     )
 
 
@@ -147,39 +126,29 @@ class RetrieveTokenHoldersCollectionSortItem(StrEnum):
     holder_name = "tax_category"
 
 
-@dataclass
-class RetrieveTokenHoldersCollectionQuery:
-    hold_balance: Annotated[
-        Optional[int], Query(description="number of hold balance")
-    ] = None
-    hold_balance_operator: Annotated[
-        Optional[ValueOperator],
-        Query(
-            description="search condition of hold balance(0:equal, 1:greater than or equal, 2:less than or equal）",
-        ),
-    ] = ValueOperator.EQUAL
-    locked_balance: Annotated[
-        Optional[int], Query(description="number of locked balance")
-    ] = None
-    locked_balance_operator: Annotated[
-        Optional[ValueOperator],
-        Query(
-            description="search condition of locked balance(0:equal, 1:greater than or equal, 2:less than or equal）",
-        ),
-    ] = ValueOperator.EQUAL
-    account_address: Annotated[
-        Optional[str], Query(description="account address(partial match)")
-    ] = None
-    key_manager: Annotated[
-        Optional[str], Query(description="key manager(partial match)")
-    ] = None
-    tax_category: Annotated[Optional[int], Query(description="tax category")] = None
-    sort_item: Annotated[
-        RetrieveTokenHoldersCollectionSortItem, Query(description="Sort Item")
-    ] = RetrieveTokenHoldersCollectionSortItem.account_address
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = SortOrder.ASC
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+class RetrieveTokenHoldersCollectionQuery(BasePaginationQuery):
+    hold_balance: Optional[int] = Field(None, description="Hold balance")
+    hold_balance_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Search condition of hold balance(0:equal, 1:greater than or equal, 2:less than or equal）",
+    )
+    locked_balance: Optional[int] = Field(None, description="Locked balance")
+    locked_balance_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Search condition of locked balance(0:equal, 1:greater than or equal, 2:less than or equal）",
+    )
+    account_address: Optional[str] = Field(
+        None, description="Account address(partial match)"
+    )
+    key_manager: Optional[str] = Field(None, description="Key manager(partial match)")
+    tax_category: Optional[int] = Field(None, description="Tax category")
+
+    sort_item: Optional[RetrieveTokenHoldersCollectionSortItem] = Field(
+        RetrieveTokenHoldersCollectionSortItem.account_address, description="Sort item"
+    )
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.ASC, description=SortOrder.__doc__
+    )
 
 
 ############################

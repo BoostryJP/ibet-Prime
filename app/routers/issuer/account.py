@@ -21,7 +21,7 @@ import hashlib
 import re
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import List, Optional, Sequence
+from typing import Annotated, List, Optional, Sequence
 
 import boto3
 import eth_keyfile
@@ -29,7 +29,7 @@ import pytz
 from coincurve import PublicKey
 from Crypto.PublicKey import RSA
 from eth_utils import keccak, to_checksum_address
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError, OperationalError
@@ -193,7 +193,7 @@ async def list_all_issuers(db: DBAsyncSession):
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-async def retrieve_issuer(db: DBAsyncSession, issuer_address: str):
+async def retrieve_issuer(db: DBAsyncSession, issuer_address: Annotated[str, Path()]):
     """Retrieve an issuer account"""
 
     _account = (
@@ -221,7 +221,7 @@ async def retrieve_issuer(db: DBAsyncSession, issuer_address: str):
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-async def delete_issuer(db: DBAsyncSession, issuer_address: str):
+async def delete_issuer(db: DBAsyncSession, issuer_address: Annotated[str, Path()]):
     """Logically delete an issuer account"""
 
     _account = (
@@ -255,7 +255,7 @@ async def delete_issuer(db: DBAsyncSession, issuer_address: str):
 )
 async def change_issuer_eoa_password(
     db: DBAsyncSession,
-    issuer_address: str,
+    issuer_address: Annotated[str, Path()],
     data: AccountChangeEOAPasswordRequest,
 ):
     """Change Issuer's EOA-Password"""
@@ -318,7 +318,7 @@ async def change_issuer_eoa_password(
 )
 async def create_issuer_rsa_key(
     db: DBAsyncSession,
-    issuer_address: str,
+    issuer_address: Annotated[str, Path()],
     data: AccountGenerateRsaKeyRequest,
 ):
     """Create issuer's RSA key"""
@@ -392,7 +392,7 @@ async def create_issuer_rsa_key(
 )
 async def change_issuer_rsa_passphrase(
     db: DBAsyncSession,
-    issuer_address: str,
+    issuer_address: Annotated[str, Path()],
     data: AccountChangeRSAPassphraseRequest,
 ):
     """Change issuer's RSA-Passphrase"""
@@ -455,8 +455,8 @@ async def generate_issuer_auth_token(
     db: DBAsyncSession,
     request: Request,
     data: AccountAuthTokenRequest,
-    issuer_address: str,
-    eoa_password: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Path()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
 ):
     """Generate issuer's auth token"""
 
@@ -541,9 +541,9 @@ async def generate_issuer_auth_token(
 async def delete_issuer_auth_token(
     db: DBAsyncSession,
     request: Request,
-    issuer_address: str,
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Path()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Delete issuer's auth token"""
 
@@ -587,7 +587,7 @@ async def delete_issuer_auth_token(
 )
 async def create_child_account(
     db: DBAsyncSession,
-    issuer_address: str,
+    issuer_address: Annotated[str, Path()],
     account_req: CreateUpdateChildAccountRequest,
 ):
     """Create the child account"""
@@ -676,8 +676,8 @@ async def create_child_account(
 )
 async def list_all_child_account(
     db: DBAsyncSession,
-    issuer_address: str,
-    get_query: ListAllChildAccountQuery = Depends(),
+    issuer_address: Annotated[str, Path()],
+    get_query: Annotated[ListAllChildAccountQuery, Query()],
 ):
     """List all child accounts"""
 
@@ -756,7 +756,9 @@ async def list_all_child_account(
     responses=get_routers_responses(404),
 )
 async def retrieve_child_account(
-    db: DBAsyncSession, issuer_address: str, child_account_index: int
+    db: DBAsyncSession,
+    issuer_address: Annotated[str, Path()],
+    child_account_index: Annotated[int, Path()],
 ):
     """Retrieve the child account"""
 
@@ -819,8 +821,8 @@ async def retrieve_child_account(
 )
 async def update_child_account(
     db: DBAsyncSession,
-    issuer_address: str,
-    child_account_index: int,
+    issuer_address: Annotated[str, Path()],
+    child_account_index: Annotated[int, Path()],
     account_req: CreateUpdateChildAccountRequest,
 ):
     """Update the personal information of the child account"""
@@ -892,7 +894,9 @@ async def update_child_account(
     responses=get_routers_responses(404),
 )
 async def delete_child_account(
-    db: DBAsyncSession, issuer_address: str, child_account_index: int
+    db: DBAsyncSession,
+    issuer_address: Annotated[str, Path()],
+    child_account_index: Annotated[int, Path()],
 ):
     """Delete the child account and its off-chain personal information"""
 

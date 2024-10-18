@@ -20,11 +20,11 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import List, Optional, Sequence
+from typing import Annotated, List, Optional, Sequence
 
 import pytz
 from eth_keyfile import decode_keyfile_json
-from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import (
     String,
@@ -142,6 +142,7 @@ from app.model.schema import (
     ListBulkTransferQuery,
     ListBulkTransferUploadQuery,
     ListRedeemHistoryQuery,
+    ListSpecificTokenTransferApprovalHistoryQuery,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
     ListTransferApprovalHistoryQuery,
@@ -194,9 +195,9 @@ async def issue_share_token(
     db: DBAsyncSession,
     request: Request,
     token: IbetShareCreate,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Issue ibetShare token"""
 
@@ -289,7 +290,7 @@ async def issue_share_token(
         try:
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=contract_address,
-                token_template=TokenType.IBET_SHARE.value,
+                token_template=TokenType.IBET_SHARE,
                 tx_from=issuer_address,
                 private_key=private_key,
             )
@@ -358,7 +359,7 @@ async def issue_share_token(
 )
 async def list_all_share_tokens(
     db: DBAsyncSession,
-    issuer_address: Optional[str] = Header(None),
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all issued share tokens"""
 
@@ -405,7 +406,9 @@ async def list_all_share_tokens(
     response_model=IbetShareResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-async def retrieve_share_token(db: DBAsyncSession, token_address: str):
+async def retrieve_share_token(
+    db: DBAsyncSession, token_address: Annotated[str, Path()]
+):
     """Retrieve the share token"""
     # Get Token
     _token: Token | None = (
@@ -456,11 +459,11 @@ async def retrieve_share_token(db: DBAsyncSession, token_address: str):
 async def update_share_token(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     update_data: IbetShareUpdate,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Update the share token"""
 
@@ -547,8 +550,8 @@ async def update_share_token(
 )
 async def list_share_operation_log_history(
     db: DBAsyncSession,
-    token_address: str,
-    request_query: ListTokenOperationLogHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    request_query: Annotated[ListTokenOperationLogHistoryQuery, Query()],
 ):
     """List all share token operation log history"""
     stmt = select(TokenUpdateOperationLog).where(
@@ -637,15 +640,10 @@ async def list_share_operation_log_history(
 )
 async def list_share_additional_issuance_history(
     db: DBAsyncSession,
-    token_address: str,
-    request_query: ListAdditionalIssuanceHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    request_query: Annotated[ListAdditionalIssuanceHistoryQuery, Query()],
 ):
     """List share additional issuance history"""
-    sort_item = request_query.sort_item
-    sort_order = request_query.sort_order
-    offset = request_query.offset
-    limit = request_query.limit
-
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -676,20 +674,20 @@ async def list_share_additional_issuance_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
-    if sort_order == 0:  # ASC
+    sort_attr = getattr(IDXIssueRedeem, request_query.sort_item, None)
+    if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+    if request_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
 
     _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
@@ -711,8 +709,8 @@ async def list_share_additional_issuance_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": request_query.offset,
+                "limit": request_query.limit,
                 "total": total,
             },
             "history": history,
@@ -738,11 +736,11 @@ async def list_share_additional_issuance_history(
 async def issuer_additional_share(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: IbetShareAdditionalIssue,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Issuer additional shares"""
 
@@ -809,9 +807,9 @@ async def issuer_additional_share(
 )
 async def list_all_batch_additional_share_issue(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListAllAdditionalIssueUploadQuery = Depends(),
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListAllAdditionalIssueUploadQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all share batch additional issues"""
     # Get a list of uploads
@@ -885,11 +883,11 @@ async def list_all_batch_additional_share_issue(
 async def issue_additional_shares_in_batch(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: List[IbetShareAdditionalIssue],
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Issue additional shares in batch"""
 
@@ -967,9 +965,9 @@ async def issue_additional_shares_in_batch(
 )
 async def retrieve_batch_additional_share_issue_status(
     db: DBAsyncSession,
-    token_address: str,
-    batch_id: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    batch_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve detailed status of additional share batch issuance"""
 
@@ -1054,8 +1052,8 @@ async def retrieve_batch_additional_share_issue_status(
 )
 async def list_share_redeem_history(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListRedeemHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListRedeemHistoryQuery, Query()],
 ):
     """List share redemption history"""
     # Get token
@@ -1088,7 +1086,7 @@ async def list_share_redeem_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, get_query.sort_item.value, None)
+    sort_attr = getattr(IDXIssueRedeem, get_query.sort_item, None)
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
@@ -1150,11 +1148,11 @@ async def list_share_redeem_history(
 async def redeem_share(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: IbetShareRedeem,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Redeem share token"""
 
@@ -1221,9 +1219,9 @@ async def redeem_share(
 )
 async def list_all_batch_share_redemption(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListAllRedeemUploadQuery = Depends(),
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListAllRedeemUploadQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all batch share redemptions"""
     # Get a list of uploads
@@ -1298,11 +1296,11 @@ async def list_all_batch_share_redemption(
 async def redeem_shares_in_batch(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: List[IbetShareRedeem],
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Redeem shares in batch"""
 
@@ -1380,9 +1378,9 @@ async def redeem_shares_in_batch(
 )
 async def retrieve_batch_redeem(
     db: DBAsyncSession,
-    token_address: str,
-    batch_id: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    batch_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve detailed status of batch share redemption"""
 
@@ -1466,8 +1464,8 @@ async def retrieve_batch_redeem(
 )
 async def list_all_scheduled_share_token_update_events(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all scheduled share token update events"""
 
@@ -1539,11 +1537,11 @@ async def list_all_scheduled_share_token_update_events(
 async def schedule_share_token_update_event(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     event_data: IbetShareScheduledUpdate,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Schedule a new share token update event"""
 
@@ -1623,11 +1621,11 @@ async def schedule_share_token_update_event(
 async def schedule_share_token_update_events_in_batch(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     event_data_list: list[IbetShareScheduledUpdate],
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Schedule share token update events in batch"""
 
@@ -1703,9 +1701,9 @@ async def schedule_share_token_update_events_in_batch(
 )
 async def retrieve_scheduled_share_token_update_event(
     db: DBAsyncSession,
-    token_address: str,
-    scheduled_event_id: str,
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    scheduled_event_id: Annotated[str, Path()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """Retrieve a scheduled share token update event"""
 
@@ -1771,11 +1769,11 @@ async def retrieve_scheduled_share_token_update_event(
 async def delete_scheduled_share_token_update_event(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
-    scheduled_event_id: str,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    scheduled_event_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Delete a scheduled share token update event"""
 
@@ -1842,9 +1840,9 @@ async def delete_scheduled_share_token_update_event(
 )
 async def list_all_share_token_holders(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListAllHoldersQuery = Depends(),
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListAllHoldersQuery, Query()],
+    issuer_address: Annotated[str, Header()],
 ):
     """List all share token holders"""
     # Validate Headers
@@ -2096,8 +2094,8 @@ async def list_all_share_token_holders(
 )
 async def count_share_token_holders(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Count the number of share token holders"""
 
@@ -2175,9 +2173,9 @@ async def count_share_token_holders(
 )
 async def retrieve_share_token_holder(
     db: DBAsyncSession,
-    token_address: str,
-    account_address: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    account_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve share token holder"""
 
@@ -2333,11 +2331,11 @@ async def retrieve_share_token_holder(
 async def register_share_token_holder_personal_info(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     personal_info: RegisterPersonalInfoRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Register personal information of share token holders"""
 
@@ -2404,9 +2402,9 @@ async def register_share_token_holder_personal_info(
 )
 async def list_all_share_token_batch_personal_info_registration(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: str = Header(...),
-    get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    get_query: Annotated[ListAllPersonalInfoBatchRegistrationUploadQuery, Query()],
 ):
     """List all personal information batch registration"""
     # Verify that the token is issued by the issuer_address
@@ -2493,11 +2491,11 @@ async def list_all_share_token_batch_personal_info_registration(
 async def initiate_share_token_batch_personal_info_registration(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     personal_info_list: List[RegisterPersonalInfoRequest],
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Initiate share token batch personal information registration"""
 
@@ -2577,9 +2575,9 @@ async def initiate_share_token_batch_personal_info_registration(
 )
 async def retrieve_share_token_personal_info_batch_registration_status(
     db: DBAsyncSession,
-    token_address: str,
-    batch_id: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    batch_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve the status of share token personal information batch registration"""
 
@@ -2647,9 +2645,9 @@ async def retrieve_share_token_personal_info_batch_registration_status(
 )
 async def list_share_token_lock_unlock_events(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: Optional[str] = Header(None),
-    request_query: ListAllTokenLockEventsQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    request_query: Annotated[ListAllTokenLockEventsQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all lock/unlock share token events"""
 
@@ -2841,9 +2839,9 @@ async def transfer_share_token_ownership(
     db: DBAsyncSession,
     request: Request,
     token: IbetShareTransfer,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Transfer share token ownership"""
 
@@ -2909,8 +2907,8 @@ async def transfer_share_token_ownership(
 )
 async def list_share_token_transfer_history(
     db: DBAsyncSession,
-    token_address: str,
-    query: ListTransferHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    query: Annotated[ListTransferHistoryQuery, Query()],
 ):
     """List share token transfer history"""
     # Check if the token has been issued
@@ -3072,9 +3070,8 @@ async def list_share_token_transfer_history(
 )
 async def list_all_share_token_transfer_approval_history(
     db: DBAsyncSession,
-    issuer_address: Optional[str] = Header(None),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: Annotated[ListTransferApprovalHistoryQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all share token transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
@@ -3157,10 +3154,10 @@ async def list_all_share_token_transfer_approval_history(
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _transfer_approvals = (await db.execute(stmt)).tuples().all()
 
@@ -3190,8 +3187,8 @@ async def list_all_share_token_transfer_approval_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "transfer_approvals": transfer_approvals,
@@ -3208,8 +3205,8 @@ async def list_all_share_token_transfer_approval_history(
 )
 async def list_specific_share_token_transfer_approval_history(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListTransferApprovalHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListSpecificTokenTransferApprovalHistoryQuery, Query()],
 ):
     """List specific share token transfer approval history"""
     # Get token
@@ -3509,12 +3506,12 @@ async def list_specific_share_token_transfer_approval_history(
 async def update_share_token_transfer_approval_status(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
-    id: int,
     data: UpdateTransferApprovalRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    id: Annotated[int, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Update share token transfer approval status"""
 
@@ -3735,8 +3732,8 @@ async def update_share_token_transfer_approval_status(
 )
 async def retrieve_share_token_transfer_approval_status(
     db: DBAsyncSession,
-    token_address: str,
-    id: int,
+    token_address: Annotated[str, Path()],
+    id: Annotated[int, Path()],
 ):
     """Retrieve share token transfer approval status"""
     # Get token
@@ -3967,9 +3964,9 @@ async def bulk_transfer_share_token_ownership(
     db: DBAsyncSession,
     request: Request,
     transfer_req: IbetShareBulkTransferRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Bulk transfer share token ownership
 
@@ -4062,8 +4059,8 @@ async def bulk_transfer_share_token_ownership(
 )
 async def list_share_token_bulk_transfers(
     db: DBAsyncSession,
-    issuer_address: Optional[str] = Header(None),
-    get_query: ListBulkTransferUploadQuery = Depends(),
+    get_query: Annotated[ListBulkTransferUploadQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List share token bulk transfers"""
 
@@ -4143,9 +4140,9 @@ async def list_share_token_bulk_transfers(
 )
 async def retrieve_share_token_bulk_transfer(
     db: DBAsyncSession,
-    upload_id: str,
-    issuer_address: Optional[str] = Header(None),
-    get_query: ListBulkTransferQuery = Depends(),
+    upload_id: Annotated[str, Path()],
+    get_query: Annotated[ListBulkTransferQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """Retrieve share token bulk transfer upload records"""
 

@@ -1106,6 +1106,18 @@ class TestListBondOperationLogHistory:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "type": "int_parsing",
+                    "loc": ["query", "offset"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
+                },
+                {
+                    "type": "int_parsing",
+                    "loc": ["query", "limit"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
+                },
+                {
                     "type": "enum",
                     "loc": ["query", "operation_category"],
                     "msg": "Input should be 'Issue' or 'Update'",
@@ -1125,18 +1137,6 @@ class TestListBondOperationLogHistory:
                     "msg": "Input should be 0 or 1",
                     "input": "test",
                     "ctx": {"expected": "0 or 1"},
-                },
-                {
-                    "type": "int_parsing",
-                    "loc": ["query", "offset"],
-                    "msg": "Input should be a valid integer, unable to parse string as an integer",
-                    "input": "test",
-                },
-                {
-                    "type": "int_parsing",
-                    "loc": ["query", "limit"],
-                    "msg": "Input should be a valid integer, unable to parse string as an integer",
-                    "input": "test",
                 },
             ],
         }

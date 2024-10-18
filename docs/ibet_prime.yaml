@@ -461,16 +461,6 @@ paths:
           schema:
             type: string
             title: Issuer Address
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: The sort order of the child_account_index. 0:asc, 1:desc
-            default: 0
-            title: Sort Order
-          description: The sort order of the child_account_index. 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -479,9 +469,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -490,9 +480,20 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: The sort order of the child_account_index. 0:asc, 1:desc
+            default: 0
+            title: Sort Order
+          description: The sort order of the child_account_index. 0:asc, 1:desc
       responses:
         '200':
           description: Successful Response
@@ -825,6 +826,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: modified_contents
           in: query
           required: false
@@ -852,9 +875,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: created datetime (From)
+            description: Created datetime (From)
             title: Created From
-          description: created datetime (From)
+          description: Created datetime (From)
         - name: created_to
           in: query
           required: false
@@ -862,15 +885,16 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: created datetime (To)
+            description: Created datetime (To)
             title: Created To
-          description: created datetime (To)
+          description: Created datetime (To)
         - name: sort_item
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/ListTokenHistorySortItem'
+              - type: 'null'
             description: Sort item
             default: created
             title: Sort Item
@@ -879,34 +903,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 'Sort order(0: ASC, 1: DESC)'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 'Sort order(0: ASC, 1: DESC)'
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -941,24 +944,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: sort_item
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/IssueRedeemSortItem'
-            default: block_timestamp
-            title: Sort Item
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -967,9 +952,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -978,9 +963,29 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/IssueRedeemSortItem'
+              - type: 'null'
+            default: block_timestamp
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -1097,24 +1102,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: processed
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: boolean
-              - type: 'null'
-            title: Processed
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -1123,9 +1110,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -1134,9 +1121,30 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: processed
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Process status
+            title: Processed
+          description: Process status
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: false
@@ -1177,14 +1185,6 @@ paths:
           schema:
             type: string
             title: Issuer-Address
-        - name: auth-token
-          in: header
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            title: Auth-Token
         - name: eoa-password
           in: header
           required: false
@@ -1193,6 +1193,14 @@ paths:
               - type: string
               - type: 'null'
             title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
       requestBody:
         required: true
         content:
@@ -1296,24 +1304,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: sort_item
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/IssueRedeemSortItem'
-            default: block_timestamp
-            title: Sort Item
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -1322,9 +1312,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -1333,9 +1323,29 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/IssueRedeemSortItem'
+              - type: 'null'
+            default: block_timestamp
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -1452,24 +1462,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: processed
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: boolean
-              - type: 'null'
-            title: Processed
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -1478,9 +1470,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -1489,9 +1481,30 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: processed
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Process status
+            title: Processed
+          description: Process status
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: false
@@ -1839,18 +1852,18 @@ paths:
       description: Retrieve a scheduled bond token update event
       operationId: RetrieveScheduledBondTokenUpdateEvent
       parameters:
-        - name: scheduled_event_id
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Scheduled Event Id
         - name: token_address
           in: path
           required: true
           schema:
             type: string
             title: Token Address
+        - name: scheduled_event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Scheduled Event Id
         - name: issuer-address
           in: header
           required: false
@@ -1955,6 +1968,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: include_former_holder
           in: query
           required: false
@@ -1969,9 +2004,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: number of balance
+            description: Token balance
             title: Balance
-          description: number of balance
+          description: Token balance
         - name: balance_operator
           in: query
           required: false
@@ -1979,11 +2014,11 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of balance(0:equal, 1:greater than or equal,
+            description: Search condition of balance(0:equal, 1:greater than or equal,
               2:less than or equal）
             default: 0
             title: Balance Operator
-          description: search condition of balance(0:equal, 1:greater than or equal,
+          description: Search condition of balance(0:equal, 1:greater than or equal,
             2:less than or equal）
         - name: pending_transfer
           in: query
@@ -1992,9 +2027,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: number of pending transfer amount
+            description: Pending transfer amount
             title: Pending Transfer
-          description: number of pending transfer amount
+          description: Pending transfer amount
         - name: pending_transfer_operator
           in: query
           required: false
@@ -2002,11 +2037,11 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of pending transfer(0:equal, 1:greater than
+            description: Search condition of pending transfer(0:equal, 1:greater than
               or equal, 2:less than or equal）
             default: 0
             title: Pending Transfer Operator
-          description: search condition of pending transfer(0:equal, 1:greater than
+          description: Search condition of pending transfer(0:equal, 1:greater than
             or equal, 2:less than or equal）
         - name: locked
           in: query
@@ -2015,9 +2050,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: number of locked amount
+            description: Locked amount
             title: Locked
-          description: number of locked amount
+          description: Locked amount
         - name: locked_operator
           in: query
           required: false
@@ -2098,34 +2133,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 0
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -2347,6 +2361,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: status
           in: query
           required: false
@@ -2359,34 +2395,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -2571,9 +2586,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -2582,9 +2597,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
         - name: account_address
           in: query
           required: false
@@ -2639,8 +2654,9 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/ListAllTokenLockEventsSortItem'
+              - type: 'null'
             description: Sort item
             default: block_timestamp
             title: Sort Item
@@ -2649,12 +2665,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 'Sort order(0: ASC, 1: DESC)'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 'Sort order(0: ASC, 1: DESC)'
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: false
@@ -2755,6 +2772,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: block_timestamp_from
           in: query
           required: false
@@ -2763,9 +2802,9 @@ paths:
               - type: string
                 format: date-time
               - type: 'null'
-            description: block timestamp (From)
+            description: Block timestamp (From)
             title: Block Timestamp From
-          description: block timestamp (From)
+          description: Block timestamp (From)
         - name: block_timestamp_to
           in: query
           required: false
@@ -2774,8 +2813,9 @@ paths:
               - type: string
                 format: date-time
               - type: 'null'
-            descriptio0n: block timestamp (To)
+            description: Block timestamp (To)
             title: Block Timestamp To
+          description: Block timestamp (To)
         - name: from_address
           in: query
           required: false
@@ -2783,9 +2823,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: transfer source address
+            description: Transfer source address
             title: From Address
-          description: transfer source address
+          description: Transfer source address
         - name: to_address
           in: query
           required: false
@@ -2793,9 +2833,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: transfer destination address
+            description: Transfer destination address
             title: To Address
-          description: transfer destination address
+          description: Transfer destination address
         - name: from_address_name
           in: query
           required: false
@@ -2803,9 +2843,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: name of transfer source address
+            description: Name of transfer source address
             title: From Address Name
-          description: name of transfer source address
+          description: Name of transfer source address
         - name: to_address_name
           in: query
           required: false
@@ -2813,9 +2853,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: name of transfer destination address
+            description: Name of transfer destination address
             title: To Address Name
-          description: name of transfer destination address
+          description: Name of transfer destination address
         - name: amount
           in: query
           required: false
@@ -2823,9 +2863,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: transfer amount
+            description: Transfer amount
             title: Amount
-          description: transfer amount
+          description: Transfer amount
         - name: amount_operator
           in: query
           required: false
@@ -2833,11 +2873,11 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: 'value filter condition(0: equal, 1: greater than, 2: less
+            description: 'Value filter condition(0: equal, 1: greater than, 2: less
               than)'
             default: 0
             title: Amount Operator
-          description: 'value filter condition(0: equal, 1: greater than, 2: less
+          description: 'Value filter condition(0: equal, 1: greater than, 2: less
             than)'
         - name: source_event
           in: query
@@ -2846,9 +2886,9 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/TransferSourceEventType'
               - type: 'null'
-            description: source event of transfer
+            description: Source event of transfer
             title: Source Event
-          description: source event of transfer
+          description: Source event of transfer
         - name: data
           in: query
           required: false
@@ -2863,44 +2903,24 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/ListTransferHistorySortItem'
-            description: sort item
+              - type: 'null'
+            description: Sort item
             default: block_timestamp
             title: Sort Item
-          description: sort item
+          description: Sort item
         - name: sort_order
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -2941,16 +2961,22 @@ paths:
           schema:
             anyOf:
               - type: integer
+                minimum: 0
               - type: 'null'
+            description: Offset for pagination
             title: Offset
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
           schema:
             anyOf:
               - type: integer
+                minimum: 0
               - type: 'null'
+            description: Limit for pagination
             title: Limit
+          description: Limit for pagination
         - name: issuer-address
           in: header
           required: false
@@ -2986,6 +3012,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: from_address
           in: query
           required: false
@@ -2993,7 +3041,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: Transfer from
             title: From Address
+          description: Transfer from
         - name: to_address
           in: query
           required: false
@@ -3001,7 +3051,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: Transfer to
             title: To Address
+          description: Transfer to
         - name: status
           in: query
           required: false
@@ -3027,34 +3079,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -3290,16 +3321,6 @@ paths:
       description: List bond token bulk transfers
       operationId: ListBondTokenBulkTransfers
       parameters:
-        - name: token_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: Token address (**this affects total number**)
-            title: Token Address
-          description: Token address (**this affects total number**)
         - name: offset
           in: query
           required: false
@@ -3322,6 +3343,16 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Token address (**this affects total number**)
+            title: Token Address
+          description: Token address (**this affects total number**)
         - name: issuer-address
           in: header
           required: false
@@ -3643,6 +3674,28 @@ paths:
       description: List all e2e messages
       operationId: ListAllE2EMessages
       parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: from_address
           in: query
           required: false
@@ -3677,22 +3730,6 @@ paths:
             description: partial match
             title: Message
           description: partial match
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Offset
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Limit
       responses:
         '200':
           description: Successful Response
@@ -3747,6 +3784,28 @@ paths:
       description: List all upload files
       operationId: ListAllUploadFiles
       parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: relation
           in: query
           required: false
@@ -3754,7 +3813,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: Relation
             title: Relation
+          description: Relation
         - name: file_name
           in: query
           required: false
@@ -3762,9 +3823,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: partial match
+            description: File name (partial match)
             title: File Name
-          description: partial match
+          description: File name (partial match)
         - name: label
           in: query
           required: false
@@ -3772,25 +3833,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: partial match
+            description: Label (partial match)
             title: Label
-          description: partial match
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Offset
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Limit
+          description: Label (partial match)
         - name: issuer-address
           in: header
           required: false
@@ -4677,9 +4722,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -4688,9 +4733,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
         - name: token_address
           in: query
           required: false
@@ -4755,8 +4800,9 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/ListAllLockEventsSortItem'
+              - type: 'null'
             description: Sort item
             default: block_timestamp
             title: Sort Item
@@ -4765,12 +4811,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 'Sort order(0: ASC, 1: DESC)'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 'Sort order(0: ASC, 1: DESC)'
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: false
@@ -5141,6 +5188,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: modified_contents
           in: query
           required: false
@@ -5168,9 +5237,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: created datetime (From)
+            description: Created datetime (From)
             title: Created From
-          description: created datetime (From)
+          description: Created datetime (From)
         - name: created_to
           in: query
           required: false
@@ -5178,15 +5247,16 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: created datetime (To)
+            description: Created datetime (To)
             title: Created To
-          description: created datetime (To)
+          description: Created datetime (To)
         - name: sort_item
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/ListTokenHistorySortItem'
+              - type: 'null'
             description: Sort item
             default: created
             title: Sort Item
@@ -5195,34 +5265,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 'Sort order(0: ASC, 1: DESC)'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 'Sort order(0: ASC, 1: DESC)'
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -5257,24 +5306,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: sort_item
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/IssueRedeemSortItem'
-            default: block_timestamp
-            title: Sort Item
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -5283,9 +5314,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -5294,9 +5325,29 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/IssueRedeemSortItem'
+              - type: 'null'
+            default: block_timestamp
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -5413,24 +5464,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: processed
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: boolean
-              - type: 'null'
-            title: Processed
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -5439,9 +5472,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -5450,9 +5483,30 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: processed
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Process status
+            title: Processed
+          description: Process status
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: false
@@ -5612,24 +5666,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: sort_item
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/IssueRedeemSortItem'
-            default: block_timestamp
-            title: Sort Item
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -5638,9 +5674,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -5649,9 +5685,29 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/IssueRedeemSortItem'
+              - type: 'null'
+            default: block_timestamp
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -5768,24 +5824,6 @@ paths:
           schema:
             type: string
             title: Token Address
-        - name: processed
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: boolean
-              - type: 'null'
-            title: Processed
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 1
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -5794,9 +5832,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -5805,9 +5843,30 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: processed
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Process status
+            title: Processed
+          description: Process status
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: false
@@ -6271,6 +6330,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: include_former_holder
           in: query
           required: false
@@ -6285,9 +6366,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: number of balance
+            description: Token balance
             title: Balance
-          description: number of balance
+          description: Token balance
         - name: balance_operator
           in: query
           required: false
@@ -6295,11 +6376,11 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of balance(0:equal, 1:greater than or equal,
+            description: Search condition of balance(0:equal, 1:greater than or equal,
               2:less than or equal）
             default: 0
             title: Balance Operator
-          description: search condition of balance(0:equal, 1:greater than or equal,
+          description: Search condition of balance(0:equal, 1:greater than or equal,
             2:less than or equal）
         - name: pending_transfer
           in: query
@@ -6308,9 +6389,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: number of pending transfer amount
+            description: Pending transfer amount
             title: Pending Transfer
-          description: number of pending transfer amount
+          description: Pending transfer amount
         - name: pending_transfer_operator
           in: query
           required: false
@@ -6318,11 +6399,11 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of pending transfer(0:equal, 1:greater than
+            description: Search condition of pending transfer(0:equal, 1:greater than
               or equal, 2:less than or equal）
             default: 0
             title: Pending Transfer Operator
-          description: search condition of pending transfer(0:equal, 1:greater than
+          description: Search condition of pending transfer(0:equal, 1:greater than
             or equal, 2:less than or equal）
         - name: locked
           in: query
@@ -6331,9 +6412,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: number of locked amount
+            description: Locked amount
             title: Locked
-          description: number of locked amount
+          description: Locked amount
         - name: locked_operator
           in: query
           required: false
@@ -6414,34 +6495,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 0
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -6663,6 +6723,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: status
           in: query
           required: false
@@ -6675,34 +6757,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -6881,9 +6942,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -6892,9 +6953,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
         - name: account_address
           in: query
           required: false
@@ -6949,8 +7010,9 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/ListAllTokenLockEventsSortItem'
+              - type: 'null'
             description: Sort item
             default: block_timestamp
             title: Sort Item
@@ -6959,12 +7021,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 'Sort order(0: ASC, 1: DESC)'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 'Sort order(0: ASC, 1: DESC)'
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: false
@@ -7071,6 +7134,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: block_timestamp_from
           in: query
           required: false
@@ -7079,9 +7164,9 @@ paths:
               - type: string
                 format: date-time
               - type: 'null'
-            description: block timestamp (From)
+            description: Block timestamp (From)
             title: Block Timestamp From
-          description: block timestamp (From)
+          description: Block timestamp (From)
         - name: block_timestamp_to
           in: query
           required: false
@@ -7090,8 +7175,9 @@ paths:
               - type: string
                 format: date-time
               - type: 'null'
-            descriptio0n: block timestamp (To)
+            description: Block timestamp (To)
             title: Block Timestamp To
+          description: Block timestamp (To)
         - name: from_address
           in: query
           required: false
@@ -7099,9 +7185,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: transfer source address
+            description: Transfer source address
             title: From Address
-          description: transfer source address
+          description: Transfer source address
         - name: to_address
           in: query
           required: false
@@ -7109,9 +7195,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: transfer destination address
+            description: Transfer destination address
             title: To Address
-          description: transfer destination address
+          description: Transfer destination address
         - name: from_address_name
           in: query
           required: false
@@ -7119,9 +7205,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: name of transfer source address
+            description: Name of transfer source address
             title: From Address Name
-          description: name of transfer source address
+          description: Name of transfer source address
         - name: to_address_name
           in: query
           required: false
@@ -7129,9 +7215,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: name of transfer destination address
+            description: Name of transfer destination address
             title: To Address Name
-          description: name of transfer destination address
+          description: Name of transfer destination address
         - name: amount
           in: query
           required: false
@@ -7139,9 +7225,9 @@ paths:
             anyOf:
               - type: integer
               - type: 'null'
-            description: transfer amount
+            description: Transfer amount
             title: Amount
-          description: transfer amount
+          description: Transfer amount
         - name: amount_operator
           in: query
           required: false
@@ -7149,11 +7235,11 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: 'value filter condition(0: equal, 1: greater than, 2: less
+            description: 'Value filter condition(0: equal, 1: greater than, 2: less
               than)'
             default: 0
             title: Amount Operator
-          description: 'value filter condition(0: equal, 1: greater than, 2: less
+          description: 'Value filter condition(0: equal, 1: greater than, 2: less
             than)'
         - name: source_event
           in: query
@@ -7162,9 +7248,9 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/TransferSourceEventType'
               - type: 'null'
-            description: source event of transfer
+            description: Source event of transfer
             title: Source Event
-          description: source event of transfer
+          description: Source event of transfer
         - name: data
           in: query
           required: false
@@ -7179,44 +7265,24 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/ListTransferHistorySortItem'
-            description: sort item
+              - type: 'null'
+            description: Sort item
             default: block_timestamp
             title: Sort Item
-          description: sort item
+          description: Sort item
         - name: sort_order
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -7257,16 +7323,22 @@ paths:
           schema:
             anyOf:
               - type: integer
+                minimum: 0
               - type: 'null'
+            description: Offset for pagination
             title: Offset
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
           schema:
             anyOf:
               - type: integer
+                minimum: 0
               - type: 'null'
+            description: Limit for pagination
             title: Limit
+          description: Limit for pagination
         - name: issuer-address
           in: header
           required: false
@@ -7302,6 +7374,28 @@ paths:
           schema:
             type: string
             title: Token Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: from_address
           in: query
           required: false
@@ -7309,7 +7403,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: Transfer from
             title: From Address
+          description: Transfer from
         - name: to_address
           in: query
           required: false
@@ -7317,7 +7413,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: Transfer to
             title: To Address
+          description: Transfer to
         - name: status
           in: query
           required: false
@@ -7343,34 +7441,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -7606,16 +7683,6 @@ paths:
       description: List share token bulk transfers
       operationId: ListShareTokenBulkTransfers
       parameters:
-        - name: token_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: Token address (**this affects total number**)
-            title: Token Address
-          description: Token address (**this affects total number**)
         - name: offset
           in: query
           required: false
@@ -7638,6 +7705,16 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Token address (**this affects total number**)
+            title: Token Address
+          description: Token address (**this affects total number**)
         - name: issuer-address
           in: header
           required: false
@@ -7731,77 +7808,6 @@ paths:
         to the token issuer
       operationId: ListTokenHoldersPersonalInfo
       parameters:
-        - name: account_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: account address
-            title: Account Address
-          description: account address
-        - name: created_from
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: created datetime (From)
-            title: Created From
-          description: created datetime (From)
-        - name: created_to
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: created datetime (To)
-            title: Created To
-          description: created datetime (To)
-        - name: modified_from
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: modified datetime (From)
-            title: Modified From
-          description: modified datetime (From)
-        - name: modified_to
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: modified datetime (To)
-            title: Modified To
-          description: modified datetime (To)
-        - name: sort_item
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/ListTokenHoldersPersonalInfoSortItem'
-            description: sort item
-            default: created
-            title: Sort Item
-          description: sort item
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/SortOrder'
-              - type: 'null'
-            description: 'sort order(0: ASC, 1: DESC)'
-            default: 0
-            title: Sort Order
-          description: 'sort order(0: ASC, 1: DESC)'
         - name: offset
           in: query
           required: false
@@ -7810,9 +7816,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: start position
+            description: Offset for pagination
             title: Offset
-          description: start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -7821,9 +7827,81 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: number of set
+            description: Limit for pagination
             title: Limit
-          description: number of set
+          description: Limit for pagination
+        - name: account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Account address
+            title: Account Address
+          description: Account address
+        - name: created_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Created datetime (From)
+            title: Created From
+          description: Created datetime (From)
+        - name: created_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Created datetime (To)
+            title: Created To
+          description: Created datetime (To)
+        - name: modified_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Modified datetime (From)
+            title: Modified From
+          description: Modified datetime (From)
+        - name: modified_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Modified datetime (To)
+            title: Modified To
+          description: Modified datetime (To)
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListTokenHoldersPersonalInfoSortItem'
+              - type: 'null'
+            description: Sort item
+            default: created
+            title: Sort Item
+          description: Sort item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 0
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -7851,6 +7929,28 @@ paths:
       description: List personal information historical data
       operationId: ListTokenHoldersPersonalInfoHistory
       parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: account_address
           in: query
           required: false
@@ -7858,9 +7958,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: account address
+            description: Account address
             title: Account Address
-          description: account address
+          description: Account address
         - name: event_type
           in: query
           required: false
@@ -7898,9 +7998,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: created datetime (From)
+            description: Created datetime (From)
             title: Created From
-          description: created datetime (From)
+          description: Created datetime (From)
         - name: created_to
           in: query
           required: false
@@ -7908,9 +8008,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
-            description: created datetime (To)
+            description: Created datetime (To)
             title: Created To
-          description: created datetime (To)
+          description: Created datetime (To)
         - name: sort_order
           in: query
           required: false
@@ -7918,32 +8018,10 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/SortOrder'
               - type: 'null'
-            description: 'sort order (0: ASC, 1: DESC)'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 0
             title: Sort Order
-          description: 'sort order (0: ASC, 1: DESC)'
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: start position
-            title: Offset
-          description: start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: number of set
-            title: Limit
-          description: number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -8123,102 +8201,6 @@ paths:
               - cfd83622-34dc-4efe-a68b-2cc275d3d824
             title: List Id
           description: UUID v4 required
-        - name: hold_balance
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            description: number of hold balance
-            title: Hold Balance
-          description: number of hold balance
-        - name: hold_balance_operator
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/ValueOperator'
-              - type: 'null'
-            description: search condition of hold balance(0:equal, 1:greater than
-              or equal, 2:less than or equal）
-            default: 0
-            title: Hold Balance Operator
-          description: search condition of hold balance(0:equal, 1:greater than or
-            equal, 2:less than or equal）
-        - name: locked_balance
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            description: number of locked balance
-            title: Locked Balance
-          description: number of locked balance
-        - name: locked_balance_operator
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/ValueOperator'
-              - type: 'null'
-            description: search condition of locked balance(0:equal, 1:greater than
-              or equal, 2:less than or equal）
-            default: 0
-            title: Locked Balance Operator
-          description: search condition of locked balance(0:equal, 1:greater than
-            or equal, 2:less than or equal）
-        - name: account_address
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: account address(partial match)
-            title: Account Address
-          description: account address(partial match)
-        - name: key_manager
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: key manager(partial match)
-            title: Key Manager
-          description: key manager(partial match)
-        - name: tax_category
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            description: tax category
-            title: Tax Category
-          description: tax category
-        - name: sort_item
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/RetrieveTokenHoldersCollectionSortItem'
-            description: Sort Item
-            default: account_address
-            title: Sort Item
-          description: Sort Item
-        - name: sort_order
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
-            default: 0
-            title: Sort Order
-          description: 0:asc, 1:desc
         - name: offset
           in: query
           required: false
@@ -8227,9 +8209,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Start position
+            description: Offset for pagination
             title: Offset
-          description: Start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -8238,9 +8220,107 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: Number of set
+            description: Limit for pagination
             title: Limit
-          description: Number of set
+          description: Limit for pagination
+        - name: hold_balance
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Hold balance
+            title: Hold Balance
+          description: Hold balance
+        - name: hold_balance_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: Search condition of hold balance(0:equal, 1:greater than
+              or equal, 2:less than or equal）
+            default: 0
+            title: Hold Balance Operator
+          description: Search condition of hold balance(0:equal, 1:greater than or
+            equal, 2:less than or equal）
+        - name: locked_balance
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Locked balance
+            title: Locked Balance
+          description: Locked balance
+        - name: locked_balance_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: Search condition of locked balance(0:equal, 1:greater than
+              or equal, 2:less than or equal）
+            default: 0
+            title: Locked Balance Operator
+          description: Search condition of locked balance(0:equal, 1:greater than
+            or equal, 2:less than or equal）
+        - name: account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Account address(partial match)
+            title: Account Address
+          description: Account address(partial match)
+        - name: key_manager
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Key manager(partial match)
+            title: Key Manager
+          description: Key manager(partial match)
+        - name: tax_category
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Tax category
+            title: Tax Category
+          description: Tax category
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/RetrieveTokenHoldersCollectionSortItem'
+              - type: 'null'
+            description: Sort item
+            default: account_address
+            title: Sort Item
+          description: Sort item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 0
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -8281,6 +8361,28 @@ paths:
           schema:
             type: string
             title: Exchange Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: token_address
           in: query
           required: false
@@ -8367,34 +8469,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
         - name: issuer-address
           in: header
           required: true
@@ -8505,17 +8586,13 @@ paths:
           required: true
           schema:
             type: string
-            description: Exchange Address
             title: Exchange Address
-          description: Exchange Address
         - name: delivery_id
           in: path
           required: true
           schema:
             type: integer
-            description: Delivery Id
             title: Delivery Id
-          description: Delivery Id
         - name: issuer-address
           in: header
           required: true
@@ -8777,6 +8854,28 @@ paths:
           schema:
             type: string
             title: Exchange Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: agent_address
           in: query
           required: true
@@ -8861,34 +8960,13 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
+            anyOf:
               - $ref: '#/components/schemas/SortOrder'
-            description: 0:asc, 1:desc
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 1
             title: Sort Order
-          description: 0:asc, 1:desc
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Start position
-            title: Offset
-          description: Start position
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: Number of set
-            title: Limit
-          description: Number of set
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -8987,9 +9065,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: start position
+            description: Offset for pagination
             title: Offset
-          description: start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -8998,9 +9076,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: number of set
+            description: Limit for pagination
             title: Limit
-          description: number of set
+          description: Limit for pagination
         - name: from_block_number
           in: query
           required: false
@@ -9026,10 +9104,10 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/SortOrder'
               - type: 'null'
-            description: 'sort order(0: ASC, 1: DESC)'
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 0
             title: Sort Order
-          description: 'sort order(0: ASC, 1: DESC)'
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -9098,9 +9176,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: start position
+            description: Offset for pagination
             title: Offset
-          description: start position
+          description: Offset for pagination
         - name: limit
           in: query
           required: false
@@ -9109,9 +9187,9 @@ paths:
               - type: integer
                 minimum: 0
               - type: 'null'
-            description: number of set
+            description: Limit for pagination
             title: Limit
-          description: number of set
+          description: Limit for pagination
         - name: block_number
           in: query
           required: false
@@ -14580,6 +14658,7 @@ components:
         - 0
         - 1
       title: SortOrder
+      description: 'Sort order (0: ASC, 1: DESC)'
     TokenAddressResponse:
       properties:
         token_address:

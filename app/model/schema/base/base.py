@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from enum import IntEnum, StrEnum
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, NonNegativeInt, StringConstraints
 from typing_extensions import Annotated
 
 
@@ -68,8 +68,15 @@ class ValueOperator(IntEnum):
 # REQUEST
 ############################
 class SortOrder(IntEnum):
+    """Sort order (0: ASC, 1: DESC)"""
+
     ASC = 0
     DESC = 1
+
+
+class BasePaginationQuery(BaseModel):
+    offset: Optional[NonNegativeInt] = Field(None, description="Offset for pagination")
+    limit: Optional[NonNegativeInt] = Field(None, description="Limit for pagination")
 
 
 ############################

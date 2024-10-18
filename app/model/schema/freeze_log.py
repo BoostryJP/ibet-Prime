@@ -17,11 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Annotated
-
-from fastapi import Query
 from pydantic import BaseModel, Field, PositiveInt, RootModel, field_validator
-from pydantic.dataclasses import dataclass
 
 from app.model import EthereumAddress
 from app.utils.check_utils import check_value_is_encrypted
@@ -98,13 +94,10 @@ class UpdateFreezeLogRequest(BaseModel):
         return v
 
 
-@dataclass
-class RetrieveFreezeLogQuery:
+class RetrieveFreezeLogQuery(BaseModel):
     """Retrieve freeze log query (REQUEST)"""
 
-    account_address: Annotated[
-        EthereumAddress, Query(description="Logging account address")
-    ]
+    account_address: EthereumAddress = Field(description="Logging account address")
 
 
 ############################
