@@ -483,6 +483,77 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: child_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Child account address (partial match)
+            title: Child Account Address
+          description: Child account address (partial match)
+        - name: name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Child account name (partial match)
+            title: Name
+          description: Child account name (partial match)
+        - name: created_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Personal information created datetime (From)
+            title: Created From
+          description: Personal information created datetime (From)
+        - name: created_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Personal information created datetime (To)
+            title: Created To
+          description: Personal information created datetime (To)
+        - name: modified_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Personal information modified datetime (From)
+            title: Modified From
+          description: Personal information modified datetime (From)
+        - name: modified_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Personal information modified datetime (To)
+            title: Modified To
+          description: Personal information modified datetime (To)
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListAllChildAccountSortItem'
+              - type: 'null'
+            description: Sort item
+            default: child_account_index
+            title: Sort Item
+          description: Sort item
         - name: sort_order
           in: query
           required: false
@@ -490,10 +561,10 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/SortOrder'
               - type: 'null'
-            description: The sort order of the child_account_index. 0:asc, 1:desc
+            description: 'Sort order (0: ASC, 1: DESC)'
             default: 0
             title: Sort Order
-          description: The sort order of the child_account_index. 0:asc, 1:desc
+          description: 'Sort order (0: ASC, 1: DESC)'
       responses:
         '200':
           description: Successful Response
@@ -10378,12 +10449,26 @@ components:
           anyOf:
             - $ref: '#/components/schemas/PersonalInfo'
             - type: 'null'
+        created:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Created
+        modified:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Modified
       type: object
       required:
         - issuer_address
         - child_account_index
         - child_account_address
         - personal_information
+        - created
+        - modified
       title: ChildAccount
       description: Child account schema
     ChildAccountResponse:
@@ -12892,6 +12977,15 @@ components:
         - child_accounts
       title: ListAllChildAccountResponse
       description: List all child accounts schema (RESPONSE)
+    ListAllChildAccountSortItem:
+      type: string
+      enum:
+        - child_account_index
+        - child_account_address
+        - name
+        - created
+        - modified
+      title: ListAllChildAccountSortItem
     ListAllDVPAgentAccountResponse:
       items:
         $ref: '#/components/schemas/DVPAgentAccountResponse'

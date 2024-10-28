@@ -18,10 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Optional
 
 from pydantic import BaseModel, Field, RootModel, field_validator
 
+from app.model import ValidatedDatetimeStr
 from app.model.db import AccountRsaStatus
 from app.model.schema.base import BasePaginationQuery, ResultSet, SortOrder
 from app.model.schema.personal_info import PersonalInfo, PersonalInfoInput
@@ -48,6 +50,8 @@ class ChildAccount(BaseModel):
     child_account_index: int
     child_account_address: str
     personal_information: PersonalInfo | None
+    created: datetime | None
+    modified: datetime | None
 
 
 ############################
@@ -135,10 +139,38 @@ class CreateUpdateChildAccountRequest(BaseModel):
     personal_information: PersonalInfoInput
 
 
+class ListAllChildAccountSortItem(StrEnum):
+    child_account_index = "child_account_index"
+    child_account_address = "child_account_address"
+    name = "name"
+    created = "created"
+    modified = "modified"
+
+
 class ListAllChildAccountQuery(BasePaginationQuery):
+    child_account_address: Optional[str] = Field(
+        None, description="Child account address (partial match)"
+    )
+    name: Optional[str] = Field(None, description="Child account name (partial match)")
+    created_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information created datetime (From)"
+    )
+    created_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information created datetime (To)"
+    )
+    modified_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information modified datetime (From)"
+    )
+    modified_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information modified datetime (To)"
+    )
+
+    sort_item: Optional[ListAllChildAccountSortItem] = Field(
+        ListAllChildAccountSortItem.child_account_index, description="Sort item"
+    )
     sort_order: Optional[SortOrder] = Field(
         SortOrder.ASC,
-        description="The sort order of the child_account_index. 0:asc, 1:desc",
+        description=SortOrder.__doc__,
     )
 
 
