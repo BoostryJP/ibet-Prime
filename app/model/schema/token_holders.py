@@ -123,7 +123,7 @@ class RetrieveTokenHoldersCollectionSortItem(StrEnum):
     hold_balance = "hold_balance"
     locked_balance = "locked_balance"
     key_manager = "key_manager"
-    holder_name = "tax_category"
+    tax_category = "tax_category"
 
 
 class RetrieveTokenHoldersCollectionQuery(BasePaginationQuery):

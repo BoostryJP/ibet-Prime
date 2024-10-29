@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import Account, ChildAccount, IDXPersonalInfo, PersonalInfoDataSource
 
 
@@ -57,10 +59,13 @@ class TestRetrieveChildAccount:
             "child_account_index": 1,
             "child_account_address": self.child_account_address,
             "personal_information": None,
+            "created": None,
+            "modified": None,
         }
 
     # <Normal_1_2>
     # Personal information is set
+    @pytest.mark.freeze_time("2024-10-28 12:34:56")
     def test_normal_1_2(self, client, db):
         # Prepare data
         _account = Account()
@@ -110,6 +115,8 @@ class TestRetrieveChildAccount:
                 "is_corporate": False,
                 "tax_category": 10,
             },
+            "created": "2024-10-28T21:34:56+09:00",
+            "modified": "2024-10-28T21:34:56+09:00",
         }
 
     ###########################################################################

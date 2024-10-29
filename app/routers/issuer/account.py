@@ -68,6 +68,7 @@ from app.model.schema import (
     CreateUpdateChildAccountRequest,
     ListAllChildAccountQuery,
     ListAllChildAccountResponse,
+    ListAllChildAccountSortItem,
 )
 from app.utils.check_utils import (
     address_is_valid_address,
@@ -94,6 +95,7 @@ from config import (
 router = APIRouter(tags=["account"])
 
 local_tz = pytz.timezone(TZ)
+utc_tz = pytz.timezone("UTC")
 
 
 # POST: /accounts
@@ -704,13 +706,76 @@ async def list_all_child_account(
         )
     )
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
-    count = total
+
+    if get_query.child_account_address is not None:
+        stmt = stmt.where(
+            ChildAccount.child_account_address.like(
+                "%" + get_query.child_account_address + "%"
+            )
+        )
+    if get_query.name is not None:
+        stmt = stmt.where(
+            IDXPersonalInfo._personal_info["name"]
+            .as_string()
+            .like("%" + get_query.name + "%")
+        )
+    if get_query.created_from:
+        _created_from = datetime.strptime(
+            get_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.created
+            >= local_tz.localize(_created_from).astimezone(utc_tz)
+        )
+    if get_query.created_to:
+        _created_to = datetime.strptime(
+            get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.created <= local_tz.localize(_created_to).astimezone(utc_tz)
+        )
+    if get_query.modified_from:
+        _modified_from = datetime.strptime(
+            get_query.modified_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.modified
+            >= local_tz.localize(_modified_from).astimezone(utc_tz)
+        )
+    if get_query.modified_to:
+        _modified_to = datetime.strptime(
+            get_query.modified_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            IDXPersonalInfo.modified
+            <= local_tz.localize(_modified_to).astimezone(utc_tz)
+        )
+
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if get_query.sort_order == 0:  # ASC
-        stmt = stmt.order_by(asc(ChildAccount.child_account_index))
-    else:  # DESC
-        stmt = stmt.order_by(desc(ChildAccount.child_account_index))
+    def _order(_order):
+        if _order == 0:
+            return asc
+        else:
+            return desc
+
+    _sort_order = get_query.sort_order
+    match get_query.sort_item:
+        case ListAllChildAccountSortItem.child_account_index:
+            stmt = stmt.order_by(_order(_sort_order)(ChildAccount.child_account_index))
+        case ListAllChildAccountSortItem.child_account_address:
+            stmt = stmt.order_by(
+                _order(_sort_order)(ChildAccount.child_account_address)
+            )
+        case ListAllChildAccountSortItem.name:
+            stmt = stmt.order_by(
+                _order(_sort_order)(IDXPersonalInfo._personal_info["name"].as_string())
+            )
+        case ListAllChildAccountSortItem.created:
+            stmt = stmt.order_by(_order(_sort_order)(IDXPersonalInfo.created))
+        case ListAllChildAccountSortItem.modified:
+            stmt = stmt.order_by(_order(_sort_order)(IDXPersonalInfo.modified))
 
     # Pagination
     if get_query.limit is not None:
@@ -724,16 +789,26 @@ async def list_all_child_account(
 
     child_accounts = []
     for _tmp_child_account in _tmp_child_accounts:
-        child_accounts.append(
-            {
+        if _tmp_child_account[1] is not None:
+            _personal_info = _tmp_child_account[1].json()
+            _child_account = {
                 "issuer_address": _tmp_child_account[0].issuer_address,
                 "child_account_index": _tmp_child_account[0].child_account_index,
                 "child_account_address": _tmp_child_account[0].child_account_address,
-                "personal_information": _tmp_child_account[1].personal_info
-                if _tmp_child_account[1] is not None
-                else None,
+                "personal_information": _personal_info["personal_info"],
+                "created": _personal_info["created"],
+                "modified": _personal_info["modified"],
             }
-        )
+        else:
+            _child_account = {
+                "issuer_address": _tmp_child_account[0].issuer_address,
+                "child_account_index": _tmp_child_account[0].child_account_index,
+                "child_account_address": _tmp_child_account[0].child_account_address,
+                "personal_information": None,
+                "created": None,
+                "modified": None,
+            }
+        child_accounts.append(_child_account)
 
     return json_response(
         {
@@ -800,16 +875,27 @@ async def retrieve_child_account(
     if _child_account is None:
         raise HTTPException(status_code=404, detail="child account does not exist")
 
-    return json_response(
-        {
+    if _child_account[1] is not None:
+        _personal_info = _child_account[1].json()
+        _resp_account = {
             "issuer_address": _child_account[0].issuer_address,
             "child_account_index": _child_account[0].child_account_index,
             "child_account_address": _child_account[0].child_account_address,
-            "personal_information": _child_account[1].personal_info
-            if _child_account[1] is not None
-            else None,
+            "personal_information": _personal_info["personal_info"],
+            "created": _personal_info["created"],
+            "modified": _personal_info["modified"],
         }
-    )
+    else:
+        _resp_account = {
+            "issuer_address": _child_account[0].issuer_address,
+            "child_account_index": _child_account[0].child_account_index,
+            "child_account_address": _child_account[0].child_account_address,
+            "personal_information": None,
+            "created": None,
+            "modified": None,
+        }
+
+    return json_response(_resp_account)
 
 
 # POST: /accounts/{issuer_address}/child_accounts/{child_account_index}

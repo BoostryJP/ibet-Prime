@@ -582,7 +582,7 @@ async def retrieve_token_holders_collection(
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.holder_name:
+    if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.tax_category:
         sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()
     elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.key_manager:
         sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()

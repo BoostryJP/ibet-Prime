@@ -30,6 +30,7 @@ from .account import (
     CreateUpdateChildAccountRequest,
     ListAllChildAccountQuery,
     ListAllChildAccountResponse,
+    ListAllChildAccountSortItem,
 )
 from .batch_issue_redeem import (
     BatchIssueRedeemUploadIdResponse,
