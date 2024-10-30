@@ -19,7 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 
+from pydantic import BaseModel
 from sqlalchemy import JSON, BigInteger, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,6 +33,14 @@ class IDXTransferSourceEventType(StrEnum):
 
     TRANSFER = "Transfer"
     UNLOCK = "Unlock"
+
+
+class UnlockData(BaseModel):
+    message: Literal[
+        "garnishment",
+        "inheritance",
+        "force_unlock",
+    ]
 
 
 class IDXTransfer(Base):
@@ -52,8 +62,16 @@ class IDXTransfer(Base):
     # Source Event (IDXTransferSourceEventType)
     source_event: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     # Data
+    #   source_event = "Transfer"
+    #     => None
+    #   source_event = "Unlock"
+    #     =>  UnlockData
     data: Mapped[dict | None] = mapped_column(JSON)
     # Message
+    #   source_event = "Transfer"
+    #     => None
+    #   source_event = "Unlock"
+    #     => "force_unlock", "garnishment" or "inheritance"
     message: Mapped[str | None] = mapped_column(String(50), index=True)
     # block timestamp
     block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)

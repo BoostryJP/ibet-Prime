@@ -25,6 +25,7 @@ from typing import Sequence
 
 import uvloop
 from eth_utils import to_checksum_address
+from pydantic import ValidationError
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,6 +39,7 @@ from app.model.db import (
     IDXTransferBlockNumber,
     IDXTransferSourceEventType,
     Token,
+    UnlockData,
 )
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -284,7 +286,11 @@ class Processor:
         if data_str is not None:
             try:
                 data = json.loads(data_str)
-                message = data.get("message", "")[0:50]
+                validated_data = UnlockData(**data)
+                message = validated_data.message
+            except ValidationError:
+                data = {}
+                message = None
             except json.JSONDecodeError:
                 data = {}
                 message = None

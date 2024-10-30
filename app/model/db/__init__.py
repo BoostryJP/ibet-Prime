@@ -74,6 +74,7 @@ from .idx_transfer import (
     IDXTransfer,
     IDXTransferBlockNumber,
     IDXTransferSourceEventType,
+    UnlockData,
 )
 from .idx_transfer_approval import (
     IDXTransferApproval,

@@ -394,7 +394,7 @@ class TestProcessor:
     # <Normal_2_2>
     # Single Token
     # Single event logs
-    # - Unlock: Data is not registered because "from" and "to" are the same
+    # - Unlock: Transfer record is not registered because "from" and "to" are the same
     @pytest.mark.asyncio
     async def test_normal_2_2(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
@@ -475,6 +475,151 @@ class TestProcessor:
         # Assertion
         _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 0
+
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
+        assert _idx_transfer_block_number.id == 1
+        assert _idx_transfer_block_number.latest_block_number == block_number
+
+    # <Normal_2_3>
+    # Single Token
+    # Single event logs
+    # - Unlock: Transfer record is registered but the data attribute is set null because of invalid data schema
+    @pytest.mark.asyncio
+    async def test_normal_2_3(self, processor, db, personal_info_contract):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+
+        lock_account = config_eth_account("user3")
+        lock_account_pk = decode_keyfile_json(
+            raw_keyfile_json=lock_account["keyfile_json"],
+            password=lock_account["password"].encode("utf-8"),
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Prepare data : Token
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
+        token_address_1 = token_contract_1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract_1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_09
+        db.add(token_1)
+
+        # Prepare data : Token(processing token)
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.token_address = "test1"
+        token_2.issuer_address = issuer_address
+        token_2.abi = "abi"
+        token_2.tx_hash = "tx_hash"
+        token_2.token_status = 0
+        token_2.version = TokenVersion.V_24_09
+        db.add(token_2)
+
+        db.commit()
+
+        # Transfer
+        tx_1 = token_contract_1.functions.transferFrom(
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(
+            tx_1, issuer_private_key
+        )
+
+        # Unlock (lock -> unlock)
+        tx_2_1 = token_contract_1.functions.lock(
+            lock_account["address"],
+            10,
+            json.dumps({"message": "garnishment"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        _, _ = ContractUtils.send_transaction(tx_2_1, issuer_private_key)
+
+        tx_2_2 = token_contract_1.functions.unlock(
+            issuer_address,
+            user_address_1,
+            10,
+            json.dumps({"invalid_message": "invalid_value"}),  # invalid data schema
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": lock_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(
+            tx_2_2, lock_account_pk
+        )
+
+        # Run target process
+        block_number = web3.eth.block_number
+        await processor.sync_new_logs()
+
+        # Assertion
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
+        assert len(_transfer_list) == 2
+
+        _transfer = _transfer_list[0]
+        assert _transfer.id == 1
+        assert _transfer.transaction_hash == tx_hash_1
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 40
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
+        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+
+        _transfer = _transfer_list[1]
+        assert _transfer.id == 2
+        assert _transfer.transaction_hash == tx_hash_2
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
+        assert _transfer.data == {}
+        assert _transfer.message is None
+        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
 
         _idx_transfer_block_number = db.scalars(
             select(IDXTransferBlockNumber).limit(1)
