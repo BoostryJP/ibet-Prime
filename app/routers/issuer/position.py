@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 from typing import Annotated, Optional, Sequence
 
 from eth_keyfile import decode_keyfile_json
@@ -530,7 +531,7 @@ async def force_unlock(
         "account_address": account_address,
         "recipient_address": data.recipient_address,
         "value": data.value,
-        "data": "",
+        "data": json.dumps({"message": "force_unlock"}),
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_unlock(

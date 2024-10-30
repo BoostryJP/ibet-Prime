@@ -321,7 +321,9 @@ class TestProcessor:
 
         # Unlock (lock -> unlock)
         tx_2_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, ""
+            lock_account["address"],
+            10,
+            json.dumps({"message": "garnishment"}),
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -333,7 +335,7 @@ class TestProcessor:
         _, _ = ContractUtils.send_transaction(tx_2_1, issuer_private_key)
 
         tx_2_2 = token_contract_1.functions.unlock(
-            issuer_address, user_address_1, 10, json.dumps({"message": "unlock"})
+            issuer_address, user_address_1, 10, json.dumps({"message": "force_unlock"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -376,7 +378,8 @@ class TestProcessor:
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
-        assert _transfer.data == {"message": "unlock"}
+        assert _transfer.data == {"message": "force_unlock"}
+        assert _transfer.message == "force_unlock"
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -442,7 +445,7 @@ class TestProcessor:
 
         # Unlock (lock -> unlock)
         tx_1_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, ""
+            lock_account["address"], 10, json.dumps({"message": "garnishment"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -454,7 +457,7 @@ class TestProcessor:
         _, _ = ContractUtils.send_transaction(tx_1_1, issuer_private_key)
 
         tx_1_2 = token_contract_1.functions.unlock(
-            issuer_address, issuer_address, 10, json.dumps({"message": "unlock"})
+            issuer_address, issuer_address, 10, json.dumps({"message": "force_unlock"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -569,7 +572,7 @@ class TestProcessor:
 
         # Unlock (lock -> unlock)
         tx_3_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, ""
+            lock_account["address"], 10, json.dumps({"message": "garnishment"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -581,7 +584,7 @@ class TestProcessor:
         _, _ = ContractUtils.send_transaction(tx_3_1, issuer_private_key)
 
         tx_3_2 = token_contract_1.functions.unlock(
-            issuer_address, user_address_1, 10, json.dumps({"message": "unlock"})
+            issuer_address, user_address_1, 10, json.dumps({"message": "garnishment"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -595,7 +598,7 @@ class TestProcessor:
         )
 
         tx_4_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, ""
+            lock_account["address"], 10, json.dumps({"message": "inheritance"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -607,7 +610,7 @@ class TestProcessor:
         _, _ = ContractUtils.send_transaction(tx_4_1, issuer_private_key)
 
         tx_4_2 = token_contract_1.functions.unlock(
-            issuer_address, user_address_1, 10, json.dumps({"message": "unlock"})
+            issuer_address, user_address_1, 10, json.dumps({"message": "inheritance"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -664,7 +667,8 @@ class TestProcessor:
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
-        assert _transfer.data == {"message": "unlock"}
+        assert _transfer.data == {"message": "garnishment"}
+        assert _transfer.message == "garnishment"
         block = web3.eth.get_block(tx_receipt_3["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -678,7 +682,8 @@ class TestProcessor:
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
-        assert _transfer.data == {"message": "unlock"}
+        assert _transfer.data == {"message": "inheritance"}
+        assert _transfer.message == "inheritance"
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC

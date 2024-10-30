@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 import time
 from binascii import Error
 from datetime import UTC, datetime, timedelta
@@ -27,6 +28,7 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from pydantic import ValidationError
 from sqlalchemy import select
+from web3 import Web3
 from web3.exceptions import (
     ContractLogicError,
     InvalidAddress,
@@ -34,6 +36,7 @@ from web3.exceptions import (
     TimeExhausted,
     TransactionNotFound,
 )
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetShareContract
@@ -49,13 +52,16 @@ from app.model.blockchain.tx_params.ibet_share import (
     UpdateParams,
 )
 from app.model.db import TokenAttrUpdate, TokenCache
-from app.utils.contract_utils import ContractUtils
-from config import TOKEN_CACHE_TTL, ZERO_ADDRESS
+from app.utils.contract_utils import AsyncContractUtils, ContractUtils
+from config import TOKEN_CACHE_TTL, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.contract_utils import (
     IbetSecurityTokenContractTestUtils,
     PersonalInfoContractTestUtils,
 )
+
+web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 class TestCreate:
@@ -4344,25 +4350,35 @@ class TestForceUnlock:
             "account_address": issuer_address,
             "recipient_address": issuer_address,
             "value": 5,
-            "data": "",
+            "data": json.dumps({"message": "force_unlock"}),
         }
+        block_from = web3.eth.block_number
         tx_hash, tx_receipt = await share_contract.force_unlock(
             data=ForceUnlockPrams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
         )
+        block_to = web3.eth.block_number
 
         # assertion
         assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
         assert tx_receipt["status"] == 1
 
-        share_token = ContractUtils.get_contract(
+        share_token = AsyncContractUtils.get_contract(
             contract_name="IbetShare", contract_address=token_address
         )
-        lock_amount = share_token.functions.lockedOf(
+        lock_amount = await share_token.functions.lockedOf(
             lock_address, issuer_address
         ).call()
         assert lock_amount == 5
+
+        logs = await AsyncContractUtils.get_event_logs(
+            contract=share_token,
+            event="Unlock",
+            block_from=block_from,
+            block_to=block_to,
+        )
+        assert json.loads(logs[0].args["data"]) == {"message": "force_unlock"}
 
     ###########################################################################
     # Error Case

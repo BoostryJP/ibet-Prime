@@ -284,10 +284,13 @@ class Processor:
         if data_str is not None:
             try:
                 data = json.loads(data_str)
+                message = data.get("message", "")[0:50]
             except json.JSONDecodeError:
                 data = {}
+                message = None
         else:
             data = None
+            message = None
         transfer_record = IDXTransfer()
         transfer_record.transaction_hash = transaction_hash
         transfer_record.token_address = token_address
@@ -296,6 +299,7 @@ class Processor:
         transfer_record.amount = amount
         transfer_record.source_event = source_event.value
         transfer_record.data = data
+        transfer_record.message = message
         transfer_record.block_timestamp = block_timestamp
         db_session.add(transfer_record)
         LOG.debug(f"Transfer: transaction_hash={transaction_hash}")

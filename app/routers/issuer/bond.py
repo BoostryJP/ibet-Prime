@@ -3055,6 +3055,8 @@ async def list_bond_token_transfer_history(
         stmt = stmt.where(IDXTransfer.source_event == query.source_event)
     if query.data is not None:
         stmt = stmt.where(cast(IDXTransfer.data, String).like("%" + query.data + "%"))
+    if query.message is not None:
+        stmt = stmt.where(IDXTransfer.message == query.message)
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort

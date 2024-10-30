@@ -191,7 +191,6 @@ from .transfer import (
     TransferApprovalTokenDetailResponse,
     TransferApprovalTokenResponse,
     TransferHistoryResponse,
-    TransferResponse,
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
 )

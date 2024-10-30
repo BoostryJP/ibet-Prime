@@ -50,9 +50,11 @@ class IDXTransfer(Base):
     # transfer amount
     amount: Mapped[int | None] = mapped_column(BigInteger)
     # Source Event (IDXTransferSourceEventType)
-    source_event: Mapped[str] = mapped_column(String(50), nullable=False)
+    source_event: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     # Data
     data: Mapped[dict | None] = mapped_column(JSON)
+    # Message
+    message: Mapped[str | None] = mapped_column(String(50), index=True)
     # block timestamp
     block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
 
