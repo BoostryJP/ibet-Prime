@@ -97,7 +97,7 @@ class TestForceUnlock:
                     "account_address": account_address,
                     "recipient_address": _recipient_address,
                     "value": 10,
-                    "data": "",
+                    "data": json.dumps({"message": "force_unlock"}),
                 }
             ),
             tx_from=_admin_address,
