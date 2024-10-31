@@ -35,7 +35,7 @@ class IDXTransferSourceEventType(StrEnum):
     UNLOCK = "Unlock"
 
 
-class UnlockData(BaseModel):
+class DataMessage(BaseModel):
     message: Literal[
         "garnishment",
         "inheritance",
@@ -65,7 +65,7 @@ class IDXTransfer(Base):
     #   source_event = "Transfer"
     #     => None
     #   source_event = "Unlock"
-    #     =>  UnlockData
+    #     =>  DataMessage
     data: Mapped[dict | None] = mapped_column(JSON)
     # Message
     #   source_event = "Transfer"

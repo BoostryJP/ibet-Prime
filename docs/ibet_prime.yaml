@@ -11153,6 +11153,19 @@ components:
         - notice_type
         - metainfo
       title: DVPDeliveryInfoNotification
+    DataMessage:
+      properties:
+        message:
+          type: string
+          enum:
+            - garnishment
+            - inheritance
+            - force_unlock
+          title: Message
+      type: object
+      required:
+        - message
+      title: DataMessage
     DeliveryStatus:
       type: integer
       enum:
@@ -15422,19 +15435,6 @@ components:
       allOf:
         - $ref: '#/components/schemas/TxDataDetail'
       title: TxDataResponse
-    UnlockData:
-      properties:
-        message:
-          type: string
-          enum:
-            - garnishment
-            - inheritance
-            - force_unlock
-          title: Message
-      type: object
-      required:
-        - message
-      title: UnlockData
     UnlockInfoMetaInfo:
       properties:
         token_address:
@@ -15542,7 +15542,7 @@ components:
           description: Source Event
         data:
           anyOf:
-            - $ref: '#/components/schemas/UnlockData'
+            - $ref: '#/components/schemas/DataMessage'
             - type: object
           title: Data
           description: Event data

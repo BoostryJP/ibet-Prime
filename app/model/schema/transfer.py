@@ -69,7 +69,7 @@ class Transfer(TransferBase):
     data: None = Field(description="Event data")
 
 
-class UnlockData(BaseModel):
+class DataMessage(BaseModel):
     message: Literal[
         "garnishment",
         "inheritance",
@@ -81,7 +81,7 @@ class UnlockTransfer(TransferBase):
     source_event: Literal[TransferSourceEventType.Unlock] = Field(
         description="Source Event"
     )
-    data: UnlockData | dict = Field(description="Event data")
+    data: DataMessage | dict = Field(description="Event data")
 
 
 ############################

@@ -35,11 +35,11 @@ from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     Account,
+    DataMessage,
     IDXTransfer,
     IDXTransferBlockNumber,
     IDXTransferSourceEventType,
     Token,
-    UnlockData,
 )
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -286,7 +286,7 @@ class Processor:
         if data_str is not None:
             try:
                 data = json.loads(data_str)
-                validated_data = UnlockData(**data)
+                validated_data = DataMessage(**data)
                 message = validated_data.message
             except ValidationError:
                 data = {}
