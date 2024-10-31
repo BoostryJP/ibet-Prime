@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import IntEnum, StrEnum
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -47,6 +47,41 @@ class TransferApprovalStatus(IntEnum):
     ESCROW_FINISHED = 1
     TRANSFERRED = 2
     CANCELED = 3
+
+
+class TransferBase(BaseModel):
+    """transfer data base"""
+
+    transaction_hash: str
+    token_address: str
+    from_address: str
+    from_address_personal_information: Optional[PersonalInfo] = Field(...)
+    to_address: str
+    to_address_personal_information: Optional[PersonalInfo] = Field(...)
+    amount: int
+    block_timestamp: str
+
+
+class Transfer(TransferBase):
+    source_event: Literal[TransferSourceEventType.Transfer] = Field(
+        description="Source Event"
+    )
+    data: None = Field(description="Event data")
+
+
+class DataMessage(BaseModel):
+    message: Literal[
+        "garnishment",
+        "inheritance",
+        "force_unlock",
+    ]
+
+
+class UnlockTransfer(TransferBase):
+    source_event: Literal[TransferSourceEventType.Unlock] = Field(
+        description="Source Event"
+    )
+    data: DataMessage | dict = Field(description="Event data")
 
 
 ############################
@@ -87,6 +122,9 @@ class ListTransferHistoryQuery(BasePaginationQuery):
         None, description="Source event of transfer"
     )
     data: Optional[str] = Field(None, description="source event data")
+    message: Optional[
+        Literal["garnishment"] | Literal["inheritance"] | Literal["force_unlock"]
+    ] = Field(None, description="message field in source event data")
 
     sort_item: Optional[ListTransferHistorySortItem] = Field(
         ListTransferHistorySortItem.BLOCK_TIMESTAMP, description="Sort item"
@@ -143,26 +181,11 @@ class ListSpecificTokenTransferApprovalHistoryQuery(BasePaginationQuery):
 ############################
 
 
-class TransferResponse(BaseModel):
-    """transfer data"""
-
-    transaction_hash: str
-    token_address: str
-    from_address: str
-    from_address_personal_information: Optional[PersonalInfo] = Field(...)
-    to_address: str
-    to_address_personal_information: Optional[PersonalInfo] = Field(...)
-    amount: int
-    source_event: TransferSourceEventType = Field(description="Source Event")
-    data: dict | None = Field(description="Event data")
-    block_timestamp: str
-
-
 class TransferHistoryResponse(BaseModel):
     """transfer history"""
 
     result_set: ResultSet
-    transfer_history: List[TransferResponse]
+    transfer_history: List[Transfer | UnlockTransfer]
 
 
 class TransferApprovalResponse(BaseModel):

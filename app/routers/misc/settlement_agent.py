@@ -300,6 +300,8 @@ async def list_all_dvp_agent_deliveries(
         stmt = stmt.order_by(IDXDelivery.create_blocktimestamp)
     else:  # DESC
         stmt = stmt.order_by(desc(IDXDelivery.create_blocktimestamp))
+    # NOTE: Set secondary sort for consistent results
+    stmt = stmt.order_by(IDXDelivery.delivery_id)
 
     # Pagination
     if request_query.limit is not None:

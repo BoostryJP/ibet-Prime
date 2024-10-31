@@ -2970,6 +2970,27 @@ paths:
             description: source event data
             title: Data
           description: source event data
+        - name: message
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - enum:
+                  - garnishment
+                const: garnishment
+                type: string
+              - enum:
+                  - inheritance
+                const: inheritance
+                type: string
+              - enum:
+                  - force_unlock
+                const: force_unlock
+                type: string
+              - type: 'null'
+            description: message field in source event data
+            title: Message
+          description: message field in source event data
         - name: sort_item
           in: query
           required: false
@@ -7332,6 +7353,27 @@ paths:
             description: source event data
             title: Data
           description: source event data
+        - name: message
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - enum:
+                  - garnishment
+                const: garnishment
+                type: string
+              - enum:
+                  - inheritance
+                const: inheritance
+                type: string
+              - enum:
+                  - force_unlock
+                const: force_unlock
+                type: string
+              - type: 'null'
+            description: message field in source event data
+            title: Message
+          description: message field in source event data
         - name: sort_item
           in: query
           required: false
@@ -11111,6 +11153,19 @@ components:
         - notice_type
         - metainfo
       title: DVPDeliveryInfoNotification
+    DataMessage:
+      properties:
+        message:
+          type: string
+          enum:
+            - garnishment
+            - inheritance
+            - force_unlock
+          title: Message
+      type: object
+      required:
+        - message
+      title: DataMessage
     DeliveryStatus:
       type: integer
       enum:
@@ -14870,6 +14925,58 @@ components:
         - Update
       title: TokenUpdateOperationCategory
       description: Operation category of update token
+    Transfer:
+      properties:
+        transaction_hash:
+          type: string
+          title: Transaction Hash
+        token_address:
+          type: string
+          title: Token Address
+        from_address:
+          type: string
+          title: From Address
+        from_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        to_address:
+          type: string
+          title: To Address
+        to_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        amount:
+          type: integer
+          title: Amount
+        block_timestamp:
+          type: string
+          title: Block Timestamp
+        source_event:
+          type: string
+          enum:
+            - Transfer
+          const: Transfer
+          title: Source Event
+          description: Source Event
+        data:
+          type: 'null'
+          title: Data
+          description: Event data
+      type: object
+      required:
+        - transaction_hash
+        - token_address
+        - from_address
+        - from_address_personal_information
+        - to_address
+        - to_address_personal_information
+        - amount
+        - block_timestamp
+        - source_event
+        - data
+      title: Transfer
     TransferApprovalHistoryResponse:
       properties:
         result_set:
@@ -15187,7 +15294,9 @@ components:
           $ref: '#/components/schemas/ResultSet'
         transfer_history:
           items:
-            $ref: '#/components/schemas/TransferResponse'
+            anyOf:
+              - $ref: '#/components/schemas/Transfer'
+              - $ref: '#/components/schemas/UnlockTransfer'
           type: array
           title: Transfer History
       type: object
@@ -15196,58 +15305,6 @@ components:
         - transfer_history
       title: TransferHistoryResponse
       description: transfer history
-    TransferResponse:
-      properties:
-        transaction_hash:
-          type: string
-          title: Transaction Hash
-        token_address:
-          type: string
-          title: Token Address
-        from_address:
-          type: string
-          title: From Address
-        from_address_personal_information:
-          anyOf:
-            - $ref: '#/components/schemas/PersonalInfo'
-            - type: 'null'
-        to_address:
-          type: string
-          title: To Address
-        to_address_personal_information:
-          anyOf:
-            - $ref: '#/components/schemas/PersonalInfo'
-            - type: 'null'
-        amount:
-          type: integer
-          title: Amount
-        source_event:
-          allOf:
-            - $ref: '#/components/schemas/TransferSourceEventType'
-          description: Source Event
-        data:
-          anyOf:
-            - type: object
-            - type: 'null'
-          title: Data
-          description: Event data
-        block_timestamp:
-          type: string
-          title: Block Timestamp
-      type: object
-      required:
-        - transaction_hash
-        - token_address
-        - from_address
-        - from_address_personal_information
-        - to_address
-        - to_address_personal_information
-        - amount
-        - source_event
-        - data
-        - block_timestamp
-      title: TransferResponse
-      description: transfer data
     TransferSourceEventType:
       type: string
       enum:
@@ -15448,6 +15505,60 @@ components:
         - notice_type
         - metainfo
       title: UnlockInfoNotification
+    UnlockTransfer:
+      properties:
+        transaction_hash:
+          type: string
+          title: Transaction Hash
+        token_address:
+          type: string
+          title: Token Address
+        from_address:
+          type: string
+          title: From Address
+        from_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        to_address:
+          type: string
+          title: To Address
+        to_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        amount:
+          type: integer
+          title: Amount
+        block_timestamp:
+          type: string
+          title: Block Timestamp
+        source_event:
+          type: string
+          enum:
+            - Unlock
+          const: Unlock
+          title: Source Event
+          description: Source Event
+        data:
+          anyOf:
+            - $ref: '#/components/schemas/DataMessage'
+            - type: object
+          title: Data
+          description: Event data
+      type: object
+      required:
+        - transaction_hash
+        - token_address
+        - from_address
+        - from_address_personal_information
+        - to_address
+        - to_address_personal_information
+        - amount
+        - block_timestamp
+        - source_event
+        - data
+      title: UnlockTransfer
     UpdateFreezeLogRequest:
       properties:
         account_address:

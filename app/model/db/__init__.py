@@ -71,6 +71,7 @@ from .idx_position import (
     IDXPositionShareBlockNumber,
 )
 from .idx_transfer import (
+    DataMessage,
     IDXTransfer,
     IDXTransferBlockNumber,
     IDXTransferSourceEventType,
