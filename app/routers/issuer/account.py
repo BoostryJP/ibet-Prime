@@ -53,6 +53,7 @@ from app.model.db import (
     IDXPersonalInfoHistory,
     PersonalInfoDataSource,
     PersonalInfoEventType,
+    TmpChildAccountBatchCreate,
     TransactionLock,
 )
 from app.model.schema import (
@@ -63,6 +64,8 @@ from app.model.schema import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
     AccountResponse,
+    BatchCreateChildAccountRequest,
+    BatchCreateChildAccountResponse,
     ChildAccountResponse,
     CreateChildAccountResponse,
     CreateUpdateChildAccountRequest,
@@ -667,6 +670,74 @@ async def create_child_account(
     await db.commit()
 
     return json_response({"child_account_index": index})
+
+
+# POST: /accounts/{issuer_address}/child_accounts/batch
+@router.post(
+    "/accounts/{issuer_address}/child_accounts/batch",
+    operation_id="CreateChildAccountInBatch",
+    response_model=BatchCreateChildAccountResponse,
+    responses=get_routers_responses(
+        404, OperationNotPermittedForOlderIssuers, ServiceUnavailableError
+    ),
+)
+async def create_child_account_in_batch(
+    db: DBAsyncSession,
+    issuer_address: Annotated[str, Path()],
+    account_list_req: BatchCreateChildAccountRequest,
+):
+    # Check if the issuer exists.
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
+    ).first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer does not exist")
+
+    # Check if the issuer was created in version 24.12 or later.
+    if _account.issuer_public_key is None:
+        raise OperationNotPermittedForOlderIssuers
+
+    # Lock child account index table
+    try:
+        _child_index = (
+            await db.scalars(
+                select(ChildAccountIndex)
+                .where(ChildAccountIndex.issuer_address == issuer_address)
+                .limit(1)
+                .with_for_update(nowait=True)
+            )
+        ).first()
+    except OperationalError:
+        await db.rollback()
+        await db.close()
+        raise ServiceUnavailableError(
+            "Creation of child accounts for this issuer is temporarily unavailable"
+        )
+
+    # Insert temporary table
+    _next_index = _child_index.next_index
+    _index_list = []
+    for _personal_info in account_list_req.personal_information_list:
+        personal_info = _personal_info.model_dump()
+        personal_info["key_manager"] = "SELF"
+
+        _batch_create = TmpChildAccountBatchCreate()
+        _batch_create.issuer_address = _account.issuer_address
+        _batch_create.child_account_index = _next_index
+        _batch_create.personal_info = personal_info
+        db.add(_batch_create)
+
+        _index_list.append(_next_index)
+        _next_index += 1
+
+    _child_index.next_index = _next_index
+    await db.merge(_child_index)
+
+    await db.commit()
+
+    return json_response({"child_account_index_list": _index_list})
 
 
 # GET: /accounts/{issuer_address}/child_accounts

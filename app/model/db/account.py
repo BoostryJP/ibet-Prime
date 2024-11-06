@@ -102,3 +102,16 @@ class ChildAccount(Base):
     child_account_index: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     # child account address
     child_account_address: Mapped[str] = mapped_column(String(42), nullable=False)
+
+
+class TmpChildAccountBatchCreate(Base):
+    """Temporary table for batch creation of child accounts"""
+
+    __tablename__ = "tmp_batch_create_child_account"
+
+    # issuer address
+    issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # child account index
+    child_account_index: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # personal information
+    personal_info = mapped_column(JSON, nullable=False)

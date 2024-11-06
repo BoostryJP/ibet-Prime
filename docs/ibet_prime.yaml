@@ -578,6 +578,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /accounts/{issuer_address}/child_accounts/batch:
+    post:
+      tags:
+        - account
+      summary: Create Child Account In Batch
+      operationId: CreateChildAccountInBatch
+      parameters:
+        - name: issuer_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Issuer Address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchCreateChildAccountRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCreateChildAccountResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationNotPermittedForOlderIssuersResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceUnavailableErrorResponse'
   /accounts/{issuer_address}/child_accounts/{child_account_index}:
     get:
       tags:
@@ -9829,6 +9874,30 @@ components:
         - meta
         - detail
       title: AuthorizationErrorResponse
+    BatchCreateChildAccountRequest:
+      properties:
+        personal_information_list:
+          items:
+            $ref: '#/components/schemas/PersonalInfoInput'
+          type: array
+          title: Personal Information List
+      type: object
+      required:
+        - personal_information_list
+      title: BatchCreateChildAccountRequest
+      description: Batch create issuer's child accounts schema (REQUEST)
+    BatchCreateChildAccountResponse:
+      properties:
+        child_account_index_list:
+          items:
+            type: integer
+          type: array
+          title: Child Account Index List
+      type: object
+      required:
+        - child_account_index_list
+      title: BatchCreateChildAccountResponse
+      description: Batch create issuer's child accounts schema (RESPONSE)
     BatchIssueRedeemProcessedMetaInfo:
       properties:
         category:

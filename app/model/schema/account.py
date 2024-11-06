@@ -139,6 +139,12 @@ class CreateUpdateChildAccountRequest(BaseModel):
     personal_information: PersonalInfoInput
 
 
+class BatchCreateChildAccountRequest(BaseModel):
+    """Batch create issuer's child accounts schema (REQUEST)"""
+
+    personal_information_list: list[PersonalInfoInput]
+
+
 class ListAllChildAccountSortItem(StrEnum):
     child_account_index = "child_account_index"
     child_account_address = "child_account_address"
@@ -195,6 +201,12 @@ class CreateChildAccountResponse(BaseModel):
     """Create a issuer's child account schema (RESPONSE)"""
 
     child_account_index: int
+
+
+class BatchCreateChildAccountResponse(BaseModel):
+    """Batch create issuer's child accounts schema (RESPONSE)"""
+
+    child_account_index_list: list[int]
 
 
 class ListAllChildAccountResponse(BaseModel):

@@ -23,6 +23,7 @@ from .account import (
     AccountRsaStatus,
     ChildAccount,
     ChildAccountIndex,
+    TmpChildAccountBatchCreate,
 )
 from .auth_token import AuthToken
 from .base import Base
