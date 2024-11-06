@@ -107,7 +107,7 @@ class ChildAccount(Base):
 class TmpChildAccountBatchCreate(Base):
     """Temporary table for batch creation of child accounts"""
 
-    __tablename__ = "tmp_batch_create_child_account"
+    __tablename__ = "tmp_child_account_batch_create"
 
     # issuer address
     issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)

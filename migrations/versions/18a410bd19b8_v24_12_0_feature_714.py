@@ -21,7 +21,7 @@ depends_on = None
 
 def upgrade():
     op.create_table(
-        "tmp_batch_create_child_account",
+        "tmp_child_account_batch_create",
         sa.Column("issuer_address", sa.String(length=42), nullable=False),
         sa.Column("child_account_index", sa.BigInteger(), nullable=False),
         sa.Column("personal_info", sa.JSON(), nullable=False),
@@ -33,4 +33,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table("tmp_batch_create_child_account", schema=get_db_schema())
+    op.drop_table("tmp_child_account_batch_create", schema=get_db_schema())
