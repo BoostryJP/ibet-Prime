@@ -27,6 +27,7 @@ PROC_LIST="${PROC_LIST} batch/processor_update_token.py"
 PROC_LIST="${PROC_LIST} batch/processor_batch_issue_redeem.py"
 PROC_LIST="${PROC_LIST} batch/processor_batch_register_personal_info.py"
 PROC_LIST="${PROC_LIST} batch/processor_dvp_async_tx.py"
+PROC_LIST="${PROC_LIST} batch/processor_batch_create_child_account.py"
 
 if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   PROC_LIST="${PROC_LIST} batch/processor_rotate_e2e_messaging_rsa_key.py"

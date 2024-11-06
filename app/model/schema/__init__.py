@@ -25,6 +25,8 @@ from .account import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
     AccountResponse,
+    BatchCreateChildAccountRequest,
+    BatchCreateChildAccountResponse,
     ChildAccountResponse,
     CreateChildAccountResponse,
     CreateUpdateChildAccountRequest,
