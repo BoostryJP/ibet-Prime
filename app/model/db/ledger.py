@@ -18,11 +18,105 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import JSON, BigInteger, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base, naive_utcnow
+from app.model.db.base import Base, naive_utcnow
+
+
+class LedgerTemplate(Base):
+    """Ledger Template"""
+
+    __tablename__ = "ledger_template"
+
+    # token address
+    token_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # issuer address
+    issuer_address: Mapped[str | None] = mapped_column(String(42), index=False)
+    # token name
+    token_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # headers(any object array)
+    headers: Mapped[dict | None] = mapped_column(JSON, default=[])
+    # footers(any object array)
+    footers: Mapped[dict | None] = mapped_column(JSON, default=[])
+
+
+class LedgerDataType(StrEnum):
+    IBET_FIN = "ibetfin"
+    DB = "db"
+
+
+class LedgerDetailsTemplate(Base):
+    """Ledger Details Template"""
+
+    __tablename__ = "ledger_details_template"
+
+    # sequence id
+    # Note: It will be unique in token_address and token_detail_type,
+    #       but since there is a possibility that multibyte characters will be set in token_detail_type,
+    #       this column will be primary key.
+    id: Mapped[str] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # token address
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
+    # token detail type
+    token_detail_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    # headers(any object array)
+    headers: Mapped[dict | None] = mapped_column(JSON, default=[])
+    # footers(any object array)
+    footers: Mapped[dict | None] = mapped_column(JSON, default=[])
+    # data type
+    data_type: Mapped[LedgerDataType] = mapped_column(String(20), nullable=False)
+    # data source (address or UUID)
+    data_source: Mapped[str | None] = mapped_column(String(42))
+
+
+class LedgerCreationStatus(StrEnum):
+    """Ledger creation status"""
+
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+
+
+class LedgerCreationRequest(Base):
+    """Ledger creation requests"""
+
+    __tablename__ = "ledger_creation_request"
+
+    # request id (UUID4)
+    request_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    # token type (TokenType)
+    token_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    # token address
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
+    # status
+    status: Mapped[LedgerCreationStatus] = mapped_column(String(20), nullable=False)
+
+
+class LedgerCreationRequestData(Base):
+    """Input dataset for ledger creation request"""
+
+    __tablename__ = "ledger_creation_request_data"
+
+    # request id (UUID4)
+    request_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    # data type
+    data_type: Mapped[LedgerDataType] = mapped_column(String(20), primary_key=True)
+    # account address
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # acquisition date (format: YYYY/MM/DD)
+    acquisition_date: Mapped[str] = mapped_column(String(10), primary_key=True)
+    # name
+    name: Mapped[str | None] = mapped_column(String(200), index=True)
+    # address
+    address: Mapped[str | None] = mapped_column(String(200))
+    # amount
+    amount: Mapped[int | None] = mapped_column(BigInteger)
+    # price
+    price: Mapped[int | None] = mapped_column(BigInteger)
+    # balance
+    balance: Mapped[int | None] = mapped_column(BigInteger)
 
 
 class Ledger(Base):
@@ -34,7 +128,7 @@ class Ledger(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token address
     token_address: Mapped[str] = mapped_column(String(42), nullable=False)
-    # token type
+    # token type (TokenType)
     token_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # ledger info
     ledger: Mapped[dict] = mapped_column(JSON, nullable=False)

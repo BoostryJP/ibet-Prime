@@ -35,7 +35,7 @@ class TestUpdateLedgerDetailsData:
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.routers.issuer.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
     def test_normal_1(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -44,7 +44,7 @@ class TestUpdateLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -120,7 +120,7 @@ class TestUpdateLedgerDetailsData:
 
     # <Normal_2>
     # Max value
-    @mock.patch("app.routers.issuer.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
     def test_normal_2(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -129,7 +129,7 @@ class TestUpdateLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -439,7 +439,7 @@ class TestUpdateLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
