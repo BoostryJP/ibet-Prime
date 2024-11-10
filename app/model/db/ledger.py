@@ -99,14 +99,18 @@ class LedgerCreationRequestData(Base):
 
     __tablename__ = "ledger_creation_request_data"
 
+    # sequence id
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # request id (UUID4)
-    request_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     # data type
-    data_type: Mapped[LedgerDataType] = mapped_column(String(20), primary_key=True)
+    data_type: Mapped[LedgerDataType] = mapped_column(
+        String(20), nullable=False, index=True
+    )
     # account address
-    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    account_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # acquisition date (format: YYYY/MM/DD)
-    acquisition_date: Mapped[str] = mapped_column(String(10), primary_key=True)
+    acquisition_date: Mapped[str] = mapped_column(String(10), nullable=False)
     # name
     name: Mapped[str | None] = mapped_column(String(200), index=True)
     # address
