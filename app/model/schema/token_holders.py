@@ -27,6 +27,7 @@ from app.model import ValidatedDatetimeStr
 from app.model.db import TokenHolderBatchStatus
 from app.model.schema.base import (
     BasePaginationQuery,
+    KeyManagerType,
     ResultSet,
     SortOrder,
     ValueOperator,
@@ -49,6 +50,9 @@ class ListTokenHoldersPersonalInfoSortItem(StrEnum):
 
 
 class ListTokenHoldersPersonalInfoQuery(BasePaginationQuery):
+    key_manager_type: Optional[KeyManagerType] = Field(
+        None, description="Key manager type (**this affects total number**)"
+    )
     account_address: Optional[str] = Field(None, description="Account address")
     created_from: Optional[ValidatedDatetimeStr] = Field(
         None, description="Created datetime (From)"
@@ -72,6 +76,9 @@ class ListTokenHoldersPersonalInfoQuery(BasePaginationQuery):
 
 
 class ListTokenHoldersPersonalInfoHistoryQuery(BasePaginationQuery):
+    key_manager_type: Optional[KeyManagerType] = Field(
+        None, description="Key manager type (**this affects total number**)"
+    )
     account_address: Optional[str] = Field(None, description="Account address")
     event_type: Optional[PersonalInfoEventType] = Field(None, description="event type")
     block_timestamp_from: Optional[ValidatedDatetimeStr] = Field(

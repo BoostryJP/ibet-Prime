@@ -49,7 +49,7 @@ from app.model.schema import (
     RetrieveTokenHoldersCollectionSortItem,
     RetrieveTokenHoldersListResponse,
 )
-from app.model.schema.base import ValueOperator
+from app.model.schema.base import KeyManagerType, ValueOperator
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
@@ -82,10 +82,19 @@ async def list_all_token_holders_personal_info(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get all data
+    # Base query
     stmt = select(IDXPersonalInfo).where(
         IDXPersonalInfo.issuer_address == issuer_address
     )
+    match get_query.key_manager_type:
+        case KeyManagerType.SELF:
+            stmt = stmt.where(
+                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"
+            )
+        case KeyManagerType.OTHERS:
+            stmt = stmt.where(
+                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
+            )
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Filter
@@ -174,10 +183,21 @@ async def list_all_token_holders_personal_info_history(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get all data
+    # Base query
     stmt = select(IDXPersonalInfoHistory).where(
         IDXPersonalInfoHistory.issuer_address == issuer_address
     )
+    match get_query.key_manager_type:
+        case KeyManagerType.SELF:
+            stmt = stmt.where(
+                IDXPersonalInfoHistory.personal_info["key_manager"].as_string()
+                == "SELF"
+            )
+        case KeyManagerType.OTHERS:
+            stmt = stmt.where(
+                IDXPersonalInfoHistory.personal_info["key_manager"].as_string()
+                != "SELF"
+            )
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Filter

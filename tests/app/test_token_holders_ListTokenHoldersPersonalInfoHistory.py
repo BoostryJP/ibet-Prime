@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import IDXPersonalInfoHistory, PersonalInfoEventType
 from tests.account_config import config_eth_account
 
@@ -162,10 +164,205 @@ class TestListTokenHoldersPersonalInfoHistory:
             ],
         }
 
-    # <Normal_3_1>
+    # <Normal_3_1_1>
+    # Multiple records
+    # Search filter: key_manager_type = "SELF"
+    @pytest.mark.freeze_time("2024-11-11 12:34:56")
+    def test_normal_3_1_1(self, client, db):
+        # Prepare data
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_1
+        history.event_type = PersonalInfoEventType.REGISTER
+        history.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(history)
+
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_1
+        history.event_type = PersonalInfoEventType.MODIFY
+        history.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(history)
+
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_2
+        history.event_type = PersonalInfoEventType.REGISTER
+        history.personal_info = {
+            "key_manager": "SELF",
+            "name": "name_test3",
+            "postal_code": "postal_code_test3",
+            "address": "address_test3",
+            "email": "email_test3",
+            "birth": "birth_test3",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(history)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.url,
+            headers={
+                "issuer-address": self.test_issuer_address_1,
+            },
+            params={"key_manager_type": "SELF"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
+            "personal_info": [
+                {
+                    "id": 3,
+                    "account_address": self.test_account_address_2,
+                    "event_type": "register",
+                    "personal_info": {
+                        "key_manager": "SELF",
+                        "name": "name_test3",
+                        "postal_code": "postal_code_test3",
+                        "address": "address_test3",
+                        "email": "email_test3",
+                        "birth": "birth_test3",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "block_timestamp": "2024-11-11T21:34:56+09:00",
+                    "created": "2024-11-11T21:34:56+09:00",
+                },
+            ],
+        }
+
+    # <Normal_3_1_2>
+    # Multiple records
+    # Search filter: key_manager_type = "OTHERS"
+    @pytest.mark.freeze_time("2024-11-11 12:34:56")
+    def test_normal_3_1_2(self, client, db):
+        # Prepare data
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_1
+        history.event_type = PersonalInfoEventType.REGISTER
+        history.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(history)
+
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_1
+        history.event_type = PersonalInfoEventType.MODIFY
+        history.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(history)
+
+        history = IDXPersonalInfoHistory()
+        history.issuer_address = self.test_issuer_address_1
+        history.account_address = self.test_account_address_2
+        history.event_type = PersonalInfoEventType.REGISTER
+        history.personal_info = {
+            "key_manager": "SELF",
+            "name": "name_test3",
+            "postal_code": "postal_code_test3",
+            "address": "address_test3",
+            "email": "email_test3",
+            "birth": "birth_test3",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(history)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.url,
+            headers={
+                "issuer-address": self.test_issuer_address_1,
+            },
+            params={"key_manager_type": "OTHERS"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 2, "limit": None, "offset": None, "total": 2},
+            "personal_info": [
+                {
+                    "id": 1,
+                    "account_address": self.test_account_address_1,
+                    "event_type": "register",
+                    "personal_info": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "block_timestamp": "2024-11-11T21:34:56+09:00",
+                    "created": "2024-11-11T21:34:56+09:00",
+                },
+                {
+                    "id": 2,
+                    "account_address": self.test_account_address_1,
+                    "event_type": "modify",
+                    "personal_info": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "address": "address_test2",
+                        "email": "email_test2",
+                        "birth": "birth_test2",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "block_timestamp": "2024-11-11T21:34:56+09:00",
+                    "created": "2024-11-11T21:34:56+09:00",
+                },
+            ],
+        }
+
+    # <Normal_3_2>
     # Multiple records
     # Search filter: account_address
-    def test_normal_3_1(self, client, db):
+    def test_normal_3_2(self, client, db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -273,10 +470,10 @@ class TestListTokenHoldersPersonalInfoHistory:
             ],
         }
 
-    # <Normal_3_2>
+    # <Normal_3_3>
     # Multiple records
     # Search filter: event_type
-    def test_normal_3_2(self, client, db):
+    def test_normal_3_3(self, client, db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -369,10 +566,10 @@ class TestListTokenHoldersPersonalInfoHistory:
             ],
         }
 
-    # <Normal_3_3>
+    # <Normal_3_4>
     # Multiple records
     # Search filter: created_from, created_to
-    def test_normal_3_3(self, client, db):
+    def test_normal_3_4(self, client, db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -466,10 +663,10 @@ class TestListTokenHoldersPersonalInfoHistory:
             ],
         }
 
-    # <Normal_3_4>
+    # <Normal_3_5>
     # Multiple records
     # Search filter: block_timestamp_from, block_timestamp_to
-    def test_normal_3_4(self, client, db):
+    def test_normal_3_5(self, client, db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1

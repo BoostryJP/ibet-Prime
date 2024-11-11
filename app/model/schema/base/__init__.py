@@ -23,6 +23,7 @@ from .base import (
     EMPTY_str,
     IbetShareContractVersion,
     IbetStraightBondContractVersion,
+    KeyManagerType,
     MMDD_constr,
     ResultSet,
     SortOrder,
