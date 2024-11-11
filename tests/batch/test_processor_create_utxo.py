@@ -130,7 +130,7 @@ class TestProcessor:
     # <Normal_1>
     # Execute Batch Run 1st: No Event
     # Execute Batch Run 2nd: Executed Transfer Event
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -276,7 +276,7 @@ class TestProcessor:
 
     # <Normal_2>
     # Over max block lot
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @mock.patch("batch.processor_create_utxo.CREATE_UTXO_BLOCK_LOT_MAX_SIZE", 5)
     @pytest.mark.asyncio
     async def test_normal_2(self, mock_func, processor, db):
@@ -389,7 +389,7 @@ class TestProcessor:
 
     # <Normal_3>
     # bulk transfer(same transaction-hash)
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_3(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -496,7 +496,7 @@ class TestProcessor:
 
     # <Normal_4>
     # to Exchange transfer only
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_4(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -572,7 +572,7 @@ class TestProcessor:
 
     # <Normal_5>
     # Holder Changed
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_5(
         self, mock_func, processor, db, personal_info_contract, ibet_exchange_contract
@@ -767,7 +767,7 @@ class TestProcessor:
 
     # <Normal_6>
     # Additional Issue
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_6(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -855,7 +855,7 @@ class TestProcessor:
 
     # <Normal_7>
     # Redeem
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_7(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -1006,7 +1006,7 @@ class TestProcessor:
 
     # <Normal_8_1>
     # Unlock(account_address!=recipient_address)
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_8_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -1199,7 +1199,7 @@ class TestProcessor:
 
     # <Normal_8_2>
     # Unlock(account_address==recipient_address)
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_8_2(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -1384,7 +1384,7 @@ class TestProcessor:
 
     # <Normal_9>
     # Transfer & Additional Issue & Redeem
-    @mock.patch("batch.processor_create_utxo.create_ledger")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @pytest.mark.asyncio
     async def test_normal_9(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")

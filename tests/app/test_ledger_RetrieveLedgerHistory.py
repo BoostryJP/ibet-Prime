@@ -25,7 +25,7 @@ from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     IDXPersonalInfo,
     Ledger,
-    LedgerDetailsDataType,
+    LedgerDataType,
     LedgerDetailsTemplate,
     PersonalInfoDataSource,
     Token,
@@ -687,7 +687,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -978,7 +978,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1291,7 +1291,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1546,7 +1546,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1732,7 +1732,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1993,7 +1993,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 

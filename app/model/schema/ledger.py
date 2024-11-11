@@ -19,18 +19,25 @@ SPDX-License-Identifier: Apache-2.0
 
 import sys
 from datetime import datetime
+from enum import StrEnum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.model.db import LedgerDetailsDataType, TokenType
-from app.model.schema.base import ResultSet
+from app.model.schema.base import ResultSet, TokenType
+
+
+############################
+# COMMON
+############################
+class LedgerDetailsDataType(StrEnum):
+    IBET_FIN = "ibetfin"
+    DB = "db"
+
 
 ############################
 # REQUEST
 ############################
-
-
 class CreateUpdateLedgerDetailsDataTemplateRequest(BaseModel):
     """Create or Update Ledger Details Data Template schema (Request)"""
 
@@ -89,8 +96,6 @@ class CreateUpdateLedgerDetailsDataRequest(BaseModel):
 ############################
 # RESPONSE
 ############################
-
-
 class LedgerResponse(BaseModel):
     """Ledger schema (Response)"""
 
