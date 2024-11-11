@@ -7988,6 +7988,16 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: key_manager_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/KeyManagerType'
+              - type: 'null'
+            description: Key manager type (**this affects total number**)
+            title: Key Manager Type
+          description: Key manager type (**this affects total number**)
         - name: account_address
           in: query
           required: false
@@ -8109,6 +8119,16 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: key_manager_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/KeyManagerType'
+              - type: 'null'
+            description: Key manager type (**this affects total number**)
+            title: Key Manager Type
+          description: Key manager type (**this affects total number**)
         - name: account_address
           in: query
           required: false
@@ -12953,6 +12973,12 @@ components:
         - amount
       title: IssueRedeemSortItem
       description: Issue/Redeem sort item
+    KeyManagerType:
+      type: string
+      enum:
+        - SELF
+        - OTHERS
+      title: KeyManagerType
     LedgerDetailsDataListAllResponse:
       properties:
         data_id:

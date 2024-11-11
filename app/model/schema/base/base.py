@@ -58,6 +58,11 @@ class TokenType(StrEnum):
     IBET_SHARE = "IbetShare"
 
 
+class KeyManagerType(StrEnum):
+    SELF = "SELF"
+    OTHERS = "OTHERS"
+
+
 class ValueOperator(IntEnum):
     EQUAL = 0
     GTE = 1
