@@ -22,7 +22,7 @@ from datetime import UTC, datetime
 from typing import Sequence
 
 import pytz
-from sqlalchemy import and_, delete, select
+from sqlalchemy import and_, delete, func, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import log
@@ -79,11 +79,16 @@ async def request_ledger_creation(db: AsyncSession, token_address: str):
         return
 
     # Get ledger details template
-    _details_template_list: Sequence[LedgerDetailsTemplate] = (
+    _details_template_list: Sequence[tuple[LedgerDataType, str | None]] = (
         await db.scalars(
-            select(LedgerDetailsTemplate)
-            .where(LedgerDetailsTemplate.token_address == token_address)
-            .order_by(LedgerDetailsTemplate.id)
+            select(
+                func.distinct(
+                    tuple_(
+                        LedgerDetailsTemplate.data_type,
+                        LedgerDetailsTemplate.data_source,
+                    )
+                )
+            ).where(LedgerDetailsTemplate.token_address == token_address)
         )
     ).all()
 
@@ -98,13 +103,15 @@ async def request_ledger_creation(db: AsyncSession, token_address: str):
 
     # Create ledger input dataset
     for _details_template in _details_template_list:
+        _data_type = _details_template[0]
+        _data_source = _details_template[1]
         await __create_ledger_input_dataset(
             db=db,
             request_id=req_id,
             token_address=token_address,
             token_type=_token.type,
-            data_type=_details_template.data_type,
-            data_source=_details_template.data_source,
+            data_type=_data_type,
+            data_source=_data_source,
         )
 
 
@@ -195,6 +202,8 @@ async def finalize_ledger(
                         LedgerCreationRequestData.request_id == request_id,
                         LedgerCreationRequestData.data_type
                         == _details_template.data_type,
+                        LedgerCreationRequestData.data_source
+                        == _details_template.data_source,
                     )
                 )
             )
@@ -277,20 +286,22 @@ async def __create_ledger_input_dataset(
     request_id: str,
     token_address: str,
     token_type: str,
-    data_type: str,
-    data_source: str,
+    data_type: LedgerDataType,
+    data_source: str | None,
 ):
     if data_type == LedgerDataType.DB:
         await __create_dataset_from_db(db, request_id, token_address, data_source)
     elif data_type == LedgerDataType.IBET_FIN:
-        await __create_dataset_from_ibetfin(db, request_id, token_address, token_type)
+        await __create_dataset_from_ibetfin(
+            db, request_id, token_address, token_type, data_source
+        )
 
 
 async def __create_dataset_from_db(
     db: AsyncSession,
     request_id: str,
     token_address: str,
-    data_source: str,
+    data_source: str | None,
 ):
     """Create ledger input data from DB(uploaded off-chain data)"""
 
@@ -310,6 +321,7 @@ async def __create_dataset_from_db(
         ledger_req_data = LedgerCreationRequestData()
         ledger_req_data.request_id = request_id
         ledger_req_data.data_type = LedgerDataType.DB
+        ledger_req_data.data_source = data_source
         ledger_req_data.account_address = ""
         ledger_req_data.acquisition_date = _details_data.acquisition_date
         ledger_req_data.name = _details_data.name
@@ -325,6 +337,7 @@ async def __create_dataset_from_ibetfin(
     request_id: str,
     token_address: str,
     token_type: str,
+    data_source: str | None,
 ):
     """Create ledger input data from ibet for Fin"""
 
@@ -374,6 +387,7 @@ async def __create_dataset_from_ibetfin(
             ledger_req_data = LedgerCreationRequestData()
             ledger_req_data.request_id = request_id
             ledger_req_data.data_type = LedgerDataType.IBET_FIN
+            ledger_req_data.data_source = data_source
             ledger_req_data.account_address = account_address
             ledger_req_data.acquisition_date = date_ymd
             ledger_req_data.name = None

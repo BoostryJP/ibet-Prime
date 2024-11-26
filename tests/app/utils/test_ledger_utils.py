@@ -375,6 +375,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[0].request_id == ledger_req[0].request_id
         assert ledger_req_data[0].data_type == LedgerDataType.DB
+        assert ledger_req_data[0].data_source == "data_id_1"
         assert ledger_req_data[0].account_address == ""
         assert ledger_req_data[0].acquisition_date == "2022/03/03"
         assert ledger_req_data[0].name == "test_data_name_1"
@@ -385,6 +386,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[1].request_id == ledger_req[0].request_id
         assert ledger_req_data[1].data_type == LedgerDataType.DB
+        assert ledger_req_data[1].data_source == "data_id_1"
         assert ledger_req_data[1].account_address == ""
         assert ledger_req_data[1].acquisition_date == "2022/12/03"
         assert ledger_req_data[1].name == "test_data_name_2"
@@ -572,7 +574,7 @@ class TestRequestLedgerCreation:
         _details_template.token_address = token_address_1
         _details_template.token_detail_type = "劣後受益権"
         _details_template.data_type = LedgerDataType.IBET_FIN
-        _details_template.data_source = "data_id_1"
+        _details_template.data_source = None
         async_db.add(_details_template)
 
         await async_db.commit()
@@ -596,6 +598,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[0].request_id == ledger_req[0].request_id
         assert ledger_req_data[0].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[0].data_source is None
         assert ledger_req_data[0].account_address == user_address_1
         assert ledger_req_data[0].acquisition_date == "2022/01/01"
         assert ledger_req_data[0].name is None
@@ -606,6 +609,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[1].request_id == ledger_req[0].request_id
         assert ledger_req_data[1].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[1].data_source is None
         assert ledger_req_data[1].account_address == user_address_1
         assert ledger_req_data[1].acquisition_date == "2022/01/02"
         assert ledger_req_data[1].name is None
@@ -616,6 +620,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[2].request_id == ledger_req[0].request_id
         assert ledger_req_data[2].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[2].data_source is None
         assert ledger_req_data[2].account_address == user_address_2
         assert ledger_req_data[2].acquisition_date == "2022/01/01"
         assert ledger_req_data[2].name is None
@@ -626,6 +631,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[3].request_id == ledger_req[0].request_id
         assert ledger_req_data[3].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[3].data_source is None
         assert ledger_req_data[3].account_address == user_address_2
         assert ledger_req_data[3].acquisition_date == "2022/01/02"
         assert ledger_req_data[3].name is None
@@ -636,6 +642,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[4].request_id == ledger_req[0].request_id
         assert ledger_req_data[4].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[4].data_source is None
         assert ledger_req_data[4].account_address == issuer_address
         assert ledger_req_data[4].acquisition_date == "2022/01/01"
         assert ledger_req_data[4].name is None
@@ -823,7 +830,7 @@ class TestRequestLedgerCreation:
         _details_template.token_address = token_address_1
         _details_template.token_detail_type = "劣後受益権"
         _details_template.data_type = LedgerDataType.IBET_FIN
-        _details_template.data_source = "data_id_1"
+        _details_template.data_source = None
         async_db.add(_details_template)
 
         await async_db.commit()
@@ -847,6 +854,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[0].request_id == ledger_req[0].request_id
         assert ledger_req_data[0].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[0].data_source is None
         assert ledger_req_data[0].account_address == user_address_1
         assert ledger_req_data[0].acquisition_date == "2022/01/01"
         assert ledger_req_data[0].name is None
@@ -857,6 +865,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[1].request_id == ledger_req[0].request_id
         assert ledger_req_data[1].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[1].data_source is None
         assert ledger_req_data[1].account_address == user_address_1
         assert ledger_req_data[1].acquisition_date == "2022/01/02"
         assert ledger_req_data[1].name is None
@@ -867,6 +876,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[2].request_id == ledger_req[0].request_id
         assert ledger_req_data[2].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[2].data_source is None
         assert ledger_req_data[2].account_address == user_address_2
         assert ledger_req_data[2].acquisition_date == "2022/01/01"
         assert ledger_req_data[2].name is None
@@ -877,6 +887,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[3].request_id == ledger_req[0].request_id
         assert ledger_req_data[3].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[3].data_source is None
         assert ledger_req_data[3].account_address == user_address_2
         assert ledger_req_data[3].acquisition_date == "2022/01/02"
         assert ledger_req_data[3].name is None
@@ -887,6 +898,7 @@ class TestRequestLedgerCreation:
 
         assert ledger_req_data[4].request_id == ledger_req[0].request_id
         assert ledger_req_data[4].data_type == LedgerDataType.IBET_FIN
+        assert ledger_req_data[4].data_source is None
         assert ledger_req_data[4].account_address == issuer_address
         assert ledger_req_data[4].acquisition_date == "2022/01/01"
         assert ledger_req_data[4].name is None
@@ -894,6 +906,150 @@ class TestRequestLedgerCreation:
         assert ledger_req_data[4].amount == 300
         assert ledger_req_data[4].price == 20
         assert ledger_req_data[4].balance == 6000
+
+    # <Normal_5>
+    # Successfully request ledger creation
+    # - Duplicate ledger detail template
+    async def test_normal_5(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data: Token
+        token_address_1 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_09
+        async_db.add(_token_1)
+
+        # Prepare data: LedgerTemplate
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = issuer_address
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
+                },
+                "テスト項目3": {
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                    "テスト項目B": "テスト値3B",
+                },
+            },
+        ]
+        _template.token_name = "受益権テスト"
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
+                },
+                "f-テスト項目3": {
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            },
+        ]
+        async_db.add(_template)
+
+        # Prepare data: LedgerDetailsData
+        _details_data_1 = LedgerDetailsData()
+        _details_data_1.token_address = token_address_1
+        _details_data_1.data_id = "data_id_1"
+        _details_data_1.name = "test_data_name_1"
+        _details_data_1.address = "test_data_address_1"
+        _details_data_1.amount = 100
+        _details_data_1.price = 200
+        _details_data_1.balance = 20000
+        _details_data_1.acquisition_date = "2022/03/03"
+        async_db.add(_details_data_1)
+
+        _details_data_2 = LedgerDetailsData()
+        _details_data_2.token_address = token_address_1
+        _details_data_2.data_id = "data_id_1"
+        _details_data_2.name = "test_data_name_2"
+        _details_data_2.address = "test_data_address_2"
+        _details_data_2.amount = 30
+        _details_data_2.price = 40
+        _details_data_2.balance = 1200
+        _details_data_2.acquisition_date = "2022/12/03"
+        async_db.add(_details_data_2)
+
+        # Prepare data: LedgerDetailsTemplate
+        _details_template_1 = LedgerDetailsTemplate()
+        _details_template_1.token_address = token_address_1
+        _details_template_1.token_detail_type = "劣後受益権"
+        _details_template_1.data_type = LedgerDataType.DB
+        _details_template_1.data_source = "data_id_1"
+        async_db.add(_details_template_1)
+
+        _details_template_2 = LedgerDetailsTemplate()
+        _details_template_2.token_address = token_address_1
+        _details_template_2.token_detail_type = "劣後受益権"
+        _details_template_2.data_type = LedgerDataType.DB
+        _details_template_2.data_source = "data_id_1"
+        async_db.add(_details_template_2)
+
+        await async_db.commit()
+
+        # Execute
+        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await async_db.commit()
+
+        # Assertion
+        ledger_req = (await async_db.scalars(select(LedgerCreationRequest))).all()
+        assert len(ledger_req) == 1
+        assert ledger_req[0].request_id is not None
+        assert ledger_req[0].token_type == TokenType.IBET_SHARE
+        assert ledger_req[0].token_address == token_address_1
+        assert ledger_req[0].status == LedgerCreationStatus.PROCESSING
+
+        ledger_req_data = (
+            await async_db.scalars(select(LedgerCreationRequestData))
+        ).all()
+        assert len(ledger_req_data) == 2
+
+        assert ledger_req_data[0].request_id == ledger_req[0].request_id
+        assert ledger_req_data[0].data_type == LedgerDataType.DB
+        assert ledger_req_data[0].data_source == "data_id_1"
+        assert ledger_req_data[0].account_address == ""
+        assert ledger_req_data[0].acquisition_date == "2022/03/03"
+        assert ledger_req_data[0].name == "test_data_name_1"
+        assert ledger_req_data[0].address == "test_data_address_1"
+        assert ledger_req_data[0].amount == 100
+        assert ledger_req_data[0].price == 200
+        assert ledger_req_data[0].balance == 20000
+
+        assert ledger_req_data[1].request_id == ledger_req[0].request_id
+        assert ledger_req_data[1].data_type == LedgerDataType.DB
+        assert ledger_req_data[1].data_source == "data_id_1"
+        assert ledger_req_data[1].account_address == ""
+        assert ledger_req_data[1].acquisition_date == "2022/12/03"
+        assert ledger_req_data[1].name == "test_data_name_2"
+        assert ledger_req_data[1].address == "test_data_address_2"
+        assert ledger_req_data[1].amount == 30
+        assert ledger_req_data[1].price == 40
+        assert ledger_req_data[1].balance == 1200
 
 
 @pytest.mark.asyncio
@@ -1195,10 +1351,11 @@ class TestFinalizeLedger:
             "ledger_id": 1,
         }
 
-    # <Normal_4>
+    # <Normal_4_1>
     # Create Ledger data from LedgerCreationRequestData
+    # - Multiple data_type: DB + IBETFIN
     @pytest.mark.freeze_time("2024-11-06 12:34:56")
-    async def test_normal_4(self, async_db):
+    async def test_normal_4_1(self, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
         user_1 = config_eth_account("user2")
@@ -1299,6 +1456,7 @@ class TestFinalizeLedger:
         ledger_req_data = LedgerCreationRequestData()
         ledger_req_data.request_id = "req_id_1"
         ledger_req_data.data_type = LedgerDataType.DB
+        ledger_req_data.data_source = "data_id_1"
         ledger_req_data.account_address = user_address_1
         ledger_req_data.acquisition_date = "2024/11/08"
         ledger_req_data.name = "test_investor_name_1"
@@ -1311,6 +1469,7 @@ class TestFinalizeLedger:
         ledger_req_data = LedgerCreationRequestData()
         ledger_req_data.request_id = "req_id_1"
         ledger_req_data.data_type = LedgerDataType.DB
+        ledger_req_data.data_source = "data_id_1"
         ledger_req_data.account_address = user_address_1
         ledger_req_data.acquisition_date = "2024/11/09"
         ledger_req_data.name = "test_investor_name_2"
@@ -1323,6 +1482,7 @@ class TestFinalizeLedger:
         ledger_req_data = LedgerCreationRequestData()
         ledger_req_data.request_id = "req_id_1"
         ledger_req_data.data_type = LedgerDataType.IBET_FIN
+        ledger_req_data.data_source = None
         ledger_req_data.account_address = user_address_1
         ledger_req_data.acquisition_date = "2024/11/08"
         ledger_req_data.name = "test_investor_name_3"
@@ -1335,6 +1495,7 @@ class TestFinalizeLedger:
         ledger_req_data = LedgerCreationRequestData()
         ledger_req_data.request_id = "req_id_1"
         ledger_req_data.data_type = LedgerDataType.IBET_FIN
+        ledger_req_data.data_source = None
         ledger_req_data.account_address = user_address_1
         ledger_req_data.acquisition_date = "2024/11/09"
         ledger_req_data.name = None
@@ -1441,6 +1602,193 @@ class TestFinalizeLedger:
                         },
                     ],
                     "some_personal_info_not_registered": True,
+                },
+            ],
+            "footers": _template.footers,
+        }
+
+        ledger_req_data = (
+            await async_db.scalars(select(LedgerCreationRequestData))
+        ).all()
+        assert len(ledger_req_data) == 0
+
+        _notifications = (await async_db.scalars(select(Notification))).all()
+        assert len(_notifications) == 1
+        assert _notifications[0].id == 1
+        assert _notifications[0].notice_id is not None
+        assert _notifications[0].issuer_address == issuer_address
+        assert _notifications[0].priority == 0
+        assert _notifications[0].type == NotificationType.CREATE_LEDGER_INFO
+        assert _notifications[0].code == 0
+        assert _notifications[0].metainfo == {
+            "token_address": token_address_1,
+            "token_type": TokenType.IBET_SHARE,
+            "ledger_id": 1,
+        }
+
+    # <Normal_4_2>
+    # Create Ledger data from LedgerCreationRequestData
+    # - Duplicate data_type: DB + DB
+    @pytest.mark.freeze_time("2024-11-06 12:34:56")
+    async def test_normal_4_2(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+        user_1 = config_eth_account("user2")
+        user_address_1 = user_1["address"]
+
+        token_address_1 = "test_token_address"
+
+        # Prepare data: Token
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_09
+        async_db.add(_token_1)
+        await async_db.commit()
+
+        # Prepare data: LedgerTemplate
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = issuer_address
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
+                },
+                "テスト項目3": {
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                    "テスト項目B": "テスト値3B",
+                },
+            },
+        ]
+        _template.token_name = "受益権テスト"
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
+                },
+                "f-テスト項目3": {
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            },
+        ]
+        async_db.add(_template)
+
+        # Prepare data: LedgerDetailsTemplate
+        _details_template = LedgerDetailsTemplate()
+        _details_template.token_address = token_address_1
+        _details_template.token_detail_type = "劣後受益権1"
+        _details_template.data_type = LedgerDataType.DB
+        _details_template.data_source = "data_id_1"
+        async_db.add(_details_template)
+
+        _details_template = LedgerDetailsTemplate()
+        _details_template.token_address = token_address_1
+        _details_template.token_detail_type = "劣後受益権2"
+        _details_template.data_type = LedgerDataType.DB
+        _details_template.data_source = "data_id_2"
+        async_db.add(_details_template)
+
+        # Prepare data: LedgerCreationRequestData
+        ledger_req_data = LedgerCreationRequestData()
+        ledger_req_data.request_id = "req_id_1"
+        ledger_req_data.data_type = LedgerDataType.DB
+        ledger_req_data.data_source = "data_id_1"
+        ledger_req_data.account_address = user_address_1
+        ledger_req_data.acquisition_date = "2024/11/08"
+        ledger_req_data.name = "test_investor_name_1"
+        ledger_req_data.address = "test_investor_address_1"
+        ledger_req_data.amount = 10
+        ledger_req_data.price = 20
+        ledger_req_data.balance = 200
+        async_db.add(ledger_req_data)
+
+        ledger_req_data = LedgerCreationRequestData()
+        ledger_req_data.request_id = "req_id_1"
+        ledger_req_data.data_type = LedgerDataType.DB
+        ledger_req_data.data_source = "data_id_2"
+        ledger_req_data.account_address = user_address_1
+        ledger_req_data.acquisition_date = "2024/11/09"
+        ledger_req_data.name = "test_investor_name_2"
+        ledger_req_data.address = "test_investor_address_2"
+        ledger_req_data.amount = 30
+        ledger_req_data.price = 40
+        ledger_req_data.balance = 1200
+        async_db.add(ledger_req_data)
+
+        await async_db.commit()
+
+        # Execute
+        await ledger_utils.finalize_ledger(
+            async_db,
+            request_id="req_id_1",
+            token_address=token_address_1,
+            currency_code="JPY",
+            some_personal_info_not_registered=True,
+        )
+        await async_db.commit()
+
+        # Assertion
+        ledger = (await async_db.scalars(select(Ledger))).all()
+        assert len(ledger) == 1
+
+        assert ledger[0].token_address == token_address_1
+        assert ledger[0].token_type == TokenType.IBET_SHARE
+        assert ledger[0].ledger == {
+            "created": "2024/11/06",
+            "token_name": _template.token_name,
+            "currency": "JPY",
+            "headers": _template.headers,
+            "details": [
+                {
+                    "token_detail_type": "劣後受益権1",
+                    "headers": [],
+                    "data": [
+                        {
+                            "account_address": user_address_1,
+                            "name": "test_investor_name_1",
+                            "address": "test_investor_address_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2024/11/08",
+                        },
+                    ],
+                    "footers": [],
+                    "some_personal_info_not_registered": False,
+                },
+                {
+                    "token_detail_type": "劣後受益権2",
+                    "headers": [],
+                    "data": [
+                        {
+                            "account_address": user_address_1,
+                            "name": "test_investor_name_2",
+                            "address": "test_investor_address_2",
+                            "amount": 30,
+                            "price": 40,
+                            "balance": 1200,
+                            "acquisition_date": "2024/11/09",
+                        },
+                    ],
+                    "footers": [],
+                    "some_personal_info_not_registered": False,
                 },
             ],
             "footers": _template.footers,
