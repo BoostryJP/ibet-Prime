@@ -38,9 +38,9 @@ class LedgerTemplate(Base):
     # token name
     token_name: Mapped[str] = mapped_column(String(200), nullable=False)
     # headers(any object array)
-    headers: Mapped[dict | None] = mapped_column(JSON, default=[])
+    headers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
     # footers(any object array)
-    footers: Mapped[dict | None] = mapped_column(JSON, default=[])
+    footers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
 
 
 class LedgerDataType(StrEnum):
@@ -63,9 +63,9 @@ class LedgerDetailsTemplate(Base):
     # token detail type
     token_detail_type: Mapped[str] = mapped_column(String(100), nullable=False)
     # headers(any object array)
-    headers: Mapped[dict | None] = mapped_column(JSON, default=[])
+    headers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
     # footers(any object array)
-    footers: Mapped[dict | None] = mapped_column(JSON, default=[])
+    footers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
     # data type
     data_type: Mapped[LedgerDataType] = mapped_column(String(20), nullable=False)
     # data source (address or UUID)
@@ -107,6 +107,8 @@ class LedgerCreationRequestData(Base):
     data_type: Mapped[LedgerDataType] = mapped_column(
         String(20), nullable=False, index=True
     )
+    # data source (address or UUID)
+    data_source: Mapped[str | None] = mapped_column(String(42))
     # account address
     account_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # acquisition date (format: YYYY/MM/DD)
