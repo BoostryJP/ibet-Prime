@@ -22,6 +22,7 @@ from datetime import datetime
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
+from sqlalchemy.exc import DataError
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -1050,6 +1051,142 @@ class TestRequestLedgerCreation:
         assert ledger_req_data[1].amount == 30
         assert ledger_req_data[1].price == 40
         assert ledger_req_data[1].balance == 1200
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Failed to request ledger creation
+    # - Create dataset from ibet for Fin (on-chain data) and the balance data is over the BigInteger limit
+    async def test_error_1(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_1 = config_eth_account("user2")
+        user_address_1 = user_1["address"]
+
+        user_2 = config_eth_account("user3")
+        user_address_2 = user_2["address"]
+
+        # Prepare data: Token
+        token_address_1 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_09
+        async_db.add(_token_1)
+
+        # Prepare data: LedgerTemplate
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = issuer_address
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
+                },
+                "テスト項目3": {
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                    "テスト項目B": "テスト値3B",
+                },
+            },
+        ]
+        _template.token_name = "受益権テスト"
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
+                },
+                "f-テスト項目3": {
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            },
+        ]
+        async_db.add(_template)
+
+        # Prepare data: UTXO
+        # - user_1: "2022/01/01" = 100
+        # - user_2: "2022/01/01" = 200
+        # - issuer: "2022/01/01" = 1000000000000000000 - 300
+        _utxo_1 = UTXO()
+        _utxo_1.transaction_hash = "tx1"
+        _utxo_1.account_address = user_address_1
+        _utxo_1.token_address = token_address_1
+        _utxo_1.amount = 100
+        _utxo_1.block_number = 1
+        _utxo_1.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
+        async_db.add(_utxo_1)
+
+        _utxo_2 = UTXO()
+        _utxo_2.transaction_hash = "tx2"
+        _utxo_2.account_address = user_address_2
+        _utxo_2.token_address = token_address_1
+        _utxo_2.amount = 200
+        _utxo_2.block_number = 5
+        _utxo_2.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
+        async_db.add(_utxo_2)
+
+        _utxo_3 = UTXO()
+        _utxo_3.transaction_hash = "tx3"
+        _utxo_3.account_address = issuer_address
+        _utxo_3.token_address = token_address_1
+        _utxo_3.amount = 1000000000000000000 - 300
+        _utxo_3.block_number = 9
+        _utxo_3.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
+        async_db.add(_utxo_3)
+
+        # Prepare data: LedgerDetailsTemplate
+        _details_template = LedgerDetailsTemplate()
+        _details_template.token_address = token_address_1
+        _details_template.token_detail_type = "劣後受益権"
+        _details_template.data_type = LedgerDataType.IBET_FIN
+        _details_template.data_source = None
+        async_db.add(_details_template)
+
+        await async_db.commit()
+
+        # Execute
+        async with async_db.begin_nested():
+            await ledger_utils.request_ledger_creation(async_db, token_address_1)
+            with pytest.raises(DataError):
+                await async_db.commit()
+
+        # Assertion
+        ledger_req = (await async_db.scalars(select(LedgerCreationRequest))).all()
+        assert len(ledger_req) == 0
+
+        ledger_req_data = (
+            await async_db.scalars(select(LedgerCreationRequestData))
+        ).all()
+        assert len(ledger_req_data) == 0
 
 
 @pytest.mark.asyncio
