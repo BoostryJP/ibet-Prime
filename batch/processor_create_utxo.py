@@ -25,7 +25,7 @@ from typing import Sequence
 
 import uvloop
 from sqlalchemy import and_, create_engine, select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import DataError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import AsyncContract
 
@@ -108,9 +108,16 @@ class Processor:
                     )
                     if event_triggered is True:
                         # If an event is triggered, initiate the ledger creation request.
-                        await request_ledger_creation(
-                            db=db_session, token_address=token_contract.address
-                        )
+                        try:
+                            async with db_session.begin_nested():
+                                await request_ledger_creation(
+                                    db=db_session, token_address=token_contract.address
+                                )
+                                await db_session.flush()
+                        except DataError:
+                            LOG.error(
+                                f"Invalid record detected. Ledger creation request has been discarded and not saved: token_address={token_contract.address}"
+                            )
                 await self.__set_utxo_block_number(
                     db_session=db_session, block_number=block_to
                 )

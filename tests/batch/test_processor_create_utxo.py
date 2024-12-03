@@ -44,7 +44,19 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     RedeemParams as IbetStraightBondRedeemParams,
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import UTXO, Account, Token, TokenType, TokenVersion, UTXOBlockNumber
+from app.model.db import (
+    UTXO,
+    Account,
+    LedgerCreationRequest,
+    LedgerCreationRequestData,
+    LedgerDataType,
+    LedgerDetailsTemplate,
+    LedgerTemplate,
+    Token,
+    TokenType,
+    TokenVersion,
+    UTXOBlockNumber,
+)
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_create_utxo import Processor
@@ -122,6 +134,7 @@ async def deploy_share_token_contract(address, private_key):
     return contract_address
 
 
+@pytest.mark.asyncio
 class TestProcessor:
     ###########################################################################
     # Normal Case
@@ -131,7 +144,6 @@ class TestProcessor:
     # Execute Batch Run 1st: No Event
     # Execute Batch Run 2nd: Executed Transfer Event
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -278,7 +290,6 @@ class TestProcessor:
     # Over max block lot
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @mock.patch("batch.processor_create_utxo.CREATE_UTXO_BLOCK_LOT_MAX_SIZE", 5)
-    @pytest.mark.asyncio
     async def test_normal_2(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -390,7 +401,6 @@ class TestProcessor:
     # <Normal_3>
     # bulk transfer(same transaction-hash)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_3(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -497,7 +507,6 @@ class TestProcessor:
     # <Normal_4>
     # to Exchange transfer only
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_4(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -573,7 +582,6 @@ class TestProcessor:
     # <Normal_5>
     # Holder Changed
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_5(
         self, mock_func, processor, db, personal_info_contract, ibet_exchange_contract
     ):
@@ -768,7 +776,6 @@ class TestProcessor:
     # <Normal_6>
     # Additional Issue
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_6(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -856,7 +863,6 @@ class TestProcessor:
     # <Normal_7>
     # Redeem
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_7(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1007,7 +1013,6 @@ class TestProcessor:
     # <Normal_8_1>
     # Unlock(account_address!=recipient_address)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_8_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1200,7 +1205,6 @@ class TestProcessor:
     # <Normal_8_2>
     # Unlock(account_address==recipient_address)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_8_2(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1385,7 +1389,6 @@ class TestProcessor:
     # <Normal_9>
     # Transfer & Additional Issue & Redeem
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    @pytest.mark.asyncio
     async def test_normal_9(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1525,7 +1528,6 @@ class TestProcessor:
 
     # <Error_1>
     # Web3 Error
-    @pytest.mark.asyncio
     async def test_error_1(self, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1558,5 +1560,132 @@ class TestProcessor:
 
         _utxo_list = db.scalars(select(UTXO)).all()
         assert len(_utxo_list) == 0
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
+
+    # <Error_2>
+    # An invalid record including the number exceeding the database limit is found
+    # => Discarded ledger creation request but saved UTXO data
+    async def test_error_2(self, processor, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        user_1 = config_eth_account("user2")
+        user_address_1 = user_1["address"]
+
+        user_2 = config_eth_account("user3")
+        user_address_2 = user_2["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token_address_1 = await deploy_share_token_contract(
+            issuer_address, issuer_private_key
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_24_09
+        _token_1.token_status = 1
+        db.add(_token_1)
+
+        # Prepare data: LedgerTemplate
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = issuer_address
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
+                },
+                "テスト項目3": {
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
+                    "テスト項目B": "テスト値3B",
+                },
+            },
+        ]
+        _template.token_name = "受益権テスト"
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
+                },
+                "f-テスト項目3": {
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            },
+        ]
+        db.add(_template)
+
+        # Execute Issue Event
+        # Share
+        # - user_1: 100
+        # - user_2: 200
+        # - issuer: 1000000000000000000 - 300
+        _additional_issue_1 = IbetShareAdditionalIssueParams(
+            account_address=issuer_address,
+            amount=1000000000000000000 - 100,
+        )
+        await IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_1, issuer_address, issuer_private_key
+        )
+        _transfer_1 = IbetShareTransferParams(
+            from_address=issuer_address, to_address=user_address_1, amount=100
+        )
+        await IbetShareContract(token_address_1).forced_transfer(
+            _transfer_1, issuer_address, issuer_private_key
+        )
+        _transfer_2 = IbetShareTransferParams(
+            from_address=issuer_address, to_address=user_address_2, amount=200
+        )
+        await IbetShareContract(token_address_1).forced_transfer(
+            _transfer_2, issuer_address, issuer_private_key
+        )
+
+        # Prepare data: LedgerDetailsTemplate
+        _details_template = LedgerDetailsTemplate()
+        _details_template.token_address = token_address_1
+        _details_template.token_detail_type = "劣後受益権"
+        _details_template.data_type = LedgerDataType.IBET_FIN
+        _details_template.data_source = None
+        db.add(_details_template)
+
+        db.commit()
+
+        # Execute batch
+        latest_block = web3.eth.block_number
+        await processor.process()
+
+        # Assert
+        _ledger_creation_list = db.scalars(select(LedgerCreationRequest)).all()
+        assert len(_ledger_creation_list) == 0
+        _ledger_creation_data_list = db.scalars(select(LedgerCreationRequestData)).all()
+        assert len(_ledger_creation_data_list) == 0
+
+        _utxo_list = db.scalars(select(UTXO)).all()
+        assert len(_utxo_list) == 3
         _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utxo_block_number.latest_block_number == latest_block
