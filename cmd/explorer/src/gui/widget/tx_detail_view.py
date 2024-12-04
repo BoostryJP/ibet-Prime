@@ -19,15 +19,15 @@ SPDX-License-Identifier: Apache-2.0
 
 from typing import Literal, Union
 
+from gui import styles
+from gui.rendarable.tx_detail_info import TxDetailInfo
+from gui.widget.base import TuiWidget
 from rich.align import Align
 from rich.panel import Panel
 from rich.style import Style
 from textual.reactive import Reactive, reactive
 
 from app.model.schema import TxDataDetail
-from src.gui import styles
-from src.gui.rendarable.tx_detail_info import TxDetailInfo
-from src.gui.widget.base import TuiWidget
 
 
 class TxDetailView(TuiWidget):

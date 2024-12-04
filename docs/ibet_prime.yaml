@@ -2239,11 +2239,9 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ListAllHoldersSortItem'
+            $ref: '#/components/schemas/ListAllHoldersSortItem'
             description: Sort Item
             default: created
-            title: Sort Item
           description: Sort Item
         - name: sort_order
           in: query
@@ -6622,11 +6620,9 @@ paths:
           in: query
           required: false
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ListAllHoldersSortItem'
+            $ref: '#/components/schemas/ListAllHoldersSortItem'
             description: Sort Item
             default: created
-            title: Sort Item
           description: Sort Item
         - name: sort_order
           in: query
@@ -9807,8 +9803,7 @@ components:
       title: AccountGenerateRsaKeyRequest
       description: Account Change Rsa Key schema (REQUEST)
     AccountResponse:
-      allOf:
-        - $ref: '#/components/schemas/Account'
+      $ref: '#/components/schemas/Account'
       title: AccountResponse
       description: Account schema (Response)
     AccountRsaStatus:
@@ -9833,8 +9828,7 @@ components:
     AuthTokenAlreadyExistsErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/AuthTokenAlreadyExistsErrorCode'
+          $ref: '#/components/schemas/AuthTokenAlreadyExistsErrorCode'
           examples:
             - 3
         title:
@@ -9868,8 +9862,7 @@ components:
     AuthorizationErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/AuthorizationErrorCode'
+          $ref: '#/components/schemas/AuthorizationErrorCode'
           examples:
             - 1
         title:
@@ -10323,8 +10316,7 @@ components:
         - block_data
       title: BlockDataListResponse
     BlockDataResponse:
-      allOf:
-        - $ref: '#/components/schemas/BlockDataDetail'
+      $ref: '#/components/schemas/BlockDataDetail'
       title: BlockDataResponse
     BlockNumberResponse:
       properties:
@@ -10411,8 +10403,7 @@ components:
           title: Issuer Address
           description: Issuer account address
         token_type:
-          allOf:
-            - $ref: '#/components/schemas/TokenType'
+          $ref: '#/components/schemas/TokenType'
           description: Token type
         token_address:
           anyOf:
@@ -10464,8 +10455,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          allOf:
-            - $ref: '#/components/schemas/TokenType'
+          $ref: '#/components/schemas/TokenType'
           description: Token type
         from_address:
           type: string
@@ -10603,8 +10593,7 @@ components:
       title: ChildAccount
       description: Child account schema
     ChildAccountResponse:
-      allOf:
-        - $ref: '#/components/schemas/ChildAccount'
+      $ref: '#/components/schemas/ChildAccount'
       title: ChildAccountResponse
       description: Child account schema (Response)
     ContractRevertErrorCode:
@@ -10793,8 +10782,7 @@ components:
     ContractRevertErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/ContractRevertErrorCode'
+          $ref: '#/components/schemas/ContractRevertErrorCode'
           examples:
             - 0
         title:
@@ -12801,8 +12789,7 @@ components:
     Integer64bitLimitExceededErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/Integer64bitLimitExceededErrorCode'
+          $ref: '#/components/schemas/Integer64bitLimitExceededErrorCode'
           examples:
             - 5
         title:
@@ -12836,8 +12823,7 @@ components:
     InvalidParameterErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/InvalidParameterErrorCode'
+          $ref: '#/components/schemas/InvalidParameterErrorCode'
           examples:
             - 1
         title:
@@ -13477,8 +13463,7 @@ components:
     LockEvent:
       properties:
         category:
-          allOf:
-            - $ref: '#/components/schemas/LockEventCategory'
+          $ref: '#/components/schemas/LockEventCategory'
           description: Event category
         transaction_hash:
           type: string
@@ -13499,8 +13484,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          allOf:
-            - $ref: '#/components/schemas/TokenType'
+          $ref: '#/components/schemas/TokenType'
           description: Token type
         token_name:
           type: string
@@ -13629,8 +13613,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          allOf:
-            - $ref: '#/components/schemas/TokenType'
+          $ref: '#/components/schemas/TokenType'
           description: Token type
         token_name:
           type: string
@@ -13663,8 +13646,7 @@ components:
     MultipleTokenTransferNotAllowedErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorCode'
+          $ref: '#/components/schemas/MultipleTokenTransferNotAllowedErrorCode'
           examples:
             - 9
         title:
@@ -13700,8 +13682,7 @@ components:
     NonTransferableTokenErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/NonTransferableTokenErrorCode'
+          $ref: '#/components/schemas/NonTransferableTokenErrorCode'
           examples:
             - 8
         title:
@@ -13750,8 +13731,7 @@ components:
     OperationNotAllowedStateErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/OperationNotAllowedStateErrorCode'
+          $ref: '#/components/schemas/OperationNotAllowedStateErrorCode'
           examples:
             - 0
         title:
@@ -13787,8 +13767,7 @@ components:
     OperationNotPermittedForOlderIssuersMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/OperationNotPermittedForOlderIssuersCode'
+          $ref: '#/components/schemas/OperationNotPermittedForOlderIssuersCode'
           examples:
             - 10
         title:
@@ -13823,8 +13802,7 @@ components:
     OperationNotSupportedVersionErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/OperationNotSupportedVersionErrorCode'
+          $ref: '#/components/schemas/OperationNotSupportedVersionErrorCode'
           examples:
             - 6
         title:
@@ -14017,8 +13995,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          allOf:
-            - $ref: '#/components/schemas/TokenType'
+          $ref: '#/components/schemas/TokenType'
           description: Token type
         token_name:
           type: string
@@ -14058,8 +14035,7 @@ components:
       title: Position
       description: Position
     PositionResponse:
-      allOf:
-        - $ref: '#/components/schemas/Position'
+      $ref: '#/components/schemas/Position'
       title: PositionResponse
       description: Position schema (Response)
     RecordNewFreezeLogRequest:
@@ -14157,8 +14133,7 @@ components:
     ResponseLimitExceededErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/ResponseLimitExceededErrorCode'
+          $ref: '#/components/schemas/ResponseLimitExceededErrorCode'
           examples:
             - 4
         title:
@@ -14835,8 +14810,7 @@ components:
     SendTransactionErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/SendTransactionErrorCode'
+          $ref: '#/components/schemas/SendTransactionErrorCode'
           examples:
             - 2
         title:
@@ -14870,8 +14844,7 @@ components:
     ServiceUnavailableErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/ServiceUnavailableErrorCode'
+          $ref: '#/components/schemas/ServiceUnavailableErrorCode'
           examples:
             - 1
         title:
@@ -14956,8 +14929,7 @@ components:
     TokenNotExistErrorMetainfo:
       properties:
         code:
-          allOf:
-            - $ref: '#/components/schemas/TokenNotExistErrorCode'
+          $ref: '#/components/schemas/TokenNotExistErrorCode'
           examples:
             - 7
         title:
@@ -15527,8 +15499,7 @@ components:
         - tx_data
       title: TxDataListResponse
     TxDataResponse:
-      allOf:
-        - $ref: '#/components/schemas/TxDataDetail'
+      $ref: '#/components/schemas/TxDataDetail'
       title: TxDataResponse
     UnlockInfoMetaInfo:
       properties:

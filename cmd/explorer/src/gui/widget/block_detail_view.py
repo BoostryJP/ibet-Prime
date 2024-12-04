@@ -19,15 +19,15 @@ SPDX-License-Identifier: Apache-2.0
 
 from typing import Literal, Union
 
+from gui import styles
+from gui.rendarable.block_detail_info import BlockDetailInfo
+from gui.widget.base import TuiWidget
 from rich.align import Align
 from rich.panel import Panel
 from rich.style import Style
 from textual.reactive import Reactive, reactive
 
 from app.model.schema import BlockDataDetail
-from src.gui import styles
-from src.gui.rendarable.block_detail_info import BlockDetailInfo
-from src.gui.widget.base import TuiWidget
 
 
 class BlockDetailView(TuiWidget):

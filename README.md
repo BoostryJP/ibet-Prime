@@ -50,14 +50,19 @@ English | [日本語](./README_JA.md)
 
 ### Install packages
 
+Create virtual environment with:
+```bash
+$ uv venv
+```
+
 Install python packages with:
 ```bash
-$ poetry install --no-root --only main --all-extras
+$ uv sync --frozen --no-install-project --no-dev --all-extras
 ```
 
 ### Install pre-commit hook
 ```bash
-$ poetry run pre-commit install
+$ uv run pre-commit install
 ```
 
 ### Install hardhat

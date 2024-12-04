@@ -17,13 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from gui.widget.base import TuiWidget
+from gui.widget.tx_list_table import TxListTable
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widget import Widget
 from textual.widgets import Static
-
-from src.gui.widget.base import TuiWidget
-from src.gui.widget.tx_list_table import TxListTable
 
 
 class TxListView(TuiWidget):
