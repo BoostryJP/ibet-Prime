@@ -70,9 +70,9 @@ jobs:
           path: cov/
           merge-multiple: true
       - name: combine coverage files
-        run: docker compose run -w /app/ibet-Prime/cov ibet-prime-postgres bash --login -c 'poetry run coverage combine .coverage-*'
+        run: docker compose run -w /app/ibet-Prime/cov ibet-prime-postgres bash --login -c 'uv run coverage combine .coverage-*'
       - name: generate coverage xml file
-        run: docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'poetry run coverage xml --data-file=cov/.coverage -o cov/coverage.xml'
+        run: docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'uv run coverage xml --data-file=cov/.coverage -o cov/coverage.xml'
       - uses: actions/download-artifact@v4
         with:
           pattern: 'pytest-*'
@@ -95,7 +95,7 @@ jobs:
       - name: Count test cases in repository
         id: countTest
         run: |
-          RESULT=$(docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'poetry run pytest --collect-only | grep -e "<Function" -e "<Coroutine"' | wc -l)
+          RESULT=$(docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'uv run pytest --collect-only | grep -e "<Function" -e "<Coroutine"' | wc -l)
           echo "test_count=${RESULT}" >> $GITHUB_OUTPUT
       - run: echo ${{ steps.coverageComment.outputs.tests }}
       - run: echo ${{ steps.countTest.outputs.test_count }}

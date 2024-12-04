@@ -26,7 +26,7 @@ TEST_TARGET=${TEST_TARGET:-tests/}
 sleep 10
 
 # Test
-poetry run pytest -v --cov=. --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch $TEST_TARGET
+uv run pytest -v --cov=. --junitxml=pytest.xml --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch $TEST_TARGET
 
 status_code=$?
 

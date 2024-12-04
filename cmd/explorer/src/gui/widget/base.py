@@ -23,7 +23,7 @@ from textual.widget import Widget
 from textual.widgets import Static
 
 if TYPE_CHECKING:
-    from src.gui.explorer import ExplorerApp
+    from gui.explorer import ExplorerApp
 
 
 class TuiWidget(Widget):

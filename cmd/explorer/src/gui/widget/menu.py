@@ -17,14 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from gui.consts import ID
+from gui.widget.base import TuiWidget
 from pydantic import BaseModel
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.widgets import Button
-
-from src.gui.consts import ID
-from src.gui.widget.base import TuiWidget
 
 
 class MenuInstruction(BaseModel):

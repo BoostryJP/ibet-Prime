@@ -19,13 +19,12 @@ SPDX-License-Identifier: Apache-2.0
 
 from typing import Literal
 
+from gui import styles
+from gui.widget.base import TuiWidget
 from rich.align import Align
 from rich.panel import Panel
 from rich.style import Style
 from rich.traceback import Traceback
-
-from src.gui import styles
-from src.gui.widget.base import TuiWidget
 
 
 class TracebackWidget(TuiWidget):

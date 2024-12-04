@@ -22,7 +22,20 @@ from asyncio import Event, Lock
 from datetime import datetime
 from typing import Optional
 
+import connector
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
+from gui.consts import ID
+from gui.error import Error
+from gui.screen.base import TuiScreen
+from gui.widget.block_detail_view import BlockDetailView
+from gui.widget.block_list_table import BlockListTable
+from gui.widget.block_list_view import (
+    BlockListQueryPanel,
+    BlockListSummaryPanel,
+    BlockListView,
+)
+from gui.widget.menu import Menu, MenuInstruction
+from gui.widget.query_panel import QuerySetting
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -38,19 +51,6 @@ from app.model.schema import (
     ListTxDataQuery,
 )
 from app.model.schema.base import SortOrder
-from src import connector
-from src.gui.consts import ID
-from src.gui.error import Error
-from src.gui.screen.base import TuiScreen
-from src.gui.widget.block_detail_view import BlockDetailView
-from src.gui.widget.block_list_table import BlockListTable
-from src.gui.widget.block_list_view import (
-    BlockListQueryPanel,
-    BlockListSummaryPanel,
-    BlockListView,
-)
-from src.gui.widget.menu import Menu, MenuInstruction
-from src.gui.widget.query_panel import QuerySetting
 
 
 class BlockScreen(TuiScreen):

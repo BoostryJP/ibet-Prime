@@ -51,14 +51,19 @@
 
 ### パッケージインストール
 
+以下のコマンドで Python の仮想環境を作成します。
+```bash
+$ uv venv
+```
+
 以下のコマンドで Python パッケージをインストールします。
 ```bash
-$ poetry install --no-root --only main --all-extras
+$ uv sync --frozen --no-install-project --no-dev --all-extras
 ```
 
 ### pre-commit hookのインストール
 ```bash
-$ poetry run pre-commit install
+$ uv run pre-commit install
 ```
 
 ### hardhatのインストール

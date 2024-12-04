@@ -17,7 +17,14 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import connector
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
+from gui.consts import ID
+from gui.screen.base import TuiScreen
+from gui.widget.block_list_table import BlockListTable
+from gui.widget.tx_detail_view import TxDetailView
+from gui.widget.tx_list_table import TxListTable
+from gui.widget.tx_list_view import TxListView
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -25,13 +32,6 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Label
 
 from app.model.schema.bc_explorer import TxDataDetail
-from src import connector
-from src.gui.consts import ID
-from src.gui.screen.base import TuiScreen
-from src.gui.widget.block_list_table import BlockListTable
-from src.gui.widget.tx_detail_view import TxDetailView
-from src.gui.widget.tx_list_table import TxListTable
-from src.gui.widget.tx_list_view import TxListView
 
 
 class TransactionScreen(TuiScreen):
