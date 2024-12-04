@@ -19,7 +19,7 @@ dependencies = [
     "orjson~=3.10.3",
     "psycopg[c]<4.0.0,>=3.2.0",
     "pycryptodome~=3.20",
-    "pydantic~=2.9.2",
+    "pydantic~=2.10.3",
     "pytz~=2024.1",
     "shared-memory-dict~=0.7.2",
     "web3==7.5.0",
@@ -28,6 +28,7 @@ dependencies = [
     "uvicorn[standard]~=0.32.0",
     "uvloop~=0.21.0",
     "memray<2.0.0,>=1.14.0",
+    "py-spy>=0.4.0",
     "typer==0.12.3",
 ]
 
