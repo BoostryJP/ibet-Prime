@@ -3018,17 +3018,11 @@ paths:
           required: false
           schema:
             anyOf:
-              - enum:
-                  - garnishment
-                const: garnishment
+              - const: garnishment
                 type: string
-              - enum:
-                  - inheritance
-                const: inheritance
+              - const: inheritance
                 type: string
-              - enum:
-                  - force_unlock
-                const: force_unlock
+              - const: force_unlock
                 type: string
               - type: 'null'
             description: message field in source event data
@@ -7399,17 +7393,11 @@ paths:
           required: false
           schema:
             anyOf:
-              - enum:
-                  - garnishment
-                const: garnishment
+              - const: garnishment
                 type: string
-              - enum:
-                  - inheritance
-                const: inheritance
+              - const: inheritance
                 type: string
-              - enum:
-                  - force_unlock
-                const: force_unlock
+              - const: force_unlock
                 type: string
               - type: 'null'
             description: message field in source event data
@@ -9683,8 +9671,6 @@ components:
       properties:
         operation_type:
           type: string
-          enum:
-            - Abort
           const: Abort
           title: Operation Type
         account_address:
@@ -9823,7 +9809,6 @@ components:
       type: integer
       enum:
         - 3
-      const: 3
       title: AuthTokenAlreadyExistsErrorCode
     AuthTokenAlreadyExistsErrorMetainfo:
       properties:
@@ -9857,7 +9842,6 @@ components:
       type: integer
       enum:
         - 1
-      const: 1
       title: AuthorizationErrorCode
     AuthorizationErrorMetainfo:
       properties:
@@ -9962,8 +9946,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - BatchIssueProcessed
           const: BatchIssueProcessed
           title: Notice Type
         metainfo:
@@ -10071,8 +10053,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - BatchRegisterPersonalInfoError
           const: BatchRegisterPersonalInfoError
           title: Notice Type
         metainfo:
@@ -10376,8 +10356,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - BulkTransferError
           const: BulkTransferError
           title: Notice Type
         metainfo:
@@ -10546,8 +10524,6 @@ components:
       properties:
         operation_type:
           type: string
-          enum:
-            - Cancel
           const: Cancel
           title: Operation Type
       type: object
@@ -10914,8 +10890,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - CreateLedgerInfo
           const: CreateLedgerInfo
           title: Notice Type
         metainfo:
@@ -11214,8 +11188,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - DVPDeliveryInfo
           const: DVPDeliveryInfo
           title: Notice Type
         metainfo:
@@ -11621,8 +11593,6 @@ components:
       properties:
         operation_type:
           type: string
-          enum:
-            - Finish
           const: Finish
           title: Operation Type
         account_address:
@@ -11898,8 +11868,6 @@ components:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Dividend Record Date
@@ -11908,8 +11876,6 @@ components:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Dividend Payment Date
@@ -11918,8 +11884,6 @@ components:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Cancellation Date
@@ -12152,8 +12116,6 @@ components:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Cancellation Date
@@ -12162,8 +12124,6 @@ components:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Dividend Record Date
@@ -12172,8 +12132,6 @@ components:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Dividend Payment Date
@@ -12680,8 +12638,6 @@ components:
               maxLength: 3
               minLength: 3
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Interest Payment Currency
@@ -12698,8 +12654,6 @@ components:
               maxLength: 3
               minLength: 3
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Redemption Value Currency
@@ -12708,8 +12662,6 @@ components:
             - type: string
               pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
-              enum:
-                - ''
               const: ''
             - type: 'null'
           title: Redemption Date
@@ -12784,7 +12736,6 @@ components:
       type: integer
       enum:
         - 5
-      const: 5
       title: Integer64bitLimitExceededErrorCode
     Integer64bitLimitExceededErrorMetainfo:
       properties:
@@ -12818,7 +12769,6 @@ components:
       type: integer
       enum:
         - 1
-      const: 1
       title: InvalidParameterErrorCode
     InvalidParameterErrorMetainfo:
       properties:
@@ -12889,8 +12839,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - IssueError
           const: IssueError
           title: Notice Type
         metainfo:
@@ -13586,8 +13534,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - LockInfo
           const: LockInfo
           title: Notice Type
         metainfo:
@@ -13641,7 +13587,6 @@ components:
       type: integer
       enum:
         - 9
-      const: 9
       title: MultipleTokenTransferNotAllowedErrorCode
     MultipleTokenTransferNotAllowedErrorMetainfo:
       properties:
@@ -13677,7 +13622,6 @@ components:
       type: integer
       enum:
         - 8
-      const: 8
       title: NonTransferableTokenErrorCode
     NonTransferableTokenErrorMetainfo:
       properties:
@@ -13726,7 +13670,6 @@ components:
       type: integer
       enum:
         - 101
-      const: 101
       title: OperationNotAllowedStateErrorCode
     OperationNotAllowedStateErrorMetainfo:
       properties:
@@ -13762,7 +13705,6 @@ components:
       type: integer
       enum:
         - 10
-      const: 10
       title: OperationNotPermittedForOlderIssuersCode
     OperationNotPermittedForOlderIssuersMetainfo:
       properties:
@@ -13797,7 +13739,6 @@ components:
       type: integer
       enum:
         - 6
-      const: 6
       title: OperationNotSupportedVersionErrorCode
     OperationNotSupportedVersionErrorMetainfo:
       properties:
@@ -13881,6 +13822,13 @@ components:
         - is_corporate
         - tax_category
       title: PersonalInfo
+    PersonalInfoDataSource:
+      type: string
+      enum:
+        - on-chain
+        - off-chain
+      title: PersonalInfoDataSource
+      description: Personal information data source
     PersonalInfoEventType:
       type: string
       enum:
@@ -14118,6 +14066,10 @@ components:
         key_manager:
           type: string
           title: Key Manager
+        data_source:
+          $ref: '#/components/schemas/PersonalInfoDataSource'
+          description: Personal information data source
+          default: on-chain
       type: object
       required:
         - account_address
@@ -14128,7 +14080,6 @@ components:
       type: integer
       enum:
         - 4
-      const: 4
       title: ResponseLimitExceededErrorCode
     ResponseLimitExceededErrorMetainfo:
       properties:
@@ -14662,8 +14613,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - ScheduleEventError
           const: ScheduleEventError
           title: Notice Type
         metainfo:
@@ -14741,7 +14690,6 @@ components:
       type: string
       enum:
         - Update
-      const: Update
       title: ScheduledEventType
     SealedTxPersonalInfoInput:
       properties:
@@ -14805,7 +14753,6 @@ components:
       type: integer
       enum:
         - 2
-      const: 2
       title: SendTransactionErrorCode
     SendTransactionErrorMetainfo:
       properties:
@@ -14839,7 +14786,6 @@ components:
       type: integer
       enum:
         - 1
-      const: 1
       title: ServiceUnavailableErrorCode
     ServiceUnavailableErrorMetainfo:
       properties:
@@ -14924,7 +14870,6 @@ components:
       type: integer
       enum:
         - 7
-      const: 7
       title: TokenNotExistErrorCode
     TokenNotExistErrorMetainfo:
       properties:
@@ -15022,8 +14967,6 @@ components:
           title: Block Timestamp
         source_event:
           type: string
-          enum:
-            - Transfer
           const: Transfer
           title: Source Event
           description: Source Event
@@ -15102,8 +15045,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - TransferApprovalInfo
           const: TransferApprovalInfo
           title: Notice Type
         metainfo:
@@ -15555,8 +15496,6 @@ components:
           title: Created
         notice_type:
           type: string
-          enum:
-            - UnlockInfo
           const: UnlockInfo
           title: Notice Type
         metainfo:
@@ -15601,8 +15540,6 @@ components:
           title: Block Timestamp
         source_event:
           type: string
-          enum:
-            - Unlock
           const: Unlock
           title: Source Event
           description: Source Event

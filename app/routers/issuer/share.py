@@ -149,6 +149,7 @@ from app.model.schema import (
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     LockEventCategory,
+    PersonalInfoDataSource,
     RegisterPersonalInfoRequest,
     ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
@@ -2375,20 +2376,41 @@ async def register_share_token_holder_personal_info(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
-    token_contract = await IbetShareContract(token_address).get()
-    try:
-        personal_info_contract = PersonalInfoContract(
-            logger=LOG,
-            issuer=issuer_account,
-            contract_address=token_contract.personal_info_contract_address,
-        )
-        await personal_info_contract.register_info(
-            account_address=personal_info.account_address,
-            data=personal_info.model_dump(),
-            default_value=None,
-        )
-    except SendTransactionError:
-        raise SendTransactionError("failed to register personal information")
+    input_personal_info = personal_info.model_dump(
+        include={
+            "key_manager",
+            "name",
+            "postal_code",
+            "address",
+            "email",
+            "birth",
+            "is_corporate",
+            "tax_category",
+        }
+    )
+    if personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN:
+        _off_personal_info = IDXPersonalInfo()
+        _off_personal_info.issuer_address = issuer_address
+        _off_personal_info.account_address = personal_info.account_address
+        _off_personal_info.personal_info = input_personal_info
+        _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
+        await db.merge(_off_personal_info)
+        await db.commit()
+    else:
+        token_contract = await IbetShareContract(token_address).get()
+        try:
+            personal_info_contract = PersonalInfoContract(
+                logger=LOG,
+                issuer=issuer_account,
+                contract_address=token_contract.personal_info_contract_address,
+            )
+            await personal_info_contract.register_info(
+                account_address=personal_info.account_address,
+                data=input_personal_info,
+                default_value=None,
+            )
+        except SendTransactionError:
+            raise SendTransactionError("failed to register personal information")
 
     return
 

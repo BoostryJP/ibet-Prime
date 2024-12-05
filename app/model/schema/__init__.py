@@ -107,6 +107,7 @@ from .personal_info import (
     GetBatchRegisterPersonalInfoResponse,
     ListAllPersonalInfoBatchRegistrationUploadQuery,
     ListBatchRegisterPersonalInfoUploadResponse,
+    PersonalInfoDataSource,
     RegisterPersonalInfoRequest,
 )
 from .position import (
