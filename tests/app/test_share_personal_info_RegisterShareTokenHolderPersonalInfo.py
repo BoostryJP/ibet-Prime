@@ -20,9 +20,19 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from unittest.mock import patch
 
+from sqlalchemy import select
+
 from app.exceptions import SendTransactionError
 from app.model.blockchain import IbetShareContract, PersonalInfoContract
-from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.db import (
+    Account,
+    AuthToken,
+    IDXPersonalInfo,
+    Token,
+    TokenType,
+    TokenVersion,
+)
+from app.model.schema import PersonalInfoDataSource
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -35,8 +45,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
-    def test_normal_1(self, client, db):
+    # <Normal_1_1>
+    # data_source = on_chain
+    def test_normal_1_1(self, client, db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -54,11 +65,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -113,13 +124,22 @@ class TestRegisterShareTokenHolderPersonalInfo:
             assert resp.json() is None
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
-                data=req_param,
+                data={
+                    "key_manager": "test_key_manager",
+                    "name": "test_name",
+                    "postal_code": "test_postal_code",
+                    "address": "test_address",
+                    "email": "test_email",
+                    "birth": "test_birth",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                },
                 default_value=None,
             )
 
-    # <Normal_2>
-    # Nullable items
-    def test_normal_2(self, client, db):
+    # <Normal_1_2>
+    # data_source = off_chain
+    def test_normal_1_2(self, client, db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -137,11 +157,195 @@ class TestRegisterShareTokenHolderPersonalInfo:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
+        token.version = TokenVersion.V_24_09
+        db.add(token)
+
+        db.commit()
+
+        # mock
+        ibet_share_contract = IbetShareContract()
+        ibet_share_contract.personal_info_contract_address = (
+            "personal_info_contract_address"
+        )
+        IbetShareContract_get = patch(
+            target="app.model.blockchain.token.IbetShareContract.get",
+            return_value=ibet_share_contract,
+        )
+        PersonalInfoContract_init = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            return_value=None,
+        )
+        PersonalInfoContract_register_info = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            return_value=None,
+        )
+
+        with (
+            IbetShareContract_get,
+            PersonalInfoContract_init,
+            PersonalInfoContract_register_info,
+        ):
+            # request target API
+            req_param = {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+                "data_source": PersonalInfoDataSource.OFF_CHAIN,
+            }
+            resp = client.post(
+                self.test_url.format(_token_address),
+                json=req_param,
+                headers={
+                    "issuer-address": _issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
+            )
+
+            # assertion
+            assert resp.status_code == 200
+            assert resp.json() is None
+
+            _off_personal_info = db.scalars(
+                select(IDXPersonalInfo)
+                .where(IDXPersonalInfo.issuer_address == _issuer_address)
+                .limit(1)
+            ).first()
+            assert _off_personal_info is not None
+            assert _off_personal_info.issuer_address == _issuer_address
+            assert _off_personal_info.account_address == _test_account_address
+            assert _off_personal_info.personal_info == {
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "address": "test_address",
+                "postal_code": "test_postal_code",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+            assert _off_personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN
+
+    # <Normal_2_1>
+    # Optional items
+    def test_normal_2_1(self, client, db):
+        _issuer_account = config_eth_account("user1")
+        _issuer_address = _issuer_account["address"]
+        _issuer_keyfile = _issuer_account["keyfile_json"]
+
+        _test_account = config_eth_account("user2")
+        _test_account_address = _test_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _issuer_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_24_09
+        db.add(token)
+
+        db.commit()
+
+        # mock
+        ibet_share_contract = IbetShareContract()
+        ibet_share_contract.personal_info_contract_address = (
+            "personal_info_contract_address"
+        )
+        IbetShareContract_get = patch(
+            target="app.model.blockchain.token.IbetShareContract.get",
+            return_value=ibet_share_contract,
+        )
+        PersonalInfoContract_init = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            return_value=None,
+        )
+        PersonalInfoContract_register_info = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            return_value=None,
+        )
+
+        with (
+            IbetShareContract_get,
+            PersonalInfoContract_init,
+            PersonalInfoContract_register_info,
+        ):
+            # request target API
+            req_param = {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+            }
+            resp = client.post(
+                self.test_url.format(_token_address),
+                json=req_param,
+                headers={
+                    "issuer-address": _issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
+            )
+
+            # assertion
+            assert resp.status_code == 200
+            assert resp.json() is None
+            PersonalInfoContract.register_info.assert_called_with(
+                account_address=_test_account_address,
+                data={
+                    "key_manager": "test_key_manager",
+                    "name": None,
+                    "postal_code": None,
+                    "address": None,
+                    "email": None,
+                    "birth": None,
+                    "is_corporate": None,
+                    "tax_category": None,
+                },
+                default_value=None,
+            )
+
+    # <Normal_2_2>
+    # Nullable items
+    def test_normal_2_2(self, client, db):
+        _issuer_account = config_eth_account("user1")
+        _issuer_address = _issuer_account["address"]
+        _issuer_keyfile = _issuer_account["keyfile_json"]
+
+        _test_account = config_eth_account("user2")
+        _test_account_address = _test_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _issuer_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -196,7 +400,16 @@ class TestRegisterShareTokenHolderPersonalInfo:
             assert resp.json() is None
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
-                data=req_param,
+                data={
+                    "key_manager": "test_key_manager",
+                    "name": None,
+                    "postal_code": None,
+                    "address": None,
+                    "email": None,
+                    "birth": None,
+                    "is_corporate": None,
+                    "tax_category": None,
+                },
                 default_value=None,
             )
 
@@ -226,11 +439,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
         db.add(auth_token)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -285,7 +498,16 @@ class TestRegisterShareTokenHolderPersonalInfo:
             assert resp.json() is None
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
-                data=req_param,
+                data={
+                    "key_manager": "test_key_manager",
+                    "name": "test_name",
+                    "postal_code": "test_postal_code",
+                    "address": "test_address",
+                    "email": "test_email",
+                    "birth": "test_birth",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                },
                 default_value=None,
             )
 
@@ -518,6 +740,56 @@ class TestRegisterShareTokenHolderPersonalInfo:
             ],
         }
 
+    # <Error_1_6>
+    # RequestValidationError
+    # data_source
+    def test_error_1_6(self, client, db):
+        _issuer_account = config_eth_account("user1")
+        _issuer_address = _issuer_account["address"]
+        _issuer_keyfile = _issuer_account["keyfile_json"]
+
+        _test_account = config_eth_account("user2")
+        _test_account_address = _test_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # request target API
+        req_param = {
+            "account_address": _test_account_address,
+            "key_manager": "test_key_manager",
+            "name": "test_name",
+            "postal_code": "test_postal_code",
+            "address": "test_address",
+            "email": "test_email",
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10,
+            "data_source": "invalid_data_source",
+        }
+        resp = client.post(
+            self.test_url.format(_token_address, _test_account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "enum",
+                    "loc": ["body", "data_source"],
+                    "msg": "Input should be 'on-chain' or 'off-chain'",
+                    "input": "invalid_data_source",
+                    "ctx": {"expected": "'on-chain' or 'off-chain'"},
+                }
+            ],
+        }
+
     # <Error_2_1>
     # AuthorizationError
     # issuer does not exist
@@ -680,11 +952,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
         db.add(token)
@@ -739,11 +1011,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 

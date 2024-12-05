@@ -29,6 +29,9 @@ from app.model.db import BatchRegisterPersonalInfoUploadStatus
 from .base import BasePaginationQuery, ResultSet, SortOrder
 
 
+############################
+# COMMON
+############################
 class PersonalInfoEventType(StrEnum):
     REGISTER = "register"
     MODIFY = "modify"
@@ -78,6 +81,13 @@ class PersonalInfoHistory(BaseModel):
     created: datetime
 
 
+class PersonalInfoDataSource(StrEnum):
+    """Personal information data source"""
+
+    ON_CHAIN = "on-chain"
+    OFF_CHAIN = "off-chain"
+
+
 ############################
 # REQUEST
 ############################
@@ -86,6 +96,9 @@ class RegisterPersonalInfoRequest(PersonalInfoInput):
 
     account_address: EthereumAddress
     key_manager: str
+    data_source: PersonalInfoDataSource = Field(
+        PersonalInfoDataSource.ON_CHAIN, description=PersonalInfoDataSource.__doc__
+    )
 
 
 class ListAllPersonalInfoBatchRegistrationUploadQuery(BasePaginationQuery):
