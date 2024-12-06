@@ -17,14 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from pydantic import BaseModel
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 from app.model import EthereumAddress
 from app.model.schema.personal_info import PersonalInfoInput
 
 
 ############################
-# REQUEST
+# COMMON
 ############################
 class SealedTxPersonalInfoInput(PersonalInfoInput):
     """Personal Information Input schema for sealed tx"""
@@ -36,7 +38,31 @@ class SealedTxPersonalInfoInput(PersonalInfoInput):
 # REQUEST
 ############################
 class SealedTxRegisterPersonalInfoRequest(BaseModel):
-    """Schema for personal information registration using sealed tx(REQUEST)"""
+    """Schema for personal information registration using sealed tx (REQUEST)"""
 
     link_address: EthereumAddress
     personal_information: SealedTxPersonalInfoInput
+
+
+class SealedTxRegisterHolderExtraInfoRequest(BaseModel):
+    """Schema for holder's extra information registration using sealed tx (REQUEST)"""
+
+    token_address: EthereumAddress
+    external_id_1_type: Optional[str] = Field(
+        None, description="The type of external-id-1", max_length=50
+    )
+    external_id_1: Optional[str] = Field(
+        None, description="external-id-1", max_length=50
+    )
+    external_id_2_type: Optional[str] = Field(
+        None, description="The type of external-id-2", max_length=50
+    )
+    external_id_2: Optional[str] = Field(
+        None, description="external-id-2", max_length=50
+    )
+    external_id_3_type: Optional[str] = Field(
+        None, description="The type of external-id-3", max_length=50
+    )
+    external_id_3: Optional[str] = Field(
+        None, description="external-id-3", max_length=50
+    )

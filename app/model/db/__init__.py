@@ -97,7 +97,12 @@ from .node import Node
 from .notification import Notification, NotificationType
 from .scheduled_events import ScheduledEvents, ScheduledEventType
 from .token import Token, TokenAttrUpdate, TokenCache, TokenType, TokenVersion
-from .token_holders import TokenHolder, TokenHolderBatchStatus, TokenHoldersList
+from .token_holder_extra_info import TokenHolderExtraInfo
+from .token_holders_collection import (
+    TokenHolder,
+    TokenHolderBatchStatus,
+    TokenHoldersList,
+)
 from .token_update_operation_log import (
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
