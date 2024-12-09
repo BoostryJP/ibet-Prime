@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -50,12 +51,16 @@ from app import log
 from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
+    BatchPersonalInfoRegistrationValidationError,
     ContractRevertError,
     InvalidParameterError,
+    InvalidUploadErrorDetail,
     MultipleTokenTransferNotAllowedError,
     NonTransferableTokenError,
     OperationNotAllowedStateError,
     OperationNotSupportedVersionError,
+    PersonalInfoExceedsSizeLimit,
+    RecordErrorDetail,
     SendTransactionError,
     TokenNotExistError,
 )
@@ -2447,6 +2452,7 @@ async def register_share_token_holder_extra_info(
         InvalidParameterError,
         SendTransactionError,
         ContractRevertError,
+        PersonalInfoExceedsSizeLimit,
     ),
 )
 async def register_share_token_holder_personal_info(
@@ -2517,6 +2523,13 @@ async def register_share_token_holder_personal_info(
         await db.merge(_off_personal_info)
         await db.commit()
     else:
+        # Check the length of personal info content
+        if (
+            len(json.dumps(input_personal_info).encode("utf-8"))
+            > config.PERSONAL_INFO_MESSAGE_SIZE_LIMIT
+        ):
+            raise PersonalInfoExceedsSizeLimit
+
         token_contract = await IbetShareContract(token_address).get()
         try:
             personal_info_contract = PersonalInfoContract(
@@ -2627,7 +2640,12 @@ async def list_all_share_token_batch_personal_info_registration(
     operation_id="InitiateShareTokenBatchPersonalInfoRegistration",
     response_model=BatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        422,
+        401,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+        BatchPersonalInfoRegistrationValidationError,
     ),
 )
 async def initiate_share_token_batch_personal_info_registration(
@@ -2685,14 +2703,38 @@ async def initiate_share_token_batch_personal_info_registration(
     batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
     db.add(batch)
 
-    for personal_info in personal_info_list:
+    errs = []
+    bulk_register_record_list = []
+
+    for i, personal_info in enumerate(personal_info_list):
         bulk_register_record = BatchRegisterPersonalInfo()
         bulk_register_record.upload_id = batch_id
         bulk_register_record.token_address = token_address
         bulk_register_record.account_address = personal_info.account_address
-        bulk_register_record.personal_info = personal_info.model_dump()
         bulk_register_record.status = 0
-        db.add(bulk_register_record)
+        bulk_register_record.personal_info = personal_info.model_dump()
+
+        # Check the length of personal info content
+        if (
+            len(json.dumps(bulk_register_record.personal_info).encode("utf-8"))
+            > config.PERSONAL_INFO_MESSAGE_SIZE_LIMIT
+        ):
+            errs.append(
+                RecordErrorDetail(
+                    row_num=i,
+                    error_reason="PersonalInfoExceedsSizeLimit",
+                )
+            )
+
+        if not errs:
+            bulk_register_record_list.append(bulk_register_record)
+
+    if len(errs) > 0:
+        raise BatchPersonalInfoRegistrationValidationError(
+            detail=InvalidUploadErrorDetail(record_error_details=errs)
+        )
+
+    db.add_all(bulk_register_record_list)
 
     await db.commit()
 

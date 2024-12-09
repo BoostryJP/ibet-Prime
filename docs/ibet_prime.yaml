@@ -2534,6 +2534,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Registerbondtokenholderpersonalinfo
   /bond/tokens/{token_address}/personal_info/batch:
@@ -2701,7 +2702,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                anyOf:
+                  - $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                title: Response 400 Initiatebondtokenbatchpersonalinforegistration
   /bond/tokens/{token_address}/personal_info/batch/{batch_id}:
     get:
       tags:
@@ -6984,6 +6988,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Registersharetokenholderpersonalinfo
   /share/tokens/{token_address}/personal_info/batch:
@@ -7151,7 +7156,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                anyOf:
+                  - $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                title: Response 400 Initiatesharetokenbatchpersonalinforegistration
   /share/tokens/{token_address}/personal_info/batch/{batch_id}:
     get:
       tags:
@@ -10193,6 +10201,41 @@ components:
         - batch_id
       title: BatchIssueRedeemUploadIdResponse
       description: Batch issue/redeem upload id (RESPONSE)
+    BatchPersonalInfoRegistrationValidationErrorCode:
+      type: integer
+      enum:
+        - 12
+      title: BatchPersonalInfoRegistrationValidationErrorCode
+    BatchPersonalInfoRegistrationValidationErrorMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorCode'
+          examples:
+            - 12
+        title:
+          type: string
+          title: Title
+          examples:
+            - BatchPersonalInfoRegistrationValidationError
+      type: object
+      required:
+        - code
+        - title
+      title: BatchPersonalInfoRegistrationValidationErrorMetainfo
+    BatchPersonalInfoRegistrationValidationErrorResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: BatchPersonalInfoRegistrationValidationErrorResponse
+      description: The uploaded list of batch personal info registration has invalid
+        records
     BatchRegisterPersonalInfoErrorMetaInfo:
       properties:
         upload_id:
@@ -14067,6 +14110,40 @@ components:
         - register
         - modify
       title: PersonalInfoEventType
+    PersonalInfoExceedsSizeLimitCode:
+      type: integer
+      enum:
+        - 11
+      title: PersonalInfoExceedsSizeLimitCode
+    PersonalInfoExceedsSizeLimitMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitCode'
+          examples:
+            - 11
+        title:
+          type: string
+          title: Title
+          examples:
+            - PersonalInfoExceedsSizeLimit
+      type: object
+      required:
+        - code
+        - title
+      title: PersonalInfoExceedsSizeLimitMetainfo
+    PersonalInfoExceedsSizeLimitResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: PersonalInfoExceedsSizeLimitResponse
+      description: Personal info exceeds size limit
     PersonalInfoHistory:
       properties:
         id:

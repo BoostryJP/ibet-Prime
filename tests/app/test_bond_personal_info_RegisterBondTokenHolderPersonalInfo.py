@@ -1071,3 +1071,83 @@ class TestRegisterBondTokenHolderPersonalInfo:
                 "meta": {"code": 2, "title": "SendTransactionError"},
                 "detail": "failed to register personal information",
             }
+
+    # <Error_6>
+    # PersonalInfoExceedsSizeLimit
+    def test_error_6(self, client, db):
+        _issuer_account = config_eth_account("user1")
+        _issuer_address = _issuer_account["address"]
+        _issuer_keyfile = _issuer_account["keyfile_json"]
+
+        _test_account = config_eth_account("user2")
+        _test_account_address = _test_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _issuer_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_24_09
+        db.add(token)
+
+        db.commit()
+
+        # mock
+        ibet_bond_contract = IbetStraightBondContract()
+        ibet_bond_contract.personal_info_contract_address = (
+            "personal_info_contract_address"
+        )
+        IbetStraightBondContract_get = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            return_value=ibet_bond_contract,
+        )
+        PersonalInfoContract_init = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            return_value=None,
+        )
+        PersonalInfoContract_register_info = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            side_effect=SendTransactionError(),
+        )
+
+        with (
+            IbetStraightBondContract_get,
+            PersonalInfoContract_init,
+            PersonalInfoContract_register_info,
+        ):
+            # request target API
+            req_param = {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address" * 100,  # Too long value
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+            resp = client.post(
+                self.test_url.format(_token_address, _test_account_address),
+                json=req_param,
+                headers={
+                    "issuer-address": _issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
+            )
+
+            # assertion
+            assert resp.status_code == 400
+            assert resp.json() == {
+                "meta": {"code": 11, "title": "PersonalInfoExceedsSizeLimit"}
+            }
