@@ -38,7 +38,7 @@ class TestSealedTxRegisterPersonalInfo:
     test_account_pk = "0000000000000000000000000000000000000000000000000000000000000001"
 
     # Target API endpoint
-    url = "/sealed_tx/personal_info/register"
+    url = "/sealed_tx/personal_info"
 
     ###########################################################################
     # Normal Case

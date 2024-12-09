@@ -87,7 +87,12 @@ from .freeze_log import (
     RetrieveFreezeLogResponse,
     UpdateFreezeLogRequest,
 )
-from .holder import HolderCountResponse, HolderResponse, HoldersResponse
+from .holder import (
+    HolderCountResponse,
+    HolderResponse,
+    HoldersResponse,
+    RegisterHolderExtraInfoRequest,
+)
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
 from .ledger import (
@@ -127,7 +132,10 @@ from .scheduled_events import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
 )
-from .sealed_tx import SealedTxRegisterPersonalInfoRequest
+from .sealed_tx import (
+    SealedTxRegisterHolderExtraInfoRequest,
+    SealedTxRegisterPersonalInfoRequest,
+)
 from .settlement import (
     AbortDVPDeliveryRequest,
     CancelDVPDeliveryRequest,

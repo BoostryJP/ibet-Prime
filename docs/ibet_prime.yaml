@@ -2384,6 +2384,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /bond/tokens/{token_address}/holders/{account_address}/holder_extra_info:
+    post:
+      tags:
+        - bond
+      summary: Register Bond Token Holder Extra Info
+      operationId: RegisterBondTokenHolderExtraInfo
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Token Address
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterHolderExtraInfoRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '401':
+          description: Authorization Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationErrorResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /bond/tokens/{token_address}/personal_info:
     post:
       tags:
@@ -6759,6 +6834,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /share/tokens/{token_address}/holders/{account_address}/holder_extra_info:
+    post:
+      tags:
+        - share
+      summary: Register Share Token Holder Extra Info
+      operationId: RegisterShareTokenHolderExtraInfo
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Token Address
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterHolderExtraInfoRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '401':
+          description: Authorization Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationErrorResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /share/tokens/{token_address}/personal_info:
     post:
       tags:
@@ -8858,7 +9008,7 @@ paths:
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatedvpdelivery
-  /sealed_tx/personal_info/register:
+  /sealed_tx/personal_info:
     post:
       tags:
         - '[misc] sealed_tx'
@@ -8877,6 +9027,35 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SealedTxRegisterPersonalInfoRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /sealed_tx/holder_extra_info:
+    post:
+      tags:
+        - '[misc] sealed_tx'
+      summary: Sealed Tx Register Holder Extra Info
+      operationId: SealedTxRegisterHolderExtraInfo
+      parameters:
+        - name: X-SealedTx-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            title: X-Sealedtx-Signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SealedTxRegisterHolderExtraInfoRequest'
       responses:
         '200':
           description: Successful Response
@@ -11737,13 +11916,65 @@ components:
         - count
       title: HolderCountResponse
       description: Holder count schema (Response)
+    HolderExtraInfo:
+      properties:
+        external_id_1_type:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: External Id 1 Type
+          description: The type of external-id-1
+        external_id_1:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: External Id 1
+          description: external-id-1
+        external_id_2_type:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: External Id 2 Type
+          description: The type of external-id-2
+        external_id_2:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: External Id 2
+          description: external-id-2
+        external_id_3_type:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: External Id 3 Type
+          description: The type of external-id-3
+        external_id_3:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: External Id 3
+          description: external-id-3
+      type: object
+      required:
+        - external_id_1_type
+        - external_id_1
+        - external_id_2_type
+        - external_id_2
+        - external_id_3_type
+        - external_id_3
+      title: HolderExtraInfo
     HolderResponse:
       properties:
         account_address:
           type: string
           title: Account Address
+          description: Holder's account address
         personal_information:
           $ref: '#/components/schemas/PersonalInfo'
+          description: Holder's personal information
+        holder_extra_info:
+          $ref: '#/components/schemas/HolderExtraInfo'
+          description: Holder's extra information
         balance:
           type: integer
           title: Balance
@@ -11769,6 +12000,7 @@ components:
       required:
         - account_address
         - personal_information
+        - holder_extra_info
         - balance
         - exchange_balance
         - exchange_commitment
@@ -14023,6 +14255,53 @@ components:
         - log_index
       title: RecordNewFreezeLogResponse
       description: New freeze-log recording schema (RESPONSE)
+    RegisterHolderExtraInfoRequest:
+      properties:
+        external_id_1_type:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 1 Type
+          description: The type of external-id-1
+        external_id_1:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 1
+          description: external-id-1
+        external_id_2_type:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 2 Type
+          description: The type of external-id-2
+        external_id_2:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 2
+          description: external-id-2
+        external_id_3_type:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 3 Type
+          description: The type of external-id-3
+        external_id_3:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 3
+          description: external-id-3
+      type: object
+      title: RegisterHolderExtraInfoRequest
+      description: Schema for holder's extra information registration (REQUEST)
     RegisterPersonalInfoRequest:
       properties:
         name:
@@ -14736,6 +15015,59 @@ components:
         - key_manager
       title: SealedTxPersonalInfoInput
       description: Personal Information Input schema for sealed tx
+    SealedTxRegisterHolderExtraInfoRequest:
+      properties:
+        token_address:
+          type: string
+          title: Token Address
+        external_id_1_type:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 1 Type
+          description: The type of external-id-1
+        external_id_1:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 1
+          description: external-id-1
+        external_id_2_type:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 2 Type
+          description: The type of external-id-2
+        external_id_2:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 2
+          description: external-id-2
+        external_id_3_type:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 3 Type
+          description: The type of external-id-3
+        external_id_3:
+          anyOf:
+            - type: string
+              maxLength: 50
+            - type: 'null'
+          title: External Id 3
+          description: external-id-3
+      type: object
+      required:
+        - token_address
+      title: SealedTxRegisterHolderExtraInfoRequest
+      description: Schema for holder's extra information registration using sealed
+        tx (REQUEST)
     SealedTxRegisterPersonalInfoRequest:
       properties:
         link_address:
@@ -14748,7 +15080,7 @@ components:
         - link_address
         - personal_information
       title: SealedTxRegisterPersonalInfoRequest
-      description: Schema for personal information registration using sealed tx(REQUEST)
+      description: Schema for personal information registration using sealed tx (REQUEST)
     SendTransactionErrorCode:
       type: integer
       enum:
@@ -14843,6 +15175,7 @@ components:
         - done
         - failed
       title: TokenHolderBatchStatus
+      description: The creation status of token holder snapshots
     TokenHoldersCollectionHolder:
       properties:
         account_address:

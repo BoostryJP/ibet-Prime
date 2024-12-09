@@ -25,8 +25,16 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
 
+class TokenHolderBatchStatus(StrEnum):
+    """The creation status of token holder snapshots"""
+
+    PENDING = "pending"
+    DONE = "done"
+    FAILED = "failed"
+
+
 class TokenHoldersList(Base):
-    """Token Holder List"""
+    """A list of token holder snapshots"""
 
     __tablename__ = "token_holders_list"
 
@@ -38,17 +46,11 @@ class TokenHoldersList(Base):
     # List id (UUID)
     list_id: Mapped[str | None] = mapped_column(String(36), index=False)
     # batch processing status
-    batch_status: Mapped[str | None] = mapped_column(String(256))
-
-
-class TokenHolderBatchStatus(StrEnum):
-    PENDING = "pending"
-    DONE = "done"
-    FAILED = "failed"
+    batch_status: Mapped[TokenHolderBatchStatus | None] = mapped_column(String(256))
 
 
 class TokenHolder(Base):
-    """Token Holder"""
+    """A snapshot of token holders at a specific block number"""
 
     __tablename__ = "token_holder"
 

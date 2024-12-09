@@ -99,6 +99,7 @@ from app.model.db import (
     IDXUnlock,
     ScheduledEvents,
     Token,
+    TokenHolderExtraInfo,
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
@@ -149,6 +150,7 @@ from app.model.schema import (
     ListTransferHistorySortItem,
     LockEventCategory,
     PersonalInfoDataSource,
+    RegisterHolderExtraInfoRequest,
     RegisterPersonalInfoRequest,
     ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
@@ -1957,6 +1959,7 @@ async def list_all_bond_token_holders(
             IDXPosition,
             locked_value,
             IDXPersonalInfo,
+            TokenHolderExtraInfo,
             func.max(IDXLockedPosition.modified),
         )
         .outerjoin(
@@ -1973,10 +1976,19 @@ async def list_all_bond_token_holders(
                 IDXPersonalInfo.account_address == IDXPosition.account_address,
             ),
         )
+        .outerjoin(
+            TokenHolderExtraInfo,
+            and_(
+                TokenHolderExtraInfo.token_address == IDXPosition.token_address,
+                TokenHolderExtraInfo.account_address == IDXPosition.account_address,
+            ),
+        )
         .where(IDXPosition.token_address == token_address)
         .group_by(
             IDXPosition.id,
             IDXPersonalInfo.id,
+            TokenHolderExtraInfo.token_address,
+            TokenHolderExtraInfo.account_address,
             IDXLockedPosition.token_address,
             IDXLockedPosition.account_address,
         )
@@ -2100,7 +2112,13 @@ async def list_all_bond_token_holders(
         stmt = stmt.offset(get_query.offset)
 
     _holders: Sequence[
-        tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
+        tuple[
+            IDXPosition,
+            int,
+            IDXPersonalInfo | None,
+            TokenHolderExtraInfo | None,
+            datetime | None,
+        ]
     ] = (await db.execute(stmt)).tuples().all()
 
     personal_info_default = {
@@ -2115,7 +2133,13 @@ async def list_all_bond_token_holders(
     }
 
     holders = []
-    for _position, _locked, _personal_info, _lock_event_latest_created in _holders:
+    for (
+        _position,
+        _locked,
+        _personal_info,
+        _holder_extra_info,
+        _lock_event_latest_created,
+    ) in _holders:
         personal_info = (
             _personal_info.personal_info
             if _personal_info is not None
@@ -2136,6 +2160,9 @@ async def list_all_bond_token_holders(
             {
                 "account_address": _position.account_address,
                 "personal_information": personal_info,
+                "holder_extra_info": _holder_extra_info.extra_info()
+                if _holder_extra_info is not None
+                else TokenHolderExtraInfo.default_extra_info,
                 "balance": _position.balance,
                 "exchange_balance": _position.exchange_balance,
                 "exchange_commitment": _position.exchange_commitment,
@@ -2372,9 +2399,28 @@ async def retrieve_bond_token_holder(
     else:
         _personal_info = _personal_info_record.personal_info
 
+    # Get holder's extra information
+    _holder_extra_info: TokenHolderExtraInfo | None = (
+        await db.scalars(
+            select(TokenHolderExtraInfo)
+            .where(
+                and_(
+                    TokenHolderExtraInfo.token_address == token_address,
+                    TokenHolderExtraInfo.account_address == account_address,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _holder_extra_info is None:
+        holder_extra_info = TokenHolderExtraInfo.default_extra_info
+    else:
+        holder_extra_info = _holder_extra_info.extra_info()
+
     holder = {
         "account_address": account_address,
         "personal_information": _personal_info,
+        "holder_extra_info": holder_extra_info,
         "balance": balance,
         "exchange_balance": exchange_balance,
         "exchange_commitment": exchange_commitment,
@@ -2384,6 +2430,80 @@ async def retrieve_bond_token_holder(
     }
 
     return json_response(holder)
+
+
+# POST: /bond/tokens/{token_address}/holders/{account_address}/holder_extra_info
+@router.post(
+    "/tokens/{token_address}/holders/{account_address}/holder_extra_info",
+    operation_id="RegisterBondTokenHolderExtraInfo",
+    response_model=None,
+    responses=get_routers_responses(
+        422,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+    ),
+)
+async def register_bond_token_holder_extra_info(
+    db: DBAsyncSession,
+    request: Request,
+    extra_info: RegisterHolderExtraInfoRequest,
+    token_address: Annotated[str, Path()],
+    account_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
+):
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    await check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Verify that the token is issued by the issuer_address
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_STRAIGHT_BOND,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Insert/Update token holder's extra information
+    # NOTE: Overwrite if a same record already exists.
+    _holder_extra_info = TokenHolderExtraInfo()
+    _holder_extra_info.token_address = token_address
+    _holder_extra_info.account_address = account_address
+    _holder_extra_info.external_id_1_type = extra_info.external_id_1_type
+    _holder_extra_info.external_id_1 = extra_info.external_id_1
+    _holder_extra_info.external_id_2_type = extra_info.external_id_2_type
+    _holder_extra_info.external_id_2 = extra_info.external_id_2
+    _holder_extra_info.external_id_3_type = extra_info.external_id_3_type
+    _holder_extra_info.external_id_3 = extra_info.external_id_3
+    await db.merge(_holder_extra_info)
+    await db.commit()
+
+    return
 
 
 # POST: /bond/tokens/{token_address}/personal_info
