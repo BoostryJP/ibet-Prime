@@ -213,7 +213,7 @@ class Processor:
                     await self.__sink_on_error_notification(
                         db_session=db_session,
                         issuer_address=_upload.issuer_address,
-                        code=2,
+                        code=1,
                         upload_id=_upload.upload_id,
                         error_registration_id=error_registration_id,
                     )

@@ -825,7 +825,7 @@ class TestProcessor:
                     _notification.type
                     == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
                 )
-                assert _notification.code == 2
+                assert _notification.code == 1
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
                     "error_registration_id": [
@@ -958,7 +958,7 @@ class TestProcessor:
                     _notification.type
                     == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
                 )
-                assert _notification.code == 2
+                assert _notification.code == 1
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
                     "error_registration_id": [
@@ -1096,7 +1096,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 _notification.type
                 == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
             )
-            assert _notification.code == 2
+            assert _notification.code == 1
             assert _notification.metainfo == {
                 "upload_id": batch_register_upload.upload_id,
                 "error_registration_id": [
