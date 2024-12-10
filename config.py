@@ -119,6 +119,12 @@ else:
 # Average block generation interval
 EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 0.1))
 
+# Maximum message size for name registration for ibet PersonalInfo contract:
+#   ( key bit length / 8 ) - ( 2 * hash function output length + 2 ) = 1238
+#   key bit length: 10240
+#   hash function output length: 20
+PERSONAL_INFO_MESSAGE_SIZE_LIMIT = int((10240 / 8) - (2 * 20 + 2))
+
 
 ####################################################
 # Web3 settings

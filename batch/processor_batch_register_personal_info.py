@@ -181,6 +181,12 @@ class Processor:
                         await self.__sink_on_finish_register_process(
                             db_session=db_session, record_id=batch_data.id, status=2
                         )
+                    except ValueError:
+                        # for ValueError: Plaintext is too long
+                        LOG.warning(f"Failed to send transaction: id=<{batch_data.id}>")
+                        await self.__sink_on_finish_register_process(
+                            db_session=db_session, record_id=batch_data.id, status=2
+                        )
                     await db_session.commit()
 
                 error_registration_list = await self.__get_registration_data(
