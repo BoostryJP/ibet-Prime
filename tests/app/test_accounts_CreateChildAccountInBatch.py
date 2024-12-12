@@ -297,3 +297,60 @@ class TestCreateChildAccountInBatch:
 
         db.rollback()
         db.close()
+
+    # <Error_5>
+    # BatchPersonalInfoRegistrationValidationError
+    def test_error_5(self, client, db):
+        # Prepare data
+        _account = Account()
+        _account.issuer_address = self.issuer_address
+        _account.issuer_public_key = self.issuer_pub_key
+        db.add(_account)
+
+        _child_index = ChildAccountIndex()
+        _child_index.issuer_address = self.issuer_address
+        _child_index.next_index = 1
+        db.add(_child_index)
+
+        db.commit()
+
+        personal_info_1 = {
+            "name": "test_name",
+            "postal_code": "test_postal_code",
+            "address": "test_address",
+            "email": "test_email",
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+
+        personal_info_2 = {
+            "name": "test_name",
+            "postal_code": "test_postal_code",
+            "address": "test_address" * 100,  # Too long value
+            "email": "test_email",
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        _personal_info_list = [personal_info_1, personal_info_2]
+
+        # Call API
+        resp = client.post(
+            self.base_url.format(self.issuer_address),
+            json={"personal_information_list": _personal_info_list},
+        )
+
+        # Assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 12,
+                "title": "BatchPersonalInfoRegistrationValidationError",
+            },
+            "detail": {
+                "record_error_details": [
+                    {"error_reason": "PersonalInfoExceedsSizeLimit", "row_num": 1},
+                ]
+            },
+        }

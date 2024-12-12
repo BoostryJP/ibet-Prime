@@ -378,3 +378,41 @@ class TestCreateChildAccount:
 
         db.rollback()
         db.close()
+
+    # <Error_5>
+    # PersonalInfoExceedsSizeLimit
+    def test_error_5(self, client, db):
+        # Prepare data
+        _account = Account()
+        _account.issuer_address = self.issuer_address
+        _account.issuer_public_key = self.issuer_pub_key
+        db.add(_account)
+
+        _child_index = ChildAccountIndex()
+        _child_index.issuer_address = self.issuer_address
+        _child_index.next_index = 1
+        db.add(_child_index)
+
+        db.commit()
+
+        # Call API
+        resp = client.post(
+            self.base_url.format(self.issuer_address),
+            json={
+                "personal_information": {
+                    "name": "name_test",
+                    "postal_code": "postal_code_test",
+                    "address": "address_test" * 100,  # Too long value
+                    "email": "email_test",
+                    "birth": "birth_test",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 11, "title": "PersonalInfoExceedsSizeLimit"}
+        }

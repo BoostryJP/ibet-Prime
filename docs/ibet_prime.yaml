@@ -441,7 +441,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OperationNotPermittedForOlderIssuersResponse'
+                anyOf:
+                  - $ref: '#/components/schemas/OperationNotPermittedForOlderIssuersResponse'
+                  - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
+                title: Response 400 Createchildaccount
         '503':
           description: Service Unavailable Error
           content:
@@ -616,7 +619,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OperationNotPermittedForOlderIssuersResponse'
+                anyOf:
+                  - $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotPermittedForOlderIssuersResponse'
+                title: Response 400 Createchildaccountinbatch
         '503':
           description: Service Unavailable Error
           content:
@@ -690,6 +696,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
     delete:
       tags:
         - account
@@ -10227,8 +10240,7 @@ components:
         meta:
           $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorMetainfo'
         detail:
-          type: string
-          title: Detail
+          $ref: '#/components/schemas/InvalidUploadErrorDetail'
       type: object
       required:
         - meta
@@ -13073,6 +13085,17 @@ components:
         - meta
         - detail
       title: InvalidParameterErrorResponse
+    InvalidUploadErrorDetail:
+      properties:
+        record_error_details:
+          items:
+            $ref: '#/components/schemas/RecordErrorDetail'
+          type: array
+          title: Record Error Details
+      type: object
+      required:
+        - record_error_details
+      title: InvalidUploadErrorDetail
     IssueErrorMetaInfo:
       properties:
         token_address:
@@ -14295,6 +14318,20 @@ components:
       $ref: '#/components/schemas/Position'
       title: PositionResponse
       description: Position schema (Response)
+    RecordErrorDetail:
+      properties:
+        row_num:
+          type: integer
+          title: Row Num
+        error_reason:
+          type: string
+          const: PersonalInfoExceedsSizeLimit
+          title: Error Reason
+      type: object
+      required:
+        - row_num
+        - error_reason
+      title: RecordErrorDetail
     RecordNewFreezeLogRequest:
       properties:
         account_address:

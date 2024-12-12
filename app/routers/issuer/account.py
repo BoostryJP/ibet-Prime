@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
+import json
 import re
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -34,12 +35,17 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError, OperationalError
 
+import config
 from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
     AuthTokenAlreadyExistsError,
+    BatchPersonalInfoRegistrationValidationError,
     InvalidParameterError,
+    InvalidUploadErrorDetail,
     OperationNotPermittedForOlderIssuers,
+    PersonalInfoExceedsSizeLimit,
+    RecordErrorDetail,
     ServiceUnavailableError,
 )
 from app.model.db import (
@@ -587,7 +593,10 @@ async def delete_issuer_auth_token(
     operation_id="CreateChildAccount",
     response_model=CreateChildAccountResponse,
     responses=get_routers_responses(
-        404, OperationNotPermittedForOlderIssuers, ServiceUnavailableError
+        404,
+        OperationNotPermittedForOlderIssuers,
+        ServiceUnavailableError,
+        PersonalInfoExceedsSizeLimit,
     ),
 )
 async def create_child_account(
@@ -652,6 +661,13 @@ async def create_child_account(
     # Insert offchain personal information
     personal_info = account_req.personal_information.model_dump()
     personal_info["key_manager"] = "SELF"
+
+    if (
+        len(json.dumps(personal_info).encode("utf-8"))
+        > config.PERSONAL_INFO_MESSAGE_SIZE_LIMIT
+    ):
+        raise PersonalInfoExceedsSizeLimit
+
     _off_personal_info = IDXPersonalInfo()
     _off_personal_info.issuer_address = _account.issuer_address
     _off_personal_info.account_address = child_addr
@@ -678,7 +694,10 @@ async def create_child_account(
     operation_id="CreateChildAccountInBatch",
     response_model=BatchCreateChildAccountResponse,
     responses=get_routers_responses(
-        404, OperationNotPermittedForOlderIssuers, ServiceUnavailableError
+        404,
+        OperationNotPermittedForOlderIssuers,
+        ServiceUnavailableError,
+        BatchPersonalInfoRegistrationValidationError,
     ),
 )
 async def create_child_account_in_batch(
@@ -719,9 +738,22 @@ async def create_child_account_in_batch(
     # Insert temporary table
     _next_index = _child_index.next_index
     _index_list = []
-    for _personal_info in account_list_req.personal_information_list:
+    errs = []
+    for i, _personal_info in enumerate(account_list_req.personal_information_list):
         personal_info = _personal_info.model_dump()
         personal_info["key_manager"] = "SELF"
+
+        # Check the length of personal info content
+        if (
+            len(json.dumps(personal_info).encode("utf-8"))
+            > config.PERSONAL_INFO_MESSAGE_SIZE_LIMIT
+        ):
+            errs.append(
+                RecordErrorDetail(
+                    row_num=i,
+                    error_reason="PersonalInfoExceedsSizeLimit",
+                )
+            )
 
         _batch_create = TmpChildAccountBatchCreate()
         _batch_create.issuer_address = _account.issuer_address
@@ -731,6 +763,11 @@ async def create_child_account_in_batch(
 
         _index_list.append(_next_index)
         _next_index += 1
+
+    if len(errs) > 0:
+        raise BatchPersonalInfoRegistrationValidationError(
+            detail=InvalidUploadErrorDetail(record_error_details=errs)
+        )
 
     _child_index.next_index = _next_index
     await db.merge(_child_index)
@@ -974,7 +1011,7 @@ async def retrieve_child_account(
     "/accounts/{issuer_address}/child_accounts/{child_account_index}",
     operation_id="UpdateChildAccount",
     response_model=None,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, PersonalInfoExceedsSizeLimit),
 )
 async def update_child_account(
     db: DBAsyncSession,
@@ -1027,6 +1064,13 @@ async def update_child_account(
     if _offchain_personal_info is not None:
         personal_info = account_req.personal_information.model_dump()
         personal_info["key_manager"] = "SELF"
+
+        if (
+            len(json.dumps(personal_info).encode("utf-8"))
+            > config.PERSONAL_INFO_MESSAGE_SIZE_LIMIT
+        ):
+            raise PersonalInfoExceedsSizeLimit
+
         _offchain_personal_info.personal_info = personal_info
         await db.merge(_offchain_personal_info)
 

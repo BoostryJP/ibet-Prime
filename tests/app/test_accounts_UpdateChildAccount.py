@@ -211,3 +211,57 @@ class TestUpdateChildAccount:
             "meta": {"code": 1, "title": "NotFound"},
             "detail": "child account does not exist",
         }
+
+    # <Error_4>
+    # PersonalInfoExceedsSizeLimit
+    def test_error_4(self, client, db):
+        # Prepare data
+        _account = Account()
+        _account.issuer_address = self.issuer_address
+        db.add(_account)
+
+        _child_account = ChildAccount()
+        _child_account.issuer_address = self.issuer_address
+        _child_account.child_account_index = 1
+        _child_account.child_account_address = self.child_account_address
+        db.add(_child_account)
+
+        _off_personal_info = IDXPersonalInfo()
+        _off_personal_info.issuer_address = self.issuer_address
+        _off_personal_info.account_address = self.child_account_address
+        _off_personal_info.personal_info = {
+            "key_manager": "SELF",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
+        db.add(_off_personal_info)
+
+        db.commit()
+
+        # Call API
+        resp = client.post(
+            self.base_url.format(self.issuer_address, 1),
+            json={
+                "personal_information": {
+                    "name": "name_test",
+                    "postal_code": "postal_code_test",
+                    "address": "address_test" * 100,  # Too long value
+                    "email": "email_test",
+                    "birth": "birth_test",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }
+            },
+        )
+
+        # Assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 11, "title": "PersonalInfoExceedsSizeLimit"}
+        }
