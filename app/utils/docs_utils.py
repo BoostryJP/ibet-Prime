@@ -23,6 +23,7 @@ from typing import List, Type, Union
 
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field, create_model
+from typing_extensions import get_type_hints
 
 from app.exceptions import AppError
 
@@ -149,6 +150,10 @@ def create_error_model(app_error: Type[AppError]):
         ),
         title=(str, Field(..., examples=[base_name])),
     )
+    if get_type_hints(app_error).get("detail") is not None:
+        detail = (get_type_hints(app_error).get("detail"), Field(...))
+    else:
+        detail = (str, Field())
     error_model = create_model(
         f"{base_name}Response",
         meta=(
@@ -157,7 +162,7 @@ def create_error_model(app_error: Type[AppError]):
                 ...,
             ),
         ),
-        detail=(str, Field()),
+        detail=detail,
     )
     error_model.__doc__ = app_error.__doc__
     return error_model
