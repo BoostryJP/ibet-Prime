@@ -795,7 +795,7 @@ class Processor:
         amount: int,
         agent_address: str,
         code: Literal[
-            Annotated[1, "deliveryConfirmed"], Annotated[2, "deliveryFinished"]
+            Annotated[0, "deliveryConfirmed"], Annotated[1, "deliveryFinished"]
         ],
     ):
         notification = Notification()
