@@ -27,10 +27,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 import config
 
-from .base import Base
+from .base import Base, naive_utcnow
 
 local_tz = pytz.timezone(config.TZ)
 utc_tz = pytz.timezone("UTC")
+
+
+class PersonalInfoDataSource(StrEnum):
+    ON_CHAIN = "on-chain"
+    OFF_CHAIN = "off-chain"
 
 
 class IDXPersonalInfo(Base):
@@ -45,7 +50,7 @@ class IDXPersonalInfo(Base):
     issuer_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # personal information
     #   {
-    #       "key_manager": "string",
+    #       "key_manager": "string",  // If managed by the issuer itself, 'SELF' is set by default.
     #       "name": "string",
     #       "postal_code": "string",
     #       "address": "string",
@@ -55,6 +60,10 @@ class IDXPersonalInfo(Base):
     #       "tax_category": "integer"
     #   }
     _personal_info = mapped_column("personal_info", JSON, nullable=False)
+    # data source
+    data_source: Mapped[PersonalInfoDataSource] = mapped_column(
+        String(10), nullable=False
+    )
 
     @hybrid_property
     def personal_info(self):
@@ -132,7 +141,10 @@ class IDXPersonalInfoHistory(Base):
     # personal information
     personal_info = mapped_column(JSON, nullable=False)
     # block timestamp
-    block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
+    # - For off-chain transactions, UTC now at the time of record insertion is set.
+    block_timestamp: Mapped[datetime | None] = mapped_column(
+        DateTime, default=naive_utcnow
+    )
 
     @staticmethod
     def localize_datetime(_datetime: datetime) -> datetime | None:

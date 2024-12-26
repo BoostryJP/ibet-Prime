@@ -160,7 +160,7 @@ class Processor:
         old_data = history.peek_oldest()
         elapsed_time = data["time"] - old_data["time"]
         generated_block_count = data["block_number"] - old_data["block_number"]
-        generated_block_count_threshold = (elapsed_time / EXPECTED_BLOCKS_PER_SEC) * (
+        generated_block_count_threshold = (elapsed_time * EXPECTED_BLOCKS_PER_SEC) * (
             BLOCK_GENERATION_SPEED_THRESHOLD / 100
         )  # count of block generation theoretical value
         if generated_block_count < generated_block_count_threshold:

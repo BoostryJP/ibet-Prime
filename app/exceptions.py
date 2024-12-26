@@ -17,7 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Literal
+
 from fastapi import status
+from pydantic import BaseModel
 
 from app.utils.contract_error_code import REVERT_CODE_MAP, error_code_msg
 
@@ -26,6 +29,15 @@ class AppError(Exception):
     status_code: int
     code: int | None = None
     code_list: list[int] | None = None
+
+
+class RecordErrorDetail(BaseModel):
+    row_num: int
+    error_reason: Literal["PersonalInfoExceedsSizeLimit"]
+
+
+class InvalidUploadErrorDetail(BaseModel):
+    record_error_details: list[RecordErrorDetail]
 
 
 ################################################
@@ -85,6 +97,35 @@ class MultipleTokenTransferNotAllowedError(BadRequestError):
     """
 
     code = 9
+
+
+class OperationNotPermittedForOlderIssuers(BadRequestError):
+    """
+    An operation not permitted for older issuers
+    """
+
+    code = 10
+
+
+class PersonalInfoExceedsSizeLimit(BadRequestError):
+    """
+    Personal info exceeds size limit
+    """
+
+    code = 11
+
+
+class BatchPersonalInfoRegistrationValidationError(BadRequestError):
+    """
+    The uploaded list of batch personal info registration has invalid records
+    """
+
+    code = 12
+    detail: InvalidUploadErrorDetail
+
+    def __init__(self, detail: InvalidUploadErrorDetail):
+        self.record_error_details = detail
+        super().__init__(detail)
 
 
 class OperationNotAllowedStateError(BadRequestError):

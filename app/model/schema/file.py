@@ -23,14 +23,13 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.model.schema.base import ResultSet
+from app.model.schema.base import BasePaginationQuery, ResultSet
 from config import MAX_UPLOAD_FILE_SIZE
+
 
 ############################
 # REQUEST
 ############################
-
-
 class UploadFileRequest(BaseModel):
     """Upload File schema (Request)"""
 
@@ -58,11 +57,15 @@ class UploadFileRequest(BaseModel):
         return v
 
 
+class ListAllUploadFilesQuery(BasePaginationQuery):
+    relation: Optional[str] = Field(None, description="Relation")
+    file_name: Optional[str] = Field(None, description="File name (partial match)")
+    label: Optional[str] = Field(None, description="Label (partial match)")
+
+
 ############################
 # RESPONSE
 ############################
-
-
 class FileResponse(BaseModel):
     """File schema (Response)"""
 

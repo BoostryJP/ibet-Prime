@@ -42,6 +42,7 @@ from app.model.db import (
     AccountRsaKeyTemporary,
     AccountRsaStatus,
     IDXPersonalInfo,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -271,12 +272,14 @@ class TestProcessor:
         idx_1.issuer_address = user_1["address"]
         idx_1.account_address = personal_user_1["address"]
         idx_1.personal_info = {}
+        idx_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_1)
 
         idx_2 = IDXPersonalInfo()
         idx_2.issuer_address = user_1["address"]
         idx_2.account_address = personal_user_2["address"]
         idx_2.personal_info = {}
+        idx_2.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_2)
 
         await set_personal_info_contract(
@@ -304,12 +307,14 @@ class TestProcessor:
         idx_3.issuer_address = user_1["address"]
         idx_3.account_address = personal_user_3["address"]
         idx_3.personal_info = {}
+        idx_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_3)
 
         idx_4 = IDXPersonalInfo()
         idx_4.issuer_address = user_1["address"]
         idx_4.account_address = personal_user_4["address"]
         idx_4.personal_info = {}
+        idx_4.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_4)
 
         await set_personal_info_contract(

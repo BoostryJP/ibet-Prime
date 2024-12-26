@@ -19,10 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 
 import base64
 import uuid
-from typing import Optional
+from typing import Annotated, Optional
 
 import pytz
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Header, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, desc, func, select
 
@@ -32,6 +32,7 @@ from app.model.schema import (
     DownloadFileResponse,
     FileResponse,
     ListAllFilesResponse,
+    ListAllUploadFilesQuery,
     UploadFileRequest,
 )
 from app.utils.check_utils import address_is_valid_address, validate_headers
@@ -54,12 +55,8 @@ utc_tz = pytz.timezone("UTC")
 )
 async def list_all_upload_files(
     db: DBAsyncSession,
-    issuer_address: Optional[str] = Header(None),
-    relation: Optional[str] = Query(None),
-    file_name: Optional[str] = Query(None, description="partial match"),
-    label: Optional[str] = Query(None, description="partial match"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: Annotated[ListAllUploadFilesQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all upload files"""
 
@@ -83,23 +80,23 @@ async def list_all_upload_files(
     # Search Filter
     if issuer_address is not None:
         stmt = stmt.where(UploadFile.issuer_address == issuer_address)
-    if relation is not None:
-        stmt = stmt.where(UploadFile.relation == relation)
-    if file_name is not None:
-        stmt = stmt.where(UploadFile.file_name.like("%" + file_name + "%"))
-    if label is not None:
-        if label == "":
+    if get_query.relation is not None:
+        stmt = stmt.where(UploadFile.relation == get_query.relation)
+    if get_query.file_name is not None:
+        stmt = stmt.where(UploadFile.file_name.like("%" + get_query.file_name + "%"))
+    if get_query.label is not None:
+        if get_query.label == "":
             stmt = stmt.where(UploadFile.label == "")
         else:
-            stmt = stmt.where(UploadFile.label.like("%" + label + "%"))
+            stmt = stmt.where(UploadFile.label.like("%" + get_query.label + "%"))
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _upload_file_list = (await db.execute(stmt)).tuples().all()
 
@@ -124,8 +121,8 @@ async def list_all_upload_files(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
             "total": total,
         },
         "files": files,
@@ -144,7 +141,7 @@ async def list_all_upload_files(
 async def upload_file(
     db: DBAsyncSession,
     data: UploadFileRequest,
-    issuer_address: str = Header(...),
+    issuer_address: Annotated[str, Header()],
 ):
     """Upload file"""
 
@@ -192,8 +189,8 @@ async def upload_file(
 )
 async def download_file(
     db: DBAsyncSession,
-    file_id: str,
-    issuer_address: Optional[str] = Header(None),
+    file_id: Annotated[str, Path()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """Download file"""
 
@@ -249,8 +246,8 @@ async def download_file(
 )
 async def delete_file(
     db: DBAsyncSession,
-    file_id: str,
-    issuer_address: str = Header(...),
+    file_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Delete file"""
 

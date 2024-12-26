@@ -40,8 +40,8 @@ from app.model.db import (
     Account,
     IDXPersonalInfo,
     Ledger,
+    LedgerDataType,
     LedgerDetailsData,
-    LedgerDetailsDataType,
     LedgerDetailsTemplate,
     LedgerTemplate,
     Token,
@@ -60,7 +60,7 @@ from app.model.schema import (
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
-from app.utils.ledger_utils import create_ledger
+from app.utils.ledger_utils import request_ledger_creation
 from config import TZ
 
 router = APIRouter(
@@ -242,8 +242,7 @@ async def retrieve_ledger_history(
                 .where(
                     and_(
                         LedgerDetailsTemplate.token_address == token_address,
-                        LedgerDetailsTemplate.data_type
-                        == LedgerDetailsDataType.IBET_FIN,
+                        LedgerDetailsTemplate.data_type == LedgerDataType.IBET_FIN,
                     )
                 )
                 .order_by(LedgerDetailsTemplate.id)
@@ -488,8 +487,8 @@ async def create_update_ledger_template(
             )
         )
 
-    # Create Ledger
-    await create_ledger(token_address, db)
+    # Request Ledger Creation
+    await request_ledger_creation(db, token_address)
 
     await db.commit()
     return
@@ -842,8 +841,8 @@ async def update_ledger_details_data(
         _details_data.acquisition_date = data_list.acquisition_date
         db.add(_details_data)
 
-    # Create Ledger
-    await create_ledger(token_address, db)
+    # Request Ledger Creation
+    await request_ledger_creation(db, token_address)
 
     await db.commit()
     return

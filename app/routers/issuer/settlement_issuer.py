@@ -21,13 +21,13 @@ import base64
 import json
 import secrets
 from datetime import UTC
-from typing import Optional, Sequence
+from typing import Annotated, Optional, Sequence
 
 import pytz
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from eth_keyfile import decode_keyfile_json
-from fastapi import APIRouter, Depends, Header, HTTPException, Path, Request
+from fastapi import APIRouter, Header, HTTPException, Path, Query, Request
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.orm import aliased
 
@@ -79,9 +79,9 @@ local_tz = pytz.timezone(config.TZ)
 )
 async def list_all_dvp_deliveries(
     db: DBAsyncSession,
-    exchange_address: str,
-    request_query: ListAllDVPDeliveriesQuery = Depends(),
-    issuer_address: str = Header(...),
+    exchange_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    request_query: Annotated[ListAllDVPDeliveriesQuery, Query()],
 ):
     """List all DVP deliveries"""
     buyer_personal_info = aliased(IDXPersonalInfo)
@@ -145,6 +145,8 @@ async def list_all_dvp_deliveries(
         stmt = stmt.order_by(IDXDelivery.create_blocktimestamp)
     else:  # DESC
         stmt = stmt.order_by(desc(IDXDelivery.create_blocktimestamp))
+    # NOTE: Set secondary sort for consistent results
+    stmt = stmt.order_by(IDXDelivery.delivery_id)
 
     # Pagination
     if request_query.limit is not None:
@@ -257,11 +259,11 @@ async def list_all_dvp_deliveries(
 async def create_dvp_delivery(
     db: DBAsyncSession,
     req: Request,
-    exchange_address: str,
     create_req: CreateDVPDeliveryRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    exchange_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     # Validate Headers
     validate_headers(
@@ -377,9 +379,9 @@ async def create_dvp_delivery(
 )
 async def retrieve_dvp_delivery(
     db: DBAsyncSession,
-    exchange_address: str = Path(..., description="Exchange Address"),
-    delivery_id: int = Path(..., description="Delivery Id"),
-    issuer_address: str = Header(...),
+    exchange_address: Annotated[str, Path()],
+    delivery_id: Annotated[int, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve a dvp delivery"""
     buyer_personal_info = aliased(IDXPersonalInfo)
@@ -511,12 +513,12 @@ async def retrieve_dvp_delivery(
 async def update_dvp_delivery(
     db: DBAsyncSession,
     req: Request,
-    exchange_address: str,
-    delivery_id: int,
     cancel_req: CancelDVPDeliveryRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    exchange_address: Annotated[str, Path()],
+    delivery_id: Annotated[int, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     # Validate Headers
     validate_headers(

@@ -24,9 +24,9 @@ from rich.panel import Panel
 from rich.progress_bar import ProgressBar
 from rich.table import Table
 from rich.text import Text
+from utils.time import human_time, unix_to_iso
 
 from app.model.schema import BlockDataDetail
-from src.utils.time import human_time, unix_to_iso
 
 
 class BlockDetailInfo:

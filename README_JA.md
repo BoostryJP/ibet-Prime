@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-24.9-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.12-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -24,7 +24,7 @@
 ## 依存
 
 - [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.12
-- [PostgreSQL](https://www.postgresql.org/) - バージョン 15
+- [PostgreSQL](https://www.postgresql.org/) - バージョン 16
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。
   - 最新の [hardhat network](https://hardhat.org/hardhat-network/) をローカル開発およびユニットテストで利用しています。
@@ -51,14 +51,19 @@
 
 ### パッケージインストール
 
+以下のコマンドで Python の仮想環境を作成します。
+```bash
+$ uv venv
+```
+
 以下のコマンドで Python パッケージをインストールします。
 ```bash
-$ poetry install --no-root --only main --all-extras
+$ uv sync --frozen --no-install-project --no-dev --all-extras
 ```
 
 ### pre-commit hookのインストール
 ```bash
-$ poetry run pre-commit install
+$ uv run pre-commit install
 ```
 
 ### hardhatのインストール

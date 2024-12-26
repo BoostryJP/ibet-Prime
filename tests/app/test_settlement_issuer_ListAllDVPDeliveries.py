@@ -24,6 +24,7 @@ from app.model.db import (
     DeliveryStatus,
     IDXDelivery,
     IDXPersonalInfo,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -529,6 +530,7 @@ class TestListAllDVPDeliveries:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info)
 
         _personal_info = IDXPersonalInfo()
@@ -544,6 +546,7 @@ class TestListAllDVPDeliveries:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info)
 
         _personal_info = IDXPersonalInfo()
@@ -559,6 +562,7 @@ class TestListAllDVPDeliveries:
             "is_corporate": False,
             "tax_category": 10,
         }
+        _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info)
 
         # prepare data: IDXDelivery(Created)
@@ -4301,6 +4305,18 @@ class TestListAllDVPDeliveries:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "type": "int_parsing",
+                    "loc": ["query", "offset"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
+                },
+                {
+                    "type": "int_parsing",
+                    "loc": ["query", "limit"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "test",
+                },
+                {
                     "type": "bool_parsing",
                     "loc": ["query", "valid"],
                     "msg": "Input should be a valid boolean, unable to interpret input",
@@ -4312,18 +4328,6 @@ class TestListAllDVPDeliveries:
                     "msg": "Input should be 0, 1, 2, 3 or 4",
                     "input": "invalid_value",
                     "ctx": {"expected": "0, 1, 2, 3 or 4"},
-                },
-                {
-                    "type": "int_parsing",
-                    "loc": ["query", "offset"],
-                    "msg": "Input should be a valid integer, unable to parse string as an integer",
-                    "input": "test",
-                },
-                {
-                    "type": "int_parsing",
-                    "loc": ["query", "limit"],
-                    "msg": "Input should be a valid integer, unable to parse string as an integer",
-                    "input": "test",
                 },
             ],
         }

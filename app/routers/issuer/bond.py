@@ -17,13 +17,14 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import json
 import uuid
 from datetime import UTC, datetime
-from typing import List, Optional, Sequence
+from typing import Annotated, List, Optional, Sequence
 
 import pytz
 from eth_keyfile import decode_keyfile_json
-from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import (
     String,
@@ -33,6 +34,7 @@ from sqlalchemy import (
     cast,
     column,
     desc,
+    distinct,
     func,
     literal,
     literal_column,
@@ -48,12 +50,16 @@ from app import log
 from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
+    BatchPersonalInfoRegistrationValidationError,
     ContractRevertError,
     InvalidParameterError,
+    InvalidUploadErrorDetail,
     MultipleTokenTransferNotAllowedError,
     NonTransferableTokenError,
     OperationNotAllowedStateError,
     OperationNotSupportedVersionError,
+    PersonalInfoExceedsSizeLimit,
+    RecordErrorDetail,
     SendTransactionError,
     TokenNotExistError,
 )
@@ -98,6 +104,7 @@ from app.model.db import (
     IDXUnlock,
     ScheduledEvents,
     Token,
+    TokenHolderExtraInfo,
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
@@ -109,8 +116,8 @@ from app.model.db import (
 from app.model.schema import (
     BatchIssueRedeemUploadIdResponse,
     BatchRegisterPersonalInfoUploadResponse,
-    BulkTransferResponse,
     BulkTransferUploadIdResponse,
+    BulkTransferUploadRecordResponse,
     BulkTransferUploadResponse,
     GetBatchIssueRedeemResponse,
     GetBatchRegisterPersonalInfoResponse,
@@ -137,13 +144,18 @@ from app.model.schema import (
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
+    ListBulkTransferQuery,
+    ListBulkTransferUploadQuery,
     ListRedeemHistoryQuery,
+    ListSpecificTokenTransferApprovalHistoryQuery,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
     ListTransferApprovalHistoryQuery,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     LockEventCategory,
+    PersonalInfoDataSource,
+    RegisterHolderExtraInfoRequest,
     RegisterPersonalInfoRequest,
     ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
@@ -190,9 +202,9 @@ async def issue_bond_token(
     db: DBAsyncSession,
     request: Request,
     token: IbetStraightBondCreate,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Issue ibetStraightBond token"""
 
@@ -294,7 +306,7 @@ async def issue_bond_token(
         try:
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=contract_address,
-                token_template=TokenType.IBET_STRAIGHT_BOND.value,
+                token_template=TokenType.IBET_STRAIGHT_BOND,
                 tx_from=issuer_address,
                 private_key=private_key,
             )
@@ -363,7 +375,7 @@ async def issue_bond_token(
 )
 async def list_all_bond_tokens(
     db: DBAsyncSession,
-    issuer_address: Optional[str] = Header(None),
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all issued bond tokens"""
 
@@ -418,7 +430,9 @@ async def list_all_bond_tokens(
     response_model=IbetStraightBondResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-async def retrieve_bond_token(db: DBAsyncSession, token_address: str):
+async def retrieve_bond_token(
+    db: DBAsyncSession, token_address: Annotated[str, Path()]
+):
     """Retrieve the bond token"""
     # Get Token
     _token: Token | None = (
@@ -469,11 +483,11 @@ async def retrieve_bond_token(db: DBAsyncSession, token_address: str):
 async def update_bond_token(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     update_data: IbetStraightBondUpdate,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Update the bond token"""
 
@@ -577,8 +591,8 @@ async def update_bond_token(
 )
 async def list_bond_operation_log_history(
     db: DBAsyncSession,
-    token_address: str,
-    request_query: ListTokenOperationLogHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    request_query: Annotated[ListTokenOperationLogHistoryQuery, Query()],
 ):
     """List all bond token operation log history"""
     stmt = select(TokenUpdateOperationLog).where(
@@ -667,15 +681,10 @@ async def list_bond_operation_log_history(
 )
 async def list_bond_additional_issuance_history(
     db: DBAsyncSession,
-    token_address: str,
-    request_query: ListAdditionalIssuanceHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    request_query: Annotated[ListAdditionalIssuanceHistoryQuery, Query()],
 ):
     """List bond additional issuance history"""
-    sort_item = request_query.sort_item
-    sort_order = request_query.sort_order
-    offset = request_query.offset
-    limit = request_query.limit
-
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -706,20 +715,20 @@ async def list_bond_additional_issuance_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
-    if sort_order == 0:  # ASC
+    sort_attr = getattr(IDXIssueRedeem, request_query.sort_item, None)
+    if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+    if request_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
 
     _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
@@ -741,8 +750,8 @@ async def list_bond_additional_issuance_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": request_query.offset,
+                "limit": request_query.limit,
                 "total": total,
             },
             "history": history,
@@ -768,11 +777,11 @@ async def list_bond_additional_issuance_history(
 async def issue_additional_bond(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: IbetStraightBondAdditionalIssue,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Issue additional bonds"""
 
@@ -839,9 +848,9 @@ async def issue_additional_bond(
 )
 async def list_all_batch_additional_bond_issue(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListAllAdditionalIssueUploadQuery = Depends(),
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListAllAdditionalIssueUploadQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all bond batch additional issues"""
     # Get a list of uploads
@@ -915,11 +924,11 @@ async def list_all_batch_additional_bond_issue(
 async def issue_additional_bonds_in_batch(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: List[IbetStraightBondAdditionalIssue],
-    issuer_address: str = Header(...),
-    auth_token: Optional[str] = Header(None),
-    eoa_password: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Issue additional bonds in batch"""
 
@@ -997,9 +1006,9 @@ async def issue_additional_bonds_in_batch(
 )
 async def retrieve_batch_additional_bond_issue_status(
     db: DBAsyncSession,
-    token_address: str,
-    batch_id: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    batch_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve detailed status of additional bond batch issuance"""
 
@@ -1084,8 +1093,8 @@ async def retrieve_batch_additional_bond_issue_status(
 )
 async def list_bond_redemption_history(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListRedeemHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListRedeemHistoryQuery, Query()],
 ):
     """List the history of bond redemptions"""
     # Get token
@@ -1118,7 +1127,7 @@ async def list_bond_redemption_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, get_query.sort_item.value, None)
+    sort_attr = getattr(IDXIssueRedeem, get_query.sort_item, None)
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
@@ -1180,11 +1189,11 @@ async def list_bond_redemption_history(
 async def redeem_bond(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: IbetStraightBondRedeem,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Redeem bond token"""
 
@@ -1251,9 +1260,9 @@ async def redeem_bond(
 )
 async def list_all_batch_bond_redemption(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListAllRedeemUploadQuery = Depends(),
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListAllRedeemUploadQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all batch bond redemptions"""
     # Get a list of uploads
@@ -1328,11 +1337,11 @@ async def list_all_batch_bond_redemption(
 async def redeem_bonds_in_batch(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     data: List[IbetStraightBondRedeem],
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Redeem bonds in batch"""
 
@@ -1410,9 +1419,9 @@ async def redeem_bonds_in_batch(
 )
 async def retrieve_batch_bond_redemption_status(
     db: DBAsyncSession,
-    token_address: str,
-    batch_id: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    batch_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve detailed status of batch bond redemption"""
 
@@ -1496,8 +1505,8 @@ async def retrieve_batch_bond_redemption_status(
 )
 async def list_all_scheduled_bond_token_update_events(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all scheduled bond token update events"""
 
@@ -1569,11 +1578,11 @@ async def list_all_scheduled_bond_token_update_events(
 async def schedule_bond_token_update_event(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     event_data: IbetStraightBondScheduledUpdate,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Schedule a new bond token update event"""
 
@@ -1672,11 +1681,11 @@ async def schedule_bond_token_update_event(
 async def schedule_bond_token_update_events_in_batch(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     event_data_list: list[IbetStraightBondScheduledUpdate],
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Schedule bond token update events in batch"""
 
@@ -1772,9 +1781,9 @@ async def schedule_bond_token_update_events_in_batch(
 )
 async def retrieve_scheduled_bond_token_update_event(
     db: DBAsyncSession,
-    scheduled_event_id: str,
-    token_address: str,
-    issuer_address: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    scheduled_event_id: Annotated[str, Path()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """Retrieve a scheduled bond token update event"""
 
@@ -1840,11 +1849,11 @@ async def retrieve_scheduled_bond_token_update_event(
 async def delete_scheduled_bond_token_update_event(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
-    scheduled_event_id: str,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    scheduled_event_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Delete a scheduled bond token update event"""
 
@@ -1911,9 +1920,9 @@ async def delete_scheduled_bond_token_update_event(
 )
 async def list_all_bond_token_holders(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListAllHoldersQuery = Depends(),
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListAllHoldersQuery, Query()],
+    issuer_address: Annotated[str, Header()],
 ):
     """List all bond token holders"""
     # Validate Headers
@@ -1955,6 +1964,7 @@ async def list_all_bond_token_holders(
             IDXPosition,
             locked_value,
             IDXPersonalInfo,
+            TokenHolderExtraInfo,
             func.max(IDXLockedPosition.modified),
         )
         .outerjoin(
@@ -1971,10 +1981,19 @@ async def list_all_bond_token_holders(
                 IDXPersonalInfo.account_address == IDXPosition.account_address,
             ),
         )
+        .outerjoin(
+            TokenHolderExtraInfo,
+            and_(
+                TokenHolderExtraInfo.token_address == IDXPosition.token_address,
+                TokenHolderExtraInfo.account_address == IDXPosition.account_address,
+            ),
+        )
         .where(IDXPosition.token_address == token_address)
         .group_by(
             IDXPosition.id,
             IDXPersonalInfo.id,
+            TokenHolderExtraInfo.token_address,
+            TokenHolderExtraInfo.account_address,
             IDXLockedPosition.token_address,
             IDXLockedPosition.account_address,
         )
@@ -2098,7 +2117,13 @@ async def list_all_bond_token_holders(
         stmt = stmt.offset(get_query.offset)
 
     _holders: Sequence[
-        tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
+        tuple[
+            IDXPosition,
+            int,
+            IDXPersonalInfo | None,
+            TokenHolderExtraInfo | None,
+            datetime | None,
+        ]
     ] = (await db.execute(stmt)).tuples().all()
 
     personal_info_default = {
@@ -2113,7 +2138,13 @@ async def list_all_bond_token_holders(
     }
 
     holders = []
-    for _position, _locked, _personal_info, _lock_event_latest_created in _holders:
+    for (
+        _position,
+        _locked,
+        _personal_info,
+        _holder_extra_info,
+        _lock_event_latest_created,
+    ) in _holders:
         personal_info = (
             _personal_info.personal_info
             if _personal_info is not None
@@ -2134,6 +2165,9 @@ async def list_all_bond_token_holders(
             {
                 "account_address": _position.account_address,
                 "personal_information": personal_info,
+                "holder_extra_info": _holder_extra_info.extra_info()
+                if _holder_extra_info is not None
+                else TokenHolderExtraInfo.default_extra_info,
                 "balance": _position.balance,
                 "exchange_balance": _position.exchange_balance,
                 "exchange_commitment": _position.exchange_commitment,
@@ -2165,8 +2199,8 @@ async def list_all_bond_token_holders(
 )
 async def count_bond_token_holders(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Count the number of bond token holders"""
 
@@ -2244,9 +2278,9 @@ async def count_bond_token_holders(
 )
 async def retrieve_bond_token_holder(
     db: DBAsyncSession,
-    token_address: str,
-    account_address: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    account_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve bond token holder"""
 
@@ -2370,9 +2404,28 @@ async def retrieve_bond_token_holder(
     else:
         _personal_info = _personal_info_record.personal_info
 
+    # Get holder's extra information
+    _holder_extra_info: TokenHolderExtraInfo | None = (
+        await db.scalars(
+            select(TokenHolderExtraInfo)
+            .where(
+                and_(
+                    TokenHolderExtraInfo.token_address == token_address,
+                    TokenHolderExtraInfo.account_address == account_address,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _holder_extra_info is None:
+        holder_extra_info = TokenHolderExtraInfo.default_extra_info
+    else:
+        holder_extra_info = _holder_extra_info.extra_info()
+
     holder = {
         "account_address": account_address,
         "personal_information": _personal_info,
+        "holder_extra_info": holder_extra_info,
         "balance": balance,
         "exchange_balance": exchange_balance,
         "exchange_commitment": exchange_commitment,
@@ -2382,6 +2435,80 @@ async def retrieve_bond_token_holder(
     }
 
     return json_response(holder)
+
+
+# POST: /bond/tokens/{token_address}/holders/{account_address}/holder_extra_info
+@router.post(
+    "/tokens/{token_address}/holders/{account_address}/holder_extra_info",
+    operation_id="RegisterBondTokenHolderExtraInfo",
+    response_model=None,
+    responses=get_routers_responses(
+        422,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+    ),
+)
+async def register_bond_token_holder_extra_info(
+    db: DBAsyncSession,
+    request: Request,
+    extra_info: RegisterHolderExtraInfoRequest,
+    token_address: Annotated[str, Path()],
+    account_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
+):
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    await check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Verify that the token is issued by the issuer_address
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_STRAIGHT_BOND,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Insert/Update token holder's extra information
+    # NOTE: Overwrite if a same record already exists.
+    _holder_extra_info = TokenHolderExtraInfo()
+    _holder_extra_info.token_address = token_address
+    _holder_extra_info.account_address = account_address
+    _holder_extra_info.external_id_1_type = extra_info.external_id_1_type
+    _holder_extra_info.external_id_1 = extra_info.external_id_1
+    _holder_extra_info.external_id_2_type = extra_info.external_id_2_type
+    _holder_extra_info.external_id_2 = extra_info.external_id_2
+    _holder_extra_info.external_id_3_type = extra_info.external_id_3_type
+    _holder_extra_info.external_id_3 = extra_info.external_id_3
+    await db.merge(_holder_extra_info)
+    await db.commit()
+
+    return
 
 
 # POST: /bond/tokens/{token_address}/personal_info
@@ -2397,16 +2524,17 @@ async def retrieve_bond_token_holder(
         InvalidParameterError,
         SendTransactionError,
         ContractRevertError,
+        PersonalInfoExceedsSizeLimit,
     ),
 )
 async def register_bond_token_holder_personal_info(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     personal_info: RegisterPersonalInfoRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Register personal information of bond token holders"""
 
@@ -2446,20 +2574,48 @@ async def register_bond_token_holder_personal_info(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
-    token_contract = await IbetStraightBondContract(token_address).get()
-    try:
-        personal_info_contract = PersonalInfoContract(
-            logger=LOG,
-            issuer=issuer_account,
-            contract_address=token_contract.personal_info_contract_address,
-        )
-        await personal_info_contract.register_info(
-            account_address=personal_info.account_address,
-            data=personal_info.model_dump(),
-            default_value=None,
-        )
-    except SendTransactionError:
-        raise SendTransactionError("failed to register personal information")
+    input_personal_info = personal_info.model_dump(
+        include={
+            "key_manager",
+            "name",
+            "postal_code",
+            "address",
+            "email",
+            "birth",
+            "is_corporate",
+            "tax_category",
+        }
+    )
+    if personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN:
+        _off_personal_info = IDXPersonalInfo()
+        _off_personal_info.issuer_address = issuer_address
+        _off_personal_info.account_address = personal_info.account_address
+        _off_personal_info.personal_info = input_personal_info
+        _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
+        await db.merge(_off_personal_info)
+        await db.commit()
+    else:
+        # Check the length of personal info content
+        if (
+            len(json.dumps(input_personal_info).encode("utf-8"))
+            > config.PERSONAL_INFO_MESSAGE_SIZE_LIMIT
+        ):
+            raise PersonalInfoExceedsSizeLimit
+
+        token_contract = await IbetStraightBondContract(token_address).get()
+        try:
+            personal_info_contract = PersonalInfoContract(
+                logger=LOG,
+                issuer=issuer_account,
+                contract_address=token_contract.personal_info_contract_address,
+            )
+            await personal_info_contract.register_info(
+                account_address=personal_info.account_address,
+                data=input_personal_info,
+                default_value=None,
+            )
+        except SendTransactionError:
+            raise SendTransactionError("failed to register personal information")
 
     return
 
@@ -2473,9 +2629,9 @@ async def register_bond_token_holder_personal_info(
 )
 async def list_all_bond_token_batch_personal_info_registration(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: str = Header(...),
-    get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    get_query: Annotated[ListAllPersonalInfoBatchRegistrationUploadQuery, Query()],
 ):
     """List all personal information batch registration"""
     # Verify that the token is issued by the issuer_address
@@ -2556,17 +2712,22 @@ async def list_all_bond_token_batch_personal_info_registration(
     operation_id="InitiateBondTokenBatchPersonalInfoRegistration",
     response_model=BatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        422,
+        401,
+        404,
+        AuthorizationError,
+        InvalidParameterError,
+        BatchPersonalInfoRegistrationValidationError,
     ),
 )
 async def initiate_bond_token_batch_personal_info_registration(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
     personal_info_list: List[RegisterPersonalInfoRequest],
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Initiate bond token batch personal information registration"""
 
@@ -2614,14 +2775,39 @@ async def initiate_bond_token_batch_personal_info_registration(
     batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
     db.add(batch)
 
-    for personal_info in personal_info_list:
+    errs = []
+    bulk_register_record_list = []
+
+    for i, personal_info in enumerate(personal_info_list):
         bulk_register_record = BatchRegisterPersonalInfo()
         bulk_register_record.upload_id = batch_id
         bulk_register_record.token_address = token_address
         bulk_register_record.account_address = personal_info.account_address
-        bulk_register_record.personal_info = personal_info.model_dump()
         bulk_register_record.status = 0
-        db.add(bulk_register_record)
+        bulk_register_record.personal_info = personal_info.model_dump()
+
+        # Check the length of personal info content
+        if (
+            personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
+            and len(json.dumps(bulk_register_record.personal_info).encode("utf-8"))
+            > config.PERSONAL_INFO_MESSAGE_SIZE_LIMIT
+        ):
+            errs.append(
+                RecordErrorDetail(
+                    row_num=i,
+                    error_reason="PersonalInfoExceedsSizeLimit",
+                )
+            )
+
+        if not errs:
+            bulk_register_record_list.append(bulk_register_record)
+
+    if len(errs) > 0:
+        raise BatchPersonalInfoRegistrationValidationError(
+            detail=InvalidUploadErrorDetail(record_error_details=errs)
+        )
+
+    db.add_all(bulk_register_record_list)
 
     await db.commit()
 
@@ -2646,9 +2832,9 @@ async def initiate_bond_token_batch_personal_info_registration(
 )
 async def retrieve_bond_token_personal_info_batch_registration_status(
     db: DBAsyncSession,
-    token_address: str,
-    batch_id: str,
-    issuer_address: str = Header(...),
+    token_address: Annotated[str, Path()],
+    batch_id: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
 ):
     """Retrieve the status of bond token personal information batch registration"""
 
@@ -2714,20 +2900,14 @@ async def retrieve_bond_token_personal_info_batch_registration_status(
 )
 async def list_bond_token_lock_unlock_events(
     db: DBAsyncSession,
-    token_address: str,
-    issuer_address: Optional[str] = Header(None),
-    request_query: ListAllTokenLockEventsQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    request_query: Annotated[ListAllTokenLockEventsQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all lock/unlock bond token events"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
-
-    # Request parameters
-    offset = request_query.offset
-    limit = request_query.limit
-    sort_item = request_query.sort_item
-    sort_order = request_query.sort_order
 
     # Base query
     stmt_lock = (
@@ -2818,23 +2998,23 @@ async def list_bond_token_lock_unlock_events(
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    sort_attr = column(sort_item)
-    if sort_order == 0:  # ASC
+    sort_attr = column(request_query.sort_item)
+    if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
 
-    if sort_item != ListAllTokenLockEventsSortItem.block_timestamp.value:
+    if request_query.sort_item != ListAllTokenLockEventsSortItem.block_timestamp.value:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(
             desc(column(ListAllTokenLockEventsSortItem.block_timestamp.value))
         )
 
     # Pagination
-    if offset is not None:
-        stmt = stmt.offset(offset)
-    if limit is not None:
-        stmt = stmt.limit(limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
 
     entries = [
         all_lock_event_alias.c.category,
@@ -2879,8 +3059,8 @@ async def list_bond_token_lock_unlock_events(
     data = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": request_query.offset,
+            "limit": request_query.limit,
             "total": total,
         },
         "events": resp_data,
@@ -2906,9 +3086,9 @@ async def transfer_bond_token_ownership(
     db: DBAsyncSession,
     request: Request,
     token: IbetStraightBondTransfer,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Transfer bond token ownership"""
 
@@ -2974,8 +3154,8 @@ async def transfer_bond_token_ownership(
 )
 async def list_bond_token_transfer_history(
     db: DBAsyncSession,
-    token_address: str,
-    query: ListTransferHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    query: Annotated[ListTransferHistoryQuery, Query()],
 ):
     """List bond token transfer history"""
     # Check if the token has been issued
@@ -3060,6 +3240,8 @@ async def list_bond_token_transfer_history(
         stmt = stmt.where(IDXTransfer.source_event == query.source_event)
     if query.data is not None:
         stmt = stmt.where(cast(IDXTransfer.data, String).like("%" + query.data + "%"))
+    if query.message is not None:
+        stmt = stmt.where(IDXTransfer.message == query.message)
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
@@ -3137,9 +3319,8 @@ async def list_bond_token_transfer_history(
 )
 async def list_all_bond_token_transfer_approval_history(
     db: DBAsyncSession,
-    issuer_address: Optional[str] = Header(None),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: Annotated[ListTransferApprovalHistoryQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all bond token transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
@@ -3224,10 +3405,10 @@ async def list_all_bond_token_transfer_approval_history(
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _transfer_approvals = (await db.execute(stmt)).tuples().all()
 
@@ -3257,8 +3438,8 @@ async def list_all_bond_token_transfer_approval_history(
         {
             "result_set": {
                 "count": count,
-                "offset": offset,
-                "limit": limit,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
                 "total": total,
             },
             "transfer_approvals": transfer_approvals,
@@ -3275,8 +3456,8 @@ async def list_all_bond_token_transfer_approval_history(
 )
 async def list_specific_bond_token_transfer_approval_history(
     db: DBAsyncSession,
-    token_address: str,
-    get_query: ListTransferApprovalHistoryQuery = Depends(),
+    token_address: Annotated[str, Path()],
+    get_query: Annotated[ListSpecificTokenTransferApprovalHistoryQuery, Query()],
 ):
     """List specific bond token transfer approval history"""
     # Get token
@@ -3576,12 +3757,12 @@ async def list_specific_bond_token_transfer_approval_history(
 async def update_bond_token_transfer_approval_status(
     db: DBAsyncSession,
     request: Request,
-    token_address: str,
-    id: int,
     data: UpdateTransferApprovalRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    token_address: Annotated[str, Path()],
+    id: Annotated[int, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Update bond token transfer approval status"""
 
@@ -3805,7 +3986,9 @@ async def update_bond_token_transfer_approval_status(
     ),
 )
 async def retrieve_bond_token_transfer_approval_status(
-    db: DBAsyncSession, token_address: str, id: int
+    db: DBAsyncSession,
+    token_address: Annotated[str, Path()],
+    id: Annotated[int, Path()],
 ):
     """Retrieve bond token transfer approval status"""
     # Get token
@@ -4035,9 +4218,9 @@ async def bulk_transfer_bond_token_ownership(
     db: DBAsyncSession,
     request: Request,
     transfer_req: IbetStraightBondBulkTransferRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Bulk transfer bond token ownership
 
@@ -4125,38 +4308,56 @@ async def bulk_transfer_bond_token_ownership(
 @router.get(
     "/bulk_transfer",
     operation_id="ListBondTokenBulkTransfers",
-    response_model=List[BulkTransferUploadResponse],
+    response_model=BulkTransferUploadResponse,
     responses=get_routers_responses(422),
 )
 async def list_bond_token_bulk_transfers(
-    db: DBAsyncSession, issuer_address: Optional[str] = Header(None)
+    db: DBAsyncSession,
+    get_query: Annotated[ListBulkTransferUploadQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List bond token bulk transfers"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get bulk transfer upload list
+    # Select statement
     if issuer_address is None:
-        _uploads: Sequence[BulkTransferUpload] = (
-            await db.scalars(
-                select(BulkTransferUpload)
-                .where(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND)
-                .order_by(BulkTransferUpload.issuer_address)
-            )
-        ).all()
+        stmt = (
+            select(BulkTransferUpload)
+            .where(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND)
+            .order_by(BulkTransferUpload.issuer_address)
+        )
     else:
-        _uploads: Sequence[BulkTransferUpload] = (
-            await db.scalars(
-                select(BulkTransferUpload).where(
-                    and_(
-                        BulkTransferUpload.issuer_address == issuer_address,
-                        BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND,
-                    )
-                )
+        stmt = select(BulkTransferUpload).where(
+            and_(
+                BulkTransferUpload.issuer_address == issuer_address,
+                BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND,
             )
-        ).all()
+        )
 
+    if get_query.token_address is not None:
+        upload_id_subquery = (
+            select(distinct(BulkTransfer.upload_id).label("upload_id"))
+            .where(BulkTransfer.token_address == get_query.token_address)
+            .subquery()
+        )
+        stmt = stmt.join(
+            upload_id_subquery,
+            upload_id_subquery.c.upload_id == BulkTransferUpload.upload_id,
+        )
+
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = total
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    # Get bulk transfer upload list
+    _uploads: Sequence[BulkTransferUpload] = (await db.scalars(stmt)).all()
     uploads = []
     for _upload in _uploads:
         created_utc = pytz.timezone("UTC").localize(_upload.created)
@@ -4171,55 +4372,116 @@ async def list_bond_token_bulk_transfers(
             }
         )
 
-    return json_response(uploads)
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
+                "total": total,
+            },
+            "bulk_transfer_uploads": uploads,
+        }
+    )
 
 
 # GET: /bond/bulk_transfer/{upload_id}
 @router.get(
     "/bulk_transfer/{upload_id}",
     operation_id="RetrieveBondTokenBulkTransfer",
-    response_model=List[BulkTransferResponse],
+    response_model=BulkTransferUploadRecordResponse,
     responses=get_routers_responses(422, 404),
 )
 async def retrieve_bond_token_bulk_transfer(
     db: DBAsyncSession,
-    upload_id: str,
-    issuer_address: Optional[str] = Header(None),
+    upload_id: Annotated[str, Path()],
+    get_query: Annotated[ListBulkTransferQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """Retrieve a bond token bulk transfer"""
+    """Retrieve bond token bulk transfer upload records"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get bulk transfer upload list
+    # Select statement
+    from_address_personal_info = aliased(IDXPersonalInfo)
+    to_address_personal_info = aliased(IDXPersonalInfo)
     if issuer_address is None:
-        _bulk_transfers: Sequence[BulkTransfer] = (
-            await db.scalars(
-                select(BulkTransfer)
-                .where(
-                    and_(
-                        BulkTransfer.upload_id == upload_id,
-                        BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
-                    )
+        stmt = (
+            select(BulkTransfer, from_address_personal_info, to_address_personal_info)
+            .where(
+                and_(
+                    BulkTransfer.upload_id == upload_id,
+                    BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
                 )
-                .order_by(BulkTransfer.issuer_address)
             )
-        ).all()
+            .outerjoin(
+                from_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == from_address_personal_info.issuer_address,
+                    BulkTransfer.from_address
+                    == from_address_personal_info.account_address,
+                ),
+            )
+            .outerjoin(
+                to_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == to_address_personal_info.issuer_address,
+                    BulkTransfer.to_address == to_address_personal_info.account_address,
+                ),
+            )
+            .order_by(BulkTransfer.issuer_address)
+        )
     else:
-        _bulk_transfers: Sequence[BulkTransfer] = (
-            await db.scalars(
-                select(BulkTransfer).where(
-                    and_(
-                        BulkTransfer.issuer_address == issuer_address,
-                        BulkTransfer.upload_id == upload_id,
-                        BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
-                    )
+        stmt = (
+            select(BulkTransfer, from_address_personal_info, to_address_personal_info)
+            .where(
+                and_(
+                    BulkTransfer.issuer_address == issuer_address,
+                    BulkTransfer.upload_id == upload_id,
+                    BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND,
                 )
             )
-        ).all()
+            .outerjoin(
+                from_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == from_address_personal_info.issuer_address,
+                    BulkTransfer.from_address
+                    == from_address_personal_info.account_address,
+                ),
+            )
+            .outerjoin(
+                to_address_personal_info,
+                and_(
+                    BulkTransfer.issuer_address
+                    == to_address_personal_info.issuer_address,
+                    BulkTransfer.to_address == to_address_personal_info.account_address,
+                ),
+            )
+        )
 
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = total
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    # Get bulk transfer upload list
+    _bulk_transfers: Sequence[
+        tuple[BulkTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
+    ] = (await db.execute(stmt)).all()
     bulk_transfers = []
-    for _bulk_transfer in _bulk_transfers:
+    for (
+        _bulk_transfer,
+        _from_address_personal_info,
+        _to_address_personal_info,
+    ) in _bulk_transfers:
         bulk_transfers.append(
             {
                 "issuer_address": _bulk_transfer.issuer_address,
@@ -4227,7 +4489,17 @@ async def retrieve_bond_token_bulk_transfer(
                 "upload_id": _bulk_transfer.upload_id,
                 "token_address": _bulk_transfer.token_address,
                 "from_address": _bulk_transfer.from_address,
+                "from_address_personal_information": (
+                    _from_address_personal_info.personal_info
+                    if _from_address_personal_info is not None
+                    else None
+                ),
                 "to_address": _bulk_transfer.to_address,
+                "to_address_personal_information": (
+                    _to_address_personal_info.personal_info
+                    if _to_address_personal_info is not None
+                    else None
+                ),
                 "amount": _bulk_transfer.amount,
                 "status": _bulk_transfer.status,
                 "transaction_error_code": _bulk_transfer.transaction_error_code,
@@ -4238,4 +4510,14 @@ async def retrieve_bond_token_bulk_transfer(
     if len(bulk_transfers) < 1:
         raise HTTPException(status_code=404, detail="bulk transfer not found")
 
-    return json_response(bulk_transfers)
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
+                "total": total,
+            },
+            "bulk_transfer_upload_records": bulk_transfers,
+        }
+    )

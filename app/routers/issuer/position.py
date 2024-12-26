@@ -17,10 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Optional, Sequence
+import json
+from typing import Annotated, Optional, Sequence
 
 from eth_keyfile import decode_keyfile_json
-from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
 from sqlalchemy import String, and_, column, desc, func, literal, null, or_, select
@@ -287,19 +288,13 @@ async def list_all_locked_position(
 async def list_account_lock_unlock_events(
     db: DBAsyncSession,
     account_address: str,
-    issuer_address: Optional[str] = Header(None),
-    request_query: ListAllLockEventsQuery = Depends(),
+    request_query: Annotated[ListAllLockEventsQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all lock/unlock events in the account"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
-
-    # Request parameters
-    offset = request_query.offset
-    limit = request_query.limit
-    sort_item = request_query.sort_item
-    sort_order = request_query.sort_order
 
     # Base query
     stmt_lock = (
@@ -386,23 +381,23 @@ async def list_account_lock_unlock_events(
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    sort_attr = column(sort_item)
-    if sort_order == 0:  # ASC
+    sort_attr = column(request_query.sort_item)
+    if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
 
-    if sort_item != ListAllLockEventsSortItem.block_timestamp.value:
+    if request_query.sort_item != ListAllLockEventsSortItem.block_timestamp.value:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(
             desc(column(ListAllLockEventsSortItem.block_timestamp.value))
         )
 
     # Pagination
-    if offset is not None:
-        stmt = stmt.offset(offset)
-    if limit is not None:
-        stmt = stmt.limit(limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
 
     entries = [
         all_lock_event_alias.c.category,
@@ -454,8 +449,8 @@ async def list_account_lock_unlock_events(
     data = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": request_query.offset,
+            "limit": request_query.limit,
             "total": total,
         },
         "events": resp_data,
@@ -479,11 +474,11 @@ async def list_account_lock_unlock_events(
 async def force_unlock(
     db: DBAsyncSession,
     request: Request,
-    account_address: str,
     data: ForceUnlockRequest,
-    issuer_address: str = Header(...),
-    eoa_password: Optional[str] = Header(None),
-    auth_token: Optional[str] = Header(None),
+    account_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
 ):
     """Force unlock the locked position"""
 
@@ -536,7 +531,7 @@ async def force_unlock(
         "account_address": account_address,
         "recipient_address": data.recipient_address,
         "value": data.value,
-        "data": "",
+        "data": json.dumps({"message": "force_unlock"}),
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_unlock(
@@ -561,9 +556,9 @@ async def force_unlock(
 )
 async def retrieve_position(
     db: DBAsyncSession,
-    account_address: str,
-    token_address: str,
-    issuer_address: Optional[str] = Header(None),
+    account_address: Annotated[str, Path()],
+    token_address: Annotated[str, Path()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """Retrieve token position for account"""
 

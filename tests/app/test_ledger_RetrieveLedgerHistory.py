@@ -25,8 +25,9 @@ from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     IDXPersonalInfo,
     Ledger,
-    LedgerDetailsDataType,
+    LedgerDataType,
     LedgerDetailsTemplate,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -686,7 +687,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -957,6 +958,7 @@ class TestRetrieveLedgerHistory:
             "name": "name_db_1",
             "address": "address_db_1",
         }
+        _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_idx_personal_info_1)
 
         _details_1 = LedgerDetailsTemplate()
@@ -976,7 +978,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1269,6 +1271,7 @@ class TestRetrieveLedgerHistory:
         _idx_personal_info_1.account_address = account_address_1
         _idx_personal_info_1.issuer_address = issuer_address
         _idx_personal_info_1.personal_info = {"name": "name_test_1", "address": None}
+        _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_idx_personal_info_1)
 
         _details_1 = LedgerDetailsTemplate()
@@ -1288,7 +1291,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1543,7 +1546,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1729,7 +1732,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -1958,6 +1961,7 @@ class TestRetrieveLedgerHistory:
             "name": None,
             "address": None,
         }
+        _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_idx_personal_info_1)
 
         _idx_personal_info_2 = (
@@ -1969,7 +1973,8 @@ class TestRetrieveLedgerHistory:
             "name": "name_db_2",
             "address": "address_db_2",
         }
-        db.add(_idx_personal_info_1)
+        _idx_personal_info_2.data_source = PersonalInfoDataSource.ON_CHAIN
+        db.add(_idx_personal_info_2)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -1988,7 +1993,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -2779,6 +2784,7 @@ class TestRetrieveLedgerHistory:
             "name": "name_db_1",
             "address": "address_db_1",
         }
+        _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_idx_personal_info_1)
 
         db.commit()

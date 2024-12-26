@@ -40,6 +40,7 @@ from app.model.db import (
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber,
     IDXPersonalInfoHistory,
+    PersonalInfoDataSource,
     PersonalInfoEventType,
     Token,
     TokenType,
@@ -342,6 +343,7 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
+        assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
         _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
         assert len(_personal_info_history_list) == 1
@@ -449,6 +451,7 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
+        assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
         # Modify
         personal_info_2 = {
@@ -492,6 +495,7 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
+        assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
         _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
         assert len(_personal_info_history_list) == 2
@@ -605,6 +609,7 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
+        assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
         # Modify
         personal_info_2 = {
@@ -648,6 +653,7 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
+        assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
         _personal_info_history_list = db.scalars(
             select(IDXPersonalInfoHistory).order_by(IDXPersonalInfoHistory.id)
@@ -714,6 +720,7 @@ class TestProcessor:
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_3
+        assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
         _personal_info_history_list = db.scalars(
             select(IDXPersonalInfoHistory).order_by(IDXPersonalInfoHistory.id)
@@ -908,6 +915,7 @@ class TestProcessor:
                 _personal_info.personal_info
                 == personal_info_dict[stored_address_order[i]]
             )
+            assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
         _personal_info_history_list = db.scalars(select(IDXPersonalInfoHistory)).all()
         assert len(_personal_info_history_list) == 2

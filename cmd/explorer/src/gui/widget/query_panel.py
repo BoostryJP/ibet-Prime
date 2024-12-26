@@ -19,6 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 
 from typing import TYPE_CHECKING, cast
 
+from gui.consts import ID
+from gui.widget.base import TuiWidget
+from gui.widget.block_list_table import BlockListTable
+from gui.widget.block_list_view import BlockListQueryPanel
+from gui.widget.choice import Choices
 from rich.markdown import Markdown
 from textual import events
 from textual.app import ComposeResult
@@ -28,14 +33,9 @@ from textual.widgets import Button, Input, Label
 
 from app.model.schema import ListBlockDataQuery
 from app.model.schema.base import SortOrder
-from src.gui.consts import ID
-from src.gui.widget.base import TuiWidget
-from src.gui.widget.block_list_table import BlockListTable
-from src.gui.widget.block_list_view import BlockListQueryPanel
-from src.gui.widget.choice import Choices
 
 if TYPE_CHECKING:
-    from src.gui.explorer import ExplorerApp
+    from gui.explorer import ExplorerApp
 
 
 class ToBlockInput(Input):

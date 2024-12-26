@@ -825,7 +825,7 @@ class TestProcessor:
                     _notification.type
                     == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
                 )
-                assert _notification.code == 2
+                assert _notification.code == 1
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
                     "error_registration_id": [
@@ -958,10 +958,148 @@ class TestProcessor:
                     _notification.type
                     == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
                 )
-                assert _notification.code == 2
+                assert _notification.code == 1
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
                     "error_registration_id": [
                         batch_register.id for batch_register in batch_register_list
                     ],
                 }
+
+    # <Error_4>
+    # Personal info exceeds size limit
+    @pytest.mark.asyncio
+    async def test_error_4(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        _account = self.account_list[0]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account["address"]
+        account.eoa_password = E2EEUtils.encrypt("password_ng")
+        account.keyfile = _account["keyfile"]
+        account.rsa_passphrase = E2EEUtils.encrypt("password")
+        account.rsa_public_key = """-----BEGIN PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAvOlb0wLo/vw/FwFys8IX
+/DE4pMNLGA/mJoZ6jz0DdQG4JqGnIitzdaPreZK9H75Cfs5yfNJmP7kJixqSNjyz
+WFyZ+0Jf+hwaZ6CxIyTp4zm7A0OLdqzsFIdXXHWFF10g3iwd2KkvKeuocD5c/TT8
+tuI2MzhLPwCUn/umBlVPswsRucAC67U5gig5KdeKkR6JdfwVO7OpeMX3gJT6A/Ns
+YE/ce4vvF/aH7mNmirnCpkfeqEk5ANpw6bdpEGwYXAdxdD3DhIabMxUvrRZp5LEh
+E7pl6K6sCvVKAPl5HPtZ5/AL/Kj7iLU88qY+TYE9bSTtWqhGabSlON7bo132EkZn
+Y8BnCy4c8ni00hRkxQ8ZdH468DjzaXOtiNlBLGV7BXiMf7zIE3YJD7Xd22g/XKMs
+FsL7F45sgez6SBxiVQrk5WuFtLLD08+3ZAYKqaxFmesw1Niqg6mBB1E+ipYOeBlD
+xtUxBqY1kHdua48rjTwEBJz6M+X6YUzIaDS/j/GcFehSyBthj099whK629i1OY3A
+PhrKAc+Fywn8tNTkjicPHdzDYzUL2STwAzhrbSfIIc2HlZJSks0Fqs+tQ4Iugep6
+fdDfFGjZcF3BwH6NA0frWvUW5AhhkJyJZ8IJ4C0UqakBrRLn2rvThvdCPNPWJ/tx
+EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
+-----END PUBLIC KEY-----"""
+        db.add(account)
+
+        # Prepare data : Token
+        token_contract_1 = await self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
+        token_address_1 = token_contract_1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_SHARE.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = _account["address"]
+        token_1.abi = token_contract_1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_09
+        db.add(token_1)
+
+        # Prepare data : BatchRegisterPersonalInfoUpload
+        batch_register_upload = BatchRegisterPersonalInfoUpload()
+        batch_register_upload.issuer_address = _account["address"]
+        batch_register_upload.upload_id = self.upload_id_list[0]
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
+        db.add(batch_register_upload)
+
+        # Prepare data : BatchRegisterPersonalInfo
+        batch_register_list = []
+        for i in range(0, 3):
+            batch_register = BatchRegisterPersonalInfo()
+            batch_register.upload_id = self.upload_id_list[0]
+            batch_register.token_address = token_address_1
+            batch_register.account_address = self.account_list[i]["address"]
+            batch_register.status = 0
+            batch_register.personal_info = {
+                "key_manager": "test_value",
+                "name": "test_value",
+                "postal_code": "1000001",
+                "address": "test_value" * 100,  # Too long value
+                "email": "test_value@a.test",
+                "birth": "19900101",
+                "is_corporate": True,
+                "tax_category": 3,
+            }
+            db.add(batch_register)
+            batch_register_list.append(batch_register)
+
+        db.commit()
+
+        # Execute batch
+        await processor.process()
+
+        # Assertion
+        _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = db.scalars(
+            select(BatchRegisterPersonalInfoUpload)
+            .where(
+                BatchRegisterPersonalInfoUpload.issuer_address == _account["address"]
+            )
+            .limit(1)
+        ).first()
+        assert (
+            _batch_register_upload.status
+            == BatchRegisterPersonalInfoUploadStatus.FAILED.value
+        )
+
+        assert 1 == caplog.record_tuples.count(
+            (
+                LOG.name,
+                logging.WARN,
+                f"Failed to send transaction: id=<{batch_register_list[0].id}>",
+            )
+        )
+        assert 1 == caplog.record_tuples.count(
+            (
+                LOG.name,
+                logging.WARN,
+                f"Failed to send transaction: id=<{batch_register_list[1].id}>",
+            )
+        )
+        assert 1 == caplog.record_tuples.count(
+            (
+                LOG.name,
+                logging.WARN,
+                f"Failed to send transaction: id=<{batch_register_list[2].id}>",
+            )
+        )
+
+        _notification_list = db.scalars(select(Notification)).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == _account["address"]
+            assert _notification.priority == 1
+            assert (
+                _notification.type
+                == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+            )
+            assert _notification.code == 1
+            assert _notification.metainfo == {
+                "upload_id": batch_register_upload.upload_id,
+                "error_registration_id": [
+                    batch_register.id for batch_register in batch_register_list
+                ],
+            }

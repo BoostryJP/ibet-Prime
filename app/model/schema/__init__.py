@@ -25,6 +25,14 @@ from .account import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
     AccountResponse,
+    BatchCreateChildAccountRequest,
+    BatchCreateChildAccountResponse,
+    ChildAccountResponse,
+    CreateChildAccountResponse,
+    CreateUpdateChildAccountRequest,
+    ListAllChildAccountQuery,
+    ListAllChildAccountResponse,
+    ListAllChildAccountSortItem,
 )
 from .batch_issue_redeem import (
     BatchIssueRedeemUploadIdResponse,
@@ -43,11 +51,13 @@ from .bc_explorer import (
     TxDataResponse,
 )
 from .bulk_transfer import (
-    BulkTransferResponse,
     BulkTransferUploadIdResponse,
+    BulkTransferUploadRecordResponse,
     BulkTransferUploadResponse,
     IbetShareBulkTransferRequest,
     IbetStraightBondBulkTransferRequest,
+    ListBulkTransferQuery,
+    ListBulkTransferUploadQuery,
 )
 from .e2e_messaging import (
     E2EMessagingAccountChangeEOAPasswordRequest,
@@ -56,12 +66,14 @@ from .e2e_messaging import (
     E2EMessagingAccountResponse,
     E2EMessagingAccountUpdateRsaKeyRequest,
     E2EMessagingResponse,
+    ListAllE2EMessagesQuery,
     ListAllE2EMessagingResponse,
 )
 from .file import (
     DownloadFileResponse,
     FileResponse,
     ListAllFilesResponse,
+    ListAllUploadFilesQuery,
     UploadFileRequest,
 )
 from .freeze_log import (
@@ -75,7 +87,12 @@ from .freeze_log import (
     RetrieveFreezeLogResponse,
     UpdateFreezeLogRequest,
 )
-from .holder import HolderCountResponse, HolderResponse, HoldersResponse
+from .holder import (
+    HolderCountResponse,
+    HolderResponse,
+    HoldersResponse,
+    RegisterHolderExtraInfoRequest,
+)
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
 from .ledger import (
@@ -95,6 +112,7 @@ from .personal_info import (
     GetBatchRegisterPersonalInfoResponse,
     ListAllPersonalInfoBatchRegistrationUploadQuery,
     ListBatchRegisterPersonalInfoUploadResponse,
+    PersonalInfoDataSource,
     RegisterPersonalInfoRequest,
 )
 from .position import (
@@ -113,6 +131,10 @@ from .scheduled_events import (
     ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
+)
+from .sealed_tx import (
+    SealedTxRegisterHolderExtraInfoRequest,
+    SealedTxRegisterPersonalInfoRequest,
 )
 from .settlement import (
     AbortDVPDeliveryRequest,
@@ -171,6 +193,7 @@ from .token_holders import (
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
+    ListSpecificTokenTransferApprovalHistoryQuery,
     ListTransferApprovalHistoryQuery,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
@@ -179,7 +202,6 @@ from .transfer import (
     TransferApprovalTokenDetailResponse,
     TransferApprovalTokenResponse,
     TransferHistoryResponse,
-    TransferResponse,
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
 )

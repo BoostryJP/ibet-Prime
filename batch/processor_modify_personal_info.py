@@ -40,6 +40,7 @@ from app.model.db import (
     AccountRsaKeyTemporary,
     AccountRsaStatus,
     IDXPersonalInfo,
+    PersonalInfoDataSource,
     Token,
     TokenType,
 )
@@ -97,7 +98,12 @@ class Processor:
                 idx_personal_info_list: Sequence[IDXPersonalInfo] = (
                     await db_session.scalars(
                         select(IDXPersonalInfo).where(
-                            IDXPersonalInfo.issuer_address == temporary.issuer_address
+                            and_(
+                                IDXPersonalInfo.issuer_address
+                                == temporary.issuer_address,
+                                IDXPersonalInfo.data_source
+                                == PersonalInfoDataSource.ON_CHAIN,
+                            )
                         )
                     )
                 ).all()

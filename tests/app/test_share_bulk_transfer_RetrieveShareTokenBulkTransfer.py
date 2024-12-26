@@ -17,7 +17,14 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
+from app.model.db import (
+    Account,
+    BulkTransfer,
+    BulkTransferUpload,
+    IDXPersonalInfo,
+    PersonalInfoDataSource,
+    TokenType,
+)
 from tests.account_config import config_eth_account
 
 
@@ -52,9 +59,10 @@ class TestAppRoutersShareBulkTransferGET:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Header: issuer-address is set
-    def test_normal_1(self, client, db):
+    # - Personal information is not set
+    def test_normal_1_1(self, client, db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
@@ -93,21 +101,138 @@ class TestAppRoutersShareBulkTransferGET:
 
         # assertion
         assert resp.status_code == 200
-        assumed_response = [
-            {
-                "issuer_address": self.upload_issuer_list[1]["address"],
-                "token_type": TokenType.IBET_SHARE.value,
-                "upload_id": self.upload_id_list[1],
-                "token_address": self.bulk_transfer_token,
-                "from_address": self.upload_issuer_list[1]["address"],
-                "to_address": self.upload_issuer_list[2]["address"],
-                "amount": 11,
-                "status": 1,
-                "transaction_error_code": None,
-                "transaction_error_message": None,
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
+            "bulk_transfer_upload_records": [
+                {
+                    "issuer_address": self.upload_issuer_list[1]["address"],
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "upload_id": self.upload_id_list[1],
+                    "token_address": self.bulk_transfer_token,
+                    "from_address": self.upload_issuer_list[1]["address"],
+                    "from_address_personal_information": None,
+                    "to_address": self.upload_issuer_list[2]["address"],
+                    "to_address_personal_information": None,
+                    "amount": 11,
+                    "status": 1,
+                    "transaction_error_code": None,
+                    "transaction_error_message": None,
+                }
+            ],
+        }
+
+    # <Normal_1_2>
+    # Header: issuer-address is set
+    # - Personal information is set
+    def test_normal_1_2(self, client, db):
+        # prepare data : Account(Issuer)
+        for _issuer in self.upload_issuer_list:
+            account = Account()
+            account.issuer_address = _issuer["address"]
+            account.keyfile = _issuer["keyfile"]
+            db.add(account)
+
+        for i in range(0, 3):
+            # prepare data : BulkTransferUpload
+            bulk_transfer_upload = BulkTransferUpload()
+            bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
+            bulk_transfer_upload.upload_id = self.upload_id_list[i]
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.status = i
+            db.add(bulk_transfer_upload)
+
+            # prepare data : BulkTransfer
+            bulk_transfer = BulkTransfer()
+            bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
+            bulk_transfer.upload_id = self.upload_id_list[i]
+            bulk_transfer.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer.token_address = self.bulk_transfer_token
+            bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
+            bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
+            bulk_transfer.amount = 10 + i
+            bulk_transfer.status = i
+            db.add(bulk_transfer)
+
+            # prepare data: IDXPersonalInfo
+            _personal_info_from = IDXPersonalInfo()
+            _personal_info_from.issuer_address = self.upload_issuer_list[i]["address"]
+            _personal_info_from.account_address = self.upload_issuer_list[1]["address"]
+            _personal_info_from._personal_info = {
+                "key_manager": "key_manager_test1",
+                "name": "test_name1",
+                "postal_code": "postal_code_test1",
+                "address": "address_test1",
+                "email": "email_test1",
+                "birth": "birth_test1",
+                "is_corporate": False,
+                "tax_category": 10,
             }
-        ]
-        assert resp.json() == assumed_response
+            _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
+            db.add(_personal_info_from)
+
+            _personal_info_to = IDXPersonalInfo()
+            _personal_info_to.issuer_address = self.upload_issuer_list[i]["address"]
+            _personal_info_to.account_address = self.upload_issuer_list[2]["address"]
+            _personal_info_to._personal_info = {
+                "key_manager": "key_manager_test2",
+                "name": "test_name2",
+                "postal_code": "postal_code_test2",
+                "address": "address_test2",
+                "email": "email_test2",
+                "birth": "birth_test2",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+            _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
+            db.add(_personal_info_to)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.test_url.format(self.upload_id_list[1]),
+            headers={"issuer-address": self.upload_issuer_list[1]["address"]},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
+            "bulk_transfer_upload_records": [
+                {
+                    "issuer_address": self.upload_issuer_list[1]["address"],
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "upload_id": self.upload_id_list[1],
+                    "token_address": self.bulk_transfer_token,
+                    "from_address": self.upload_issuer_list[1]["address"],
+                    "from_address_personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "test_name1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "to_address": self.upload_issuer_list[2]["address"],
+                    "to_address_personal_information": {
+                        "key_manager": "key_manager_test2",
+                        "name": "test_name2",
+                        "postal_code": "postal_code_test2",
+                        "address": "address_test2",
+                        "email": "email_test2",
+                        "birth": "birth_test2",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "amount": 11,
+                    "status": 1,
+                    "transaction_error_code": None,
+                    "transaction_error_message": None,
+                }
+            ],
+        }
 
     # <Normal_2>
     # Header: issuer-address is not set
@@ -142,21 +267,25 @@ class TestAppRoutersShareBulkTransferGET:
 
         # assertion
         assert resp.status_code == 200
-        assumed_response = [
-            {
-                "issuer_address": self.upload_issuer_list[0]["address"],
-                "token_type": TokenType.IBET_SHARE.value,
-                "upload_id": self.upload_id_list[0],
-                "token_address": self.bulk_transfer_token,
-                "from_address": self.upload_issuer_list[1]["address"],
-                "to_address": self.upload_issuer_list[2]["address"],
-                "amount": 10,
-                "status": 0,
-                "transaction_error_code": None,
-                "transaction_error_message": None,
-            }
-        ]
-        assert resp.json() == assumed_response
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
+            "bulk_transfer_upload_records": [
+                {
+                    "issuer_address": self.upload_issuer_list[0]["address"],
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "upload_id": self.upload_id_list[0],
+                    "token_address": self.bulk_transfer_token,
+                    "from_address": self.upload_issuer_list[1]["address"],
+                    "from_address_personal_information": None,
+                    "to_address": self.upload_issuer_list[2]["address"],
+                    "to_address_personal_information": None,
+                    "amount": 10,
+                    "status": 0,
+                    "transaction_error_code": None,
+                    "transaction_error_message": None,
+                }
+            ],
+        }
 
     # <Normal_3>
     # Bulk transaction error record
@@ -194,21 +323,87 @@ class TestAppRoutersShareBulkTransferGET:
 
         # assertion
         assert resp.status_code == 200
-        assumed_response = [
-            {
-                "issuer_address": self.upload_issuer_list[0]["address"],
-                "token_type": TokenType.IBET_SHARE.value,
-                "upload_id": self.upload_id_list[0],
-                "token_address": self.bulk_transfer_token,
-                "from_address": self.upload_issuer_list[1]["address"],
-                "to_address": self.upload_issuer_list[2]["address"],
-                "amount": 10,
-                "status": 2,
-                "transaction_error_code": 110503,
-                "transaction_error_message": "Transfer amount is greater than from address balance.",
-            }
-        ]
-        assert resp.json() == assumed_response
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
+            "bulk_transfer_upload_records": [
+                {
+                    "issuer_address": self.upload_issuer_list[0]["address"],
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "upload_id": self.upload_id_list[0],
+                    "token_address": self.bulk_transfer_token,
+                    "from_address": self.upload_issuer_list[1]["address"],
+                    "from_address_personal_information": None,
+                    "to_address": self.upload_issuer_list[2]["address"],
+                    "to_address_personal_information": None,
+                    "amount": 10,
+                    "status": 2,
+                    "transaction_error_code": 110503,
+                    "transaction_error_message": "Transfer amount is greater than from address balance.",
+                }
+            ],
+        }
+
+    # <Normal_4>
+    # offset / limit
+    def test_normal_4(self, client, db):
+        # prepare data : Account(Issuer)
+        for _issuer in self.upload_issuer_list:
+            account = Account()
+            account.issuer_address = _issuer["address"]
+            account.keyfile = _issuer["keyfile"]
+            db.add(account)
+
+        # prepare data : BulkTransferUpload
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = self.upload_issuer_list[1]["address"]
+        bulk_transfer_upload.upload_id = self.upload_id_list[1]
+        bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_upload.status = 1
+        db.add(bulk_transfer_upload)
+
+        for i in range(0, 3):
+            # prepare data : BulkTransfer
+            bulk_transfer = BulkTransfer()
+            bulk_transfer.issuer_address = self.upload_issuer_list[1]["address"]
+            bulk_transfer.upload_id = self.upload_id_list[1]
+            bulk_transfer.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer.token_address = self.bulk_transfer_token
+            bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
+            bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
+            bulk_transfer.amount = 10 + i
+            bulk_transfer.status = i
+            db.add(bulk_transfer)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.test_url.format(self.upload_id_list[1]),
+            headers={"issuer-address": self.upload_issuer_list[1]["address"]},
+            params={"offset": 1, "limit": 1},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 3, "offset": 1, "limit": 1, "total": 3},
+            "bulk_transfer_upload_records": [
+                {
+                    "issuer_address": self.upload_issuer_list[1]["address"],
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "upload_id": self.upload_id_list[1],
+                    "token_address": self.bulk_transfer_token,
+                    "from_address": self.upload_issuer_list[1]["address"],
+                    "from_address_personal_information": None,
+                    "to_address": self.upload_issuer_list[2]["address"],
+                    "to_address_personal_information": None,
+                    "amount": 11,
+                    "status": 1,
+                    "transaction_error_code": None,
+                    "transaction_error_message": None,
+                }
+            ],
+        }
 
     ###########################################################################
     # Error Case

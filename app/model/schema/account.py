@@ -18,13 +18,40 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, RootModel, field_validator
 
+from app.model import ValidatedDatetimeStr
 from app.model.db import AccountRsaStatus
+from app.model.schema.base import BasePaginationQuery, ResultSet, SortOrder
+from app.model.schema.personal_info import PersonalInfo, PersonalInfoInput
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
+
+
+############################
+# COMMON
+############################
+class Account(BaseModel):
+    """Account schema"""
+
+    issuer_address: str
+    rsa_public_key: Optional[str] = Field(...)
+    rsa_status: AccountRsaStatus
+    is_deleted: bool
+
+
+class ChildAccount(BaseModel):
+    """Child account schema"""
+
+    issuer_address: str
+    child_account_index: int
+    child_account_address: str
+    personal_information: PersonalInfo | None
+    created: datetime | None
+    modified: datetime | None
 
 
 ############################
@@ -106,18 +133,60 @@ class AccountAuthTokenRequest(BaseModel):
     )  # The maximum valid duration shall be 3 days.
 
 
+class CreateUpdateChildAccountRequest(BaseModel):
+    """Create or update a issuer's child account schema (REQUEST)"""
+
+    personal_information: PersonalInfoInput
+
+
+class BatchCreateChildAccountRequest(BaseModel):
+    """Batch create issuer's child accounts schema (REQUEST)"""
+
+    personal_information_list: list[PersonalInfoInput]
+
+
+class ListAllChildAccountSortItem(StrEnum):
+    child_account_index = "child_account_index"
+    child_account_address = "child_account_address"
+    name = "name"
+    created = "created"
+    modified = "modified"
+
+
+class ListAllChildAccountQuery(BasePaginationQuery):
+    child_account_address: Optional[str] = Field(
+        None, description="Child account address (partial match)"
+    )
+    name: Optional[str] = Field(None, description="Child account name (partial match)")
+    created_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information created datetime (From)"
+    )
+    created_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information created datetime (To)"
+    )
+    modified_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information modified datetime (From)"
+    )
+    modified_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Personal information modified datetime (To)"
+    )
+
+    sort_item: Optional[ListAllChildAccountSortItem] = Field(
+        ListAllChildAccountSortItem.child_account_index, description="Sort item"
+    )
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.ASC,
+        description=SortOrder.__doc__,
+    )
+
+
 ############################
 # RESPONSE
 ############################
-
-
-class AccountResponse(BaseModel):
+class AccountResponse(RootModel[Account]):
     """Account schema (Response)"""
 
-    issuer_address: str
-    rsa_public_key: Optional[str] = Field(...)
-    rsa_status: AccountRsaStatus
-    is_deleted: bool
+    pass
 
 
 class AccountAuthTokenResponse(BaseModel):
@@ -126,3 +195,28 @@ class AccountAuthTokenResponse(BaseModel):
     auth_token: str
     usage_start: datetime
     valid_duration: int
+
+
+class CreateChildAccountResponse(BaseModel):
+    """Create a issuer's child account schema (RESPONSE)"""
+
+    child_account_index: int
+
+
+class BatchCreateChildAccountResponse(BaseModel):
+    """Batch create issuer's child accounts schema (RESPONSE)"""
+
+    child_account_index_list: list[int]
+
+
+class ListAllChildAccountResponse(BaseModel):
+    """List all child accounts schema (RESPONSE)"""
+
+    result_set: ResultSet
+    child_accounts: list[ChildAccount]
+
+
+class ChildAccountResponse(RootModel[ChildAccount]):
+    """Child account schema (Response)"""
+
+    pass

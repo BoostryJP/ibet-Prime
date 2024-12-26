@@ -25,6 +25,7 @@ import config
 from app.model.db import (
     IDXPersonalInfo,
     IDXTransferApproval,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -152,6 +153,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -167,6 +169,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -346,6 +349,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -361,6 +365,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -466,6 +471,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -481,6 +487,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -670,6 +677,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -685,6 +693,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -783,6 +792,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -798,6 +808,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -897,6 +908,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -912,6 +924,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -1043,6 +1056,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -1058,6 +1072,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -1423,6 +1438,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -1438,6 +1454,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -1643,6 +1660,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -1658,6 +1676,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -1895,6 +1914,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -1910,6 +1930,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -2095,6 +2116,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -2110,6 +2132,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -2335,6 +2358,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -2350,6 +2374,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -2575,6 +2600,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -2590,6 +2616,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -2780,6 +2807,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -2795,6 +2823,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -2983,6 +3012,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -2998,6 +3028,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -3222,6 +3253,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -3237,6 +3269,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -3468,6 +3501,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -3483,6 +3517,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -3710,6 +3745,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
@@ -3725,6 +3761,7 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "birth": "birth_test",
             "is_corporate": False,
         }
+        _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
@@ -4132,13 +4169,6 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "enum",
-                    "loc": ["query", "status", 0],
-                    "msg": "Input should be 0, 1, 2 or 3",
-                    "input": "a",
-                    "ctx": {"expected": "0, 1, 2 or 3"},
-                },
-                {
                     "type": "int_parsing",
                     "loc": ["query", "offset"],
                     "msg": "Input should be a valid integer, unable to parse string as an integer",
@@ -4149,6 +4179,13 @@ class TestListSpecificShareTokenTransferApprovalHistory:
                     "loc": ["query", "limit"],
                     "msg": "Input should be a valid integer, unable to parse string as an integer",
                     "input": "d",
+                },
+                {
+                    "type": "enum",
+                    "loc": ["query", "status", 0],
+                    "msg": "Input should be 0, 1, 2 or 3",
+                    "input": "a",
+                    "ctx": {"expected": "0, 1, 2 or 3"},
                 },
             ],
         }

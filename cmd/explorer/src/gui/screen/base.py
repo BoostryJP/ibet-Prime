@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, cast
 from textual.screen import Screen
 
 if TYPE_CHECKING:
-    from src.gui.explorer import ExplorerApp
+    from gui.explorer import ExplorerApp
 
 
 class TuiScreen(Screen):

@@ -24,7 +24,9 @@ from app.model.db import (
     IDXLockedPosition,
     IDXPersonalInfo,
     IDXPosition,
+    PersonalInfoDataSource,
     Token,
+    TokenHolderExtraInfo,
     TokenType,
     TokenVersion,
 )
@@ -55,11 +57,11 @@ class TestRetrieveShareTokenHolder:
 
         # prepare data: Token
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -77,6 +79,7 @@ class TestRetrieveShareTokenHolder:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -100,6 +103,14 @@ class TestRetrieveShareTokenHolder:
                 "birth": "birth_test1",
                 "is_corporate": False,
                 "tax_category": 10,
+            },
+            "holder_extra_info": {
+                "external_id_1_type": None,
+                "external_id_1": None,
+                "external_id_2_type": None,
+                "external_id_2": None,
+                "external_id_3_type": None,
+                "external_id_3": None,
             },
             "balance": 0,
             "exchange_balance": 0,
@@ -125,11 +136,11 @@ class TestRetrieveShareTokenHolder:
 
         # prepare data: Token
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -158,6 +169,7 @@ class TestRetrieveShareTokenHolder:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -181,6 +193,14 @@ class TestRetrieveShareTokenHolder:
                 "birth": "birth_test1",
                 "is_corporate": False,
                 "tax_category": 10,
+            },
+            "holder_extra_info": {
+                "external_id_1_type": None,
+                "external_id_1": None,
+                "external_id_2_type": None,
+                "external_id_2": None,
+                "external_id_3_type": None,
+                "external_id_3": None,
             },
             "balance": 10,
             "exchange_balance": 11,
@@ -206,11 +226,11 @@ class TestRetrieveShareTokenHolder:
 
         # prepare data: Token
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -260,6 +280,7 @@ class TestRetrieveShareTokenHolder:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -284,6 +305,14 @@ class TestRetrieveShareTokenHolder:
                 "is_corporate": False,
                 "tax_category": 10,
             },
+            "holder_extra_info": {
+                "external_id_1_type": None,
+                "external_id_1": None,
+                "external_id_2_type": None,
+                "external_id_2": None,
+                "external_id_3_type": None,
+                "external_id_3": None,
+            },
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
@@ -306,11 +335,11 @@ class TestRetrieveShareTokenHolder:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -346,6 +375,14 @@ class TestRetrieveShareTokenHolder:
                 "is_corporate": None,
                 "tax_category": None,
             },
+            "holder_extra_info": {
+                "external_id_1_type": None,
+                "external_id_1": None,
+                "external_id_2_type": None,
+                "external_id_2": None,
+                "external_id_3_type": None,
+                "external_id_3": None,
+            },
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
@@ -368,11 +405,11 @@ class TestRetrieveShareTokenHolder:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -398,6 +435,7 @@ class TestRetrieveShareTokenHolder:
             "birth": "birth_test1",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -421,6 +459,96 @@ class TestRetrieveShareTokenHolder:
                 "birth": "birth_test1",
                 "is_corporate": None,
                 "tax_category": None,
+            },
+            "holder_extra_info": {
+                "external_id_1_type": None,
+                "external_id_1": None,
+                "external_id_2_type": None,
+                "external_id_2": None,
+                "external_id_3_type": None,
+                "external_id_3": None,
+            },
+            "balance": 10,
+            "exchange_balance": 11,
+            "exchange_commitment": 12,
+            "pending_transfer": 5,
+            "locked": 0,
+            "modified": "2023-10-24T00:00:00",
+        }
+
+    # <Normal_3>
+    # Holder's extra information is set
+    # PersonalInfo not registry
+    def test_normal_3(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_24_09
+        db.add(token)
+
+        idx_position_1 = IDXPosition()
+        idx_position_1.token_address = _token_address
+        idx_position_1.account_address = _account_address_1
+        idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
+        idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
+        db.add(idx_position_1)
+
+        extra_info = TokenHolderExtraInfo()
+        extra_info.token_address = _token_address
+        extra_info.account_address = _account_address_1
+        extra_info.external_id_1_type = "test_id_type_1"
+        extra_info.external_id_1 = "test_id_1"
+        extra_info.external_id_2_type = "test_id_type_2"
+        extra_info.external_id_2 = "test_id_2"
+        extra_info.external_id_3_type = "test_id_type_3"
+        extra_info.external_id_3 = "test_id_3"
+        db.add(extra_info)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address, _account_address_1),
+            headers={"issuer-address": _issuer_address},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "account_address": _account_address_1,
+            "personal_information": {
+                "key_manager": None,
+                "name": None,
+                "postal_code": None,
+                "address": None,
+                "email": None,
+                "birth": None,
+                "is_corporate": None,
+                "tax_category": None,
+            },
+            "holder_extra_info": {
+                "external_id_1_type": "test_id_type_1",
+                "external_id_1": "test_id_1",
+                "external_id_2_type": "test_id_type_2",
+                "external_id_2": "test_id_2",
+                "external_id_3_type": "test_id_type_3",
+                "external_id_3": "test_id_3",
             },
             "balance": 10,
             "exchange_balance": 11,
@@ -523,11 +651,11 @@ class TestRetrieveShareTokenHolder:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
         db.add(token)

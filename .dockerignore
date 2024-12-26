@@ -8,3 +8,6 @@
 .git/
 .idea/
 .DS_Store
+.cov/
+.venv
+Dockerfile

@@ -19,14 +19,12 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import IntEnum
-from typing import Annotated, Literal, Optional
+from typing import Literal, Optional
 
-from fastapi import Query
 from pydantic import BaseModel, Field, RootModel, field_validator
-from pydantic.dataclasses import dataclass
 
 from app.model import EthereumAddress
-from app.model.schema.base import ResultSet, SortOrder
+from app.model.schema.base import BasePaginationQuery, ResultSet, SortOrder
 from app.model.schema.personal_info import PersonalInfo
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
@@ -91,52 +89,42 @@ class DVPAgentAccountChangeEOAPasswordRequest(BaseModel):
         return v
 
 
-@dataclass
-class ListAllDVPDeliveriesQuery:
-    token_address: Annotated[Optional[str], Query(description="Token address")] = None
-    seller_address: Annotated[Optional[str], Query(description="Seller address")] = None
-    buyer_address: Annotated[Optional[str], Query(description="Buyer address")] = None
-    agent_address: Annotated[Optional[str], Query(description="Agent address")] = None
-    valid: Annotated[Optional[bool], Query(description="Valid flag")] = None
-    status: Annotated[
-        Optional[DeliveryStatus], Query(description="Delivery status")
-    ] = None
-    create_blocktimestamp_from: Annotated[
-        Optional[datetime], Query(description="Create block timestamp filter(From)")
-    ] = None
-    create_blocktimestamp_to: Annotated[
-        Optional[datetime], Query(description="Create block timestamp filter(To)")
-    ] = None
-
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+class ListAllDVPDeliveriesQuery(BasePaginationQuery):
+    token_address: Optional[str] = Field(None, description="Token address")
+    seller_address: Optional[str] = Field(None, description="Seller address")
+    buyer_address: Optional[str] = Field(None, description="Buyer address")
+    agent_address: Optional[str] = Field(None, description="Agent address")
+    valid: Optional[bool] = Field(None, description="Valid flag")
+    status: Optional[DeliveryStatus] = Field(None, description="Delivery status")
+    create_blocktimestamp_from: Optional[datetime] = Field(
+        None, description="Create block timestamp filter(From)"
     )
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
-
-
-@dataclass
-class ListAllDVPAgentDeliveriesQuery:
-    agent_address: Annotated[str, Query(description="Agent address")]
-    token_address: Annotated[Optional[str], Query(description="Token address")] = None
-    seller_address: Annotated[Optional[str], Query(description="Seller address")] = None
-    buyer_address: Annotated[Optional[str], Query(description="Buyer address")] = None
-    valid: Annotated[Optional[bool], Query(description="Valid flag")] = None
-    status: Annotated[
-        Optional[DeliveryStatus], Query(description="Delivery status")
-    ] = None
-    create_blocktimestamp_from: Annotated[
-        Optional[datetime], Query(description="Create block timestamp filter(From)")
-    ] = None
-    create_blocktimestamp_to: Annotated[
-        Optional[datetime], Query(description="Create block timestamp filter(To)")
-    ] = None
-
-    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
-        SortOrder.DESC
+    create_blocktimestamp_to: Optional[datetime] = Field(
+        None, description="Create block timestamp filter(To)"
     )
-    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
-    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
+    )
+
+
+class ListAllDVPAgentDeliveriesQuery(BasePaginationQuery):
+    agent_address: str = Field(..., description="Agent address")
+    token_address: Optional[str] = Field(None, description="Token address")
+    seller_address: Optional[str] = Field(None, description="Seller address")
+    buyer_address: Optional[str] = Field(None, description="Buyer address")
+    valid: Optional[bool] = Field(None, description="Valid flag")
+    status: Optional[DeliveryStatus] = Field(None, description="Delivery status")
+    create_blocktimestamp_from: Optional[datetime] = Field(
+        None, description="Create block timestamp filter(From)"
+    )
+    create_blocktimestamp_to: Optional[datetime] = Field(
+        None, description="Create block timestamp filter(To)"
+    )
+
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
+    )
 
 
 class CreateDVPDeliveryRequest(BaseModel):

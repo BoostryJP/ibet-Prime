@@ -21,7 +21,7 @@ import json
 import re
 import secrets
 from datetime import UTC
-from typing import Sequence
+from typing import Annotated, Sequence
 
 import boto3
 import eth_keyfile
@@ -29,7 +29,7 @@ import pytz
 from coincurve import PublicKey
 from eth_keyfile import decode_keyfile_json
 from eth_utils import keccak, to_checksum_address
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import and_, desc, func, select
 
 import config
@@ -155,7 +155,10 @@ async def list_all_accounts(db: DBAsyncSession):
     response_model=DVPAgentAccountResponse,
     responses=get_routers_responses(404),
 )
-async def delete_account(db: DBAsyncSession, account_address: str):
+async def delete_account(
+    db: DBAsyncSession,
+    account_address: Annotated[str, Path()],
+):
     """Logically delete an DVP-Payment Agent Account"""
 
     # Search for an account
@@ -191,7 +194,7 @@ async def delete_account(db: DBAsyncSession, account_address: str):
 )
 async def change_eoa_password(
     db: DBAsyncSession,
-    account_address: str,
+    account_address: Annotated[str, Path()],
     change_req: DVPAgentAccountChangeEOAPasswordRequest,
 ):
     """Change Agent's EOA Password"""
@@ -255,8 +258,8 @@ async def change_eoa_password(
 )
 async def list_all_dvp_agent_deliveries(
     db: DBAsyncSession,
-    exchange_address: str,
-    request_query: ListAllDVPAgentDeliveriesQuery = Depends(),
+    exchange_address: Annotated[str, Path()],
+    request_query: Annotated[ListAllDVPAgentDeliveriesQuery, Query()],
 ):
     """List all DVP deliveries for paying agent"""
     stmt = select(IDXDelivery).where(
@@ -297,6 +300,8 @@ async def list_all_dvp_agent_deliveries(
         stmt = stmt.order_by(IDXDelivery.create_blocktimestamp)
     else:  # DESC
         stmt = stmt.order_by(desc(IDXDelivery.create_blocktimestamp))
+    # NOTE: Set secondary sort for consistent results
+    stmt = stmt.order_by(IDXDelivery.delivery_id)
 
     # Pagination
     if request_query.limit is not None:
@@ -400,8 +405,8 @@ async def list_all_dvp_agent_deliveries(
 )
 async def update_dvp_agent_delivery(
     db: DBAsyncSession,
-    exchange_address: str,
-    delivery_id: str,
+    exchange_address: Annotated[str, Path()],
+    delivery_id: Annotated[str, Path()],
     data: FinishDVPDeliveryRequest | AbortDVPDeliveryRequest,
 ):
     """Finish/Abort DVP delivery"""

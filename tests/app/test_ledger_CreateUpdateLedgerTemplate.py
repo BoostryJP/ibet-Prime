@@ -22,7 +22,7 @@ from unittest import mock
 from sqlalchemy import select
 
 from app.model.db import (
-    LedgerDetailsDataType,
+    LedgerDataType,
     LedgerDetailsTemplate,
     LedgerTemplate,
     Token,
@@ -42,7 +42,7 @@ class TestCreateUpdateLedgerTemplate:
 
     # <Normal_1>
     # Create
-    @mock.patch("app.routers.issuer.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
     def test_normal_1(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -50,7 +50,7 @@ class TestCreateUpdateLedgerTemplate:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -87,7 +87,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN.value,
+                        "type": LedgerDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": [
@@ -114,7 +114,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB.value,
+                        "type": LedgerDataType.DB,
                         "source": "data_id_2",
                     },
                     "footers": [
@@ -203,7 +203,7 @@ class TestCreateUpdateLedgerTemplate:
                 "f-fuga-1": "bbb-1",
             },
         ]
-        assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
+        assert _details.data_type == LedgerDataType.IBET_FIN
         assert _details.data_source == token_address
         _details = _details_list[1]
         assert _details.id == 2
@@ -229,12 +229,12 @@ class TestCreateUpdateLedgerTemplate:
                 "f-fuga-2": "bbb-2",
             },
         ]
-        assert _details.data_type == LedgerDetailsDataType.DB.value
+        assert _details.data_type == LedgerDataType.DB
         assert _details.data_source == "data_id_2"
 
     # <Normal_2>
     # Update
-    @mock.patch("app.routers.issuer.ledger.create_ledger")
+    @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
     def test_normal_2(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -242,7 +242,7 @@ class TestCreateUpdateLedgerTemplate:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -299,7 +299,7 @@ class TestCreateUpdateLedgerTemplate:
                 "f-fuga-2": "bbb-2",
             },
         ]
-        _details_1.data_type = LedgerDetailsDataType.DB.value
+        _details_1.data_type = LedgerDataType.DB
         _details_1.data_source = "data_id_1"
         db.add(_details_1)
 
@@ -326,7 +326,7 @@ class TestCreateUpdateLedgerTemplate:
                 "f-fuga-3": "bbb-3",
             },
         ]
-        _details_2.data_type = LedgerDetailsDataType.DB.value
+        _details_2.data_type = LedgerDataType.DB
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
@@ -359,7 +359,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN.value,
+                        "type": LedgerDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": [
@@ -386,7 +386,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN.value,
+                        "type": LedgerDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": [
@@ -474,7 +474,7 @@ class TestCreateUpdateLedgerTemplate:
                 "f-fuga-2_update": "bbb-2_update",
             },
         ]
-        assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
+        assert _details.data_type == LedgerDataType.IBET_FIN
         assert _details.data_source == token_address
         _details = _details_list[1]
         assert _details.id == 3
@@ -500,7 +500,7 @@ class TestCreateUpdateLedgerTemplate:
                 "f-fuga-1": "bbb-1",
             },
         ]
-        assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
+        assert _details.data_type == LedgerDataType.IBET_FIN
         assert _details.data_source == token_address
 
     ###########################################################################
@@ -569,7 +569,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN.value,
+                        "type": LedgerDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": [
@@ -596,7 +596,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB.value,
+                        "type": LedgerDataType.DB,
                         "source": "data_id_2",
                     },
                     "footers": [
@@ -901,7 +901,7 @@ class TestCreateUpdateLedgerTemplate:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -926,7 +926,7 @@ class TestCreateUpdateLedgerTemplate:
                         "fuga": "bbb",
                     },
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN.value,
+                        "type": LedgerDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": {
@@ -1014,7 +1014,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN.value,
+                        "type": LedgerDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": [
@@ -1041,7 +1041,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB.value,
+                        "type": LedgerDataType.DB,
                         "source": "data_id_2",
                     },
                     "footers": [
@@ -1091,7 +1091,7 @@ class TestCreateUpdateLedgerTemplate:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -1129,7 +1129,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN.value,
+                        "type": LedgerDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": [
@@ -1156,7 +1156,7 @@ class TestCreateUpdateLedgerTemplate:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB.value,
+                        "type": LedgerDataType.DB,
                         "source": "data_id_2",
                     },
                     "footers": [

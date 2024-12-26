@@ -24,7 +24,9 @@ from app.model.db import (
     IDXLockedPosition,
     IDXPersonalInfo,
     IDXPosition,
+    PersonalInfoDataSource,
     Token,
+    TokenHolderExtraInfo,
     TokenType,
     TokenVersion,
 )
@@ -52,11 +54,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -75,9 +77,10 @@ class TestListAllShareTokenHolders:
             "holders": [],
         }
 
-    # <Normal_2>
+    # <Normal_2_1>
     # 1 record
-    def test_normal_2(self, client, db):
+    # - Holder's extra info is not set
+    def test_normal_2_1(self, client, db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -90,11 +93,11 @@ class TestListAllShareTokenHolders:
 
         # prepare data: Token
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -155,6 +158,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         db.commit()
@@ -182,6 +186,153 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
+                    "balance": 10,
+                    "exchange_balance": 11,
+                    "exchange_commitment": 12,
+                    "pending_transfer": 5,
+                    "locked": 10,
+                    "modified": "2023-10-24T00:02:00",
+                }
+            ],
+        }
+
+    # <Normal_2_2>
+    # 1 record
+    # - Holder's extra info is set
+    def test_normal_2_2(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+
+        # prepare data: Account
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        # prepare data: Token
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_24_09
+        db.add(token)
+
+        # prepare data: Position
+        idx_position_1 = IDXPosition()
+        idx_position_1.token_address = _token_address
+        idx_position_1.account_address = _account_address_1
+        idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
+        idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
+        db.add(idx_position_1)
+
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = _token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = _account_address_1
+        _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 24, 0, 1, 0)
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = _token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = _account_address_1
+        _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 24, 0, 2, 0)
+        db.add(_locked_position)
+
+        # Other locked position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = "other_token_address"
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = _account_address_1
+        _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 25, 0, 2, 0)
+        db.add(_locked_position)
+
+        # prepare data: Personal Info
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = _account_address_1
+        idx_personal_info_1.issuer_address = _issuer_address
+        idx_personal_info_1.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        db.add(idx_personal_info_1)
+
+        # prepare data: TokenHolderExtraInfo
+        extra_info = TokenHolderExtraInfo()
+        extra_info.token_address = _token_address
+        extra_info.account_address = _account_address_1
+        extra_info.external_id_1_type = "test_id_type_1"
+        extra_info.external_id_1 = "test_id_1"
+        extra_info.external_id_2_type = "test_id_type_2"
+        extra_info.external_id_2 = "test_id_2"
+        extra_info.external_id_3_type = "test_id_type_3"
+        extra_info.external_id_3 = "test_id_3"
+        db.add(extra_info)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address),
+            headers={"issuer-address": _issuer_address},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "total": 1, "offset": None, "limit": None},
+            "holders": [
+                {
+                    "account_address": _account_address_1,
+                    "personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": "test_id_type_1",
+                        "external_id_1": "test_id_1",
+                        "external_id_2_type": "test_id_type_2",
+                        "external_id_2": "test_id_2",
+                        "external_id_3_type": "test_id_type_3",
+                        "external_id_3": "test_id_3",
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -207,11 +358,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -259,6 +410,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -346,7 +498,20 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
+
+        # prepare data: TokenHolderExtraInfo
+        extra_info = TokenHolderExtraInfo()
+        extra_info.token_address = _token_address
+        extra_info.account_address = _account_address_1
+        extra_info.external_id_1_type = "test_id_type_1"
+        extra_info.external_id_1 = "test_id_1"
+        extra_info.external_id_2_type = "test_id_type_2"
+        extra_info.external_id_2 = "test_id_2"
+        extra_info.external_id_3_type = "test_id_type_3"
+        extra_info.external_id_3 = "test_id_3"
+        db.add(extra_info)
 
         db.commit()
 
@@ -373,6 +538,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": "test_id_type_1",
+                        "external_id_1": "test_id_1",
+                        "external_id_2_type": "test_id_type_2",
+                        "external_id_2": "test_id_2",
+                        "external_id_3_type": "test_id_type_3",
+                        "external_id_3": "test_id_3",
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -392,6 +565,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -410,6 +591,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -436,11 +625,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -512,6 +701,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -540,6 +730,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 0,
                     "exchange_balance": 0,
                     "exchange_commitment": 12,
@@ -558,6 +756,14 @@ class TestListAllShareTokenHolders:
                         "birth": None,
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 20,
                     "exchange_balance": 21,
@@ -585,11 +791,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -616,6 +822,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         idx_position_2 = IDXPosition()
@@ -650,6 +857,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -679,6 +887,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 0,
                     "exchange_balance": 0,
                     "exchange_commitment": 12,
@@ -698,6 +914,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 0,
@@ -716,6 +940,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 0,
                     "exchange_balance": 0,
@@ -742,11 +974,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -794,6 +1026,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -881,6 +1114,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -909,6 +1143,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -934,11 +1176,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -986,6 +1228,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1073,6 +1316,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1101,6 +1345,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -1119,6 +1371,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -1145,11 +1405,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -1197,6 +1457,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1284,6 +1545,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1312,6 +1574,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -1330,6 +1600,14 @@ class TestListAllShareTokenHolders:
                         "birth": None,
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 20,
                     "exchange_balance": 21,
@@ -1356,11 +1634,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -1408,6 +1686,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1495,6 +1774,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1523,6 +1803,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -1548,11 +1836,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -1600,6 +1888,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1687,6 +1976,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1715,6 +2005,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -1733,6 +2031,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -1759,11 +2065,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -1811,6 +2117,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -1898,6 +2205,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -1926,6 +2234,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -1944,6 +2260,14 @@ class TestListAllShareTokenHolders:
                         "birth": None,
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 20,
                     "exchange_balance": 21,
@@ -1970,11 +2294,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -2022,6 +2346,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2109,6 +2434,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2137,6 +2463,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -2162,11 +2496,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -2214,6 +2548,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2301,6 +2636,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2329,6 +2665,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -2347,6 +2691,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -2374,11 +2726,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -2426,6 +2778,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2513,6 +2866,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         # prepare data: account_address_4
@@ -2552,6 +2906,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -2570,6 +2932,14 @@ class TestListAllShareTokenHolders:
                         "birth": None,
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 20,
                     "exchange_balance": 21,
@@ -2590,6 +2960,14 @@ class TestListAllShareTokenHolders:
                         "name": None,
                         "postal_code": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -2615,11 +2993,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -2667,6 +3045,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2754,6 +3133,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2785,6 +3165,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -2810,11 +3198,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -2862,6 +3250,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -2949,6 +3338,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -2980,6 +3370,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -2998,6 +3396,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -3024,11 +3430,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -3076,6 +3482,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3163,6 +3570,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3194,6 +3602,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -3212,6 +3628,14 @@ class TestListAllShareTokenHolders:
                         "birth": None,
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 20,
                     "exchange_balance": 21,
@@ -3238,11 +3662,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -3290,6 +3714,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3377,6 +3802,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3405,6 +3831,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -3430,11 +3864,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -3482,6 +3916,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3569,6 +4004,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3597,6 +4033,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -3615,6 +4059,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -3641,11 +4093,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -3693,6 +4145,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3780,6 +4233,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -3808,6 +4262,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": False,
                         "tax_category": 10,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -3833,11 +4295,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -3886,6 +4348,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -3975,6 +4438,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4003,6 +4467,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -4022,6 +4494,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -4040,6 +4520,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -4066,11 +4554,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -4119,6 +4607,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4208,6 +4697,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4236,6 +4726,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -4255,6 +4753,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -4273,6 +4779,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -4299,11 +4813,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -4352,6 +4866,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4441,6 +4956,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4469,6 +4985,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -4488,6 +5012,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -4506,6 +5038,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -4532,11 +5072,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -4585,6 +5125,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4674,6 +5215,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4702,6 +5244,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -4721,6 +5271,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -4739,6 +5297,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -4765,11 +5331,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -4818,6 +5384,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -4907,6 +5474,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -4935,6 +5503,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -4954,6 +5530,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -4972,6 +5556,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -4998,11 +5590,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -5051,6 +5643,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5140,6 +5733,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -5168,6 +5762,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -5187,6 +5789,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -5205,6 +5815,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -5232,11 +5850,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -5285,6 +5903,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5374,6 +5993,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         # prepare data: account_address_4
@@ -5414,6 +6034,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -5432,6 +6060,14 @@ class TestListAllShareTokenHolders:
                         "birth": None,
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 100,
                     "exchange_balance": 100,
@@ -5452,6 +6088,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -5470,6 +6114,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -5497,11 +6149,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -5550,6 +6202,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5639,6 +6292,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         # prepare data: account_address_4
@@ -5679,6 +6333,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -5697,6 +6359,14 @@ class TestListAllShareTokenHolders:
                         "birth": None,
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 100,
                     "exchange_balance": 100,
@@ -5717,6 +6387,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 99,
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
@@ -5735,6 +6413,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test1",
                         "is_corporate": False,
                         "tax_category": 10,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 10,
                     "exchange_balance": 11,
@@ -5761,11 +6447,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -5813,6 +6499,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -5900,6 +6587,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -5928,6 +6616,14 @@ class TestListAllShareTokenHolders:
                         "is_corporate": None,
                         "tax_category": None,
                     },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
+                    },
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -5946,6 +6642,14 @@ class TestListAllShareTokenHolders:
                         "birth": "birth_test3",
                         "is_corporate": None,
                         "tax_category": None,
+                    },
+                    "holder_extra_info": {
+                        "external_id_1_type": None,
+                        "external_id_1": None,
+                        "external_id_2_type": None,
+                        "external_id_2": None,
+                        "external_id_3_type": None,
+                        "external_id_3": None,
                     },
                     "balance": 99,
                     "exchange_balance": 99,
@@ -5972,11 +6676,11 @@ class TestListAllShareTokenHolders:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -6024,6 +6728,7 @@ class TestListAllShareTokenHolders:
             "is_corporate": False,
             "tax_category": 10,
         }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_1)
 
         # prepare data: account_address_2
@@ -6111,6 +6816,7 @@ class TestListAllShareTokenHolders:
             "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
+        idx_personal_info_3.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(idx_personal_info_3)
 
         db.commit()
@@ -6212,11 +6918,11 @@ class TestListAllShareTokenHolders:
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
         db.add(token)

@@ -25,12 +25,14 @@ python batch/processor_generate_rsa_key.py &
 python batch/processor_modify_personal_info.py &
 python batch/processor_bulk_transfer.py &
 python batch/processor_create_utxo.py &
+python batch/processor_create_ledger.py &
 python batch/processor_scheduled_events.py &
 python batch/processor_monitor_block_sync.py &
 python batch/processor_update_token.py &
 python batch/processor_batch_issue_redeem.py &
 python batch/processor_batch_register_personal_info.py &
 python batch/processor_dvp_async_tx.py &
+python batch/processor_batch_create_child_account.py &
 
 if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   python batch/processor_rotate_e2e_messaging_rsa_key.py &

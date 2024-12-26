@@ -26,6 +26,7 @@ from app.model.db import (
     IDXPersonalInfo,
     IDXTransfer,
     IDXTransferSourceEventType,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
@@ -34,7 +35,7 @@ from app.model.db import (
 local_tz = timezone(config.TZ)
 
 
-class TestAppRoutersShareTransfersGET:
+class TestListShareTokenTransferHistory:
     # target API endpoint
     base_url = "/share/transfers/{}"
 
@@ -165,6 +166,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -180,6 +182,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
@@ -619,6 +622,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -634,6 +638,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -724,6 +729,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -739,6 +745,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1083,7 +1090,7 @@ class TestAppRoutersShareTransfersGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={"source_event": IDXTransferSourceEventType.UNLOCK.value},
+            params={"source_event": IDXTransferSourceEventType.UNLOCK},
         )
 
         # assertion
@@ -1176,6 +1183,83 @@ class TestAppRoutersShareTransfersGET:
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.UNLOCK.value,
                     "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2],
+                }
+            ],
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_3_10>
+    # filter: message
+    def test_normal_3_10(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = self.test_from_address_2
+        _idx_transfer.to_address = self.test_to_address_1
+        _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = self.test_from_address_2
+        _idx_transfer.to_address = self.test_to_address_1
+        _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = self.test_from_address_1
+        _idx_transfer.to_address = self.test_to_address_1
+        _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "force_unlock"}
+        _idx_transfer.message = "force_unlock"
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={"message": "force_unlock"},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_from_address_1,
+                    "from_address_personal_information": None,
+                    "to_address": self.test_to_address_1,
+                    "to_address_personal_information": None,
+                    "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "force_unlock"},
                     "block_timestamp": self.test_block_timestamp_str[2],
                 }
             ],
@@ -1520,6 +1604,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1535,6 +1620,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()
@@ -1649,6 +1735,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
@@ -1664,6 +1751,7 @@ class TestAppRoutersShareTransfersGET:
             "is_corporate": False,
             "tax_category": 10,
         }  # latest data
+        _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         db.add(_personal_info_to)
 
         db.commit()

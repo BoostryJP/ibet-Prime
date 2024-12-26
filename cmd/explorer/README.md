@@ -22,18 +22,6 @@
 - **URL**: ibet-Prime URL.
 - You can run this on pythonic way in local.
 
-### Poetry
-```bash
-> poetry install
-> poetry run python src/main.py --url http://localhost:5000
-```
-
-### Pip
-```bash
-> pip install -e ./
-> python src/main.py --url http://localhost:5000
-```
-
 ## Screenshots 👀
 
 ![query-setting](https://user-images.githubusercontent.com/15183665/222354993-0c11eedc-fb22-472a-8c9f-f9bc8be4d173.png)

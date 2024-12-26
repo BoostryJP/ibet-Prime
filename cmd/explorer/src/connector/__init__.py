@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from dataclasses import asdict
 from typing import Any
 
 from aiohttp import ClientSession
@@ -47,7 +46,7 @@ async def health_check(url: str, session: ClientSession) -> None:
 async def get_block_number(session: ClientSession, url: str) -> BlockNumberResponse:
     async with session.get(url=f"{url}/block_number") as resp:
         data = await resp.json()
-        return BlockNumberResponse.parse_obj(data)
+        return BlockNumberResponse.model_validate(data)
 
 
 def dict_factory(x: list[tuple[str, Any]]):
@@ -60,12 +59,12 @@ async def list_block_data(
 ) -> BlockDataListResponse:
     async with session.get(
         url=f"{url}/blockchain_explorer/block_data",
-        params=asdict(query, dict_factory=dict_factory),
+        params=query.model_dump_json(),
     ) as resp:
         data = await resp.json()
         if resp.status == 404:
             raise ApiNotEnabledException(data)
-        return BlockDataListResponse.parse_obj(data)
+        return BlockDataListResponse.model_validate(data)
 
 
 @AsyncTTL(time_to_live=3600, skip_args=1)
@@ -76,7 +75,7 @@ async def get_block_data(
         url=f"{url}/blockchain_explorer/block_data/{block_number}"
     ) as resp:
         data = await resp.json()
-        return BlockDataDetail.parse_obj(data)
+        return BlockDataDetail.model_validate(data)
 
 
 @AsyncTTL(time_to_live=3600, skip_args=1)
@@ -85,14 +84,14 @@ async def list_tx_data(
 ) -> TxDataListResponse:
     async with session.get(
         url=f"{url}/blockchain_explorer/tx_data",
-        params=asdict(query, dict_factory=dict_factory),
+        params=query.model_dump_json(),
     ) as resp:
         data = await resp.json()
-        return TxDataListResponse.parse_obj(data)
+        return TxDataListResponse.model_validate(data)
 
 
 @AsyncTTL(time_to_live=3600, skip_args=1)
 async def get_tx_data(session: ClientSession, url: str, tx_hash: str) -> TxDataDetail:
     async with session.get(url=f"{url}/blockchain_explorer/tx_data/{tx_hash}") as resp:
         data = await resp.json()
-        return TxDataDetail.parse_obj(data)
+        return TxDataDetail.model_validate(data)

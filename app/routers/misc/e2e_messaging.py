@@ -21,7 +21,7 @@ import json
 import re
 import secrets
 from datetime import UTC, datetime
-from typing import List, Optional, Sequence
+from typing import Annotated, List, Sequence
 
 import boto3
 import eth_keyfile
@@ -56,6 +56,7 @@ from app.model.schema import (
     E2EMessagingAccountResponse,
     E2EMessagingAccountUpdateRsaKeyRequest,
     E2EMessagingResponse,
+    ListAllE2EMessagesQuery,
     ListAllE2EMessagingResponse,
 )
 from app.utils.contract_utils import AsyncContractUtils
@@ -260,7 +261,9 @@ async def list_all_e2e_messaging_accounts(db: DBAsyncSession):
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-async def retrieve_e2e_messaging_account(db: DBAsyncSession, account_address: str):
+async def retrieve_e2e_messaging_account(
+    db: DBAsyncSession, account_address: Annotated[str, Path()]
+):
     """Retrieve an e2e messaging account"""
 
     _account: E2EMessagingAccount | None = (
@@ -305,7 +308,9 @@ async def retrieve_e2e_messaging_account(db: DBAsyncSession, account_address: st
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-async def delete_e2e_messaging_account(db: DBAsyncSession, account_address: str):
+async def delete_e2e_messaging_account(
+    db: DBAsyncSession, account_address: Annotated[str, Path()]
+):
     """Logically delete an e2e messaging account"""
 
     _account: E2EMessagingAccount | None = (
@@ -351,7 +356,7 @@ async def delete_e2e_messaging_account(db: DBAsyncSession, account_address: str)
 )
 async def update_e2e_messaging_account_rsa_key(
     db: DBAsyncSession,
-    account_address: str,
+    account_address: Annotated[str, Path()],
     data: E2EMessagingAccountUpdateRsaKeyRequest,
 ):
     """Update an e2e messaging account rsa key"""
@@ -407,7 +412,7 @@ async def update_e2e_messaging_account_rsa_key(
 )
 async def change_e2e_messaging_account_eoa_password(
     db: DBAsyncSession,
-    account_address: str,
+    account_address: Annotated[str, Path()],
     data: E2EMessagingAccountChangeEOAPasswordRequest,
 ):
     """Change E2EMessaging account's EOA password"""
@@ -474,7 +479,7 @@ async def change_e2e_messaging_account_eoa_password(
 )
 async def change_e2e_messaging_account_rsa_passphrase(
     db: DBAsyncSession,
-    account_address: str,
+    account_address: Annotated[str, Path()],
     data: E2EMessagingAccountChangeRSAPassphraseRequest,
 ):
     """Change E2EMessaging account's RSA passphrase"""
@@ -550,13 +555,7 @@ async def change_e2e_messaging_account_rsa_passphrase(
     responses=get_routers_responses(422),
 )
 async def list_all_e2e_messages(
-    db: DBAsyncSession,
-    from_address: Optional[str] = Query(None),
-    to_address: Optional[str] = Query(None),
-    _type: Optional[str] = Query(None, alias="type"),
-    message: Optional[str] = Query(None, description="partial match"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    db: DBAsyncSession, get_query: Annotated[ListAllE2EMessagesQuery, Query()]
 ):
     """List all e2e messages"""
 
@@ -566,22 +565,22 @@ async def list_all_e2e_messages(
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
-    if from_address is not None:
-        stmt = stmt.where(IDXE2EMessaging.from_address == from_address)
-    if to_address is not None:
-        stmt = stmt.where(IDXE2EMessaging.to_address == to_address)
-    if _type is not None:
-        stmt = stmt.where(IDXE2EMessaging.type == _type)
-    if message is not None:
-        stmt = stmt.where(IDXE2EMessaging.message.like("%" + message + "%"))
+    if get_query.from_address is not None:
+        stmt = stmt.where(IDXE2EMessaging.from_address == get_query.from_address)
+    if get_query.to_address is not None:
+        stmt = stmt.where(IDXE2EMessaging.to_address == get_query.to_address)
+    if get_query.type is not None:
+        stmt = stmt.where(IDXE2EMessaging.type == get_query.type)
+    if get_query.message is not None:
+        stmt = stmt.where(IDXE2EMessaging.message.like("%" + get_query.message + "%"))
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
     _e2e_messaging_list: Sequence[IDXE2EMessaging] = (await db.scalars(stmt)).all()
 
@@ -611,8 +610,8 @@ async def list_all_e2e_messages(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
             "total": total,
         },
         "e2e_messages": e2e_messages,
@@ -628,7 +627,9 @@ async def list_all_e2e_messages(
     response_model=E2EMessagingResponse,
     responses=get_routers_responses(422, 404),
 )
-async def retrieve_e2e_messaging(db: DBAsyncSession, _id: int = Path(..., alias="id")):
+async def retrieve_e2e_messaging(
+    db: DBAsyncSession, _id: Annotated[int, Path(..., alias="id")]
+):
     """Retrieve an e2e message"""
 
     # Get E2E Messaging

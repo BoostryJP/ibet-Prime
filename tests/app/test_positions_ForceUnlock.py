@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
+import json
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
@@ -96,7 +97,7 @@ class TestForceUnlock:
                     "account_address": account_address,
                     "recipient_address": _recipient_address,
                     "value": 10,
-                    "data": "",
+                    "data": json.dumps({"message": "force_unlock"}),
                 }
             ),
             tx_from=_admin_address,
@@ -169,7 +170,7 @@ class TestForceUnlock:
                     "account_address": account_address,
                     "recipient_address": _recipient_address,
                     "value": 10,
-                    "data": "",
+                    "data": json.dumps({"message": "force_unlock"}),
                 }
             ),
             tx_from=_admin_address,

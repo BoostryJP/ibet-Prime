@@ -1,7 +1,11 @@
 FROM ubuntu:22.04 AS builder
 
 ENV PYTHON_VERSION=3.12.2
-ENV POETRY_VERSION=1.8.2
+ENV UV_VERSION=0.5.5
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_INSTALL_DIR="/usr/local/bin"
+ENV UV_PROJECT_ENVIRONMENT="/home/apl/.venv"
 
 # make application directory
 RUN mkdir -p /app
@@ -10,59 +14,42 @@ RUN mkdir -p /app
 RUN groupadd -g 1000 apl \
  && useradd -g apl -s /bin/bash -u 1000 -p apl apl \
  && echo 'apl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
- && chown -R apl:apl /app
+ && chown -R apl:apl /app \
+ && mkdir /home/apl \
+ && chown -R apl:apl /home/apl
 
 # install packages
 RUN apt-get update -q \
  && apt-get upgrade -qy \
  && apt-get install -y --no-install-recommends \
- unzip \
  build-essential \
  ca-certificates \
  curl \
- libbz2-dev \
- libreadline-dev \
- libsqlite3-dev \
- libssl-dev \
- zlib1g-dev \
  libffi-dev \
- python3-dev \
  libpq-dev \
- automake \
- pkg-config \
- libtool \
- libgmp-dev \
- language-pack-ja-base \
- language-pack-ja \
- git \
- libyaml-cpp-dev \
  libc-bin \
- liblzma-dev \
+ clang \
  && apt clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# install pyenv
-RUN git clone https://github.com/pyenv/pyenv.git /home/apl/.pyenv
-RUN chown -R apl:apl /home/apl
+# install uv
+ADD https://astral.sh/uv/$UV_VERSION/install.sh /uv-installer.sh
+RUN INSTALLER_NO_MODIFY_PATH=1 sh /uv-installer.sh && rm /uv-installer.sh
+
+# install Python
+RUN uv python install $PYTHON_VERSION
+
+# prepare venv
 USER apl
-RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~apl/.bash_profile \
- && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~apl/.bash_profile \
- && echo 'export POETRY_CACHE_DIR=/tmp/poetry_cache' >> ~apl/.bash_profile \
- && echo 'eval "$(pyenv init --path)"' >> ~apl/.bash_profile \
- && echo 'export LANG=ja_JP.utf8' >> ~apl/.bash_profile
+RUN mkdir /home/apl/.venv
 
-# install python
-RUN . ~/.bash_profile \
- && pyenv install $PYTHON_VERSION \
- && pyenv global $PYTHON_VERSION \
- && pip install --upgrade --no-cache-dir pip setuptools
-
-# install poetry
-RUN . ~/.bash_profile \
- && python -m pip install poetry==$POETRY_VERSION \
- && . ~/.bash_profile \
- && poetry config virtualenvs.create false \
- && poetry config installer.max-workers 1
+# setup shell setting
+#   .bash_profile
+RUN echo 'if [ -f ~/.bashrc ]; then' >> ~/.bash_profile && \
+    echo '    . ~/.bashrc' >> ~/.bash_profile && \
+    echo 'fi' >> ~/.bash_profile
+#   .bashrc
+RUN echo '. $HOME/.venv/bin/activate' >> ~apl/.bashrc
 
 # install python packages
 COPY --chown=apl:apl LICENSE /app/ibet-Prime/
@@ -85,12 +72,12 @@ RUN find /app/ibet-Prime/ -type d -name __pycache__ | xargs rm -fr \
  && chmod -R 755 /app/ibet-Prime/
 
 COPY pyproject.toml /app/ibet-Prime/pyproject.toml
-COPY poetry.lock /app/ibet-Prime/poetry.lock
-RUN . ~/.bash_profile \
- && cd /app/ibet-Prime \
- && poetry install --only main --no-root --all-extras \
+COPY uv.lock /app/ibet-Prime/uv.lock
+RUN cd /app/ibet-Prime \
+ && uv venv $UV_PROJECT_ENVIRONMENT \
+ && uv sync --frozen --no-dev --no-install-project --all-extras \
  && rm -f /app/ibet-Prime/pyproject.toml \
- && rm -f /app/ibet-Prime/poetry.lock
+ && rm -f /app/ibet-Prime/uv.lock
 
 FROM ubuntu:22.04 AS runner
 
@@ -101,7 +88,9 @@ RUN mkdir -p /app/ibet-Prime/
 RUN groupadd -g 1000 apl \
  && useradd -g apl -s /bin/bash -u 1000 -p apl apl \
  && echo 'apl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
- && chown -R apl:apl /app
+ && chown -R apl:apl /app \
+ && mkdir /home/apl \
+ && chown -R apl:apl /home/apl
 
 # install packages
 RUN apt-get update -q \
@@ -117,12 +106,15 @@ RUN apt-get update -q \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# copy python and dependencies from builder stage
+# copy python, dependencies and uv from builder stage
 USER apl
 COPY --from=builder --chown=apl:apl /home/apl/ /home/apl/
 COPY --from=builder --chown=apl:apl /app/ibet-Prime/ /app/ibet-Prime/
-RUN . ~/.bash_profile
+COPY --from=builder --chown=apl:apl /usr/local/bin/uv /usr/local/bin/uv
+COPY --from=builder --chown=apl:apl /usr/local/bin/uvx /usr/local/bin/uvx
 
+ENV LANG=ja_JP.utf8
+ENV UV_PROJECT_ENVIRONMENT="/home/apl/.venv"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/ibet-Prime:/app/ibet-Prime/cmd
 

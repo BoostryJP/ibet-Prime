@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-24.9-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-24.12-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -18,12 +18,12 @@ English | [日本語](./README_JA.md)
 - ibet-Prime is an API service that enables the issuance and management of security tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network).
 - It supports tokens and various smart contracts developed by the [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract) project.
 - As a security token ledger management system, ibet-Prime provides a variety of functions required under Japanese regulations.
-- By calling the ibet-Prime API from your own front-end application, you can easily build a security token management service.
+- By integrating the ibet-Prime API into your front-end application, you can easily build a security token management service.
 
 ## Dependencies
 
 - [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.12
-- [PostgreSQL](https://www.postgresql.org/) - version 15
+- [PostgreSQL](https://www.postgresql.org/) - version 16
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
   - We use [hardhat network](https://hardhat.org/hardhat-network/) for local development and unit testing, and we use the latest version.
@@ -39,25 +39,30 @@ English | [日本語](./README_JA.md)
 
 ### Prerequisites
 
-- Need to set up a Python runtime environment.
-- Need to create the DB on PostgreSQL beforehand.
-  - By default, the following settings are required.
+- A Python runtime environment must be set up.
+- The database must be created on PostgreSQL beforehand.
+  - By default, the following settings are required:
     - User: issuerapi
     - Password: issuerapipass
-    - DB: issuerapidb
-    - DB for test use: issuerapidb_test
-- TokenList and E2EMessaging contract of the ibet-SmartContract must have been deployed beforehand.
+    - Database: issuerapidb
+    - Test database: issuerapidb_test
+- The TokenList and E2EMessaging contracts from the ibet-SmartContract project must be deployed in advance.
 
 ### Install packages
 
+Create virtual environment with:
+```bash
+$ uv venv
+```
+
 Install python packages with:
 ```bash
-$ poetry install --no-root --only main --all-extras
+$ uv sync --frozen --no-install-project --no-dev --all-extras
 ```
 
 ### Install pre-commit hook
 ```bash
-$ poetry run pre-commit install
+$ uv run pre-commit install
 ```
 
 ### Install hardhat
