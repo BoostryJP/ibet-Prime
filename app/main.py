@@ -280,7 +280,7 @@ async def method_not_allowed_error_handler(
 async def service_unavailable_error_handler(
     request: Request, exc: ServiceUnavailableError
 ):
-    meta = {"code": 1, "title": "ServiceUnavailableError"}
+    meta = {"code": exc.code, "title": exc.__class__.__name__}
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
