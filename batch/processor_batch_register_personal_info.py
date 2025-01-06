@@ -118,11 +118,12 @@ class Processor:
                     await self.__sink_on_finish_upload_process(
                         db_session=db_session,
                         upload_id=_upload.upload_id,
-                        status=BatchRegisterPersonalInfoUploadStatus.FAILED.value,
+                        status=BatchRegisterPersonalInfoUploadStatus.FAILED,
                     )
                     await self.__sink_on_error_notification(
                         db_session=db_session,
                         issuer_address=_upload.issuer_address,
+                        token_address=_upload.token_address,
                         code=0,
                         upload_id=_upload.upload_id,
                         error_registration_id=[],
@@ -197,14 +198,14 @@ class Processor:
                     await self.__sink_on_finish_upload_process(
                         db_session=db_session,
                         upload_id=_upload.upload_id,
-                        status=BatchRegisterPersonalInfoUploadStatus.DONE.value,
+                        status=BatchRegisterPersonalInfoUploadStatus.DONE,
                     )
                 else:
                     # failed
                     await self.__sink_on_finish_upload_process(
                         db_session=db_session,
                         upload_id=_upload.upload_id,
-                        status=BatchRegisterPersonalInfoUploadStatus.FAILED.value,
+                        status=BatchRegisterPersonalInfoUploadStatus.FAILED,
                     )
                     error_registration_id = [
                         _error_registration.id
@@ -213,6 +214,7 @@ class Processor:
                     await self.__sink_on_error_notification(
                         db_session=db_session,
                         issuer_address=_upload.issuer_address,
+                        token_address=_upload.token_address,
                         code=1,
                         upload_id=_upload.upload_id,
                         error_registration_id=error_registration_id,
@@ -407,18 +409,20 @@ class Processor:
     async def __sink_on_error_notification(
         db_session: AsyncSession,
         issuer_address: str,
+        token_address: str | None,
         code: int,
         upload_id: str,
         error_registration_id: list[int],
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
         notification.code = code
         notification.metainfo = {
             "upload_id": upload_id,
+            "token_address": token_address,
             "error_registration_id": error_registration_id,
         }
         db_session.add(notification)

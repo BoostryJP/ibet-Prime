@@ -2772,7 +2772,8 @@ async def initiate_bond_token_batch_personal_info_registration(
     batch = BatchRegisterPersonalInfoUpload()
     batch.upload_id = batch_id
     batch.issuer_address = issuer_address
-    batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+    batch.token_address = token_address
+    batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING
     db.add(batch)
 
     errs = []

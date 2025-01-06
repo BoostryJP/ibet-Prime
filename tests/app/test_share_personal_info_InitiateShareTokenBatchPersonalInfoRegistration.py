@@ -65,11 +65,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -110,6 +110,7 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
         ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
+        assert _upload.token_address == _token_address
 
         _register_list: list[BatchRegisterPersonalInfo] = db.scalars(
             select(BatchRegisterPersonalInfo)
@@ -142,11 +143,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
         db.add(auth_token)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 
@@ -187,6 +188,7 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
         ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
+        assert _upload.token_address == _token_address
 
         _register_list: list[BatchRegisterPersonalInfo] = db.scalars(
             select(BatchRegisterPersonalInfo)
@@ -662,11 +664,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
         db.add(token)
@@ -724,11 +726,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 1
         token.version = TokenVersion.V_24_09
         db.add(token)
@@ -776,11 +778,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         db.add(token)
 

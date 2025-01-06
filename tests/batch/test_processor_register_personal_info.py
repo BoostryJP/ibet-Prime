@@ -166,7 +166,7 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -211,7 +211,7 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -314,7 +314,7 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -330,9 +330,7 @@ class TestProcessor:
                 _account["address"] if i % 3 == 0 else _other_issuer["address"]
             )
             batch_register_upload.upload_id = self.upload_id_list[i]
-            batch_register_upload.status = (
-                BatchRegisterPersonalInfoUploadStatus.PENDING.value
-            )
+            batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
             db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -473,7 +471,7 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -487,9 +485,7 @@ class TestProcessor:
             batch_register_upload = BatchRegisterPersonalInfoUpload()
             batch_register_upload.issuer_address = _account["address"]
             batch_register_upload.upload_id = self.upload_id_list[i]
-            batch_register_upload.status = (
-                BatchRegisterPersonalInfoUploadStatus.PENDING.value
-            )
+            batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
             db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -613,7 +609,7 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -625,9 +621,8 @@ class TestProcessor:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _account["address"]
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
+        batch_register_upload.token_address = token_address_1
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
         db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -697,6 +692,7 @@ class TestProcessor:
                 assert _notification.code == 0
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
+                    "token_address": batch_register_upload.token_address,
                     "error_registration_id": [],
                 }
 
@@ -728,7 +724,7 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -740,9 +736,8 @@ class TestProcessor:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _account["address"]
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
+        batch_register_upload.token_address = token_address_1
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
         db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -828,6 +823,7 @@ class TestProcessor:
                 assert _notification.code == 1
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
+                    "token_address": batch_register_upload.token_address,
                     "error_registration_id": [
                         batch_register.id for batch_register in batch_register_list
                     ],
@@ -861,7 +857,7 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -873,9 +869,8 @@ class TestProcessor:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _account["address"]
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
+        batch_register_upload.token_address = token_address_1
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
         db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -961,6 +956,7 @@ class TestProcessor:
                 assert _notification.code == 1
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
+                    "token_address": batch_register_upload.token_address,
                     "error_registration_id": [
                         batch_register.id for batch_register in batch_register_list
                     ],
@@ -1009,7 +1005,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
@@ -1021,9 +1017,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _account["address"]
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
+        batch_register_upload.token_address = token_address_1
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
         db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -1099,6 +1094,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             assert _notification.code == 1
             assert _notification.metainfo == {
                 "upload_id": batch_register_upload.upload_id,
+                "token_address": batch_register_upload.token_address,
                 "error_registration_id": [
                     batch_register.id for batch_register in batch_register_list
                 ],
