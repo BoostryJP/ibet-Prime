@@ -789,16 +789,19 @@ paths:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issuebondtoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
             Revert Error etc
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Issuebondtoken
+                $ref: '#/components/schemas/ContractRevertErrorResponse'
     get:
       tags:
         - bond
@@ -939,8 +942,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatebondtoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/history:
     get:
       tags:
@@ -1215,8 +1223,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Issueadditionalbond
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/additional_issue/batch:
     get:
       tags:
@@ -1575,8 +1588,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeembond
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/redeem/batch:
     get:
       tags:
@@ -2548,8 +2566,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Registerbondtokenholderpersonalinfo
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/personal_info/batch:
     get:
       tags:
@@ -2962,8 +2985,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transferbondtokenownership
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/transfers/{token_address}:
     get:
       tags:
@@ -3415,8 +3443,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatebondtokentransferapprovalstatus
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
     get:
       tags:
         - bond
@@ -3709,8 +3742,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Createe2Emessagingaccount
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /e2e_messaging/accounts/{account_address}:
     get:
       tags:
@@ -5129,8 +5167,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Forceunlock
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /positions/{account_address}/{token_address}:
     get:
       tags:
@@ -5243,16 +5286,19 @@ paths:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issuesharetoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
             Revert Error etc
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Issuesharetoken
+                $ref: '#/components/schemas/ContractRevertErrorResponse'
     get:
       tags:
         - share
@@ -5393,8 +5439,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatesharetoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/history:
     get:
       tags:
@@ -5669,8 +5720,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Issueadditionalshare
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/additional_issue/batch:
     get:
       tags:
@@ -6029,8 +6085,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeemshare
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/redeem/batch:
     get:
       tags:
@@ -7002,8 +7063,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Registersharetokenholderpersonalinfo
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/personal_info/batch:
     get:
       tags:
@@ -7416,8 +7482,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transfersharetokenownership
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/transfers/{token_address}:
     get:
       tags:
@@ -7869,8 +7940,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatesharetokentransferapprovalstatus
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
     get:
       tags:
         - share
@@ -8902,10 +8978,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Createdvpdelivery
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /settlement/dvp/{exchange_address}/delivery/{delivery_id}:
     get:
       tags:
@@ -9025,10 +9104,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatedvpdelivery
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /sealed_tx/personal_info:
     post:
       tags:
@@ -9405,10 +9487,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatedvpagentdelivery
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /blockchain_explorer/block_data:
     get:
       tags:
@@ -9784,10 +9869,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Recordnewfreezelog
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /freeze_log/logs/{log_index}:
     post:
       tags:
@@ -9830,10 +9918,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatefreezelog
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
     get:
       tags:
         - '[misc] freeze_log'
