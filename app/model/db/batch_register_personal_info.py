@@ -35,6 +35,8 @@ class BatchRegisterPersonalInfoUpload(Base):
     upload_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     # issuer address
     issuer_address: Mapped[str] = mapped_column(String(42), nullable=False, index=True)
+    # token address
+    token_address: Mapped[str | None] = mapped_column(String(42))
     # processing status (BatchRegisterPersonalInfoUploadStatus)
     status: Mapped[str] = mapped_column(String, nullable=False, index=True)
 

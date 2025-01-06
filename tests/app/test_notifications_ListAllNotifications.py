@@ -138,6 +138,7 @@ class TestListAllNotifications:
         _notification_6.code = 1
         _notification_6.metainfo = {
             "upload_id": str(uuid.uuid4()),
+            "token_address": test_token_address,
             "error_registration_id": [1, 2, 3],
         }
         _notification_6.created = datetime.strptime(
@@ -307,7 +308,11 @@ class TestListAllNotifications:
                     "priority": 0,
                     "notice_type": NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR,
                     "notice_code": 1,
-                    "metainfo": {"upload_id": ANY, "error_registration_id": [1, 2, 3]},
+                    "metainfo": {
+                        "upload_id": ANY,
+                        "token_address": test_token_address,
+                        "error_registration_id": [1, 2, 3],
+                    },
                     "created": "2022-01-06T09:20:30+09:00",
                 },
                 {
@@ -460,7 +465,7 @@ class TestListAllNotifications:
         resp = client.get(
             self.base_url,
             params={
-                "notice_type": NotificationType.SCHEDULE_EVENT_ERROR.value,
+                "notice_type": NotificationType.SCHEDULE_EVENT_ERROR,
             },
             headers={
                 "issuer-address": issuer_address_1,

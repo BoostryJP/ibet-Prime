@@ -10344,6 +10344,11 @@ components:
         upload_id:
           type: string
           title: Upload Id
+        token_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Token Address
         error_registration_id:
           items:
             type: integer

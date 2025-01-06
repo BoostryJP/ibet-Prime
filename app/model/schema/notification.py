@@ -59,6 +59,7 @@ class CreateLedgerInfoMetaInfo(BaseModel):
 
 class BatchRegisterPersonalInfoErrorMetaInfo(BaseModel):
     upload_id: str
+    token_address: Optional[str] = None
     error_registration_id: list[int]
 
 
