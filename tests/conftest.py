@@ -112,7 +112,6 @@ def db(db_engine):
         db.execute(text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;'))
     db.commit()
     db.close()
-    db_engine.dispose()
 
     app.dependency_overrides[db_session] = db_session
 
