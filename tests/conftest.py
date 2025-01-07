@@ -32,6 +32,7 @@ from app.database import (
     AsyncSessionLocal,
     SessionLocal,
     async_engine,
+    batch_async_engine,
     db_async_session,
     db_session,
     engine,
@@ -81,6 +82,7 @@ async def db_engine():
 
     engine.dispose()
     await async_engine.dispose()
+    await batch_async_engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -125,6 +127,7 @@ async def async_db_engine():
 
     engine.dispose()
     await async_engine.dispose()
+    await batch_async_engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="function", loop_scope="session")
