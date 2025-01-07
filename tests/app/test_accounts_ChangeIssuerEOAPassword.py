@@ -28,6 +28,7 @@ from config import EOA_PASSWORD_PATTERN_MSG
 from tests.account_config import config_eth_account
 
 
+@pytest.mark.asyncio
 class TestChangeIssuerEOAPassword:
     # target API endpoint
     base_url = "/accounts/{}/eoa_password"
@@ -38,7 +39,7 @@ class TestChangeIssuerEOAPassword:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, client, db):
+    async def test_normal_1(self, async_client, db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
@@ -60,7 +61,9 @@ class TestChangeIssuerEOAPassword:
             "old_eoa_password": E2EEUtils.encrypt(_old_password),
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 200
@@ -99,12 +102,12 @@ class TestChangeIssuerEOAPassword:
 
     # <Error_1>
     # parameter error(required body)
-    def test_error_1(self, client, db):
+    async def test_error_1(self, async_client, db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
 
         # request target API
-        resp = client.post(self.base_url.format(_issuer_address))
+        resp = await async_client.post(self.base_url.format(_issuer_address))
 
         # assertion
         assert resp.status_code == 422
@@ -122,7 +125,7 @@ class TestChangeIssuerEOAPassword:
 
     # <Error_2>
     # parameter error(required field)
-    def test_error_2(self, client, db):
+    async def test_error_2(self, async_client, db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
 
@@ -130,7 +133,9 @@ class TestChangeIssuerEOAPassword:
         req_param = {
             "dummy": "dummy",
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 422
@@ -154,7 +159,7 @@ class TestChangeIssuerEOAPassword:
 
     # <Error_3>
     # parameter error(not decrypt)
-    def test_error_3(self, client, db):
+    async def test_error_3(self, async_client, db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_password = "password"
@@ -165,7 +170,9 @@ class TestChangeIssuerEOAPassword:
             "old_eoa_password": _old_password,
             "eoa_password": _new_password,
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 422
@@ -193,7 +200,7 @@ class TestChangeIssuerEOAPassword:
 
     # <Error_4>
     # No data
-    def test_error_4(self, client, db):
+    async def test_error_4(self, async_client, db):
         _old_password = "password"
         _new_password = "passwordnew"
 
@@ -202,7 +209,7 @@ class TestChangeIssuerEOAPassword:
             "old_eoa_password": E2EEUtils.encrypt(_old_password),
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format("non_existent_issuer_address"), json=req_param
         )
 
@@ -215,7 +222,7 @@ class TestChangeIssuerEOAPassword:
 
     # <Error_5>
     # old password mismatch
-    def test_error_5(self, client, db):
+    async def test_error_5(self, async_client, db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
@@ -237,7 +244,9 @@ class TestChangeIssuerEOAPassword:
             "old_eoa_password": E2EEUtils.encrypt("passwordtest"),
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 400
@@ -248,7 +257,7 @@ class TestChangeIssuerEOAPassword:
 
     # <Error_6>
     # password policy
-    def test_error_6(self, client, db):
+    async def test_error_6(self, async_client, db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
@@ -270,7 +279,9 @@ class TestChangeIssuerEOAPassword:
             "old_eoa_password": E2EEUtils.encrypt(_old_password),
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 400

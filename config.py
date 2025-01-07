@@ -74,6 +74,7 @@ else:
         os.environ.get("DATABASE_URL")
         or "postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb"
     )
+ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql+psycopg://", "postgresql+asyncpg://")
 DATABASE_SCHEMA = os.environ.get("DATABASE_SCHEMA")
 DB_ECHO = True if CONFIG["database"]["echo"] == "yes" else False
 

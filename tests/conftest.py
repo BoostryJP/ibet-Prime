@@ -21,7 +21,8 @@ import pytest
 import pytest_asyncio
 from eth_keyfile import decode_keyfile_json
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
+from pytest_asyncio import is_async_test
 from sqlalchemy import text
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -43,9 +44,11 @@ web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def async_client() -> AsyncClient:
-    async_client = AsyncClient(app=app, base_url="http://localhost")
+    async_client = AsyncClient(
+        transport=ASGITransport(app), base_url="http://localhost"
+    )
     async with async_client as s:
         yield s
 
@@ -93,7 +96,7 @@ def db():
     app.dependency_overrides[db_session] = db_session
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function", loop_scope="session")
 async def async_db():
     # Create DB session
     _db = AsyncSessionLocal()
@@ -131,7 +134,6 @@ async def async_db():
                 text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;')
             )
         await session.commit()
-        await session.close()
 
         app.dependency_overrides[db_async_session] = db_async_session
 
@@ -364,3 +366,10 @@ def freeze_log_contract():
         "FreezeLog", [], deployer_address, deployer_private_key
     )
     return ContractUtils.get_contract("FreezeLog", contract_address)
+
+
+def pytest_collection_modifyitems(items):
+    pytest_asyncio_tests = (item for item in items if is_async_test(item))
+    session_scope_marker = pytest.mark.asyncio(loop_scope="session")
+    for async_test in pytest_asyncio_tests:
+        async_test.add_marker(session_scope_marker, append=False)
