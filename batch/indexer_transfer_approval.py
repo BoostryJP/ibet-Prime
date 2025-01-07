@@ -666,17 +666,17 @@ class Processor:
             try:
                 transfer_approval.application_datetime = datetime.fromtimestamp(
                     float(optional_data_applicant), tz=UTC
-                )
+                ).replace(tzinfo=None)
             except ValueError:
                 transfer_approval.application_datetime = None
             transfer_approval.application_blocktimestamp = datetime.fromtimestamp(
                 block_timestamp, tz=UTC
-            )
+            ).replace(tzinfo=None)
         elif event_type == "Cancel":
             if transfer_approval is not None:
                 transfer_approval.cancellation_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 transfer_approval.cancelled = True
         elif event_type == "EscrowFinish":
             if transfer_approval is not None:
@@ -686,12 +686,12 @@ class Processor:
                 try:
                     transfer_approval.approval_datetime = datetime.fromtimestamp(
                         float(optional_data_approver), tz=UTC
-                    )
+                    ).replace(tzinfo=None)
                 except ValueError:
                     transfer_approval.approval_datetime = None
                 transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 transfer_approval.transfer_approved = True
         await db_session.merge(transfer_approval)
 
@@ -705,7 +705,7 @@ class Processor:
         id: int,
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 0  # Low
         notification.type = NotificationType.TRANSFER_APPROVAL_INFO

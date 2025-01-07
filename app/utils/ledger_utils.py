@@ -268,7 +268,7 @@ async def finalize_ledger(
     # Register Notification to the DB
     # NOTE: DB commit is executed by the caller
     _notification = Notification()
-    _notification.notice_id = uuid.uuid4()
+    _notification.notice_id = str(uuid.uuid4())
     _notification.issuer_address = _token.issuer_address
     _notification.priority = 0  # Low
     _notification.type = NotificationType.CREATE_LEDGER_INFO

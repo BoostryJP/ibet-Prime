@@ -23,7 +23,7 @@ from typing import Tuple, Type, TypeVar
 from eth_typing import HexStr
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine, select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
 from web3.contract import AsyncContract, Contract
@@ -191,10 +191,10 @@ class ContractUtils:
                 .limit(1)
                 .with_for_update()
             ).first()
-        except OperationalError as op_err:
+        except (OperationalError, DBAPIError) as err:
             local_session.rollback()
             local_session.close()
-            raise SendTransactionError(op_err)
+            raise SendTransactionError(err)
 
         try:
             # Get nonce
@@ -445,10 +445,10 @@ class AsyncContractUtils:
                     .with_for_update()
                 )
             ).first()
-        except OperationalError as op_err:
+        except (OperationalError, DBAPIError) as err:
             await local_session.rollback()
             await local_session.close()
-            raise SendTransactionError(op_err)
+            raise SendTransactionError(err)
 
         try:
             # Get nonce
@@ -509,10 +509,10 @@ class AsyncContractUtils:
                     .with_for_update()
                 )
             ).first()
-        except OperationalError as op_err:
+        except (OperationalError, DBAPIError) as err:
             await local_session.rollback()
             await local_session.close()
-            raise SendTransactionError(op_err)
+            raise SendTransactionError(err)
 
         try:
             # Get nonce

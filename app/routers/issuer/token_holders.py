@@ -106,14 +106,15 @@ async def list_all_token_holders_personal_info(
         )
         stmt = stmt.where(
             IDXPersonalInfo.created
-            >= local_tz.localize(_created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.created_to:
         _created_to = datetime.strptime(
             get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
         )
         stmt = stmt.where(
-            IDXPersonalInfo.created <= local_tz.localize(_created_to).astimezone(utc_tz)
+            IDXPersonalInfo.created
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.modified_from:
         _modified_from = datetime.strptime(
@@ -121,7 +122,7 @@ async def list_all_token_holders_personal_info(
         )
         stmt = stmt.where(
             IDXPersonalInfo.modified
-            >= local_tz.localize(_modified_from).astimezone(utc_tz)
+            >= local_tz.localize(_modified_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.modified_to:
         _modified_to = datetime.strptime(
@@ -129,7 +130,7 @@ async def list_all_token_holders_personal_info(
         )
         stmt = stmt.where(
             IDXPersonalInfo.modified
-            <= local_tz.localize(_modified_to).astimezone(utc_tz)
+            <= local_tz.localize(_modified_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
@@ -213,7 +214,9 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.block_timestamp
-            >= local_tz.localize(_block_timestamp_from).astimezone(utc_tz)
+            >= local_tz.localize(_block_timestamp_from)
+            .astimezone(utc_tz)
+            .replace(tzinfo=None)
         )
     if get_query.block_timestamp_to:
         _block_timestamp_to = datetime.strptime(
@@ -221,7 +224,9 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.block_timestamp
-            <= local_tz.localize(_block_timestamp_to).astimezone(utc_tz)
+            <= local_tz.localize(_block_timestamp_to)
+            .astimezone(utc_tz)
+            .replace(tzinfo=None)
         )
     if get_query.created_from:
         _created_from = datetime.strptime(
@@ -229,7 +234,7 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.created
-            >= local_tz.localize(_created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.created_to:
         _created_to = datetime.strptime(
@@ -237,7 +242,7 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.created
-            <= local_tz.localize(_created_to).astimezone(utc_tz)
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))

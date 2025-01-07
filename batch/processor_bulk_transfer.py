@@ -544,7 +544,7 @@ class Processor:
         error_transfer_id: List[int],
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = NotificationType.BULK_TRANSFER_ERROR

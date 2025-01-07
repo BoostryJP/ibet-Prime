@@ -33,7 +33,11 @@ from eth_utils import keccak, to_checksum_address
 from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
-from sqlalchemy.exc import IntegrityError as SAIntegrityError, OperationalError
+from sqlalchemy.exc import (
+    DBAPIError,
+    IntegrityError as SAIntegrityError,
+    OperationalError,
+)
 
 import config
 from app.database import DBAsyncSession
@@ -516,7 +520,7 @@ async def generate_issuer_auth_token(
                 raise AuthTokenAlreadyExistsError()
         # Update auth token
         auth_token.auth_token = hashed_token
-        auth_token.usage_start = current_datetime_utc
+        auth_token.usage_start = current_datetime_utc.replace(tzinfo=None)
         auth_token.valid_duration = data.valid_duration
         await db.merge(auth_token)
         await db.commit()
@@ -525,7 +529,7 @@ async def generate_issuer_auth_token(
             auth_token = AuthToken()
             auth_token.issuer_address = issuer_address
             auth_token.auth_token = hashed_token
-            auth_token.usage_start = current_datetime_utc
+            auth_token.usage_start = current_datetime_utc.replace(tzinfo=None)
             auth_token.valid_duration = data.valid_duration
             db.add(auth_token)
             await db.commit()
@@ -631,7 +635,7 @@ async def create_child_account(
                 .with_for_update(nowait=True)
             )
         ).first()
-    except OperationalError:
+    except (OperationalError, DBAPIError):
         await db.rollback()
         await db.close()
         raise ServiceUnavailableError(
@@ -728,7 +732,7 @@ async def create_child_account_in_batch(
                 .with_for_update(nowait=True)
             )
         ).first()
-    except OperationalError:
+    except (OperationalError, DBAPIError):
         await db.rollback()
         await db.close()
         raise ServiceUnavailableError(
@@ -833,14 +837,15 @@ async def list_all_child_account(
         )
         stmt = stmt.where(
             IDXPersonalInfo.created
-            >= local_tz.localize(_created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.created_to:
         _created_to = datetime.strptime(
             get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
         )
         stmt = stmt.where(
-            IDXPersonalInfo.created <= local_tz.localize(_created_to).astimezone(utc_tz)
+            IDXPersonalInfo.created
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.modified_from:
         _modified_from = datetime.strptime(
@@ -848,7 +853,7 @@ async def list_all_child_account(
         )
         stmt = stmt.where(
             IDXPersonalInfo.modified
-            >= local_tz.localize(_modified_from).astimezone(utc_tz)
+            >= local_tz.localize(_modified_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.modified_to:
         _modified_to = datetime.strptime(
@@ -856,7 +861,7 @@ async def list_all_child_account(
         )
         stmt = stmt.where(
             IDXPersonalInfo.modified
-            <= local_tz.localize(_modified_to).astimezone(utc_tz)
+            <= local_tz.localize(_modified_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))

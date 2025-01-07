@@ -51,7 +51,7 @@ class TestCreateTokenHoldersCollection:
     # Normal_1
     # POST collection request.
     @pytest.mark.asyncio
-    async def test_normal_1(self, client, db):
+    async def test_normal_1(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -59,7 +59,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -80,7 +80,7 @@ class TestCreateTokenHoldersCollection:
             "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
         ):
             req_param = {"list_id": list_id, "block_number": 100}
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(token_address=token_address),
                 json=req_param,
                 headers={"issuer-address": issuer_address},
@@ -103,7 +103,7 @@ class TestCreateTokenHoldersCollection:
     # Normal_2
     # POST collection request with already existing contract_address and block_number.
     @pytest.mark.asyncio
-    async def test_normal_2(self, client, db):
+    async def test_normal_2(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -111,7 +111,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -131,7 +131,7 @@ class TestCreateTokenHoldersCollection:
         ):
             list_id1 = str(uuid.uuid4())
             req_param = {"list_id": list_id1, "block_number": 100}
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(token_address=token_address),
                 json=req_param,
                 headers={"issuer-address": issuer_address},
@@ -149,7 +149,7 @@ class TestCreateTokenHoldersCollection:
         ):
             list_id2 = str(uuid.uuid4())
             req_param = {"list_id": list_id2, "block_number": 100}
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(token_address=token_address),
                 json=req_param,
                 headers={"issuer-address": issuer_address},
@@ -171,7 +171,7 @@ class TestCreateTokenHoldersCollection:
     # 422: Validation Error
     # List id in request body is empty.
     @pytest.mark.asyncio
-    async def test_error_1(self, client, db):
+    async def test_error_1(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -179,7 +179,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -191,7 +191,7 @@ class TestCreateTokenHoldersCollection:
 
         # request target API
         req_param = {"block_number": 100}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
             headers={"issuer-address": issuer_address},
@@ -215,7 +215,7 @@ class TestCreateTokenHoldersCollection:
     # 404: Not Found Error
     # Invalid contract address
     @pytest.mark.asyncio
-    async def test_error_2(self, client, db):
+    async def test_error_2(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -223,7 +223,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -236,7 +236,7 @@ class TestCreateTokenHoldersCollection:
         # request target API
         list_id = str(uuid.uuid4())
         req_param = {"block_number": 100, "list_id": list_id}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address="0xABCdeF123456789"),
             json=req_param,
             headers={"issuer-address": issuer_address},
@@ -253,7 +253,7 @@ class TestCreateTokenHoldersCollection:
     # 422: Invalid Parameter Error
     # "list_id" is not UUIDv4.
     @pytest.mark.asyncio
-    async def test_error_3(self, client, db):
+    async def test_error_3(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -261,7 +261,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -274,7 +274,7 @@ class TestCreateTokenHoldersCollection:
         # request target API
         list_id = "some_id"
         req_param = {"block_number": 100, "list_id": list_id}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
             headers={"issuer-address": issuer_address},
@@ -298,7 +298,8 @@ class TestCreateTokenHoldersCollection:
     # Error_4
     # 400: Invalid Parameter Error
     # Block number is future one or negative.
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -306,7 +307,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -326,7 +327,7 @@ class TestCreateTokenHoldersCollection:
         ):
             list_id = str(uuid.uuid4())
             req_param = {"block_number": 101, "list_id": list_id}
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(token_address=token_address),
                 json=req_param,
                 headers={"issuer-address": issuer_address},
@@ -342,7 +343,8 @@ class TestCreateTokenHoldersCollection:
     # Error_5
     # 400: Invalid Parameter Error
     # Duplicate list_id is posted.
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -350,7 +352,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token1 = Token()
-        _token1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token1.type = TokenType.IBET_STRAIGHT_BOND
         _token1.tx_hash = ""
         _token1.issuer_address = issuer_address
         _token1.token_address = token_address1
@@ -370,7 +372,7 @@ class TestCreateTokenHoldersCollection:
         ):
             list_id = str(uuid.uuid4())
             req_param = {"block_number": 100, "list_id": list_id}
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(token_address=token_address1),
                 json=req_param,
                 headers={"issuer-address": issuer_address},
@@ -386,7 +388,7 @@ class TestCreateTokenHoldersCollection:
         # prepare data
         token_address2 = "0x000000000987654321fEdcba0987654321FedCBA"
         _token2 = Token()
-        _token2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token2.type = TokenType.IBET_STRAIGHT_BOND
         _token2.tx_hash = ""
         _token2.issuer_address = issuer_address
         _token2.token_address = token_address2
@@ -401,7 +403,7 @@ class TestCreateTokenHoldersCollection:
             "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
         ):
             req_param = {"block_number": 100, "list_id": list_id}
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(token_address=token_address2),
                 json=req_param,
                 headers={"issuer-address": issuer_address},
@@ -418,7 +420,7 @@ class TestCreateTokenHoldersCollection:
     # 400: Invalid Parameter Error
     # Not listed token
     @pytest.mark.asyncio
-    async def test_error_6(self, client, db):
+    async def test_error_6(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -426,7 +428,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -441,7 +443,7 @@ class TestCreateTokenHoldersCollection:
 
         # request target API
         req_param = {"list_id": list_id, "block_number": 100}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
             headers={"issuer-address": issuer_address},
@@ -458,7 +460,7 @@ class TestCreateTokenHoldersCollection:
     # 422: Validation Error
     # Issuer-address in request header is not set.
     @pytest.mark.asyncio
-    async def test_error_7(self, client, db):
+    async def test_error_7(self, async_client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -466,7 +468,7 @@ class TestCreateTokenHoldersCollection:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -480,7 +482,7 @@ class TestCreateTokenHoldersCollection:
 
         # request target API
         req_param = {"block_number": 100, "list_id": list_id}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
         )

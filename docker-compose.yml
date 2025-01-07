@@ -18,7 +18,7 @@ services:
       context: ./
       dockerfile: ./tests/Dockerfile_unittest
     environment:
-      - TEST_DATABASE_URL=postgresql+psycopg://apluser:apluserpass@postgres/apldb
+      - TEST_DATABASE_URL=postgresql://apluser:apluserpass@postgres/apldb
       - WEB3_HTTP_PROVIDER=http://quorum:8545
       - RESPONSE_VALIDATION_MODE=1
       - BC_EXPLORER_ENABLED=1

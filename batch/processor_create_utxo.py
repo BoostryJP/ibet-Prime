@@ -25,7 +25,7 @@ from typing import Sequence
 
 import uvloop
 from sqlalchemy import and_, create_engine, select
-from sqlalchemy.exc import DataError, SQLAlchemyError
+from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import AsyncContract
 
@@ -114,7 +114,7 @@ class Processor:
                                     db=db_session, token_address=token_contract.address
                                 )
                                 await db_session.flush()
-                        except DataError:
+                        except DBAPIError:
                             LOG.error(
                                 f"Invalid record detected. Ledger creation request has been discarded and not saved: token_address={token_contract.address}"
                             )

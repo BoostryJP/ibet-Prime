@@ -301,7 +301,7 @@ class Processor:
         token_address: str,
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = NotificationType.SCHEDULE_EVENT_ERROR

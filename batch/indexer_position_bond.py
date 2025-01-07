@@ -434,7 +434,7 @@ class Processor:
                             db_session=db_session,
                             issuer_address=issuer_address,
                             token_address=token.address,
-                            token_type=TokenType.IBET_STRAIGHT_BOND.value,
+                            token_type=TokenType.IBET_STRAIGHT_BOND,
                             account_address=account_address,
                             lock_address=lock_address,
                             value=value,
@@ -544,7 +544,7 @@ class Processor:
                             db_session=db_session,
                             issuer_address=issuer_address,
                             token_address=token.address,
-                            token_type=TokenType.IBET_STRAIGHT_BOND.value,
+                            token_type=TokenType.IBET_STRAIGHT_BOND,
                             account_address=account_address,
                             lock_address=lock_address,
                             recipient_address=recipient_address,
@@ -1150,7 +1150,7 @@ class Processor:
         lock.account_address = account_address
         lock.value = value
         lock.data = data
-        lock.block_timestamp = block_timestamp
+        lock.block_timestamp = block_timestamp.replace(tzinfo=None)
         db_session.add(lock)
 
     @staticmethod
@@ -1195,7 +1195,7 @@ class Processor:
         unlock.recipient_address = recipient_address
         unlock.value = value
         unlock.data = data
-        unlock.block_timestamp = block_timestamp
+        unlock.block_timestamp = block_timestamp.replace(tzinfo=None)
         db_session.add(unlock)
 
     @staticmethod
@@ -1320,7 +1320,7 @@ class Processor:
             data = {}
 
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 0  # Low
         notification.type = NotificationType.LOCK_INFO
@@ -1353,7 +1353,7 @@ class Processor:
             data = {}
 
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 0  # Low
         notification.type = NotificationType.UNLOCK_INFO
