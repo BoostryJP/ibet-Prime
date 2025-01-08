@@ -130,7 +130,7 @@ async def async_db_engine():
     await batch_async_engine.dispose()
 
 
-@pytest_asyncio.fixture(scope="function", loop_scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def async_db(async_db_engine):
     # Create DB session
     _db = AsyncSessionLocal()

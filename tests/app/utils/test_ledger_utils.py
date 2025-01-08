@@ -22,7 +22,7 @@ from datetime import datetime
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
-from sqlalchemy.exc import DataError
+from sqlalchemy.exc import DBAPIError
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -1176,7 +1176,7 @@ class TestRequestLedgerCreation:
         # Execute
         async with async_db.begin_nested():
             await ledger_utils.request_ledger_creation(async_db, token_address_1)
-            with pytest.raises(DataError):
+            with pytest.raises(DBAPIError):
                 await async_db.commit()
 
         # Assertion
