@@ -364,7 +364,7 @@ class Processor:
         arguments: dict,
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = notice_type

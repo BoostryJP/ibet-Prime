@@ -294,7 +294,7 @@ async def issue_bond_token(
         _update_token = UpdateToken()
         _update_token.token_address = contract_address
         _update_token.issuer_address = issuer_address
-        _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token.type = TokenType.IBET_STRAIGHT_BOND
         _update_token.arguments = token_dict
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
@@ -340,7 +340,7 @@ async def issue_bond_token(
 
     # Register token data
     _token = Token()
-    _token.type = TokenType.IBET_STRAIGHT_BOND.value
+    _token.type = TokenType.IBET_STRAIGHT_BOND
     _token.tx_hash = tx_hash
     _token.issuer_address = issuer_address
     _token.token_address = contract_address
@@ -353,10 +353,10 @@ async def issue_bond_token(
     operation_log = TokenUpdateOperationLog()
     operation_log.token_address = contract_address
     operation_log.issuer_address = issuer_address
-    operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
+    operation_log.type = TokenType.IBET_STRAIGHT_BOND
     operation_log.arguments = token.model_dump()
     operation_log.original_contents = None
-    operation_log.operation_category = TokenUpdateOperationCategory.ISSUE.value
+    operation_log.operation_category = TokenUpdateOperationCategory.ISSUE
     db.add(operation_log)
 
     await db.commit()
@@ -572,10 +572,10 @@ async def update_bond_token(
     operation_log = TokenUpdateOperationLog()
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
-    operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
+    operation_log.type = TokenType.IBET_STRAIGHT_BOND
     operation_log.arguments = update_data.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
-    operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
+    operation_log.operation_category = TokenUpdateOperationCategory.UPDATE
     db.add(operation_log)
 
     await db.commit()
@@ -620,7 +620,7 @@ async def list_bond_operation_log_history(
         )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            >= local_tz.localize(_created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if request_query.created_to:
         _created_to = datetime.strptime(
@@ -628,7 +628,7 @@ async def list_bond_operation_log_history(
         )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            <= local_tz.localize(_created_to).astimezone(utc_tz)
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
@@ -972,15 +972,15 @@ async def issue_additional_bonds_in_batch(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Generate upload_id
-    upload_id = uuid.uuid4()
+    upload_id = str(uuid.uuid4())
 
     # Add batch data
     _batch_upload = BatchIssueRedeemUpload()
     _batch_upload.upload_id = upload_id
     _batch_upload.issuer_address = issuer_address
-    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND
     _batch_upload.token_address = token_address
-    _batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE
     _batch_upload.processed = False
     db.add(_batch_upload)
 
@@ -1385,15 +1385,15 @@ async def redeem_bonds_in_batch(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Generate upload_id
-    upload_id = uuid.uuid4()
+    upload_id = str(uuid.uuid4())
 
     # Add batch data
     _batch_upload = BatchIssueRedeemUpload()
     _batch_upload.upload_id = upload_id
     _batch_upload.issuer_address = issuer_address
-    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND
     _batch_upload.token_address = token_address
-    _batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM
     _batch_upload.processed = False
     db.add(_batch_upload)
 
@@ -1548,7 +1548,7 @@ async def list_all_scheduled_bond_token_update_events(
             {
                 "scheduled_event_id": _token_event.event_id,
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "scheduled_datetime": scheduled_datetime_utc.astimezone(
                     local_tz
                 ).isoformat(),
@@ -1653,8 +1653,10 @@ async def schedule_bond_token_update_event(
     _scheduled_event.event_id = str(uuid.uuid4())
     _scheduled_event.issuer_address = issuer_address
     _scheduled_event.token_address = token_address
-    _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-    _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
+    _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND
+    _scheduled_event.scheduled_datetime = event_data.scheduled_datetime.astimezone(
+        UTC
+    ).replace(tzinfo=None)
     _scheduled_event.event_type = event_data.event_type
     _scheduled_event.data = event_data.data.model_dump()
     _scheduled_event.status = 0
@@ -1758,8 +1760,10 @@ async def schedule_bond_token_update_events_in_batch(
         _scheduled_event.event_id = str(uuid.uuid4())
         _scheduled_event.issuer_address = issuer_address
         _scheduled_event.token_address = token_address
-        _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
+        _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        _scheduled_event.scheduled_datetime = event_data.scheduled_datetime.astimezone(
+            UTC
+        ).replace(tzinfo=None)
         _scheduled_event.event_type = event_data.event_type
         _scheduled_event.data = event_data.data.model_dump()
         _scheduled_event.status = 0
@@ -1827,7 +1831,7 @@ async def retrieve_scheduled_bond_token_update_event(
         {
             "scheduled_event_id": _token_event.event_id,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "scheduled_datetime": scheduled_datetime_utc.astimezone(
                 local_tz
             ).isoformat(),
@@ -1897,7 +1901,7 @@ async def delete_scheduled_bond_token_update_event(
     rtn = {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
-        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+        "token_type": TokenType.IBET_STRAIGHT_BOND,
         "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
@@ -3206,12 +3210,16 @@ async def list_bond_token_transfer_history(
     if query.block_timestamp_from is not None:
         stmt = stmt.where(
             IDXTransfer.block_timestamp
-            >= local_tz.localize(query.block_timestamp_from).astimezone(UTC)
+            >= local_tz.localize(query.block_timestamp_from)
+            .astimezone(UTC)
+            .replace(tzinfo=None)
         )
     if query.block_timestamp_to is not None:
         stmt = stmt.where(
             IDXTransfer.block_timestamp
-            <= local_tz.localize(query.block_timestamp_to).astimezone(UTC)
+            <= local_tz.localize(query.block_timestamp_to)
+            .astimezone(UTC)
+            .replace(tzinfo=None)
         )
     if query.from_address is not None:
         stmt = stmt.where(IDXTransfer.from_address == query.from_address)
@@ -4276,13 +4284,13 @@ async def bulk_transfer_bond_token_ownership(
         )
 
     # Generate upload_id
-    upload_id = uuid.uuid4()
+    upload_id = str(uuid.uuid4())
 
     # Add bulk transfer upload record
     _bulk_transfer_upload = BulkTransferUpload()
     _bulk_transfer_upload.upload_id = upload_id
     _bulk_transfer_upload.issuer_address = issuer_address
-    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
     _bulk_transfer_upload.token_address = token_address
     _bulk_transfer_upload.status = 0
     db.add(_bulk_transfer_upload)
@@ -4293,7 +4301,7 @@ async def bulk_transfer_bond_token_ownership(
         _bulk_transfer.issuer_address = issuer_address
         _bulk_transfer.upload_id = upload_id
         _bulk_transfer.token_address = _transfer.token_address
-        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
         _bulk_transfer.from_address = _transfer.from_address
         _bulk_transfer.to_address = _transfer.to_address
         _bulk_transfer.amount = _transfer.amount

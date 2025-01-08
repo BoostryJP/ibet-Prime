@@ -21,7 +21,8 @@ import pytest
 import pytest_asyncio
 from eth_keyfile import decode_keyfile_json
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
+from pytest_asyncio import is_async_test
 from sqlalchemy import text
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -30,11 +31,14 @@ from web3.types import RPCEndpoint
 from app.database import (
     AsyncSessionLocal,
     SessionLocal,
+    async_engine,
+    batch_async_engine,
     db_async_session,
     db_session,
     engine,
 )
 from app.main import app
+from app.model.db import Base
 from app.utils.contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
@@ -43,21 +47,46 @@ web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
-@pytest_asyncio.fixture(scope="session")
-async def async_client() -> AsyncClient:
-    async_client = AsyncClient(app=app, base_url="http://localhost")
-    async with async_client as s:
-        yield s
+def pytest_collection_modifyitems(items):
+    pytest_asyncio_tests = (item for item in items if is_async_test(item))
+    session_scope_marker = pytest.mark.asyncio(loop_scope="session")
+    for async_test in pytest_asyncio_tests:
+        async_test.add_marker(session_scope_marker, append=False)
 
 
+#####################################################
+# Test Client
+#####################################################
 @pytest.fixture(scope="session")
 def client() -> TestClient:
     client = TestClient(app)
     return client
 
 
-@pytest.fixture(scope="function")
-def db():
+@pytest_asyncio.fixture(scope="session")
+async def async_client() -> AsyncClient:
+    async_client = AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://localhost"
+    )
+    async with async_client as s:
+        yield s
+
+
+#####################################################
+# DB
+#####################################################
+@pytest_asyncio.fixture(scope="function")
+async def db_engine():
+    Base.metadata.create_all(engine)
+    yield engine
+
+    engine.dispose()
+    await async_engine.dispose()
+    await batch_async_engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="function")
+def db(db_engine):
     # Create DB session
     db = SessionLocal()
 
@@ -68,10 +97,6 @@ def db():
     app.dependency_overrides[db_session] = override_inject_db_session
 
     # Create DB tables
-    from app.model.db import Base
-
-    Base.metadata.create_all(engine)
-
     yield db
 
     # Remove DB tables
@@ -94,7 +119,19 @@ def db():
 
 
 @pytest_asyncio.fixture(scope="function")
-async def async_db():
+async def async_db_engine():
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield async_engine
+
+    engine.dispose()
+    await async_engine.dispose()
+    await batch_async_engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def async_db(async_db_engine):
     # Create DB session
     _db = AsyncSessionLocal()
 
@@ -104,16 +141,11 @@ async def async_db():
     # Replace target API's dependency DB session.
     app.dependency_overrides[db_async_session] = override_inject_db_session
 
-    # Create DB tables
-    from app.model.db import Base
-
-    Base.metadata.create_all(engine)
-
     async with _db as session:
-        await session.begin()
-
+        # Create DB tables
         yield session
 
+        # Remove DB tables
         await session.rollback()
         await session.begin()
         for table in Base.metadata.sorted_tables:
@@ -136,6 +168,9 @@ async def async_db():
         app.dependency_overrides[db_async_session] = db_async_session
 
 
+#####################################################
+# Blockchain & Smart Contract
+#####################################################
 @pytest.fixture(scope="function", autouse=True)
 def block_number(request):
     # save blockchain state before function starts

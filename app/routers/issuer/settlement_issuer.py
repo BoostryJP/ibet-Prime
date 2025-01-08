@@ -126,16 +126,16 @@ async def list_all_dvp_deliveries(
     if request_query.create_blocktimestamp_from is not None:
         stmt = stmt.where(
             IDXDelivery.create_blocktimestamp
-            >= local_tz.localize(request_query.create_blocktimestamp_from).astimezone(
-                tz=UTC
-            )
+            >= local_tz.localize(request_query.create_blocktimestamp_from)
+            .astimezone(tz=UTC)
+            .replace(tzinfo=None)
         )
     if request_query.create_blocktimestamp_to is not None:
         stmt = stmt.where(
             IDXDelivery.create_blocktimestamp
-            <= local_tz.localize(request_query.create_blocktimestamp_to).astimezone(
-                tz=UTC
-            )
+            <= local_tz.localize(request_query.create_blocktimestamp_to)
+            .astimezone(tz=UTC)
+            .replace(tzinfo=None)
         )
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))

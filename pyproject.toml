@@ -30,6 +30,7 @@ dependencies = [
     "memray<2.0.0,>=1.14.0",
     "py-spy>=0.4.0",
     "typer==0.12.3",
+    "asyncpg~=0.30.0",
 ]
 
 [tool.uv]
@@ -42,7 +43,7 @@ dev-dependencies = [
     "textual-dev<2.0.0,>=1.2.1",
     "pytest-alembic<1.0.0,>=0.10.7",
     "pytest-freezer<1.0.0,>=0.4.8",
-    "pytest-asyncio==0.23.8",
+    "pytest-asyncio<0.24.0,>=0.23.0",
     "pytest-aiohttp<2.0.0,>=1.0.5",
     "ruamel-yaml<1.0.0,>=0.18.6",
     "pytest-memray<2.0.0,>=1.6.0",
@@ -88,6 +89,7 @@ exclude = ["migrations/*"]
 combine-as-imports = true
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 addopts = "-m 'not alembic'"
 markers = [
     "alembic: tests for alembic",

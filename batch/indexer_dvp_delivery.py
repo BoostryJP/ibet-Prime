@@ -671,7 +671,7 @@ class Processor:
                 delivery.settlement_service_type = settlement_service_type
                 delivery.create_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 delivery.create_transaction_hash = transaction_hash
                 delivery.confirmed = False
                 delivery.valid = True
@@ -680,7 +680,7 @@ class Processor:
             if delivery is not None:
                 delivery.cancel_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 delivery.cancel_transaction_hash = transaction_hash
                 delivery.valid = False
                 delivery.status = DeliveryStatus.DELIVERY_CANCELED
@@ -706,7 +706,7 @@ class Processor:
             if delivery is not None:
                 delivery.confirm_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 delivery.confirm_transaction_hash = transaction_hash
                 delivery.confirmed = True
                 delivery.status = DeliveryStatus.DELIVERY_CONFIRMED
@@ -714,7 +714,7 @@ class Processor:
             if delivery is not None:
                 delivery.finish_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 delivery.finish_transaction_hash = transaction_hash
                 delivery.valid = False
                 delivery.status = DeliveryStatus.DELIVERY_FINISHED
@@ -740,7 +740,7 @@ class Processor:
             if delivery is not None:
                 delivery.abort_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 delivery.abort_transaction_hash = transaction_hash
                 delivery.valid = False
                 delivery.status = DeliveryStatus.DELIVERY_ABORTED
@@ -799,7 +799,7 @@ class Processor:
         ],
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 0  # Low
         notification.type = NotificationType.DVP_DELIVERY_INFO

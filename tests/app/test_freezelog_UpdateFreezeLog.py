@@ -39,7 +39,7 @@ class TestUpdateFreezeLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, client, db, freeze_log_contract):
+    async def test_normal_1(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -59,7 +59,7 @@ class TestUpdateFreezeLog:
             freeze_log_contract.address,
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -70,7 +70,7 @@ class TestUpdateFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(log_index),
                 json={
                     "account_address": user_address_1,
@@ -92,7 +92,7 @@ class TestUpdateFreezeLog:
     # <Normal_2>
     # E2EE_REQUEST_ENABLED = False
     @pytest.mark.asyncio
-    async def test_normal_2(self, client, db, freeze_log_contract):
+    async def test_normal_2(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -122,7 +122,7 @@ class TestUpdateFreezeLog:
             ),
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -133,7 +133,7 @@ class TestUpdateFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(log_index),
                 json={
                     "account_address": user_address_1,
@@ -159,7 +159,8 @@ class TestUpdateFreezeLog:
     # <Error_1_1>
     # Missing required fields
     # -> RequestValidationError
-    def test_error_1_1(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -179,7 +180,7 @@ class TestUpdateFreezeLog:
             freeze_log_contract.address,
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -190,7 +191,7 @@ class TestUpdateFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(log_index),
                 json={},
             )
@@ -224,7 +225,8 @@ class TestUpdateFreezeLog:
     # <Error_1_2>
     # Invalid ethereum address: account_address
     # -> RequestValidationError
-    def test_error_1_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -244,7 +246,7 @@ class TestUpdateFreezeLog:
             freeze_log_contract.address,
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -255,7 +257,7 @@ class TestUpdateFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(log_index),
                 json={
                     "account_address": "invalid address",  # invalid ethereum address
@@ -282,7 +284,8 @@ class TestUpdateFreezeLog:
     # <Error_1_3>
     # Password is not encrypted
     # -> RequestValidationError
-    def test_error_1_3(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -302,7 +305,7 @@ class TestUpdateFreezeLog:
             freeze_log_contract.address,
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -313,7 +316,7 @@ class TestUpdateFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(log_index),
                 json={
                     "account_address": user_address_1,
@@ -340,7 +343,8 @@ class TestUpdateFreezeLog:
     # <Error_2>
     # Log account is not exists
     # -> NotFound
-    def test_error_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         password = "password"
@@ -350,7 +354,7 @@ class TestUpdateFreezeLog:
             freeze_log_contract.address,
         ):
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(0),
                 json={
                     "account_address": user_address_1,
@@ -369,7 +373,8 @@ class TestUpdateFreezeLog:
     # <Error_3>
     # Password mismatch
     # -> InvalidParameterError
-    def test_error_3(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -389,7 +394,7 @@ class TestUpdateFreezeLog:
             freeze_log_contract.address,
         ):
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(0),
                 json={
                     "account_address": user_address_1,
@@ -407,7 +412,8 @@ class TestUpdateFreezeLog:
 
     # <Error_4>
     # SendTransactionError
-    def test_error_4(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -433,7 +439,7 @@ class TestUpdateFreezeLog:
             ),
         ):
             # Update log
-            resp = client.post(
+            resp = await async_client.post(
                 self.update_log_url.format(0),
                 json={
                     "account_address": user_address_1,
