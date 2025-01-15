@@ -34,10 +34,70 @@ class IbetStraightBondContractVersion(StrEnum):
     V_24_09 = "24_09"
 
 
+class IbetStraightBond(BaseModel):
+    """IbetStraightBond schema"""
+
+    issuer_address: str
+    token_address: str
+    name: str
+    symbol: str
+    total_supply: int
+    face_value: int
+    face_value_currency: str
+    redemption_date: str
+    redemption_value: int
+    redemption_value_currency: str
+    return_date: str
+    return_amount: str
+    purpose: str
+    interest_rate: float
+    interest_payment_date: list[str]
+    interest_payment_currency: str
+    base_fx_rate: float
+    transferable: bool
+    is_redeemed: bool
+    status: bool
+    is_offering: bool
+    tradable_exchange_contract_address: str
+    personal_info_contract_address: str
+    require_personal_info_registered: bool
+    contact_information: str
+    privacy_policy: str
+    transfer_approval_required: bool
+    memo: str
+
+
 class IbetShareContractVersion(StrEnum):
     V_22_12 = "22_12"
     V_24_06 = "24_06"
     V_24_09 = "24_09"
+
+
+class IbetShare(BaseModel):
+    """IbetShare schema"""
+
+    issuer_address: str
+    token_address: str
+    name: str
+    symbol: str
+    issue_price: int
+    principal_value: int
+    total_supply: int
+    dividends: float
+    dividend_record_date: str
+    dividend_payment_date: str
+    cancellation_date: str
+    transferable: bool
+    transfer_approval_required: bool
+    status: bool
+    is_offering: bool
+    tradable_exchange_contract_address: str
+    personal_info_contract_address: str
+    require_personal_info_registered: bool
+    contact_information: str
+    privacy_policy: str
+    is_canceled: bool
+    memo: str
 
 
 MMDD_constr = Annotated[

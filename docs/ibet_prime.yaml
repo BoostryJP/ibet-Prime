@@ -4848,13 +4848,48 @@ paths:
           schema:
             type: string
             title: Account Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: include_former_position
           in: query
           required: false
           schema:
             type: boolean
+            description: Whether to include positions that were held in the past but
+              currently have a zero balance.
             default: false
             title: Include Former Position
+          description: Whether to include positions that were held in the past but
+            currently have a zero balance.
+        - name: include_token_attributes
+          in: query
+          required: false
+          schema:
+            type: boolean
+            description: Whether to include token attribute information in the response.
+            default: false
+            title: Include Token Attributes
+          description: Whether to include token attribute information in the response.
         - name: token_type
           in: query
           required: false
@@ -4862,23 +4897,9 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/TokenType'
               - type: 'null'
+            description: Token type
             title: Token Type
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Offset
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Limit
+          description: Token type
         - name: issuer-address
           in: header
           required: false
@@ -4914,6 +4935,28 @@ paths:
           schema:
             type: string
             title: Account Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: token_type
           in: query
           required: false
@@ -4921,23 +4964,9 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/TokenType'
               - type: 'null'
+            description: Token type
             title: Token Type
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Offset
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Limit
+          description: Token type
         - name: issuer-address
           in: header
           required: false
@@ -12175,6 +12204,100 @@ components:
         - holders
       title: HoldersResponse
       description: Holders schema (Response)
+    IbetShare:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+        token_address:
+          type: string
+          title: Token Address
+        name:
+          type: string
+          title: Name
+        symbol:
+          type: string
+          title: Symbol
+        issue_price:
+          type: integer
+          title: Issue Price
+        principal_value:
+          type: integer
+          title: Principal Value
+        total_supply:
+          type: integer
+          title: Total Supply
+        dividends:
+          type: number
+          title: Dividends
+        dividend_record_date:
+          type: string
+          title: Dividend Record Date
+        dividend_payment_date:
+          type: string
+          title: Dividend Payment Date
+        cancellation_date:
+          type: string
+          title: Cancellation Date
+        transferable:
+          type: boolean
+          title: Transferable
+        transfer_approval_required:
+          type: boolean
+          title: Transfer Approval Required
+        status:
+          type: boolean
+          title: Status
+        is_offering:
+          type: boolean
+          title: Is Offering
+        tradable_exchange_contract_address:
+          type: string
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          type: string
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          type: boolean
+          title: Require Personal Info Registered
+        contact_information:
+          type: string
+          title: Contact Information
+        privacy_policy:
+          type: string
+          title: Privacy Policy
+        is_canceled:
+          type: boolean
+          title: Is Canceled
+        memo:
+          type: string
+          title: Memo
+      type: object
+      required:
+        - issuer_address
+        - token_address
+        - name
+        - symbol
+        - issue_price
+        - principal_value
+        - total_supply
+        - dividends
+        - dividend_record_date
+        - dividend_payment_date
+        - cancellation_date
+        - transferable
+        - transfer_approval_required
+        - status
+        - is_offering
+        - tradable_exchange_contract_address
+        - personal_info_contract_address
+        - require_personal_info_registered
+        - contact_information
+        - privacy_policy
+        - is_canceled
+        - memo
+      title: IbetShare
+      description: IbetShare schema
     IbetShareAdditionalIssue:
       properties:
         account_address:
@@ -12408,18 +12531,18 @@ components:
         privacy_policy:
           type: string
           title: Privacy Policy
-        issue_datetime:
-          type: string
-          title: Issue Datetime
-        token_status:
-          type: integer
-          title: Token Status
         is_canceled:
           type: boolean
           title: Is Canceled
         memo:
           type: string
           title: Memo
+        issue_datetime:
+          type: string
+          title: Issue Datetime
+        token_status:
+          type: integer
+          title: Token Status
         contract_version:
           $ref: '#/components/schemas/IbetShareContractVersion'
       type: object
@@ -12444,10 +12567,10 @@ components:
         - require_personal_info_registered
         - contact_information
         - privacy_policy
-        - issue_datetime
-        - token_status
         - is_canceled
         - memo
+        - issue_datetime
+        - token_status
         - contract_version
       title: IbetShareResponse
       description: ibet Share schema (Response)
@@ -12593,6 +12716,126 @@ components:
       type: object
       title: IbetShareUpdate
       description: ibet Share schema (Update)
+    IbetStraightBond:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+        token_address:
+          type: string
+          title: Token Address
+        name:
+          type: string
+          title: Name
+        symbol:
+          type: string
+          title: Symbol
+        total_supply:
+          type: integer
+          title: Total Supply
+        face_value:
+          type: integer
+          title: Face Value
+        face_value_currency:
+          type: string
+          title: Face Value Currency
+        redemption_date:
+          type: string
+          title: Redemption Date
+        redemption_value:
+          type: integer
+          title: Redemption Value
+        redemption_value_currency:
+          type: string
+          title: Redemption Value Currency
+        return_date:
+          type: string
+          title: Return Date
+        return_amount:
+          type: string
+          title: Return Amount
+        purpose:
+          type: string
+          title: Purpose
+        interest_rate:
+          type: number
+          title: Interest Rate
+        interest_payment_date:
+          items:
+            type: string
+          type: array
+          title: Interest Payment Date
+        interest_payment_currency:
+          type: string
+          title: Interest Payment Currency
+        base_fx_rate:
+          type: number
+          title: Base Fx Rate
+        transferable:
+          type: boolean
+          title: Transferable
+        is_redeemed:
+          type: boolean
+          title: Is Redeemed
+        status:
+          type: boolean
+          title: Status
+        is_offering:
+          type: boolean
+          title: Is Offering
+        tradable_exchange_contract_address:
+          type: string
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          type: string
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          type: boolean
+          title: Require Personal Info Registered
+        contact_information:
+          type: string
+          title: Contact Information
+        privacy_policy:
+          type: string
+          title: Privacy Policy
+        transfer_approval_required:
+          type: boolean
+          title: Transfer Approval Required
+        memo:
+          type: string
+          title: Memo
+      type: object
+      required:
+        - issuer_address
+        - token_address
+        - name
+        - symbol
+        - total_supply
+        - face_value
+        - face_value_currency
+        - redemption_date
+        - redemption_value
+        - redemption_value_currency
+        - return_date
+        - return_amount
+        - purpose
+        - interest_rate
+        - interest_payment_date
+        - interest_payment_currency
+        - base_fx_rate
+        - transferable
+        - is_redeemed
+        - status
+        - is_offering
+        - tradable_exchange_contract_address
+        - personal_info_contract_address
+        - require_personal_info_registered
+        - contact_information
+        - privacy_policy
+        - transfer_approval_required
+        - memo
+      title: IbetStraightBond
+      description: IbetStraightBond schema
     IbetStraightBondAdditionalIssue:
       properties:
         account_address:
@@ -12888,18 +13131,18 @@ components:
         privacy_policy:
           type: string
           title: Privacy Policy
-        issue_datetime:
-          type: string
-          title: Issue Datetime
-        token_status:
-          type: integer
-          title: Token Status
         transfer_approval_required:
           type: boolean
           title: Transfer Approval Required
         memo:
           type: string
           title: Memo
+        issue_datetime:
+          type: string
+          title: Issue Datetime
+        token_status:
+          type: integer
+          title: Token Status
         contract_version:
           $ref: '#/components/schemas/IbetStraightBondContractVersion'
       type: object
@@ -12930,10 +13173,10 @@ components:
         - require_personal_info_registered
         - contact_information
         - privacy_policy
-        - issue_datetime
-        - token_status
         - transfer_approval_required
         - memo
+        - issue_datetime
+        - token_status
         - contract_version
       title: IbetStraightBondResponse
       description: ibet Straight Bond schema (Response)
@@ -14377,6 +14620,13 @@ components:
           type: string
           title: Token Name
           description: Token name
+        token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+            - type: 'null'
+          title: Token Attributes
+          description: Token attributes
         balance:
           type: integer
           title: Balance
@@ -14403,6 +14653,7 @@ components:
         - token_address
         - token_type
         - token_name
+        - token_attributes
         - balance
         - exchange_balance
         - exchange_commitment
