@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import UTC, datetime, timedelta
 from unittest import mock
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
@@ -25,11 +24,9 @@ from app.model.db import (
     IDXLockedPosition,
     IDXPosition,
     Token,
-    TokenCache,
     TokenType,
     TokenVersion,
 )
-from config import TOKEN_CACHE_TTL
 
 
 class TestListAllPositions:
@@ -1194,7 +1191,8 @@ class TestListAllPositions:
     # <Normal_7_1>
     # include_token_attributes: True
     # - IbetStraightBond
-    def test_normal_7_1(self, client, db):
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_7_1(self, mock_IbetStraightBondContract_get, client, db):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
@@ -1246,7 +1244,10 @@ class TestListAllPositions:
         _locked_position.value = 5
         db.add(_locked_position)
 
-        # prepare data: TokenCache
+        db.commit()
+
+        # mock
+        bond_1 = IbetStraightBondContract()
         token_attr = {
             "issuer_address": issuer_address,
             "token_address": token_address_1,
@@ -1290,16 +1291,8 @@ class TestListAllPositions:
             "memo": "memo-test",
             "is_redeemed": True,
         }
-        token_cache = TokenCache()
-        token_cache.token_address = token_address_1
-        token_cache.attributes = token_attr
-        token_cache.cached_datetime = datetime.now(UTC).replace(tzinfo=None)
-        token_cache.expiration_datetime = datetime.now(UTC).replace(
-            tzinfo=None
-        ) + timedelta(seconds=TOKEN_CACHE_TTL)
-        db.add(token_cache)
-
-        db.commit()
+        bond_1.__dict__ = token_attr
+        mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
         resp = client.get(
@@ -1335,7 +1328,8 @@ class TestListAllPositions:
     # <Normal_7_2>
     # include_token_attributes: True
     # - IbetShare
-    def test_normal_7_2(self, client, db):
+    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    def test_normal_7_2(self, mock_IbetShareContract_get, client, db):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
@@ -1387,7 +1381,10 @@ class TestListAllPositions:
         _locked_position.value = 5
         db.add(_locked_position)
 
-        # prepare data: TokenCache
+        db.commit()
+
+        # mock
+        share_1 = IbetShareContract()
         token_attr = {
             "issuer_address": issuer_address,
             "token_address": token_address_1,
@@ -1412,16 +1409,8 @@ class TestListAllPositions:
             "dividend_record_date": "99991230",
             "dividend_payment_date": "99991229",
         }
-        token_cache = TokenCache()
-        token_cache.token_address = token_address_1
-        token_cache.attributes = token_attr
-        token_cache.cached_datetime = datetime.now(UTC).replace(tzinfo=None)
-        token_cache.expiration_datetime = datetime.now(UTC).replace(
-            tzinfo=None
-        ) + timedelta(seconds=TOKEN_CACHE_TTL)
-        db.add(token_cache)
-
-        db.commit()
+        share_1.__dict__ = token_attr
+        mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
         resp = client.get(

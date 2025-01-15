@@ -154,7 +154,7 @@ async def list_all_positions(
 
     positions = []
     for _position, _locked, _token in _position_list:
-        # Get Token Name
+        # Get Token Attributes
         token_attr = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND:
             token_attr = await IbetStraightBondContract(_token.token_address).get()
@@ -636,20 +636,19 @@ async def retrieve_position(
             balance=0, exchange_balance=0, exchange_commitment=0, pending_transfer=0
         )
 
-    # Get Token Name
-    token_name = None
-    if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-        _bond = await IbetStraightBondContract(_token.token_address).get()
-        token_name = _bond.name
-    elif _token.type == TokenType.IBET_SHARE.value:
-        _share = await IbetShareContract(_token.token_address).get()
-        token_name = _share.name
+    # Get Token Attributes
+    token_attr = None
+    if _token.type == TokenType.IBET_STRAIGHT_BOND:
+        token_attr = await IbetStraightBondContract(_token.token_address).get()
+    elif _token.type == TokenType.IBET_SHARE:
+        token_attr = await IbetShareContract(_token.token_address).get()
 
     resp = {
         "issuer_address": _token.issuer_address,
         "token_address": _token.token_address,
         "token_type": _token.type,
-        "token_name": token_name,
+        "token_name": token_attr.name if token_attr is not None else None,
+        "token_attributes": token_attr.__dict__ if token_attr is not None else None,
         "balance": _position.balance,
         "exchange_balance": _position.exchange_balance,
         "exchange_commitment": _position.exchange_commitment,
