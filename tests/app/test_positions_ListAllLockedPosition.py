@@ -693,13 +693,6 @@ class TestAppRoutersLockedPositions:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"expected": "'IbetStraightBond' or 'IbetShare'"},
-                    "input": "test",
-                    "loc": ["query", "token_type"],
-                    "msg": "Input should be 'IbetStraightBond' or 'IbetShare'",
-                    "type": "enum",
-                },
-                {
                     "input": "test",
                     "loc": ["query", "offset"],
                     "msg": "Input should be a valid integer, unable to parse string "
@@ -712,6 +705,13 @@ class TestAppRoutersLockedPositions:
                     "msg": "Input should be a valid integer, unable to parse string "
                     "as an integer",
                     "type": "int_parsing",
+                },
+                {
+                    "ctx": {"expected": "'IbetStraightBond' or 'IbetShare'"},
+                    "input": "test",
+                    "loc": ["query", "token_type"],
+                    "msg": "Input should be 'IbetStraightBond' or 'IbetShare'",
+                    "type": "enum",
                 },
             ],
         }

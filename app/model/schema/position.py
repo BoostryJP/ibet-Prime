@@ -18,13 +18,20 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field, PositiveInt, RootModel
 
 from app.model import EthereumAddress
 
-from .base import BasePaginationQuery, ResultSet, SortOrder, TokenType
+from .base import (
+    BasePaginationQuery,
+    IbetShare,
+    IbetStraightBond,
+    ResultSet,
+    SortOrder,
+    TokenType,
+)
 
 
 ############################
@@ -37,6 +44,9 @@ class Position(BaseModel):
     token_address: str = Field(description="Token address")
     token_type: TokenType = Field(description="Token type")
     token_name: str = Field(description="Token name")
+    token_attributes: Optional[Union[IbetStraightBond, IbetShare]] = Field(
+        description="Token attributes"
+    )
     balance: int = Field(description="Balance")
     exchange_balance: int = Field(description="Balance on the exchange contract")
     exchange_commitment: int = Field(description="Commitment on the exchange contract")
@@ -83,6 +93,22 @@ class LockEvent(BaseModel):
 ############################
 # REQUEST
 ############################
+class ListAllPositionsQuery(BasePaginationQuery):
+    include_former_position: bool = Field(
+        False,
+        description="Whether to include positions that were held in the past but currently have a zero balance.",
+    )
+    include_token_attributes: bool = Field(
+        False,
+        description="Whether to include token attribute information in the response.",
+    )
+    token_type: Optional[TokenType] = Field(None, description="Token type")
+
+
+class ListAllLockedPositionsQuery(BasePaginationQuery):
+    token_type: Optional[TokenType] = Field(None, description="Token type")
+
+
 class ListAllLockEventsSortItem(StrEnum):
     token_address = "token_address"
     lock_address = "lock_address"
@@ -117,8 +143,6 @@ class ForceUnlockRequest(BaseModel):
 ############################
 # RESPONSE
 ############################
-
-
 class PositionResponse(RootModel[Position]):
     """Position schema (Response)"""
 

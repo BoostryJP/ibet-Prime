@@ -45,9 +45,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -91,7 +91,50 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # mock
         bond_1 = IbetStraightBondContract()
-        bond_1.name = "test_bond_1"
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "name": "test_bond_1",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
@@ -107,8 +150,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         assert resp.json() == {
             "issuer_address": issuer_address,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_name": "test_bond_1",
+            "token_attributes": token_attr,
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
@@ -130,9 +174,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -176,7 +220,31 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # mock
         share_1 = IbetShareContract()
-        share_1.name = "test_share_1"
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "name": "test_share_1",
+            "symbol": "TEST-test",
+            "total_supply": 999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": False,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "issue_price": 999997,
+            "cancellation_date": "99991231",
+            "memo": "memo_test",
+            "principal_value": 999998,
+            "is_canceled": True,
+            "dividends": 9.99,
+            "dividend_record_date": "99991230",
+            "dividend_payment_date": "99991229",
+        }
+        share_1.__dict__ = token_attr
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
@@ -192,8 +260,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         assert resp.json() == {
             "issuer_address": issuer_address,
             "token_address": token_address,
-            "token_type": TokenType.IBET_SHARE.value,
+            "token_type": TokenType.IBET_SHARE,
             "token_name": "test_share_1",
+            "token_attributes": token_attr,
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
@@ -213,9 +282,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -233,7 +302,50 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # mock
         bond_1 = IbetStraightBondContract()
-        bond_1.name = "test_bond_1"
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "name": "test_bond_1",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
@@ -248,8 +360,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         assert resp.json() == {
             "issuer_address": issuer_address,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_name": "test_bond_1",
+            "token_attributes": token_attr,
             "balance": 0,
             "exchange_balance": 0,
             "exchange_commitment": 12,
@@ -270,9 +383,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -290,7 +403,50 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # mock
         bond_1 = IbetStraightBondContract()
-        bond_1.name = "test_bond_1"
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "name": "test_bond_1",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
@@ -306,8 +462,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         assert resp.json() == {
             "issuer_address": issuer_address,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_name": "test_bond_1",
+            "token_attributes": token_attr,
             "balance": 0,
             "exchange_balance": 0,
             "exchange_commitment": 0,
@@ -327,9 +484,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -357,7 +514,50 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # mock
         bond_1 = IbetStraightBondContract()
-        bond_1.name = "test_bond_1"
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "name": "test_bond_1",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
@@ -373,8 +573,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         assert resp.json() == {
             "issuer_address": issuer_address,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_name": "test_bond_1",
+            "token_attributes": token_attr,
             "balance": 0,
             "exchange_balance": 0,
             "exchange_commitment": 0,
@@ -395,9 +596,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -415,7 +616,50 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # mock
         bond_1 = IbetStraightBondContract()
-        bond_1.name = "test_bond_1"
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "name": "test_bond_1",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
@@ -431,8 +675,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         assert resp.json() == {
             "issuer_address": issuer_address,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_name": "test_bond_1",
+            "token_attributes": token_attr,
             "balance": 5,
             "exchange_balance": 10,
             "exchange_commitment": 15,
@@ -452,9 +697,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -482,7 +727,50 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # mock
         bond_1 = IbetStraightBondContract()
-        bond_1.name = "test_bond_1"
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "name": "test_bond_1",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
@@ -498,8 +786,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         assert resp.json() == {
             "issuer_address": issuer_address,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_name": "test_bond_1",
+            "token_attributes": token_attr,
             "balance": 5,
             "exchange_balance": 10,
             "exchange_commitment": 15,
@@ -575,9 +864,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.issuer_address = (
             "0x1234567890123456789012345678900000000101"  # not target
         )
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -619,9 +908,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token = Token()
         _token.token_address = token_address
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
         db.add(_token)

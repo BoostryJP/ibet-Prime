@@ -32,7 +32,9 @@ from .base import (
     BasePaginationQuery,
     CURRENCY_str,
     EMPTY_str,
+    IbetShare,
     IbetShareContractVersion,
+    IbetStraightBond,
     IbetStraightBondContractVersion,
     MMDD_constr,
     ResultSet,
@@ -466,69 +468,19 @@ class TokenAddressResponse(BaseModel):
     token_status: int
 
 
-class IbetStraightBondResponse(BaseModel):
+class IbetStraightBondResponse(IbetStraightBond):
     """ibet Straight Bond schema (Response)"""
 
-    issuer_address: str
-    token_address: str
-    name: str
-    symbol: str
-    total_supply: int
-    face_value: int
-    face_value_currency: str
-    redemption_date: str
-    redemption_value: int
-    redemption_value_currency: str
-    return_date: str
-    return_amount: str
-    purpose: str
-    interest_rate: float
-    interest_payment_date: list[str]
-    interest_payment_currency: str
-    base_fx_rate: float
-    transferable: bool
-    is_redeemed: bool
-    status: bool
-    is_offering: bool
-    tradable_exchange_contract_address: str
-    personal_info_contract_address: str
-    require_personal_info_registered: bool
-    contact_information: str
-    privacy_policy: str
     issue_datetime: str
     token_status: int
-    transfer_approval_required: bool
-    memo: str
     contract_version: IbetStraightBondContractVersion
 
 
-class IbetShareResponse(BaseModel):
+class IbetShareResponse(IbetShare):
     """ibet Share schema (Response)"""
 
-    issuer_address: str
-    token_address: str
-    name: str
-    symbol: str
-    issue_price: int
-    principal_value: int
-    total_supply: int
-    dividends: float
-    dividend_record_date: str
-    dividend_payment_date: str
-    cancellation_date: str
-    transferable: bool
-    transfer_approval_required: bool
-    status: bool
-    is_offering: bool
-    tradable_exchange_contract_address: str
-    personal_info_contract_address: str
-    require_personal_info_registered: bool
-    contact_information: str
-    privacy_policy: str
     issue_datetime: str
     token_status: int
-    is_canceled: bool
-    memo: str
     contract_version: IbetShareContractVersion
 
 

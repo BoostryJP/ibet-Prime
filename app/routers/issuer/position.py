@@ -52,10 +52,12 @@ from app.model.db import (
 from app.model.schema import (
     ForceUnlockRequest,
     ListAllLockedPositionResponse,
+    ListAllLockedPositionsQuery,
     ListAllLockEventsQuery,
     ListAllLockEventsResponse,
     ListAllLockEventsSortItem,
     ListAllPositionResponse,
+    ListAllPositionsQuery,
     LockEventCategory,
     PositionResponse,
 )
@@ -83,12 +85,9 @@ local_tz = timezone(TZ)
 )
 async def list_all_positions(
     db: DBAsyncSession,
-    account_address: str,
-    issuer_address: Optional[str] = Header(None),
-    include_former_position: bool = False,
-    token_type: Optional[TokenType] = Query(None),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    account_address: Annotated[str, Path()],
+    request_query: Annotated[ListAllPositionsQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all positions"""
 
@@ -119,7 +118,7 @@ async def list_all_positions(
         )
     )
 
-    if not include_former_position:
+    if not request_query.include_former_position:
         stmt = stmt.where(
             or_(
                 IDXPosition.balance != 0,
@@ -138,16 +137,16 @@ async def list_all_positions(
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
-    if token_type is not None:
-        stmt = stmt.where(Token.type == token_type.value)
+    if request_query.token_type is not None:
+        stmt = stmt.where(Token.type == request_query.token_type)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
 
     _position_list: Sequence[tuple[IDXPosition, int, Token]] = (
         (await db.execute(stmt)).tuples().all()
@@ -155,20 +154,25 @@ async def list_all_positions(
 
     positions = []
     for _position, _locked, _token in _position_list:
-        # Get Token Name
-        token_name = None
-        if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _bond = await IbetStraightBondContract(_token.token_address).get()
-            token_name = _bond.name
-        elif _token.type == TokenType.IBET_SHARE.value:
-            _share = await IbetShareContract(_token.token_address).get()
-            token_name = _share.name
+        # Get Token Attributes
+        token_attr = None
+        if _token.type == TokenType.IBET_STRAIGHT_BOND:
+            token_attr = await IbetStraightBondContract(_token.token_address).get()
+        elif _token.type == TokenType.IBET_SHARE:
+            token_attr = await IbetShareContract(_token.token_address).get()
+
         positions.append(
             {
                 "issuer_address": _token.issuer_address,
                 "token_address": _token.token_address,
                 "token_type": _token.type,
-                "token_name": token_name,
+                "token_name": token_attr.name if token_attr is not None else None,
+                "token_attributes": token_attr.__dict__
+                if (
+                    request_query.include_token_attributes is True
+                    and token_attr is not None
+                )
+                else None,
                 "balance": _position.balance,
                 "exchange_balance": _position.exchange_balance,
                 "exchange_commitment": _position.exchange_commitment,
@@ -180,8 +184,8 @@ async def list_all_positions(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": request_query.offset,
+            "limit": request_query.limit,
             "total": total,
         },
         "positions": positions,
@@ -199,11 +203,9 @@ async def list_all_positions(
 )
 async def list_all_locked_position(
     db: DBAsyncSession,
-    account_address: str,
-    issuer_address: Optional[str] = Header(None),
-    token_type: Optional[TokenType] = Query(None),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    account_address: Annotated[str, Path()],
+    request_query: Annotated[ListAllLockedPositionsQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
 ):
     """List all locked position"""
 
@@ -230,16 +232,16 @@ async def list_all_locked_position(
     total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
-    if token_type is not None:
-        stmt = stmt.where(Token.type == token_type.value)
+    if request_query.token_type is not None:
+        stmt = stmt.where(Token.type == request_query.token_type)
 
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
 
     _position_list: Sequence[tuple[IDXLockedPosition, Token]] = (
         (await db.execute(stmt)).tuples().all()
@@ -269,8 +271,8 @@ async def list_all_locked_position(
     resp = {
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": request_query.offset,
+            "limit": request_query.limit,
             "total": total,
         },
         "locked_positions": positions,
@@ -287,7 +289,7 @@ async def list_all_locked_position(
 )
 async def list_account_lock_unlock_events(
     db: DBAsyncSession,
-    account_address: str,
+    account_address: Annotated[str, Path()],
     request_query: Annotated[ListAllLockEventsQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
@@ -634,20 +636,19 @@ async def retrieve_position(
             balance=0, exchange_balance=0, exchange_commitment=0, pending_transfer=0
         )
 
-    # Get Token Name
-    token_name = None
-    if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-        _bond = await IbetStraightBondContract(_token.token_address).get()
-        token_name = _bond.name
-    elif _token.type == TokenType.IBET_SHARE.value:
-        _share = await IbetShareContract(_token.token_address).get()
-        token_name = _share.name
+    # Get Token Attributes
+    token_attr = None
+    if _token.type == TokenType.IBET_STRAIGHT_BOND:
+        token_attr = await IbetStraightBondContract(_token.token_address).get()
+    elif _token.type == TokenType.IBET_SHARE:
+        token_attr = await IbetShareContract(_token.token_address).get()
 
     resp = {
         "issuer_address": _token.issuer_address,
         "token_address": _token.token_address,
         "token_type": _token.type,
-        "token_name": token_name,
+        "token_name": token_attr.name if token_attr is not None else None,
+        "token_attributes": token_attr.__dict__ if token_attr is not None else None,
         "balance": _position.balance,
         "exchange_balance": _position.exchange_balance,
         "exchange_commitment": _position.exchange_commitment,

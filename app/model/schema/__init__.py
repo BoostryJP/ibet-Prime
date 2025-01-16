@@ -118,10 +118,12 @@ from .personal_info import (
 from .position import (
     ForceUnlockRequest,
     ListAllLockedPositionResponse,
+    ListAllLockedPositionsQuery,
     ListAllLockEventsQuery,
     ListAllLockEventsResponse,
     ListAllLockEventsSortItem,
     ListAllPositionResponse,
+    ListAllPositionsQuery,
     LockEventCategory,
     PositionResponse,
 )

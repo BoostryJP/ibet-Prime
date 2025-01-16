@@ -20,7 +20,13 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType, TokenVersion
+from app.model.db import (
+    IDXLockedPosition,
+    IDXPosition,
+    Token,
+    TokenType,
+    TokenVersion,
+)
 
 
 class TestListAllPositions:
@@ -35,20 +41,22 @@ class TestListAllPositions:
     # 0 record
     def test_normal_1(self, client, db):
         account_address = "0x1234567890123456789012345678900000000000"
+        token_address = "0x1234567890123456789012345678900000000010"
+        issuer_address = "0x1234567890123456789012345678900000000100"
 
         # prepare data: Token
         _token = Token()
-        _token.token_address = "0x1234567890123456789012345678900000000010"
-        _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
-        _position.token_address = "0x1234567890123456789012345678900000000010"
+        _position.token_address = token_address
         _position.account_address = (
             "0x1234567890123456789012345678900000000001"  # not target
         )
@@ -90,9 +98,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -157,8 +165,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_1",
+                    "token_attributes": None,
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -185,9 +194,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -224,9 +233,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = token_address_2
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -263,9 +272,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = token_address_3
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -328,8 +337,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_1",
+                    "token_attributes": None,
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -339,8 +349,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": issuer_address,
                     "token_address": token_address_2,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_2",
+                    "token_attributes": None,
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -350,8 +361,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": issuer_address,
                     "token_address": token_address_3,
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": "test_share_1",
+                    "token_attributes": None,
                     "balance": 30,
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
@@ -378,9 +390,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -398,9 +410,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = token_address_2
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -428,9 +440,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = token_address_3
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -484,8 +496,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_1",
+                    "token_attributes": None,
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -495,8 +508,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": issuer_address,
                     "token_address": token_address_2,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_2",
+                    "token_attributes": None,
                     "balance": 0,
                     "exchange_balance": 0,
                     "exchange_commitment": 22,
@@ -519,9 +533,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000010"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -541,9 +555,9 @@ class TestListAllPositions:
         _token.issuer_address = (
             "0x1234567890123456789012345678900000000101"  # not target
         )
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -561,9 +575,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000012"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -608,8 +622,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
                     "token_address": "0x1234567890123456789012345678900000000010",
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_1",
+                    "token_attributes": None,
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -619,8 +634,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
                     "token_address": "0x1234567890123456789012345678900000000012",
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": "test_share_1",
+                    "token_attributes": None,
                     "balance": 30,
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
@@ -642,9 +658,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000010"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -662,9 +678,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000011"
         _token.issuer_address = "0x1234567890123456789012345678900000000101"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -682,9 +698,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000012"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -710,7 +726,7 @@ class TestListAllPositions:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value},
+            params={"token_type": TokenType.IBET_STRAIGHT_BOND},
         )
 
         # assertion
@@ -726,8 +742,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
                     "token_address": "0x1234567890123456789012345678900000000010",
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_1",
+                    "token_attributes": None,
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -737,8 +754,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000101",
                     "token_address": "0x1234567890123456789012345678900000000011",
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_2",
+                    "token_attributes": None,
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -760,9 +778,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000010"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -780,9 +798,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000011"
         _token.issuer_address = "0x1234567890123456789012345678900000000101"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -800,9 +818,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000012"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -826,7 +844,7 @@ class TestListAllPositions:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_type": TokenType.IBET_SHARE.value},
+            params={"token_type": TokenType.IBET_SHARE},
         )
 
         # assertion
@@ -842,8 +860,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
                     "token_address": "0x1234567890123456789012345678900000000012",
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": "test_share_1",
+                    "token_attributes": None,
                     "balance": 30,
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
@@ -867,9 +886,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000010"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -887,9 +906,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000011"
         _token.issuer_address = "0x1234567890123456789012345678900000000101"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -907,9 +926,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000012"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -927,9 +946,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000013"
         _token.issuer_address = "0x1234567890123456789012345678900000000101"
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -976,8 +995,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
                     "token_address": "0x1234567890123456789012345678900000000010",
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_1",
+                    "token_attributes": None,
                     "balance": 10,
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
@@ -987,8 +1007,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000101",
                     "token_address": "0x1234567890123456789012345678900000000011",
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_2",
+                    "token_attributes": None,
                     "balance": 0,
                     "exchange_balance": 0,
                     "exchange_commitment": 0,
@@ -998,8 +1019,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
                     "token_address": "0x1234567890123456789012345678900000000012",
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": "test_share_1",
+                    "token_attributes": None,
                     "balance": 30,
                     "exchange_balance": 20,
                     "exchange_commitment": 10,
@@ -1009,8 +1031,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000101",
                     "token_address": "0x1234567890123456789012345678900000000013",
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": "test_share_2",
+                    "token_attributes": None,
                     "balance": 0,
                     "exchange_balance": 0,
                     "exchange_commitment": 0,
@@ -1033,9 +1056,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000010"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -1053,9 +1076,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000011"
         _token.issuer_address = "0x1234567890123456789012345678900000000101"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -1073,9 +1096,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000012"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -1093,9 +1116,9 @@ class TestListAllPositions:
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000013"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
         db.add(_token)
 
@@ -1141,8 +1164,9 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000101",
                     "token_address": "0x1234567890123456789012345678900000000011",
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": "test_bond_2",
+                    "token_attributes": None,
                     "balance": 20,
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
@@ -1152,13 +1176,269 @@ class TestListAllPositions:
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
                     "token_address": "0x1234567890123456789012345678900000000012",
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": "test_share_1",
+                    "token_attributes": None,
                     "balance": 30,
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
                     "pending_transfer": 33,
                     "locked": 0,
+                },
+            ],
+        }
+
+    # <Normal_7_1>
+    # include_token_attributes: True
+    # - IbetStraightBond
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_7_1(self, mock_IbetStraightBondContract_get, client, db):
+        issuer_address = "0x1234567890123456789012345678900000000100"
+        account_address = "0x1234567890123456789012345678900000000000"
+        other_account_address = "0x1234567890123456789012345678911111111111"
+        token_address_1 = "0x1234567890123456789012345678900000000010"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address_1
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = token_address_1
+        _position.account_address = account_address
+        _position.balance = 10
+        _position.exchange_balance = 11
+        _position.exchange_commitment = 12
+        _position.pending_transfer = 13
+        db.add(_position)
+
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_1
+        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
+        _locked_position.account_address = other_account_address  # not to be included
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        db.commit()
+
+        # mock
+        bond_1 = IbetStraightBondContract()
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address_1,
+            "name": "テスト債券-test",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
+        mock_IbetStraightBondContract_get.side_effect = [bond_1]
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(account_address=account_address),
+            params={"include_token_attributes": True},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 1,
+            },
+            "positions": [
+                {
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "token_name": "テスト債券-test",
+                    "token_attributes": token_attr,
+                    "balance": 10,
+                    "exchange_balance": 11,
+                    "exchange_commitment": 12,
+                    "pending_transfer": 13,
+                    "locked": 10,
+                },
+            ],
+        }
+
+    # <Normal_7_2>
+    # include_token_attributes: True
+    # - IbetShare
+    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    def test_normal_7_2(self, mock_IbetShareContract_get, client, db):
+        issuer_address = "0x1234567890123456789012345678900000000100"
+        account_address = "0x1234567890123456789012345678900000000000"
+        other_account_address = "0x1234567890123456789012345678911111111111"
+        token_address_1 = "0x1234567890123456789012345678900000000010"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address_1
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = ""
+        _token.abi = {}
+        _token.version = TokenVersion.V_24_09
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = token_address_1
+        _position.account_address = account_address
+        _position.balance = 10
+        _position.exchange_balance = 11
+        _position.exchange_commitment = 12
+        _position.pending_transfer = 13
+        db.add(_position)
+
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_1
+        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
+        _locked_position.account_address = other_account_address  # not to be included
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        db.commit()
+
+        # mock
+        share_1 = IbetShareContract()
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address_1,
+            "name": "テスト株式-test",
+            "symbol": "TEST-test",
+            "total_supply": 999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": False,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "issue_price": 999997,
+            "cancellation_date": "99991231",
+            "memo": "memo_test",
+            "principal_value": 999998,
+            "is_canceled": True,
+            "dividends": 9.99,
+            "dividend_record_date": "99991230",
+            "dividend_payment_date": "99991229",
+        }
+        share_1.__dict__ = token_attr
+        mock_IbetShareContract_get.side_effect = [share_1]
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(account_address=account_address),
+            params={"include_token_attributes": True},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 1,
+            },
+            "positions": [
+                {
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_SHARE,
+                    "token_name": "テスト株式-test",
+                    "token_attributes": token_attr,
+                    "balance": 10,
+                    "exchange_balance": 11,
+                    "exchange_commitment": 12,
+                    "pending_transfer": 13,
+                    "locked": 10,
                 },
             ],
         }
@@ -1217,13 +1497,6 @@ class TestListAllPositions:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"expected": "'IbetStraightBond' or 'IbetShare'"},
-                    "input": "test",
-                    "loc": ["query", "token_type"],
-                    "msg": "Input should be 'IbetStraightBond' or 'IbetShare'",
-                    "type": "enum",
-                },
-                {
                     "input": "test",
                     "loc": ["query", "offset"],
                     "msg": "Input should be a valid integer, unable to parse string "
@@ -1236,6 +1509,13 @@ class TestListAllPositions:
                     "msg": "Input should be a valid integer, unable to parse string "
                     "as an integer",
                     "type": "int_parsing",
+                },
+                {
+                    "ctx": {"expected": "'IbetStraightBond' or 'IbetShare'"},
+                    "input": "test",
+                    "loc": ["query", "token_type"],
+                    "msg": "Input should be 'IbetStraightBond' or 'IbetShare'",
+                    "type": "enum",
                 },
             ],
         }
