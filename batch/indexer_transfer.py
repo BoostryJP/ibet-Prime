@@ -29,7 +29,6 @@ from pydantic import ValidationError
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -41,7 +40,7 @@ from app.model.db import (
     IDXTransferSourceEventType,
     Token,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
@@ -54,7 +53,7 @@ web3 = AsyncWeb3Wrapper()
 
 class Processor:
     def __init__(self):
-        self.token_list: dict[str, AsyncContract] = {}
+        self.token_list: dict[str, AsyncContractEventsView] = {}
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -151,7 +150,9 @@ class Processor:
             token_contract = web3.eth.contract(
                 address=load_required_token.token_address, abi=load_required_token.abi
             )
-            self.token_list[load_required_token.token_address] = token_contract
+            self.token_list[load_required_token.token_address] = (
+                AsyncContractEventsView(token_contract.address, token_contract.events)
+            )
 
     @staticmethod
     async def __get_idx_transfer_block_number(db_session: AsyncSession):
@@ -303,7 +304,7 @@ class Processor:
         transfer_record.from_address = from_address
         transfer_record.to_address = to_address
         transfer_record.amount = amount
-        transfer_record.source_event = source_event.value
+        transfer_record.source_event = source_event
         transfer_record.data = data
         transfer_record.message = message
         transfer_record.block_timestamp = block_timestamp

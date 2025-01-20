@@ -27,6 +27,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
 from web3.contract import AsyncContract, Contract
+from web3.contract.async_contract import AsyncContractEvents
 from web3.exceptions import (
     ABIEventNotFound,
     ABIFunctionNotFound,
@@ -288,6 +289,20 @@ class ContractUtils:
             return []
 
         return result
+
+
+class AsyncContractEventsView:
+    def __init__(self, address: str, contract_events: AsyncContractEvents) -> None:
+        self._address = address
+        self._events = contract_events
+
+    @property
+    def address(self) -> str:
+        return self._address
+
+    @property
+    def events(self) -> AsyncContractEvents:
+        return self._events
 
 
 class AsyncContractUtils:
@@ -585,7 +600,7 @@ class AsyncContractUtils:
 
     @staticmethod
     async def get_event_logs(
-        contract: AsyncContract,
+        contract: AsyncContract | AsyncContractEventsView,
         event: str,
         block_from: int = None,
         block_to: int = None,

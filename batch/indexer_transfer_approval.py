@@ -41,7 +41,7 @@ from app.model.db import (
     Token,
     TokenType,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
@@ -71,7 +71,7 @@ ibetSecurityTokenEscrow
 
 class Processor:
     def __init__(self):
-        self.token_list: dict[str, AsyncContract] = {}
+        self.token_list: dict[str, AsyncContractEventsView] = {}
         self.exchange_list: list[AsyncContract] = []
         self.token_type_map: dict[str, TokenType] = {}
 
@@ -165,7 +165,9 @@ class Processor:
             token_contract = web3.eth.contract(
                 address=load_required_token.token_address, abi=load_required_token.abi
             )
-            self.token_list[load_required_token.token_address] = token_contract
+            self.token_list[load_required_token.token_address] = (
+                AsyncContractEventsView(token_contract.address, token_contract.events)
+            )
             self.token_type_map[load_required_token.token_address] = (
                 load_required_token.type
             )
