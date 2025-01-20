@@ -27,13 +27,12 @@ import uvloop
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import UTXO, Account, Token, TokenType, UTXOBlockNumber
-from app.utils.contract_utils import AsyncContractUtils
+from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.ledger_utils import request_ledger_creation
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.utils import batch_log
@@ -60,7 +59,7 @@ web3 = AsyncWeb3Wrapper()
 
 class Processor:
     def __init__(self):
-        self.token_contract_list: list[AsyncContract] = []
+        self.token_contract_list: list[AsyncContractEventsView] = []
         self.token_type_map: dict[str, TokenType] = {}
 
     async def process(self):
@@ -151,7 +150,12 @@ class Processor:
             token_contract = AsyncContractUtils.get_contract(
                 contract_name=_token.type, contract_address=_token.token_address
             )
-            self.token_contract_list.append(token_contract)
+            self.token_contract_list.append(
+                AsyncContractEventsView(
+                    token_contract.address,
+                    token_contract.events,
+                )
+            )
             self.token_type_map[_token.token_address] = _token.type
 
     @staticmethod
@@ -177,7 +181,7 @@ class Processor:
     async def __process_transfer(
         self,
         db_session: AsyncSession,
-        token_contract: AsyncContract,
+        token_contract: AsyncContractEventsView,
         block_from: int,
         block_to: int,
     ):
@@ -333,7 +337,7 @@ class Processor:
     async def __process_issue(
         self,
         db_session: AsyncSession,
-        token_contract: AsyncContract,
+        token_contract: AsyncContractEventsView,
         block_from: int,
         block_to: int,
     ):
@@ -389,7 +393,7 @@ class Processor:
     async def __process_redeem(
         self,
         db_session: AsyncSession,
-        token_contract: AsyncContract,
+        token_contract: AsyncContractEventsView,
         block_from: int,
         block_to: int,
     ):

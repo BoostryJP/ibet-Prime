@@ -27,7 +27,6 @@ from eth_utils import to_checksum_address
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -38,7 +37,7 @@ from app.model.db import (
     IDXIssueRedeemEventType,
     Token,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL
@@ -51,7 +50,7 @@ web3 = AsyncWeb3Wrapper()
 
 class Processor:
     def __init__(self):
-        self.token_list: dict[str, AsyncContract] = {}
+        self.token_list: dict[str, AsyncContractEventsView] = {}
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -145,7 +144,9 @@ class Processor:
             token_contract = web3.eth.contract(
                 address=load_required_token.token_address, abi=load_required_token.abi
             )
-            self.token_list[load_required_token.token_address] = token_contract
+            self.token_list[load_required_token.token_address] = (
+                AsyncContractEventsView(token_contract.address, token_contract.events)
+            )
 
     @staticmethod
     async def __get_idx_issue_redeem_block_number(db_session: AsyncSession):
@@ -207,7 +208,7 @@ class Processor:
                     else:
                         await self.__insert_index(
                             db_session=db_session,
-                            event_type=IDXIssueRedeemEventType.ISSUE.value,
+                            event_type=IDXIssueRedeemEventType.ISSUE,
                             transaction_hash=transaction_hash,
                             token_address=to_checksum_address(token.address),
                             locked_address=args["lockAddress"],
@@ -248,7 +249,7 @@ class Processor:
                     else:
                         await self.__insert_index(
                             db_session=db_session,
-                            event_type=IDXIssueRedeemEventType.REDEEM.value,
+                            event_type=IDXIssueRedeemEventType.REDEEM,
                             transaction_hash=transaction_hash,
                             token_address=to_checksum_address(token.address),
                             locked_address=args["lockAddress"],
