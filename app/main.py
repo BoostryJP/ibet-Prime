@@ -45,6 +45,7 @@ from app.routers.issuer import (
     position,
     settlement_issuer,
     share,
+    token_common,
     token_holders,
 )
 from app.routers.misc import (
@@ -148,6 +149,7 @@ else:
     app.include_router(notification.router)
     app.include_router(position.router)
     app.include_router(share.router)
+    app.include_router(token_common.router)
     app.include_router(token_holders.router)
     app.include_router(settlement_issuer.router)
     app.include_router(sealed_tx.router)

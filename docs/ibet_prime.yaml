@@ -8217,6 +8217,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /tokens:
+    get:
+      tags:
+        - token_common
+      summary: List All Issued Tokens
+      description: List all tokens issued from ibet-Prime
+      operationId: ListAllIssuedTokens
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: token_address_list
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: array
+                items:
+                  type: string
+              - type: 'null'
+            description: Token address to filter (**this affects total number**)
+            title: Token Address List
+          description: Token address to filter (**this affects total number**)
+        - name: token_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/TokenType'
+              - type: 'null'
+            description: Token type
+            title: Token Type
+          description: Token type
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListAllIssuedTokensSortItem'
+              - type: 'null'
+            default: created
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
+        - name: issuer-address
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Issuer-Address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllIssuedTokensResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /token/holders/personal_info:
     get:
       tags:
@@ -13544,6 +13637,50 @@ components:
         - amount
       title: IssueRedeemSortItem
       description: Issue/Redeem sort item
+    IssuedToken:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+          description: Issuer address
+        token_address:
+          type: string
+          title: Token Address
+          description: Token address
+        token_type:
+          $ref: '#/components/schemas/TokenType'
+          description: Token type
+        created:
+          type: string
+          title: Created
+          description: Created(Issued) datetime
+        token_status:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Token Status
+          description: Token status
+        contract_version:
+          type: string
+          title: Contract Version
+          description: Contract version
+        token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+          title: Token Attributes
+          description: Token attributes
+      type: object
+      required:
+        - issuer_address
+        - token_address
+        - token_type
+        - created
+        - token_status
+        - contract_version
+        - token_attributes
+      title: IssuedToken
+      description: Issued Token
     KeyManagerType:
       type: string
       enum:
@@ -13791,6 +13928,27 @@ components:
         - key_manager
         - holder_name
       title: ListAllHoldersSortItem
+    ListAllIssuedTokensResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        tokens:
+          items:
+            $ref: '#/components/schemas/IssuedToken'
+          type: array
+          title: Tokens
+      type: object
+      required:
+        - result_set
+        - tokens
+      title: ListAllIssuedTokensResponse
+      description: List issued tokens schema
+    ListAllIssuedTokensSortItem:
+      type: string
+      enum:
+        - created
+        - token_address
+      title: ListAllIssuedTokensSortItem
     ListAllLedgerDetailsDataResponse:
       properties:
         result_set:
