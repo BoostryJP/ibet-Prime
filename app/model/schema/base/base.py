@@ -118,6 +118,12 @@ class TokenType(StrEnum):
     IBET_SHARE = "IbetShare"
 
 
+class TokenStatus(IntEnum):
+    PENDING = 0
+    SUCCEEDED = 1
+    FAILED = 2
+
+
 class KeyManagerType(StrEnum):
     SELF = "SELF"
     OTHERS = "OTHERS"

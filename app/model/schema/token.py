@@ -39,6 +39,7 @@ from .base import (
     MMDD_constr,
     ResultSet,
     SortOrder,
+    TokenStatus,
     TokenType,
     ValueOperator,
     YYYYMMDD_constr,
@@ -490,8 +491,10 @@ class IssuedToken(BaseModel):
     token_address: str = Field(description="Token address")
     token_type: TokenType = Field(description="Token type")
     created: str = Field(description="Created(Issued) datetime")
-    token_status: Optional[int] = Field(description="Token status")
-    contract_version: str = Field(description="Contract version")
+    token_status: Optional[TokenStatus] = Field(description="Token status")
+    contract_version: IbetStraightBondContractVersion | IbetShareContractVersion = (
+        Field(description="Contract version")
+    )
     token_attributes: IbetStraightBond | IbetShare = Field(
         description="Token attributes"
     )
@@ -508,14 +511,14 @@ class TokenAddressResponse(BaseModel):
     """token address"""
 
     token_address: str
-    token_status: int
+    token_status: TokenStatus
 
 
 class IbetStraightBondResponse(IbetStraightBond):
     """ibet Straight Bond schema (Response)"""
 
     issue_datetime: str
-    token_status: int
+    token_status: Optional[TokenStatus]
     contract_version: IbetStraightBondContractVersion
 
 
@@ -523,7 +526,7 @@ class IbetShareResponse(IbetShare):
     """ibet Share schema (Response)"""
 
     issue_datetime: str
-    token_status: int
+    token_status: Optional[TokenStatus]
     contract_version: IbetShareContractVersion
 
 

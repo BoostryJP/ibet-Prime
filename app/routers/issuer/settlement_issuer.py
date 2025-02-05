@@ -48,6 +48,7 @@ from app.model.db import (
     IDXDelivery,
     IDXPersonalInfo,
     Token,
+    TokenStatus,
 )
 from app.model.schema import (
     CancelDVPDeliveryRequest,
@@ -288,7 +289,7 @@ async def create_dvp_delivery(
                 and_(
                     Token.issuer_address == issuer_address,
                     Token.token_address == create_req.token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -296,7 +297,7 @@ async def create_dvp_delivery(
     ).first()
     if _token is None:
         raise InvalidParameterError("token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get private key

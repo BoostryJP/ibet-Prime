@@ -45,6 +45,7 @@ from app.model.db import (
     LedgerDetailsTemplate,
     LedgerTemplate,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.model.schema import (
@@ -97,7 +98,10 @@ async def list_all_ledger_history(
             await db.scalars(
                 select(Token)
                 .where(
-                    and_(Token.token_address == token_address, Token.token_status != 2)
+                    and_(
+                        Token.token_address == token_address,
+                        Token.token_status != TokenStatus.FAILED,
+                    )
                 )
                 .limit(1)
             )
@@ -110,7 +114,7 @@ async def list_all_ledger_history(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -118,7 +122,7 @@ async def list_all_ledger_history(
         ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     stmt = (
@@ -193,7 +197,10 @@ async def retrieve_ledger_history(
             await db.scalars(
                 select(Token)
                 .where(
-                    and_(Token.token_address == token_address, Token.token_status != 2)
+                    and_(
+                        Token.token_address == token_address,
+                        Token.token_status != TokenStatus.FAILED,
+                    )
                 )
                 .limit(1)
             )
@@ -206,7 +213,7 @@ async def retrieve_ledger_history(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -214,7 +221,7 @@ async def retrieve_ledger_history(
         ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Ledger Exist Check
@@ -303,7 +310,10 @@ async def retrieve_ledger_template(
             await db.scalars(
                 select(Token)
                 .where(
-                    and_(Token.token_address == token_address, Token.token_status != 2)
+                    and_(
+                        Token.token_address == token_address,
+                        Token.token_status != TokenStatus.FAILED,
+                    )
                 )
                 .limit(1)
             )
@@ -316,7 +326,7 @@ async def retrieve_ledger_template(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -324,7 +334,7 @@ async def retrieve_ledger_template(
         ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Ledger Template Exist Check
@@ -396,7 +406,7 @@ async def create_update_ledger_template(
                 and_(
                     Token.token_address == token_address,
                     Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -404,7 +414,7 @@ async def create_update_ledger_template(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Ledger Template
@@ -519,7 +529,7 @@ async def delete_ledger_template(
                 and_(
                     Token.token_address == token_address,
                     Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -527,7 +537,7 @@ async def delete_ledger_template(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Delete Ledger Template
@@ -578,7 +588,10 @@ async def list_all_ledger_details_data(
             await db.scalars(
                 select(Token)
                 .where(
-                    and_(Token.token_address == token_address, Token.token_status != 2)
+                    and_(
+                        Token.token_address == token_address,
+                        Token.token_status != TokenStatus.FAILED,
+                    )
                 )
                 .limit(1)
             )
@@ -591,7 +604,7 @@ async def list_all_ledger_details_data(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -599,7 +612,7 @@ async def list_all_ledger_details_data(
         ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Ledger Details Data(summary data_id)
@@ -678,7 +691,7 @@ async def create_ledger_details_data(
                 and_(
                     Token.token_address == token_address,
                     Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -686,7 +699,7 @@ async def create_ledger_details_data(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     data_id = str(uuid.uuid4())
@@ -730,7 +743,10 @@ async def retrieve_ledger_details_data(
             await db.scalars(
                 select(Token)
                 .where(
-                    and_(Token.token_address == token_address, Token.token_status != 2)
+                    and_(
+                        Token.token_address == token_address,
+                        Token.token_status != TokenStatus.FAILED,
+                    )
                 )
                 .limit(1)
             )
@@ -743,7 +759,7 @@ async def retrieve_ledger_details_data(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -751,7 +767,7 @@ async def retrieve_ledger_details_data(
         ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Ledger Details Data
@@ -809,7 +825,7 @@ async def update_ledger_details_data(
                 and_(
                     Token.token_address == token_address,
                     Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -817,7 +833,7 @@ async def update_ledger_details_data(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Delete + Insert Ledger Details Data
@@ -874,7 +890,7 @@ async def delete_ledger_details_data(
                 and_(
                     Token.token_address == token_address,
                     Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -882,7 +898,7 @@ async def delete_ledger_details_data(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Delete Ledger Details Data

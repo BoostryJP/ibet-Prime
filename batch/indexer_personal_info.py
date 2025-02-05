@@ -44,6 +44,7 @@ from app.model.db import (
     PersonalInfoDataSource,
     PersonalInfoEventType,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -117,7 +118,7 @@ class Processor:
                         Account.is_deleted == False,
                     ),
                 )
-                .where(Token.token_status == 1)
+                .where(Token.token_status == TokenStatus.SUCCEEDED)
             )
         ).all()
         tmp_list = []

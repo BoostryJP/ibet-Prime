@@ -45,6 +45,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.utils.asyncio_utils import SemaphoreTaskGroup
@@ -140,7 +141,7 @@ class Processor:
                         .where(
                             and_(
                                 Token.type == TokenType.IBET_SHARE,
-                                Token.token_status == 1,
+                                Token.token_status == TokenStatus.SUCCEEDED,
                             )
                         )
                     )
@@ -159,7 +160,7 @@ class Processor:
                 select(Token).where(
                     and_(
                         Token.type == TokenType.IBET_SHARE,
-                        Token.token_status == 1,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                         Token.token_address.in_(load_required_address_list),
                     )
                 )
