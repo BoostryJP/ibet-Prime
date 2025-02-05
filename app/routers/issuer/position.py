@@ -47,6 +47,7 @@ from app.model.db import (
     IDXPosition,
     IDXUnlock,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.model.schema import (
@@ -107,7 +108,8 @@ async def list_all_positions(
         )
         .where(
             and_(
-                IDXPosition.account_address == account_address, Token.token_status != 2
+                IDXPosition.account_address == account_address,
+                Token.token_status != TokenStatus.FAILED,
             )
         )
         .group_by(
@@ -220,7 +222,7 @@ async def list_all_locked_position(
             and_(
                 IDXLockedPosition.account_address == account_address,
                 IDXLockedPosition.value > 0,
-                Token.token_status != 2,
+                Token.token_status != TokenStatus.FAILED,
             )
         )
         .order_by(IDXLockedPosition.token_address)
@@ -315,7 +317,10 @@ async def list_account_lock_unlock_events(
         )
         .join(Token, IDXLock.token_address == Token.token_address)
         .where(
-            and_(column("account_address") == account_address, Token.token_status != 2)
+            and_(
+                column("account_address") == account_address,
+                Token.token_status != TokenStatus.FAILED,
+            )
         )
     )
     if issuer_address is not None:
@@ -339,7 +344,10 @@ async def list_account_lock_unlock_events(
         )
         .join(Token, IDXUnlock.token_address == Token.token_address)
         .where(
-            and_(column("account_address") == account_address, Token.token_status != 2)
+            and_(
+                column("account_address") == account_address,
+                Token.token_status != TokenStatus.FAILED,
+            )
         )
     )
     if issuer_address is not None:
@@ -516,7 +524,7 @@ async def force_unlock(
                 and_(
                     Token.issuer_address == issuer_address,
                     Token.token_address == data.token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -524,7 +532,7 @@ async def force_unlock(
     ).first()
     if _token is None:
         raise InvalidParameterError("token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Force unlock
@@ -576,7 +584,7 @@ async def retrieve_position(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -587,14 +595,17 @@ async def retrieve_position(
             await db.scalars(
                 select(Token)
                 .where(
-                    and_(Token.token_address == token_address, Token.token_status != 2)
+                    and_(
+                        Token.token_address == token_address,
+                        Token.token_status != TokenStatus.FAILED,
+                    )
                 )
                 .limit(1)
             )
         ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Position

@@ -42,6 +42,7 @@ from app.model.db import (
     IDXPersonalInfo,
     PersonalInfoDataSource,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.utils.contract_utils import AsyncContractUtils
@@ -196,7 +197,8 @@ class Processor:
                 )
                 .where(
                     and_(
-                        Token.issuer_address == issuer_address, Token.token_status == 1
+                        Token.issuer_address == issuer_address,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                     )
                 )
             )

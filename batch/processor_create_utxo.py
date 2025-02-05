@@ -31,7 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import UTXO, Account, Token, TokenType, UTXOBlockNumber
+from app.model.db import UTXO, Account, Token, TokenStatus, TokenType, UTXOBlockNumber
 from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.ledger_utils import request_ledger_creation
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -142,7 +142,7 @@ class Processor:
                         Account.is_deleted == False,
                     ),
                 )
-                .where(Token.token_status == 1)
+                .where(Token.token_status == TokenStatus.SUCCEEDED)
                 .order_by(Token.id)
             )
         ).all()

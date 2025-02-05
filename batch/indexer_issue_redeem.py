@@ -36,6 +36,7 @@ from app.model.db import (
     IDXIssueRedeemBlockNumber,
     IDXIssueRedeemEventType,
     Token,
+    TokenStatus,
 )
 from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -114,7 +115,7 @@ class Processor:
                                 Account.is_deleted == False,
                             ),
                         )
-                        .where(Token.token_status == 1)
+                        .where(Token.token_status == TokenStatus.SUCCEEDED)
                     )
                 )
                 .tuples()
@@ -134,7 +135,7 @@ class Processor:
             await db_session.scalars(
                 select(Token).where(
                     and_(
-                        Token.token_status == 1,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                         Token.token_address.in_(load_required_address_list),
                     )
                 )

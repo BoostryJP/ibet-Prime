@@ -12634,8 +12634,9 @@ components:
           type: string
           title: Issue Datetime
         token_status:
-          type: integer
-          title: Token Status
+          anyOf:
+            - $ref: '#/components/schemas/TokenStatus'
+            - type: 'null'
         contract_version:
           $ref: '#/components/schemas/IbetShareContractVersion'
       type: object
@@ -13234,8 +13235,9 @@ components:
           type: string
           title: Issue Datetime
         token_status:
-          type: integer
-          title: Token Status
+          anyOf:
+            - $ref: '#/components/schemas/TokenStatus'
+            - type: 'null'
         contract_version:
           $ref: '#/components/schemas/IbetStraightBondContractVersion'
       type: object
@@ -13656,12 +13658,13 @@ components:
           description: Created(Issued) datetime
         token_status:
           anyOf:
-            - type: integer
+            - $ref: '#/components/schemas/TokenStatus'
             - type: 'null'
-          title: Token Status
           description: Token status
         contract_version:
-          type: string
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBondContractVersion'
+            - $ref: '#/components/schemas/IbetShareContractVersion'
           title: Contract Version
           description: Contract version
         token_attributes:
@@ -15779,8 +15782,7 @@ components:
           type: string
           title: Token Address
         token_status:
-          type: integer
-          title: Token Status
+          $ref: '#/components/schemas/TokenStatus'
       type: object
       required:
         - token_address
@@ -15876,6 +15878,13 @@ components:
         - operation_category
         - created
       title: TokenOperationLogResponse
+    TokenStatus:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
+      title: TokenStatus
     TokenType:
       type: string
       enum:

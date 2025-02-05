@@ -106,6 +106,7 @@ from app.model.db import (
     ScheduledEvents,
     Token,
     TokenHolderExtraInfo,
+    TokenStatus,
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
@@ -292,7 +293,7 @@ async def issue_share_token(
         _update_token.trigger = "Issue"
         db.add(_update_token)
 
-        token_status = 0  # processing
+        token_status = TokenStatus.PENDING
     else:
         # Register token_address token list
         try:
@@ -328,7 +329,7 @@ async def issue_share_token(
         )
         db.add(_utxo)
 
-        token_status = 1  # succeeded
+        token_status = TokenStatus.SUCCEEDED
 
     # Register token data
     _token = Token()
@@ -426,7 +427,7 @@ async def retrieve_share_token(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -434,7 +435,7 @@ async def retrieve_share_token(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get contract data
@@ -505,7 +506,7 @@ async def update_share_token(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -513,7 +514,7 @@ async def update_share_token(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Verify that the token version supports the operation
@@ -660,7 +661,7 @@ async def list_share_additional_issuance_history(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -668,7 +669,7 @@ async def list_share_additional_issuance_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get history record
@@ -782,7 +783,7 @@ async def issuer_additional_share(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -790,7 +791,7 @@ async def issuer_additional_share(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
@@ -927,7 +928,7 @@ async def issue_additional_shares_in_batch(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -935,7 +936,7 @@ async def issue_additional_shares_in_batch(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Generate upload_id
@@ -1072,7 +1073,7 @@ async def list_share_redeem_history(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1080,7 +1081,7 @@ async def list_share_redeem_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get history record
@@ -1194,7 +1195,7 @@ async def redeem_share(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1202,7 +1203,7 @@ async def redeem_share(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
@@ -1340,7 +1341,7 @@ async def redeem_shares_in_batch(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1348,7 +1349,7 @@ async def redeem_shares_in_batch(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Generate upload_id
@@ -1577,7 +1578,7 @@ async def schedule_share_token_update_event(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1585,7 +1586,7 @@ async def schedule_share_token_update_event(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Verify that the token version supports the operation
@@ -1663,7 +1664,7 @@ async def schedule_share_token_update_events_in_batch(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1671,7 +1672,7 @@ async def schedule_share_token_update_events_in_batch(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     _event_id_list = []
@@ -1878,7 +1879,7 @@ async def list_all_share_token_holders(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1886,7 +1887,7 @@ async def list_all_share_token_holders(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
@@ -2157,7 +2158,7 @@ async def count_share_token_holders(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2165,7 +2166,7 @@ async def count_share_token_holders(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
@@ -2237,7 +2238,7 @@ async def retrieve_share_token_holder(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2245,7 +2246,7 @@ async def retrieve_share_token_holder(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
@@ -2415,7 +2416,7 @@ async def register_share_token_holder_extra_info(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2423,7 +2424,7 @@ async def register_share_token_holder_extra_info(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Insert/Update token holder's extra information
@@ -2494,7 +2495,7 @@ async def register_share_token_holder_personal_info(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2502,7 +2503,7 @@ async def register_share_token_holder_personal_info(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
@@ -2575,7 +2576,7 @@ async def list_all_share_token_batch_personal_info_registration(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2583,7 +2584,7 @@ async def list_all_share_token_batch_personal_info_registration(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get a list of uploads
@@ -2687,7 +2688,7 @@ async def initiate_share_token_batch_personal_info_registration(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2695,7 +2696,7 @@ async def initiate_share_token_batch_personal_info_registration(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
     if len(personal_info_list) == 0:
         raise InvalidParameterError("personal information list must not be empty")
@@ -2869,7 +2870,7 @@ async def list_share_token_lock_unlock_events(
             and_(
                 Token.type == TokenType.IBET_SHARE,
                 Token.token_address == token_address,
-                Token.token_status != 2,
+                Token.token_status != TokenStatus.FAILED,
             )
         )
     )
@@ -2897,7 +2898,7 @@ async def list_share_token_lock_unlock_events(
             and_(
                 Token.type == TokenType.IBET_SHARE,
                 Token.token_address == token_address,
-                Token.token_status != 2,
+                Token.token_status != TokenStatus.FAILED,
             )
         )
     )
@@ -3064,7 +3065,7 @@ async def transfer_share_token_ownership(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token.token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3072,7 +3073,7 @@ async def transfer_share_token_ownership(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     try:
@@ -3108,7 +3109,7 @@ async def list_share_token_transfer_history(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3116,7 +3117,7 @@ async def list_share_token_transfer_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer history
@@ -3334,7 +3335,12 @@ async def list_all_share_token_transfer_approval_history(
             func.count(or_(literal_column("status") == 3, None)),
         )
         .join(Token, subquery.token_address == Token.token_address)
-        .where(and_(Token.type == TokenType.IBET_SHARE, Token.token_status != 2))
+        .where(
+            and_(
+                Token.type == TokenType.IBET_SHARE,
+                Token.token_status != TokenStatus.FAILED,
+            )
+        )
     )
     if issuer_address is not None:
         stmt = stmt.where(Token.issuer_address == issuer_address)
@@ -3412,7 +3418,7 @@ async def list_specific_share_token_transfer_approval_history(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3420,7 +3426,7 @@ async def list_specific_share_token_transfer_approval_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Create a subquery for 'status' added IDXTransferApproval
@@ -3739,7 +3745,7 @@ async def update_share_token_transfer_approval_status(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3747,7 +3753,7 @@ async def update_share_token_transfer_approval_status(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
@@ -3939,7 +3945,7 @@ async def retrieve_share_token_transfer_approval_status(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3947,7 +3953,7 @@ async def retrieve_share_token_transfer_approval_status(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
@@ -4202,7 +4208,7 @@ async def bulk_transfer_share_token_ownership(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -4210,7 +4216,7 @@ async def bulk_transfer_share_token_ownership(
     ).first()
     if _issued_token is None:
         raise TokenNotExistError(f"token not found: {token_address}")
-    if _issued_token.token_status == 0:
+    if _issued_token.token_status == TokenStatus.PENDING:
         raise NonTransferableTokenError(
             f"this token is temporarily unavailable: {token_address}"
         )

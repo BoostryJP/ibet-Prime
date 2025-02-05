@@ -44,6 +44,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
 )
 from config import TZ
@@ -60,7 +61,12 @@ async def request_ledger_creation(db: AsyncSession, token_address: str):
     _token: Token | None = (
         await db.scalars(
             select(Token)
-            .where(and_(Token.token_address == token_address, Token.token_status == 1))
+            .where(
+                and_(
+                    Token.token_address == token_address,
+                    Token.token_status == TokenStatus.SUCCEEDED,
+                )
+            )
             .limit(1)
         )
     ).first()

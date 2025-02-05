@@ -49,6 +49,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -248,7 +249,7 @@ class Processor:
                 .where(
                     and_(
                         Token.issuer_address == issuer_account.issuer_address,
-                        Token.token_status == 1,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                     )
                 )
             )

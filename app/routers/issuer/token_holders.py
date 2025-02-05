@@ -36,6 +36,7 @@ from app.model.db import (
     TokenHolder,
     TokenHolderBatchStatus,
     TokenHoldersList,
+    TokenStatus,
 )
 from app.model.schema import (
     CreateTokenHoldersListRequest,
@@ -312,7 +313,7 @@ async def create_token_holders_collection(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Validate block number
@@ -398,7 +399,7 @@ async def list_all_token_holders_collections(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -411,7 +412,7 @@ async def list_all_token_holders_collections(
                 .where(
                     and_(
                         Token.token_address == token_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -420,7 +421,7 @@ async def list_all_token_holders_collections(
 
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Base query
@@ -509,7 +510,7 @@ async def retrieve_token_holders_collection(
                 and_(
                     Token.token_address == token_address,
                     Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -517,7 +518,7 @@ async def retrieve_token_holders_collection(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Validate list id

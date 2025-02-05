@@ -35,6 +35,7 @@ from app.model.db import (
     TokenHolder,
     TokenHolderBatchStatus,
     TokenHoldersList,
+    TokenStatus,
     TokenType,
 )
 from app.utils.contract_utils import AsyncContractUtils
@@ -112,7 +113,7 @@ class Processor:
                 .where(
                     and_(
                         Token.token_address == self.target.token_address,
-                        Token.token_status == 1,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                     )
                 )
                 .limit(1)
