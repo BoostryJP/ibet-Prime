@@ -89,6 +89,7 @@ exclude = ["migrations/*"]
 combine-as-imports = true
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 addopts = "-m 'not alembic'"
 markers = [
     "alembic: tests for alembic",
