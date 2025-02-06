@@ -10072,6 +10072,10 @@ paths:
       responses:
         '200':
           description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrieveFreezeLogResponse'
         '404':
           description: Not Found Error
           content:
@@ -15274,6 +15278,24 @@ components:
         - status
       title: RetrieveDVPDeliveryResponse
       description: Retrieve DVP delivery schema (Response)
+    RetrieveFreezeLogResponse:
+      properties:
+        block_number:
+          type: integer
+          title: Block Number
+        freezing_grace_block_count:
+          type: integer
+          title: Freezing Grace Block Count
+        log_message:
+          type: string
+          title: Log Message
+      type: object
+      required:
+        - block_number
+        - freezing_grace_block_count
+        - log_message
+      title: RetrieveFreezeLogResponse
+      description: Frozen log data (RESPONSE)
     RetrieveLedgerDetailsDataHistoryResponse:
       properties:
         account_address:
