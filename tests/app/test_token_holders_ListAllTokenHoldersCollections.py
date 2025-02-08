@@ -21,6 +21,8 @@ import uuid
 from datetime import datetime
 from unittest import mock
 
+import pytest
+
 from app.model.db import (
     Token,
     TokenHolderBatchStatus,
@@ -41,25 +43,26 @@ class TestListAllTokenHoldersCollections:
 
     # <Normal Case 1>
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(token_address), headers={})
+        resp = await async_client.get(self.base_url.format(token_address), headers={})
 
         assert resp.status_code == 200
         assert resp.json() == {
@@ -69,32 +72,33 @@ class TestListAllTokenHoldersCollections:
 
     # <Normal Case 2>
     # 1 record
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
-        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
-        db.add(token_holder_list1)
+        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING
+        async_db.add(token_holder_list1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(token_address), headers={})
+        resp = await async_client.get(self.base_url.format(token_address), headers={})
 
         assert resp.status_code == 200
         assert resp.json() == {
@@ -104,14 +108,15 @@ class TestListAllTokenHoldersCollections:
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value,
+                    "status": TokenHolderBatchStatus.PENDING,
                 }
             ],
         }
 
     # <Normal_3_1>
     # Multi record
-    def test_normal_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -119,61 +124,61 @@ class TestListAllTokenHoldersCollections:
         # prepare data
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
-        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
-        db.add(token_holder_list1)
+        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING
+        async_db.add(token_holder_list1)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
-        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list2)
+        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list2)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
         token_holder_list3.list_id = str(uuid.uuid4())
         token_holder_list3.block_number = 300
-        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list3)
+        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list3)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list4 = TokenHoldersList()
         token_holder_list4.token_address = token_address
         token_holder_list4.list_id = str(uuid.uuid4())
         token_holder_list4.block_number = 400
-        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list4)
+        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list4)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
-        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list5)
+        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list5)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(token_address), headers={})
+        resp = await async_client.get(self.base_url.format(token_address), headers={})
 
         assert resp.status_code == 200
         assert resp.json() == {
@@ -183,101 +188,102 @@ class TestListAllTokenHoldersCollections:
                     "token_address": token_address,
                     "block_number": 500,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value,
+                    "status": TokenHolderBatchStatus.DONE,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 400,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value,
+                    "status": TokenHolderBatchStatus.DONE,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value,
+                    "status": TokenHolderBatchStatus.PENDING,
                 },
             ],
         }
 
     # <Normal_3_2>
     # Multi record (Issuer specified)
-    def test_normal_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
-        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
-        db.add(token_holder_list1)
+        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING
+        async_db.add(token_holder_list1)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
-        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list2)
+        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list2)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
         token_holder_list3.list_id = str(uuid.uuid4())
         token_holder_list3.block_number = 300
-        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list3)
+        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list3)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list4 = TokenHoldersList()
         token_holder_list4.token_address = token_address
         token_holder_list4.list_id = str(uuid.uuid4())
         token_holder_list4.block_number = 400
-        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list4)
+        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list4)
 
-        db.commit()
+        await async_db.commit()
 
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
-        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list5)
+        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list5)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address),
             headers={"issuer-address": issuer_address},
         )
@@ -290,94 +296,95 @@ class TestListAllTokenHoldersCollections:
                     "token_address": token_address,
                     "block_number": 500,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value,
+                    "status": TokenHolderBatchStatus.DONE,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 400,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value,
+                    "status": TokenHolderBatchStatus.DONE,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value,
+                    "status": TokenHolderBatchStatus.PENDING,
                 },
             ],
         }
 
     # <Normal_3_3>
     # filter by status
-    def test_normal_3_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
-        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
-        db.add(token_holder_list1)
+        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING
+        async_db.add(token_holder_list1)
 
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
-        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list2)
+        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list2)
 
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
         token_holder_list3.list_id = str(uuid.uuid4())
         token_holder_list3.block_number = 300
-        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list3)
+        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list3)
 
         token_holder_list4 = TokenHoldersList()
         token_holder_list4.token_address = token_address
         token_holder_list4.list_id = str(uuid.uuid4())
         token_holder_list4.block_number = 400
-        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list4)
+        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list4)
 
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
-        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list5)
+        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list5)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address),
             headers={"issuer-address": issuer_address},
-            params={"status": str(TokenHolderBatchStatus.PENDING.value)},
+            params={"status": str(TokenHolderBatchStatus.PENDING)},
         )
 
         assert resp.status_code == 200
@@ -388,73 +395,76 @@ class TestListAllTokenHoldersCollections:
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value,
+                    "status": TokenHolderBatchStatus.PENDING,
                 }
             ],
         }
 
     # <Normal_4>
     # Pagination
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
-        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
+        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING
         token_holder_list1.created = datetime(2024, 1, 2, 3, 4, 51)
-        db.add(token_holder_list1)
+        async_db.add(token_holder_list1)
 
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
-        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
+        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED
         token_holder_list2.created = datetime(2024, 1, 2, 3, 4, 52)
-        db.add(token_holder_list2)
+        async_db.add(token_holder_list2)
 
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
         token_holder_list3.list_id = str(uuid.uuid4())
         token_holder_list3.block_number = 300
-        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
+        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED
         token_holder_list3.created = datetime(2024, 1, 2, 3, 4, 53)
-        db.add(token_holder_list3)
+        async_db.add(token_holder_list3)
 
         token_holder_list4 = TokenHoldersList()
         token_holder_list4.token_address = token_address
         token_holder_list4.list_id = str(uuid.uuid4())
         token_holder_list4.block_number = 400
-        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
+        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE
         token_holder_list4.created = datetime(2024, 1, 2, 3, 4, 54)
-        db.add(token_holder_list4)
+        async_db.add(token_holder_list4)
 
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
-        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
+        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE
         token_holder_list5.created = datetime(2024, 1, 2, 3, 4, 55)
-        db.add(token_holder_list5)
+        async_db.add(token_holder_list5)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"limit": 2, "offset": 2}
-        resp = client.get(self.base_url.format(token_address), params=req_param)
+        resp = await async_client.get(
+            self.base_url.format(token_address), params=req_param
+        )
 
         assert resp.status_code == 200
         assert resp.json() == {
@@ -464,74 +474,77 @@ class TestListAllTokenHoldersCollections:
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
             ],
         }
 
     # <Normal_5>
     # Sort
-    def test_normal_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
-        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
-        db.add(token_holder_list1)
+        token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING
+        async_db.add(token_holder_list1)
 
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
-        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list2)
+        token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list2)
 
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
         token_holder_list3.list_id = str(uuid.uuid4())
         token_holder_list3.block_number = 300
-        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
-        db.add(token_holder_list3)
+        token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED
+        async_db.add(token_holder_list3)
 
         token_holder_list4 = TokenHoldersList()
         token_holder_list4.token_address = token_address
         token_holder_list4.list_id = str(uuid.uuid4())
         token_holder_list4.block_number = 400
-        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list4)
+        token_holder_list4.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list4)
 
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
-        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
-        db.add(token_holder_list5)
+        token_holder_list5.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(token_holder_list5)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"sort_order": 0}
-        resp = client.get(self.base_url.format(token_address), params=req_param)
+        resp = await async_client.get(
+            self.base_url.format(token_address), params=req_param
+        )
 
         assert resp.status_code == 200
         assert resp.json() == {
@@ -541,31 +554,31 @@ class TestListAllTokenHoldersCollections:
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value,
+                    "status": TokenHolderBatchStatus.PENDING,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value,
+                    "status": TokenHolderBatchStatus.FAILED,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 400,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value,
+                    "status": TokenHolderBatchStatus.DONE,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 500,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value,
+                    "status": TokenHolderBatchStatus.DONE,
                 },
             ],
         }
@@ -576,9 +589,10 @@ class TestListAllTokenHoldersCollections:
 
     # <Error_1>
     # Parameter Error
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             headers={
                 "issuer-address": "test",
@@ -601,12 +615,13 @@ class TestListAllTokenHoldersCollections:
 
     # <Error_2>
     # Token Not Found
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format("invalid_address"),
             headers={"issuer-address": issuer_address},
         )
@@ -620,26 +635,27 @@ class TestListAllTokenHoldersCollections:
 
     # <Error_3>
     # Token status pending
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.token_status = 0
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address),
             headers={"issuer-address": issuer_address},
         )

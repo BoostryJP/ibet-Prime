@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
+import pytest
+
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
     IDXLockedPosition,
@@ -39,7 +41,8 @@ class TestListAllPositions:
 
     # <Normal_1>
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -52,7 +55,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -64,12 +67,12 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -88,7 +91,10 @@ class TestListAllPositions:
     # <Normal_2>
     # 1 record
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_2(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
@@ -102,7 +108,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -112,7 +118,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -122,7 +128,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
@@ -131,16 +137,16 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
         _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
         _locked_position.account_address = other_account_address  # not to be included
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -148,7 +154,7 @@ class TestListAllPositions:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -181,8 +187,13 @@ class TestListAllPositions:
     # multi record
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_1(
-        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    @pytest.mark.asyncio
+    async def test_normal_3_1(
+        self,
+        mock_IbetStraightBondContract_get,
+        mock_IbetShareContract_get,
+        async_client,
+        async_db,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
@@ -198,7 +209,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position 1
         _position = IDXPosition()
@@ -208,7 +219,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position 1
         _locked_position = IDXLockedPosition()
@@ -218,7 +229,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
@@ -227,7 +238,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         # prepare data: Token-2
         _token = Token()
@@ -237,7 +248,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position-2
         _position = IDXPosition()
@@ -247,7 +258,7 @@ class TestListAllPositions:
         _position.exchange_balance = 21
         _position.exchange_commitment = 22
         _position.pending_transfer = 23
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position 2
         _locked_position = IDXLockedPosition()
@@ -257,7 +268,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 10
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_2
@@ -266,7 +277,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 10
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         # prepare data: Token-3
         _token = Token()
@@ -276,7 +287,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position-3
         _position = IDXPosition()
@@ -286,7 +297,7 @@ class TestListAllPositions:
         _position.exchange_balance = 31
         _position.exchange_commitment = 32
         _position.pending_transfer = 33
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position 3
         _locked_position = IDXLockedPosition()
@@ -296,7 +307,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 15
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_3
@@ -305,9 +316,9 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 15
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -320,7 +331,7 @@ class TestListAllPositions:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -377,8 +388,13 @@ class TestListAllPositions:
     # multi record (Including former holder)
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_2(
-        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    @pytest.mark.asyncio
+    async def test_normal_3_2(
+        self,
+        mock_IbetStraightBondContract_get,
+        mock_IbetShareContract_get,
+        async_client,
+        async_db,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
@@ -394,7 +410,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position 1
         _position = IDXPosition()
@@ -404,7 +420,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token 2
         _token = Token()
@@ -414,7 +430,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position 2
         _position = IDXPosition()
@@ -424,7 +440,7 @@ class TestListAllPositions:
         _position.exchange_balance = 0
         _position.exchange_commitment = 22
         _position.pending_transfer = 23
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position 2
         _locked_position = IDXLockedPosition()
@@ -434,7 +450,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 0
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         # prepare data: Token 3
         _token = Token()
@@ -444,7 +460,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position 3
         _position = IDXPosition()
@@ -454,7 +470,7 @@ class TestListAllPositions:
         _position.exchange_balance = 0
         _position.exchange_commitment = 0
         _position.pending_transfer = 0
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position 3
         _locked_position = IDXLockedPosition()
@@ -464,9 +480,9 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 0
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -479,7 +495,7 @@ class TestListAllPositions:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -524,8 +540,13 @@ class TestListAllPositions:
     # specify header
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_4(
-        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    @pytest.mark.asyncio
+    async def test_normal_4(
+        self,
+        mock_IbetStraightBondContract_get,
+        mock_IbetShareContract_get,
+        async_client,
+        async_db,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -537,7 +558,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -547,7 +568,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -559,7 +580,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -569,7 +590,7 @@ class TestListAllPositions:
         _position.exchange_balance = 21
         _position.exchange_commitment = 22
         _position.pending_transfer = 23
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -579,7 +600,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -589,9 +610,9 @@ class TestListAllPositions:
         _position.exchange_balance = 31
         _position.exchange_commitment = 32
         _position.pending_transfer = 33
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -604,7 +625,7 @@ class TestListAllPositions:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             headers={"issuer-address": "0x1234567890123456789012345678900000000100"},
         )
@@ -651,7 +672,10 @@ class TestListAllPositions:
     # token_type
     # IbetStraightBond
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -662,7 +686,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -672,7 +696,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -682,7 +706,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -692,7 +716,7 @@ class TestListAllPositions:
         _position.exchange_balance = 21
         _position.exchange_commitment = 22
         _position.pending_transfer = 23
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -702,7 +726,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -712,9 +736,9 @@ class TestListAllPositions:
         _position.exchange_balance = 31
         _position.exchange_commitment = 32
         _position.pending_transfer = 33
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -724,7 +748,7 @@ class TestListAllPositions:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_2]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"token_type": TokenType.IBET_STRAIGHT_BOND},
         )
@@ -771,7 +795,8 @@ class TestListAllPositions:
     # token_type
     # IbetShare
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_5_2(self, mock_IbetShareContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_2(self, mock_IbetShareContract_get, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -782,7 +807,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -792,7 +817,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -802,7 +827,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -812,7 +837,7 @@ class TestListAllPositions:
         _position.exchange_balance = 21
         _position.exchange_commitment = 22
         _position.pending_transfer = 23
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -822,7 +847,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -832,9 +857,9 @@ class TestListAllPositions:
         _position.exchange_balance = 31
         _position.exchange_commitment = 32
         _position.pending_transfer = 33
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         share_1 = IbetShareContract()
@@ -842,7 +867,7 @@ class TestListAllPositions:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"token_type": TokenType.IBET_SHARE},
         )
@@ -877,8 +902,13 @@ class TestListAllPositions:
     # including_former_position
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_3(
-        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    @pytest.mark.asyncio
+    async def test_normal_5_3(
+        self,
+        mock_IbetStraightBondContract_get,
+        mock_IbetShareContract_get,
+        async_client,
+        async_db,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -890,7 +920,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -900,7 +930,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -910,7 +940,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -920,7 +950,7 @@ class TestListAllPositions:
         _position.exchange_balance = 0
         _position.exchange_commitment = 0
         _position.pending_transfer = 0
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -930,7 +960,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -940,7 +970,7 @@ class TestListAllPositions:
         _position.exchange_balance = 20
         _position.exchange_commitment = 10
         _position.pending_transfer = 1
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -950,7 +980,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -960,9 +990,9 @@ class TestListAllPositions:
         _position.exchange_balance = 0
         _position.exchange_commitment = 0
         _position.pending_transfer = 0
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -977,7 +1007,7 @@ class TestListAllPositions:
         mock_IbetShareContract_get.side_effect = [share_1, share_2]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"include_former_position": "true"},
         )
@@ -1047,8 +1077,13 @@ class TestListAllPositions:
     # Pagination
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_6(
-        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    @pytest.mark.asyncio
+    async def test_normal_6(
+        self,
+        mock_IbetStraightBondContract_get,
+        mock_IbetShareContract_get,
+        async_client,
+        async_db,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -1060,7 +1095,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -1070,7 +1105,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -1080,7 +1115,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -1090,7 +1125,7 @@ class TestListAllPositions:
         _position.exchange_balance = 21
         _position.exchange_commitment = 22
         _position.pending_transfer = 23
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -1100,7 +1135,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -1110,7 +1145,7 @@ class TestListAllPositions:
         _position.exchange_balance = 31
         _position.exchange_commitment = 32
         _position.pending_transfer = 33
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Token
         _token = Token()
@@ -1120,7 +1155,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -1130,9 +1165,9 @@ class TestListAllPositions:
         _position.exchange_balance = 41
         _position.exchange_commitment = 42
         _position.pending_transfer = 43
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_2 = IbetStraightBondContract()
@@ -1143,7 +1178,7 @@ class TestListAllPositions:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={
                 "offset": 1,
@@ -1192,7 +1227,10 @@ class TestListAllPositions:
     # include_token_attributes: True
     # - IbetStraightBond
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_7_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_7_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
@@ -1206,7 +1244,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -1216,7 +1254,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -1226,7 +1264,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
@@ -1235,16 +1273,16 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
         _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
         _locked_position.account_address = other_account_address  # not to be included
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -1295,7 +1333,7 @@ class TestListAllPositions:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"include_token_attributes": True},
         )
@@ -1329,7 +1367,8 @@ class TestListAllPositions:
     # include_token_attributes: True
     # - IbetShare
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_7_2(self, mock_IbetShareContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_7_2(self, mock_IbetShareContract_get, async_client, async_db):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
@@ -1343,7 +1382,7 @@ class TestListAllPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -1353,7 +1392,7 @@ class TestListAllPositions:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -1363,7 +1402,7 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
@@ -1372,16 +1411,16 @@ class TestListAllPositions:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
         _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
         _locked_position.account_address = other_account_address  # not to be included
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         share_1 = IbetShareContract()
@@ -1413,7 +1452,7 @@ class TestListAllPositions:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"include_token_attributes": True},
         )
@@ -1450,11 +1489,12 @@ class TestListAllPositions:
     # <Error_1_1>
     # RequestValidationError
     # header
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             headers={
                 "issuer-address": "test",
@@ -1478,11 +1518,12 @@ class TestListAllPositions:
     # <Error_1_2>
     # RequestValidationError
     # query(invalid value)
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={
                 "token_type": "test",

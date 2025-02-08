@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 from unittest import mock
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaStatus, ChildAccountIndex, TransactionLock
@@ -39,13 +40,14 @@ class TestCreateIssuerKey:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
-        accounts_before = db.scalars(select(Account)).all()
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
+        accounts_before = (await async_db.scalars(select(Account))).all()
 
         password = self.valid_password
         req_param = {"eoa_password": E2EEUtils.encrypt(password)}
 
-        resp = client.post(self.apiurl, json=req_param)
+        resp = await async_client.post(self.apiurl, json=req_param)
 
         # assertion
         assert resp.status_code == 200
@@ -54,7 +56,7 @@ class TestCreateIssuerKey:
         assert resp.json()["rsa_status"] == AccountRsaStatus.UNSET.value
         assert resp.json()["is_deleted"] is False
 
-        accounts_after = db.scalars(select(Account)).all()
+        accounts_after = (await async_db.scalars(select(Account))).all()
         assert 0 == len(accounts_before)
         assert 1 == len(accounts_after)
 
@@ -69,19 +71,20 @@ class TestCreateIssuerKey:
         assert account_1.rsa_status == AccountRsaStatus.UNSET.value
         assert account_1.is_deleted is False
 
-        child_idx = db.scalars(select(ChildAccountIndex).limit(1)).first()
+        child_idx = (await async_db.scalars(select(ChildAccountIndex).limit(1))).first()
         assert child_idx.issuer_address == account_1.issuer_address
         assert child_idx.next_index == 1
 
-        tx_lock = db.scalars(select(TransactionLock).limit(1)).first()
+        tx_lock = (await async_db.scalars(select(TransactionLock).limit(1))).first()
         assert tx_lock.tx_from == account_1.issuer_address
 
     # <Normal_2>
     # AWS KMS
     @mock.patch("app.routers.issuer.account.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
     @mock.patch("boto3.client")
-    def test_normal_2(self, boto3_mock, client, db):
-        accounts_before = db.scalars(select(Account)).all()
+    @pytest.mark.asyncio
+    async def test_normal_2(self, boto3_mock, async_client, async_db):
+        accounts_before = (await async_db.scalars(select(Account))).all()
 
         password = self.valid_password
         req_param = {"eoa_password": E2EEUtils.encrypt(password)}
@@ -94,7 +97,7 @@ class TestCreateIssuerKey:
 
         boto3_mock.side_effect = [KMSClientMock()]
 
-        resp = client.post(self.apiurl, json=req_param)
+        resp = await async_client.post(self.apiurl, json=req_param)
 
         # assertion
         assert resp.status_code == 200
@@ -103,7 +106,7 @@ class TestCreateIssuerKey:
         assert resp.json()["rsa_status"] == AccountRsaStatus.UNSET.value
         assert resp.json()["is_deleted"] is False
 
-        accounts_after = db.scalars(select(Account)).all()
+        accounts_after = (await async_db.scalars(select(Account))).all()
         assert 0 == len(accounts_before)
         assert 1 == len(accounts_after)
 
@@ -118,11 +121,11 @@ class TestCreateIssuerKey:
         assert account_1.rsa_status == AccountRsaStatus.UNSET.value
         assert account_1.is_deleted is False
 
-        child_idx = db.scalars(select(ChildAccountIndex).limit(1)).first()
+        child_idx = (await async_db.scalars(select(ChildAccountIndex).limit(1))).first()
         assert child_idx.issuer_address == account_1.issuer_address
         assert child_idx.next_index == 1
 
-        tx_lock = db.scalars(select(TransactionLock).limit(1)).first()
+        tx_lock = (await async_db.scalars(select(TransactionLock).limit(1))).first()
         assert tx_lock.tx_from == account_1.issuer_address
 
     ###########################################################################
@@ -131,12 +134,13 @@ class TestCreateIssuerKey:
 
     # <Error_1>
     # Password Policy Violation
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         req_param = {
             "eoa_password": base64.encodebytes("password".encode("utf-8")).decode()
         }
 
-        resp = client.post(self.apiurl, json=req_param)
+        resp = await async_client.post(self.apiurl, json=req_param)
 
         # assertion
         assert resp.status_code == 422
@@ -156,10 +160,11 @@ class TestCreateIssuerKey:
 
     # <Error_2>
     # Invalid Password
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}
 
-        resp = client.post(self.apiurl, json=req_param)
+        resp = await async_client.post(self.apiurl, json=req_param)
 
         # assertion
         assert resp.status_code == 400

@@ -51,7 +51,7 @@ class TestCreateTokenHoldersCollection:
     # Normal_1
     # POST collection request.
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, db):
+    async def test_normal_1(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -65,9 +65,9 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         list_id = str(uuid.uuid4())
 
@@ -87,23 +87,27 @@ class TestCreateTokenHoldersCollection:
             )
 
         # assertion
-        stored_data: TokenHoldersList = db.scalars(
-            select(TokenHoldersList).where(TokenHoldersList.list_id == list_id).limit(1)
+        stored_data: TokenHoldersList = (
+            await async_db.scalars(
+                select(TokenHoldersList)
+                .where(TokenHoldersList.list_id == list_id)
+                .limit(1)
+            )
         ).first()
         assert resp.status_code == 200
         assert resp.json() == {
             "list_id": list_id,
-            "status": TokenHolderBatchStatus.PENDING.value,
+            "status": TokenHolderBatchStatus.PENDING,
         }
         assert stored_data.list_id == list_id
         assert stored_data.token_address == token_address
-        assert stored_data.batch_status == TokenHolderBatchStatus.PENDING.value
+        assert stored_data.batch_status == TokenHolderBatchStatus.PENDING
         assert stored_data.block_number == 100
 
     # Normal_2
     # POST collection request with already existing contract_address and block_number.
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, db):
+    async def test_normal_2(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -117,9 +121,9 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock setting
         block_number_mock = AsyncMock()
@@ -141,7 +145,7 @@ class TestCreateTokenHoldersCollection:
         assert resp.status_code == 200
         assert resp.json() == {
             "list_id": list_id1,
-            "status": TokenHolderBatchStatus.PENDING.value,
+            "status": TokenHolderBatchStatus.PENDING,
         }
 
         with mock.patch(
@@ -160,7 +164,7 @@ class TestCreateTokenHoldersCollection:
         assert resp.status_code == 200
         assert resp.json() == {
             "list_id": list_id1,
-            "status": TokenHolderBatchStatus.PENDING.value,
+            "status": TokenHolderBatchStatus.PENDING,
         }
 
     ###########################################################################
@@ -171,7 +175,7 @@ class TestCreateTokenHoldersCollection:
     # 422: Validation Error
     # List id in request body is empty.
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, db):
+    async def test_error_1(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -185,9 +189,9 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"block_number": 100}
@@ -215,7 +219,7 @@ class TestCreateTokenHoldersCollection:
     # 404: Not Found Error
     # Invalid contract address
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, db):
+    async def test_error_2(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -229,9 +233,9 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         list_id = str(uuid.uuid4())
@@ -253,7 +257,7 @@ class TestCreateTokenHoldersCollection:
     # 422: Invalid Parameter Error
     # "list_id" is not UUIDv4.
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, db):
+    async def test_error_3(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -267,9 +271,9 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         list_id = "some_id"
@@ -299,7 +303,7 @@ class TestCreateTokenHoldersCollection:
     # 400: Invalid Parameter Error
     # Block number is future one or negative.
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, db):
+    async def test_error_4(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -313,9 +317,9 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock setting
         block_number_mock = AsyncMock()
@@ -344,7 +348,7 @@ class TestCreateTokenHoldersCollection:
     # 400: Invalid Parameter Error
     # Duplicate list_id is posted.
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, db):
+    async def test_error_5(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -358,9 +362,9 @@ class TestCreateTokenHoldersCollection:
         _token1.token_address = token_address1
         _token1.abi = {}
         _token1.version = TokenVersion.V_24_09
-        db.add(_token1)
+        async_db.add(_token1)
 
-        db.commit()
+        await async_db.commit()
 
         # mock setting
         block_number_mock = AsyncMock()
@@ -382,7 +386,7 @@ class TestCreateTokenHoldersCollection:
         assert resp.status_code == 200
         assert resp.json() == {
             "list_id": list_id,
-            "status": TokenHolderBatchStatus.PENDING.value,
+            "status": TokenHolderBatchStatus.PENDING,
         }
 
         # prepare data
@@ -394,9 +398,9 @@ class TestCreateTokenHoldersCollection:
         _token2.token_address = token_address2
         _token2.abi = {}
         _token2.version = TokenVersion.V_24_09
-        db.add(_token2)
+        async_db.add(_token2)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         with mock.patch(
@@ -420,7 +424,7 @@ class TestCreateTokenHoldersCollection:
     # 400: Invalid Parameter Error
     # Not listed token
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, db):
+    async def test_error_6(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -435,9 +439,9 @@ class TestCreateTokenHoldersCollection:
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         list_id = str(uuid.uuid4())
 
@@ -460,7 +464,7 @@ class TestCreateTokenHoldersCollection:
     # 422: Validation Error
     # Issuer-address in request header is not set.
     @pytest.mark.asyncio
-    async def test_error_7(self, async_client, db):
+    async def test_error_7(self, async_client, async_db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -474,9 +478,9 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         list_id = str(uuid.uuid4())
 

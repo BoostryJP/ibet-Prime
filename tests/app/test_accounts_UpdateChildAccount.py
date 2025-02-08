@@ -45,17 +45,18 @@ class TestUpdateChildAccount:
 
     # <Normal_1>
     @pytest.mark.freeze_time("2024-09-28 12:34:56")
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         _child_account = ChildAccount()
         _child_account.issuer_address = self.issuer_address
         _child_account.child_account_index = 1
         _child_account.child_account_address = self.child_account_address
-        db.add(_child_account)
+        async_db.add(_child_account)
 
         _off_personal_info = IDXPersonalInfo()
         _off_personal_info.issuer_address = self.issuer_address
@@ -71,12 +72,12 @@ class TestUpdateChildAccount:
             "tax_category": 10,
         }
         _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
-        db.add(_off_personal_info)
+        async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address, 1),
             json={
                 "personal_information": {
@@ -94,16 +95,18 @@ class TestUpdateChildAccount:
         # Assertion
         assert resp.status_code == 200
 
-        _off_personal_info_af = db.scalars(
-            select(IDXPersonalInfo)
-            .where(
-                and_(
-                    IDXPersonalInfo.issuer_address == self.issuer_address,
-                    IDXPersonalInfo.account_address == self.child_account_address,
-                    IDXPersonalInfo.data_source == PersonalInfoDataSource.OFF_CHAIN,
+        _off_personal_info_af = (
+            await async_db.scalars(
+                select(IDXPersonalInfo)
+                .where(
+                    and_(
+                        IDXPersonalInfo.issuer_address == self.issuer_address,
+                        IDXPersonalInfo.account_address == self.child_account_address,
+                        IDXPersonalInfo.data_source == PersonalInfoDataSource.OFF_CHAIN,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _off_personal_info.personal_info == {
             "key_manager": "SELF",
@@ -116,10 +119,12 @@ class TestUpdateChildAccount:
             "tax_category": 20,
         }
 
-        _personal_info_history = db.scalars(
-            select(IDXPersonalInfoHistory)
-            .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
-            .limit(1)
+        _personal_info_history = (
+            await async_db.scalars(
+                select(IDXPersonalInfoHistory)
+                .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _personal_info_history.issuer_address == self.issuer_address
         assert _personal_info_history.account_address == self.child_account_address
@@ -136,9 +141,12 @@ class TestUpdateChildAccount:
     # <Error_1>
     # RequestValidationError
     # - Missing body
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Call API
-        resp = client.post(self.base_url.format(self.issuer_address, 1), json={})
+        resp = await async_client.post(
+            self.base_url.format(self.issuer_address, 1), json={}
+        )
 
         # Assertion
         assert resp.status_code == 422
@@ -156,9 +164,10 @@ class TestUpdateChildAccount:
 
     # <Error_2>
     # 404: Issuer does not exist
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address, 1),
             json={
                 "personal_information": {
@@ -182,15 +191,16 @@ class TestUpdateChildAccount:
 
     # <Error_3>
     # 404: Issuer does not exist
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
-        db.commit()
+        async_db.add(_account)
+        await async_db.commit()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address, 1),
             json={
                 "personal_information": {
@@ -214,17 +224,18 @@ class TestUpdateChildAccount:
 
     # <Error_4>
     # PersonalInfoExceedsSizeLimit
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         _child_account = ChildAccount()
         _child_account.issuer_address = self.issuer_address
         _child_account.child_account_index = 1
         _child_account.child_account_address = self.child_account_address
-        db.add(_child_account)
+        async_db.add(_child_account)
 
         _off_personal_info = IDXPersonalInfo()
         _off_personal_info.issuer_address = self.issuer_address
@@ -240,12 +251,12 @@ class TestUpdateChildAccount:
             "tax_category": 10,
         }
         _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
-        db.add(_off_personal_info)
+        async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address, 1),
             json={
                 "personal_information": {

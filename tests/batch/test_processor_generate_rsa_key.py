@@ -29,7 +29,7 @@ from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     return Processor()
 
 
@@ -40,7 +40,7 @@ class TestProcessor:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db):
+    async def test_normal_1(self, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         keyfile_1 = user_1["keyfile_json"]
@@ -76,7 +76,7 @@ class TestProcessor:
         account_1.eoa_password = eoa_password_1
         account_1.rsa_passphrase = rsa_passphrase_1
         account_1.rsa_status = AccountRsaStatus.CREATING.value
-        db.add(account_1)
+        async_db.add(account_1)
 
         # data:CHANGING
         account_2 = Account()
@@ -87,14 +87,14 @@ class TestProcessor:
         account_2.rsa_public_key = rsa_public_key_2
         account_2.rsa_passphrase = rsa_passphrase_2
         account_2.rsa_status = AccountRsaStatus.CHANGING.value
-        db.add(account_2)
+        async_db.add(account_2)
 
         temporary_2 = AccountRsaKeyTemporary()
         temporary_2.issuer_address = issuer_address_2
         temporary_2.rsa_private_key = account_2.rsa_private_key
         temporary_2.rsa_public_key = account_2.rsa_public_key
         temporary_2.rsa_passphrase = account_2.rsa_passphrase
-        db.add(temporary_2)
+        async_db.add(temporary_2)
 
         # data:UNSET(Non-Target)
         account_3 = Account()
@@ -102,7 +102,7 @@ class TestProcessor:
         account_3.keyfile = keyfile_3
         account_3.eoa_password = eoa_password_3
         account_3.rsa_status = AccountRsaStatus.UNSET.value
-        db.add(account_3)
+        async_db.add(account_3)
 
         # data:SET(Non-Target)
         account_4 = Account()
@@ -113,9 +113,9 @@ class TestProcessor:
         account_4.rsa_public_key = rsa_public_key_4
         account_4.rsa_passphrase = rsa_passphrase_4
         account_4.rsa_status = AccountRsaStatus.SET.value
-        db.add(account_4)
+        async_db.add(account_4)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock start
         patch = mock.patch("Crypto.PublicKey.RSA.generate")
@@ -135,12 +135,15 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Mock end
         patch.stop()
 
         # assertion
-        account_after = db.scalars(select(Account).order_by(Account.created)).all()
+        account_after = (
+            await async_db.scalars(select(Account).order_by(Account.created))
+        ).all()
         assert len(account_after) == 4
         _account = account_after[0]
         assert _account.issuer_address == issuer_address_1

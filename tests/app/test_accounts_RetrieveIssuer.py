@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import Account, AccountRsaStatus
 from tests.account_config import config_eth_account
 
@@ -31,7 +33,8 @@ class TestRetrieveIssuer:
 
     # <Normal_1>
     # rsa_public_key is None
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -41,10 +44,10 @@ class TestRetrieveIssuer:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.rsa_status = AccountRsaStatus.UNSET.value
-        db.add(account)
-        db.commit()
+        async_db.add(account)
+        await async_db.commit()
 
-        resp = client.get(self.base_url.format(_admin_address))
+        resp = await async_client.get(self.base_url.format(_admin_address))
 
         assert resp.status_code == 200
         assert resp.json() == {
@@ -56,7 +59,8 @@ class TestRetrieveIssuer:
 
     # <Normal_2>
     # rsa_public_key is not None
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -68,10 +72,10 @@ class TestRetrieveIssuer:
         account.keyfile = _admin_keyfile
         account.rsa_public_key = _admin_rsa_public_key
         account.rsa_status = AccountRsaStatus.CHANGING.value
-        db.add(account)
-        db.commit()
+        async_db.add(account)
+        await async_db.commit()
 
-        resp = client.get(self.base_url.format(_admin_address))
+        resp = await async_client.get(self.base_url.format(_admin_address))
 
         assert resp.status_code == 200
         assert resp.json() == {
@@ -87,8 +91,11 @@ class TestRetrieveIssuer:
 
     # <Error_1>
     # No data
-    def test_error_1(self, client, db):
-        resp = client.get(self.base_url.format("non_existent_issuer_address"))
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
+        resp = await async_client.get(
+            self.base_url.format("non_existent_issuer_address")
+        )
 
         assert resp.status_code == 404
         assert resp.json() == {

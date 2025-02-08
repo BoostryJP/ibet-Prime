@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 import base64
 
+import pytest
+
 from app.model.db import UploadFile
 
 
@@ -35,7 +37,8 @@ class TestDownloadFile:
     # <Normal_1_1>
     # text file
     # unset header
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -54,12 +57,12 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
         )
 
@@ -79,7 +82,8 @@ abc def"""
     # <Normal_1_2>
     # text file
     # set header
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -98,12 +102,12 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
             headers={
                 "issuer-address": self.issuer_address,
@@ -125,7 +129,8 @@ abc def"""
 
     # <Normal_2>
     # binary file
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # prepare data
@@ -138,12 +143,12 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
         )
 
@@ -167,9 +172,10 @@ abc def"""
     # <Error_1>
     # Parameter Error
     # Invalid
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
             headers={
                 "issuer-address": "test",
@@ -193,9 +199,10 @@ abc def"""
     # <Error_2_1>
     # Not Found
     # unset header
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
         )
 
@@ -209,7 +216,8 @@ abc def"""
     # <Error_2_2>
     # Not Found
     # set header
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # prepare data
@@ -224,12 +232,12 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
             headers={
                 "issuer-address": self.issuer_address,

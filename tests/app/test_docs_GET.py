@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from fastapi.testclient import TestClient
+import pytest
 
 
 class TestOpenAPIDoc:
@@ -29,9 +29,10 @@ class TestOpenAPIDoc:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client):
         apiurl = self.apiurl_base
-        resp = client.get(apiurl)
+        resp = await async_client.get(apiurl)
 
         assert resp.status_code == 200
         assert resp.json()["openapi"] == "3.1.0"

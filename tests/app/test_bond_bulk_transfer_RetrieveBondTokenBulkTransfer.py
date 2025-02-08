@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import (
     Account,
     BulkTransfer,
@@ -62,39 +64,40 @@ class TestRetrieveBondTokenBulkTransfer:
     # <Normal_1_1>
     # Header: issuer-address is set
     # - Personal information is not set
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
-            db.add(account)
+            async_db.add(account)
 
         for i in range(0, 3):
             # prepare data : BulkTransferUpload
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer_upload.status = i
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
             # prepare data : BulkTransfer
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
-            db.add(bulk_transfer)
+            async_db.add(bulk_transfer)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url.format(self.upload_id_list[1]),
             headers={"issuer-address": self.upload_issuer_list[1]["address"]},
         )
@@ -106,7 +109,7 @@ class TestRetrieveBondTokenBulkTransfer:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "upload_id": self.upload_id_list[1],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -124,34 +127,35 @@ class TestRetrieveBondTokenBulkTransfer:
     # <Normal_1_2>
     # Header: issuer-address is set
     # - Personal information is set
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
-            db.add(account)
+            async_db.add(account)
 
         for i in range(0, 3):
             # prepare data : BulkTransferUpload
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer_upload.status = i
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
             # prepare data : BulkTransfer
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
-            db.add(bulk_transfer)
+            async_db.add(bulk_transfer)
 
             # prepare data: IDXPersonalInfo
             _personal_info_from = IDXPersonalInfo()
@@ -168,7 +172,7 @@ class TestRetrieveBondTokenBulkTransfer:
                 "tax_category": 10,
             }
             _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-            db.add(_personal_info_from)
+            async_db.add(_personal_info_from)
 
             _personal_info_to = IDXPersonalInfo()
             _personal_info_to.issuer_address = self.upload_issuer_list[i]["address"]
@@ -184,12 +188,12 @@ class TestRetrieveBondTokenBulkTransfer:
                 "tax_category": 10,
             }
             _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-            db.add(_personal_info_to)
+            async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url.format(self.upload_id_list[1]),
             headers={"issuer-address": self.upload_issuer_list[1]["address"]},
         )
@@ -201,7 +205,7 @@ class TestRetrieveBondTokenBulkTransfer:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "upload_id": self.upload_id_list[1],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -236,32 +240,33 @@ class TestRetrieveBondTokenBulkTransfer:
 
     # <Normal_2>
     # Header: issuer-address is not set
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         for i in range(0, 3):
             # prepare data : BulkTransferUpload
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer_upload.status = i
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
             # prepare data : BulkTransfer
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
-            db.add(bulk_transfer)
+            async_db.add(bulk_transfer)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url.format(self.upload_id_list[0]),
         )
 
@@ -272,7 +277,7 @@ class TestRetrieveBondTokenBulkTransfer:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[0]["address"],
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "upload_id": self.upload_id_list[0],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -289,20 +294,21 @@ class TestRetrieveBondTokenBulkTransfer:
 
     # <Normal_3>
     # Bulk transaction error record
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         # prepare data : BulkTransferUpload
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
         bulk_transfer_upload.status = 2
-        db.add(bulk_transfer_upload)
+        async_db.add(bulk_transfer_upload)
 
         # prepare data : BulkTransfer
         bulk_transfer = BulkTransfer()
         bulk_transfer.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer.upload_id = self.upload_id_list[0]
-        bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
         bulk_transfer.token_address = self.bulk_transfer_token
         bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
         bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
@@ -312,12 +318,12 @@ class TestRetrieveBondTokenBulkTransfer:
         bulk_transfer.transaction_error_message = (
             "Transfer amount is greater than from address balance."
         )
-        db.add(bulk_transfer)
+        async_db.add(bulk_transfer)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url.format(self.upload_id_list[0]),
         )
 
@@ -328,7 +334,7 @@ class TestRetrieveBondTokenBulkTransfer:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[0]["address"],
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "upload_id": self.upload_id_list[0],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -345,39 +351,40 @@ class TestRetrieveBondTokenBulkTransfer:
 
     # <Normal_4>
     # offset / limit
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
-            db.add(account)
+            async_db.add(account)
 
         # prepare data : BulkTransferUpload
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = self.upload_issuer_list[1]["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[1]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
         bulk_transfer_upload.status = 1
-        db.add(bulk_transfer_upload)
+        async_db.add(bulk_transfer_upload)
 
         for i in range(0, 3):
             # prepare data : BulkTransfer
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.upload_id = self.upload_id_list[1]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
-            db.add(bulk_transfer)
+            async_db.add(bulk_transfer)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url.format(self.upload_id_list[1]),
             headers={"issuer-address": self.upload_issuer_list[1]["address"]},
             params={"offset": 1, "limit": 1},
@@ -390,7 +397,7 @@ class TestRetrieveBondTokenBulkTransfer:
             "bulk_transfer_upload_records": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "upload_id": self.upload_id_list[1],
                     "token_address": self.bulk_transfer_token,
                     "from_address": self.upload_issuer_list[1]["address"],
@@ -412,9 +419,10 @@ class TestRetrieveBondTokenBulkTransfer:
     # <Error_1>
     # RequestValidationError
     # invalid type : issuer-address
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url.format(self.upload_id_list[0]),
             headers={"issuer-address": "DUMMY ADDRESS"},
         )
@@ -435,9 +443,10 @@ class TestRetrieveBondTokenBulkTransfer:
 
     # <Error_2>
     # Upload id Not Found
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # request target API
-        resp = client.get(self.test_url.format("DUMMY UPLOAD ID"))
+        resp = await async_client.get(self.test_url.format("DUMMY UPLOAD ID"))
 
         # assertion
         assert resp.status_code == 404
@@ -448,39 +457,40 @@ class TestRetrieveBondTokenBulkTransfer:
 
     # <Error_3>
     # Upload id Not Found
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
-            db.add(account)
+            async_db.add(account)
 
         for i in range(0, 3):
             # prepare data : BulkTransferUpload
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer_upload.status = i
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
             # prepare data : BulkTransfer
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
-            db.add(bulk_transfer)
+            async_db.add(bulk_transfer)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url.format(self.upload_id_list[2]),
             headers={"issuer-address": self.upload_issuer_list[0]["address"]},
         )

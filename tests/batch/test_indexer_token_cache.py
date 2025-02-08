@@ -27,7 +27,8 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
@@ -40,12 +41,12 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 from app.model.db import Account, Token, TokenCache, TokenType, TokenVersion
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_token_cache import LOG, Processor, main
-from config import ZERO_ADDRESS
+from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
-web3 = Web3Wrapper()
+web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
@@ -60,7 +61,7 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(db, caplog: pytest.LogCaptureFixture):
+def processor(async_db, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -149,22 +150,22 @@ class TestProcessor:
     # Single Token
     # not issue token
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, db, personal_info_contract):
+    async def test_normal_1_1(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Token(processing token)
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = "test1"
         token_1.issuer_address = issuer_address
-        token_1.abi = "abi"
+        token_1.abi = {}
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         sleep_mock = AsyncMock()
         sleep_mock.return_value = 0
@@ -172,9 +173,13 @@ class TestProcessor:
         # Run target process
         with mock.patch("asyncio.sleep", sleep_mock):
             await processor.process()
+            async_db.expire_all()
+
         # Assertion
-        _cache_list = db.scalars(
-            select(TokenCache).order_by(TokenCache.cached_datetime)
+        _cache_list = (
+            await async_db.scalars(
+                select(TokenCache).order_by(TokenCache.cached_datetime)
+            )
         ).all()
         assert len(_cache_list) == 0
 
@@ -182,7 +187,7 @@ class TestProcessor:
     # Multi Token
     # issued token
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, db, personal_info_contract):
+    async def test_normal_1_2(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -194,7 +199,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -202,13 +207,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token
         token_contract_2 = await deploy_share_token_contract(
@@ -216,26 +221,26 @@ class TestProcessor:
         )
         token_address_2 = token_contract_2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract_2.abi
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
-        token_3.abi = "abi"
+        token_3.abi = {}
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         before_cache_time = datetime.now(UTC).replace(tzinfo=None)
 
@@ -245,10 +250,13 @@ class TestProcessor:
         # Run target process
         with mock.patch("asyncio.sleep", sleep_mock):
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        _cache_list = db.scalars(
-            select(TokenCache).order_by(TokenCache.cached_datetime)
+        _cache_list = (
+            await async_db.scalars(
+                select(TokenCache).order_by(TokenCache.cached_datetime)
+            )
         ).all()
         assert len(_cache_list) == 2
 
@@ -326,7 +334,7 @@ class TestProcessor:
     async def test_error_1(
         self,
         main_func,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -341,7 +349,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -349,15 +357,15 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run mainloop once and fail with web3 utils error
         sleep_mock = AsyncMock()

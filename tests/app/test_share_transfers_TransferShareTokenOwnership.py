@@ -21,6 +21,8 @@ import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
+import pytest
+
 from app.exceptions import SendTransactionError
 from app.model.blockchain.tx_params.ibet_share import ForcedTransferParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
@@ -39,7 +41,8 @@ class TestTransferShareTokenOwnership:
     # <Normal_1>
     # Authorization by eoa-password
     @mock.patch("app.model.blockchain.token.IbetShareContract.forced_transfer")
-    def test_normal_1(self, IbetShareContract_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, IbetShareContract_mock, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -57,18 +60,18 @@ class TestTransferShareTokenOwnership:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_mock.side_effect = [None]
@@ -80,7 +83,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -108,7 +111,8 @@ class TestTransferShareTokenOwnership:
     # <Normal_2>
     # Authorization by auth-token
     @mock.patch("app.model.blockchain.token.IbetShareContract.forced_transfer")
-    def test_normal_2(self, IbetShareContract_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, IbetShareContract_mock, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -126,24 +130,24 @@ class TestTransferShareTokenOwnership:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = _admin_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_mock.side_effect = [None]
@@ -155,7 +159,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={"issuer-address": _admin_address, "auth-token": "test_auth_token"},
@@ -183,7 +187,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_1>
     # RequestValidationError: token_address, from_address, to_address, amount(min)
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _from_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
@@ -197,7 +202,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 0,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url, json=req_param, headers={"issuer-address": _admin_address}
         )
 
@@ -239,7 +244,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_2>
     # RequestValidationError: amount(max)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -259,7 +265,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 1_000_000_000_001,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url, json=req_param, headers={"issuer-address": _admin_address}
         )
 
@@ -280,9 +286,10 @@ class TestTransferShareTokenOwnership:
 
     # <Error_3>
     # RequestValidationError: headers and body required
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         # request target API
-        resp = client.post(self.test_url)
+        resp = await async_client.post(self.test_url)
 
         # assertion
         assert resp.status_code == 422
@@ -306,7 +313,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_4>
     # RequestValidationError: issuer-address
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -326,7 +334,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
@@ -346,7 +354,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_5>
     # RequestValidationError: eoa-password(not decrypt)
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -366,7 +375,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={"issuer-address": _admin_address, "eoa-password": "password"},
@@ -388,7 +397,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_6>
     # AuthorizationError: issuer does not exist
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -408,7 +418,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -426,7 +436,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_7>
     # AuthorizationError: password mismatch
-    def test_error_7(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -444,9 +455,9 @@ class TestTransferShareTokenOwnership:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -455,7 +466,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -473,7 +484,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_8>
     # InvalidParameterError: token not found
-    def test_error_8(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_8(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -491,9 +503,9 @@ class TestTransferShareTokenOwnership:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -502,7 +514,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -520,7 +532,8 @@ class TestTransferShareTokenOwnership:
 
     # <Error_9>
     # InvalidParameterError: processing token
-    def test_error_9(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_9(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -538,19 +551,19 @@ class TestTransferShareTokenOwnership:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -559,7 +572,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -581,7 +594,8 @@ class TestTransferShareTokenOwnership:
         "app.model.blockchain.token.IbetShareContract.forced_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
-    def test_error_10(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_10(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -599,18 +613,18 @@ class TestTransferShareTokenOwnership:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -619,7 +633,7 @@ class TestTransferShareTokenOwnership:
             "to_address": _to_address,
             "amount": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={

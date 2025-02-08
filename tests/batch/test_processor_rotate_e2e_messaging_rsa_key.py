@@ -26,7 +26,6 @@ from unittest.mock import ANY, call
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_messaging_rsa_key
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -39,7 +38,7 @@ from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(db, e2e_messaging_contract):
+def processor(async_db, e2e_messaging_contract):
     processor_rotate_e2e_messaging_rsa_key.E2E_MESSAGING_CONTRACT_ADDRESS = (
         e2e_messaging_contract.address
     )
@@ -60,7 +59,7 @@ class TestProcessor:
     # <Normal_1_1>
     # E2E messaging account is not exists
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, db):
+    async def test_normal_1_1(self, processor, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -68,17 +67,20 @@ class TestProcessor:
         _account = E2EMessagingAccount()
         _account.account_address = user_address_1
         _account.is_deleted = True  # deleted
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey).order_by(
-                E2EMessagingAccountRsaKey.block_timestamp
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey).order_by(
+                    E2EMessagingAccountRsaKey.block_timestamp
+                )
             )
         ).all()
         assert len(_rsa_key_list) == 0
@@ -86,7 +88,7 @@ class TestProcessor:
     # <Normal_1_2>
     # E2E messaging account is not auto generated
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, db):
+    async def test_normal_1_2(self, processor, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -95,27 +97,31 @@ class TestProcessor:
         _account.account_address = user_address_1
         _account.rsa_key_generate_interval = None
         _account.rsa_generation = None
-        db.add(_account)
+        async_db.add(_account)
 
         # Prepare data : E2EMessagingAccountRsaKey
+        block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         _rsa_key_1 = E2EMessagingAccountRsaKey()
         _rsa_key_1.transaction_hash = "tx_1"
         _rsa_key_1.account_address = user_address_1
         _rsa_key_1.rsa_private_key = "rsa_private_key_1"
         _rsa_key_1.rsa_public_key = "rsa_public_key_1"
         _rsa_key_1.rsa_passphrase = "rsa_passphrase_1"
-        _rsa_key_1.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key_1)
+        _rsa_key_1.block_timestamp = block_timestamp
+        async_db.add(_rsa_key_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey).order_by(
-                E2EMessagingAccountRsaKey.block_timestamp
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey).order_by(
+                    E2EMessagingAccountRsaKey.block_timestamp
+                )
             )
         ).all()
         assert len(_rsa_key_list) == 1
@@ -126,12 +132,12 @@ class TestProcessor:
         assert _rsa_key.rsa_private_key == "rsa_private_key_1"
         assert _rsa_key.rsa_public_key == "rsa_public_key_1"
         assert _rsa_key.rsa_passphrase == "rsa_passphrase_1"
-        assert _rsa_key.block_timestamp == _rsa_key_1.block_timestamp
+        assert _rsa_key.block_timestamp == block_timestamp
 
     # <Normal_1_3>
     # Last generation is within the interval
     @pytest.mark.asyncio
-    async def test_normal_1_3(self, processor, db):
+    async def test_normal_1_3(self, processor, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -140,27 +146,31 @@ class TestProcessor:
         _account.account_address = user_address_1
         _account.rsa_key_generate_interval = 99999
         _account.rsa_generation = None
-        db.add(_account)
+        async_db.add(_account)
 
         # Prepare data : E2EMessagingAccountRsaKey
+        block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         _rsa_key_1 = E2EMessagingAccountRsaKey()
         _rsa_key_1.transaction_hash = "tx_1"
         _rsa_key_1.account_address = user_address_1
         _rsa_key_1.rsa_private_key = "rsa_private_key_1"
         _rsa_key_1.rsa_public_key = "rsa_public_key_1"
         _rsa_key_1.rsa_passphrase = "rsa_passphrase_1"
-        _rsa_key_1.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key_1)
+        _rsa_key_1.block_timestamp = block_timestamp
+        async_db.add(_rsa_key_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey).order_by(
-                E2EMessagingAccountRsaKey.block_timestamp
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey).order_by(
+                    E2EMessagingAccountRsaKey.block_timestamp
+                )
             )
         ).all()
         assert len(_rsa_key_list) == 1
@@ -171,12 +181,12 @@ class TestProcessor:
         assert _rsa_key.rsa_private_key == "rsa_private_key_1"
         assert _rsa_key.rsa_public_key == "rsa_public_key_1"
         assert _rsa_key.rsa_passphrase == "rsa_passphrase_1"
-        assert _rsa_key.block_timestamp == _rsa_key_1.block_timestamp
+        assert _rsa_key.block_timestamp == block_timestamp
 
     # <Normal_2>
     # auto generate and rotate
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, db, e2e_messaging_contract):
+    async def test_normal_2(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -197,7 +207,7 @@ class TestProcessor:
         _account.eoa_password = E2EEUtils.encrypt("password")
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
-        db.add(_account)
+        async_db.add(_account)
 
         datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
@@ -209,7 +219,7 @@ class TestProcessor:
         _rsa_key_1_1.rsa_public_key = "rsa_public_key_1_1"
         _rsa_key_1_1.rsa_passphrase = "rsa_passphrase_1_1"
         _rsa_key_1_1.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-3)
-        db.add(_rsa_key_1_1)
+        async_db.add(_rsa_key_1_1)
         time.sleep(1)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -220,18 +230,19 @@ class TestProcessor:
         _rsa_key_1_2.rsa_public_key = "rsa_public_key_1_2"
         _rsa_key_1_2.rsa_passphrase = "rsa_passphrase_1_2"
         _rsa_key_1_2.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-2)
-        db.add(_rsa_key_1_2)
+        async_db.add(_rsa_key_1_2)
         time.sleep(1)
 
         # Prepare data : E2EMessagingAccountRsaKey
+        rsa_key_1_3_block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
         _rsa_key_1_3 = E2EMessagingAccountRsaKey()
         _rsa_key_1_3.transaction_hash = "tx_3"
         _rsa_key_1_3.account_address = user_address_1
         _rsa_key_1_3.rsa_private_key = "rsa_private_key_1_3"
         _rsa_key_1_3.rsa_public_key = "rsa_public_key_1_3"
         _rsa_key_1_3.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
-        _rsa_key_1_3.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
-        db.add(_rsa_key_1_3)
+        _rsa_key_1_3.block_timestamp = rsa_key_1_3_block_timestamp
+        async_db.add(_rsa_key_1_3)
         time.sleep(1)
 
         # Prepare data : E2EMessagingAccount
@@ -241,7 +252,7 @@ class TestProcessor:
         _account.eoa_password = E2EEUtils.encrypt("password")
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
-        db.add(_account)
+        async_db.add(_account)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _rsa_key_2_1 = E2EMessagingAccountRsaKey()
@@ -251,10 +262,10 @@ class TestProcessor:
         _rsa_key_2_1.rsa_public_key = "rsa_public_key_2_2"
         _rsa_key_2_1.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_2")
         _rsa_key_2_1.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
-        db.add(_rsa_key_2_1)
+        async_db.add(_rsa_key_2_1)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
@@ -288,6 +299,7 @@ class TestProcessor:
             mock_ContractUtils_get_block_by_transaction_hash,
         ):
             await processor.process()
+            async_db.expire_all()
 
             # # Assertion
             assert user_address_2 < user_address_1
@@ -311,12 +323,15 @@ class TestProcessor:
                 [call(tx_hash="tx_5"), call(tx_hash="tx_6")]
             )
 
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey)
-            .where(E2EMessagingAccountRsaKey.account_address == user_address_1)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey)
+                .where(E2EMessagingAccountRsaKey.account_address == user_address_1)
+                .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            )
         ).all()
         assert len(_rsa_key_list) == 2
+
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 3
         assert _rsa_key.transaction_hash == "tx_3"
@@ -324,7 +339,8 @@ class TestProcessor:
         assert _rsa_key.rsa_private_key == "rsa_private_key_1_3"
         assert _rsa_key.rsa_public_key == "rsa_public_key_1_3"
         assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_1"
-        assert _rsa_key.block_timestamp == _rsa_key_1_3.block_timestamp
+        assert _rsa_key.block_timestamp == rsa_key_1_3_block_timestamp
+
         _rsa_key = _rsa_key_list[1]
         assert _rsa_key.id == 6
         assert _rsa_key.transaction_hash == "tx_6"
@@ -335,12 +351,16 @@ class TestProcessor:
         assert _rsa_key.rsa_public_key == ANY
         assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_1"
         assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 59)
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey)
-            .where(E2EMessagingAccountRsaKey.account_address == user_address_2)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey)
+                .where(E2EMessagingAccountRsaKey.account_address == user_address_2)
+                .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            )
         ).all()
         assert len(_rsa_key_list) == 2
+
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 4
         assert _rsa_key.transaction_hash == "tx_4"
@@ -348,7 +368,8 @@ class TestProcessor:
         assert _rsa_key.rsa_private_key == "rsa_private_key_2_1"
         assert _rsa_key.rsa_public_key == "rsa_public_key_2_2"
         assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_2"
-        assert _rsa_key.block_timestamp == _rsa_key_1_3.block_timestamp
+        assert _rsa_key.block_timestamp == rsa_key_1_3_block_timestamp
+
         _rsa_key = _rsa_key_list[1]
         assert _rsa_key.id == 5
         assert _rsa_key.transaction_hash == "tx_5"
@@ -367,7 +388,7 @@ class TestProcessor:
     # <Error_1>
     # Could not get the EOA private key
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, db):
+    async def test_error_1(self, processor, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -379,7 +400,7 @@ class TestProcessor:
         _account.eoa_password = E2EEUtils.encrypt("password_invalid")
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
-        db.add(_account)
+        async_db.add(_account)
 
         datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
@@ -391,25 +412,28 @@ class TestProcessor:
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
         _rsa_key.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey).order_by(
-                E2EMessagingAccountRsaKey.block_timestamp
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey).order_by(
+                    E2EMessagingAccountRsaKey.block_timestamp
+                )
             )
         ).all()
 
     # <Error_2>
     # Failed to send transaction
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, db, e2e_messaging_contract):
+    async def test_error_2(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -424,7 +448,7 @@ class TestProcessor:
         _account.eoa_password = E2EEUtils.encrypt("password")
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
-        db.add(_account)
+        async_db.add(_account)
 
         datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
@@ -436,10 +460,10 @@ class TestProcessor:
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
         _rsa_key.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
@@ -450,6 +474,7 @@ class TestProcessor:
         # Run target process
         with mock_E2EMessaging_set_public_key:
             await processor.process()
+            async_db.expire_all()
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(
@@ -459,9 +484,11 @@ class TestProcessor:
                 private_key=user_private_key_1,
             )
 
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey).order_by(
-                E2EMessagingAccountRsaKey.block_timestamp
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey).order_by(
+                    E2EMessagingAccountRsaKey.block_timestamp
+                )
             )
         ).all()
         assert len(_rsa_key_list) == 1
@@ -472,7 +499,7 @@ class TestProcessor:
     async def test_error_3(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         e2e_messaging_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -490,7 +517,7 @@ class TestProcessor:
         _account.eoa_password = E2EEUtils.encrypt("password")
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
-        db.add(_account)
+        async_db.add(_account)
 
         datetime_now = datetime.now(UTC).replace(tzinfo=None)
 
@@ -502,10 +529,10 @@ class TestProcessor:
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
         _rsa_key.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
@@ -516,6 +543,7 @@ class TestProcessor:
         # Run target process
         with mock_E2EMessaging_set_public_key:
             await processor.process()
+            async_db.expire_all()
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(
@@ -525,9 +553,11 @@ class TestProcessor:
                 private_key=user_private_key_1,
             )
 
-        _rsa_key_list = db.scalars(
-            select(E2EMessagingAccountRsaKey).order_by(
-                E2EMessagingAccountRsaKey.block_timestamp
+        _rsa_key_list = (
+            await async_db.scalars(
+                select(E2EMessagingAccountRsaKey).order_by(
+                    E2EMessagingAccountRsaKey.block_timestamp
+                )
             )
         ).all()
         assert len(_rsa_key_list) == 1

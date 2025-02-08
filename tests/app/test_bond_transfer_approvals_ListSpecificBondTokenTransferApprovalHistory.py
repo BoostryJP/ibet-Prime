@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
+import pytest
 from pytz import timezone
 
 import config
@@ -103,21 +104,22 @@ class TestListSpecificBondTokenTransferApprovalHistory:
 
     # <Normal_1_1>
     # no data
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
@@ -129,16 +131,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
 
     # <Normal_1_2>
     # exist data
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -154,7 +157,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -170,7 +173,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -190,12 +193,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
@@ -325,16 +328,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
 
     # <Normal_2>
     # offset, limit
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -350,7 +354,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -366,7 +370,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -388,12 +392,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address) + "?offset=1&limit=1"
         )
 
@@ -447,16 +451,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
 
     # <Normal_3>
     # set exchange_address
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -472,7 +477,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -488,7 +493,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -517,12 +522,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
@@ -653,16 +658,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_4_1>
     # filter
     # from_address
-    def test_normal_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -678,7 +684,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -694,7 +700,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -716,12 +722,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"from_address": self.test_from_address + "1"},
         )
@@ -768,16 +774,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_4_2>
     # filter
     # to_address
-    def test_normal_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -793,7 +800,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -809,7 +816,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -831,12 +838,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"to_address": self.test_to_address + "1"},
         )
@@ -884,16 +891,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # filter
     # status
     # 0: unapproved
-    def test_normal_4_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -909,7 +917,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -925,7 +933,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 5):
@@ -971,12 +979,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"status": 0}
         )
 
@@ -1032,16 +1040,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # filter
     # status
     # 1: escrow_finished
-    def test_normal_4_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -1057,7 +1066,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -1073,7 +1082,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 5):
@@ -1119,12 +1128,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"status": 1}
         )
 
@@ -1180,16 +1189,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # filter
     # status
     # 2: transferred
-    def test_normal_4_3_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3_3(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 7):
@@ -1236,7 +1246,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
                 _transfer_approval_history.operation_type = (
-                    TransferApprovalOperationType.APPROVE.value
+                    TransferApprovalOperationType.APPROVE
                 )
                 _transfer_approval_history.from_address_personal_info = {
                     "key_manager": "key_manager_test1",
@@ -1258,7 +1268,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                     "is_corporate": False,
                     "tax_category": 10,
                 }  # snapshot
-                db.add(_transfer_approval_history)
+                async_db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancellation_blocktimestamp = None
@@ -1280,7 +1290,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
                 _transfer_approval_history.operation_type = (
-                    TransferApprovalOperationType.CANCEL.value
+                    TransferApprovalOperationType.CANCEL
                 )
                 _transfer_approval_history.from_address_personal_info = {
                     "key_manager": "key_manager_test1",
@@ -1302,7 +1312,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                     "is_corporate": False,
                     "tax_category": 10,
                 }  # snapshot
-                db.add(_transfer_approval_history)
+                async_db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancellation_blocktimestamp = (
@@ -1311,12 +1321,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"status": 2}
         )
 
@@ -1414,16 +1424,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # filter
     # status
     # 3: canceled
-    def test_normal_4_3_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3_4(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -1439,7 +1450,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -1455,7 +1466,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 6):
@@ -1504,7 +1515,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
                 _transfer_approval_history.operation_type = (
-                    TransferApprovalOperationType.CANCEL.value
+                    TransferApprovalOperationType.CANCEL
                 )
                 _transfer_approval_history.from_address_personal_info = {
                     "key_manager": "key_manager_test1",
@@ -1526,7 +1537,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                     "is_corporate": False,
                     "tax_category": 10,
                 }  # snapshot
-                db.add(_transfer_approval_history)
+                async_db.add(_transfer_approval_history)
             elif i == 5:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancellation_blocktimestamp = (
@@ -1536,12 +1547,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
 
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"status": 3}
         )
 
@@ -1636,16 +1647,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # filter
     # status
     # multi specify
-    def test_normal_4_3_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3_5(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -1661,7 +1673,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -1677,7 +1689,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 7):
@@ -1720,7 +1732,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
                 _transfer_approval_history.operation_type = (
-                    TransferApprovalOperationType.APPROVE.value
+                    TransferApprovalOperationType.APPROVE
                 )
                 _transfer_approval_history.from_address_personal_info = {
                     "key_manager": "key_manager_test1",
@@ -1742,7 +1754,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                     "is_corporate": False,
                     "tax_category": 10,
                 }  # snapshot
-                db.add(_transfer_approval_history)
+                async_db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancellation_blocktimestamp = None
@@ -1760,7 +1772,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
                 _transfer_approval_history.operation_type = (
-                    TransferApprovalOperationType.CANCEL.value
+                    TransferApprovalOperationType.CANCEL
                 )
                 _transfer_approval_history.from_address_personal_info = {
                     "key_manager": "key_manager_test1",
@@ -1782,7 +1794,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                     "is_corporate": False,
                     "tax_category": 10,
                 }  # snapshot
-                db.add(_transfer_approval_history)
+                async_db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancellation_blocktimestamp = (
@@ -1791,12 +1803,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"status": [0, 1]}
         )
 
@@ -1890,16 +1902,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_1>
     # sort
     # id
-    def test_normal_5_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -1915,7 +1928,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -1931,7 +1944,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -1953,12 +1966,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "id", "sort_order": 0},
         )
@@ -2092,16 +2105,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_2>
     # sort
     # exchange_address
-    def test_normal_5_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -2117,7 +2131,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -2133,7 +2147,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -2156,12 +2170,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "exchange_address", "sort_order": 1},
         )
@@ -2334,16 +2348,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_3>
     # sort
     # application_id
-    def test_normal_5_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_3(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -2359,7 +2374,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -2375,7 +2390,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -2398,12 +2413,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "application_id", "sort_order": 0},
         )
@@ -2576,16 +2591,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_4>
     # sort
     # from_address
-    def test_normal_5_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_4(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -2601,7 +2617,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -2617,7 +2633,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -2641,12 +2657,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "from_address", "sort_order": 1},
         )
@@ -2783,16 +2799,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_5>
     # sort
     # to_address
-    def test_normal_5_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_5(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -2808,7 +2825,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -2824,7 +2841,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -2846,12 +2863,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "to_address", "sort_order": 0},
         )
@@ -2988,16 +3005,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_6>
     # sort
     # amount
-    def test_normal_5_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_6(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -3013,7 +3031,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -3029,7 +3047,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -3051,12 +3069,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "amount", "sort_order": 1},
         )
@@ -3229,16 +3247,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_7>
     # sort
     # application_datetime
-    def test_normal_5_7(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_7(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -3254,7 +3273,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -3270,7 +3289,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -3299,12 +3318,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "application_datetime", "sort_order": 0},
         )
@@ -3477,16 +3496,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_8>
     # sort
     # approval_datetime
-    def test_normal_5_8(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_8(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -3502,7 +3522,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -3518,7 +3538,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -3543,12 +3563,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "approval_datetime", "sort_order": 1},
         )
@@ -3721,16 +3741,17 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_5_9>
     # sort
     # status
-    def test_normal_5_9(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_9(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _from_personal_info = IDXPersonalInfo()
@@ -3746,7 +3767,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _from_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_from_personal_info)
+        async_db.add(_from_personal_info)
 
         # prepare data: IDXPersonalInfo
         _to_personal_info = IDXPersonalInfo()
@@ -3762,7 +3783,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             "is_corporate": False,
         }
         _to_personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_to_personal_info)
+        async_db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 8):
@@ -3814,12 +3835,12 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
-            db.add(_idx_transfer_approval)
+            async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "status", "sort_order": 0},
         )
@@ -4152,9 +4173,10 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Error_1_1>
     # validation error
     # type_error
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={
                 "status": ["a"],
@@ -4194,9 +4216,10 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Error_1_2>
     # validation error
     # min value
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={
                 "status": -1,
@@ -4222,9 +4245,10 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Error_1_3>
     # validation error
     # max value
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={
                 "status": 4,
@@ -4249,9 +4273,10 @@ class TestListSpecificBondTokenTransferApprovalHistory:
 
     # <Error_2>
     # token not found
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 404
@@ -4263,22 +4288,23 @@ class TestListSpecificBondTokenTransferApprovalHistory:
 
     # <Error_3>
     # processing token
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 400

@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from datetime import datetime
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, AuthToken
@@ -40,7 +41,8 @@ class TestDeleteIssuerAuthToken:
 
     # Normal_1
     # Authorization by eoa_password
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -48,19 +50,19 @@ class TestDeleteIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         auth_token.usage_start = datetime(2022, 7, 15, 12, 34, 56)
         auth_token.valid_duration = 120
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.apiurl.format(test_account["address"]),
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
@@ -68,16 +70,19 @@ class TestDeleteIssuerAuthToken:
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
     # Normal_2
     # Authorization by auth_token
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -85,18 +90,18 @@ class TestDeleteIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.apiurl.format(test_account["address"]),
             headers={"auth-token": self.auth_token},
         )
@@ -104,10 +109,12 @@ class TestDeleteIssuerAuthToken:
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -118,7 +125,8 @@ class TestDeleteIssuerAuthToken:
     # Error_1
     # RequestValidationError
     # issuer-address is not a valid address
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -126,19 +134,19 @@ class TestDeleteIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         auth_token.usage_start = datetime(2022, 7, 15, 12, 34, 56)
         auth_token.valid_duration = 120
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.apiurl.format(test_account["address"][::-1]),  # invalid issue address
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
@@ -157,17 +165,20 @@ class TestDeleteIssuerAuthToken:
             ],
         }
 
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is not None
 
     # Error_2
     # RequestValidationError
     # eoa-password is not a Base64-encoded encrypted data
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -175,19 +186,19 @@ class TestDeleteIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         auth_token.usage_start = datetime(2022, 7, 15, 12, 34, 56)
         auth_token.valid_duration = 120
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.apiurl.format(test_account["address"]),
             headers={"eoa-password": self.eoa_password},
         )
@@ -206,17 +217,20 @@ class TestDeleteIssuerAuthToken:
             ],
         }
 
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is not None
 
     # Error_3_1
     # AuthorizationError
     # eoa-password (or auth-token) not set
-    def test_error_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -224,19 +238,19 @@ class TestDeleteIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         auth_token.usage_start = datetime(2022, 7, 15, 12, 34, 56)
         auth_token.valid_duration = 120
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.apiurl.format(test_account["address"]),
         )
 
@@ -247,17 +261,20 @@ class TestDeleteIssuerAuthToken:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is not None
 
     # Error_3_2
     # AuthorizationError
     # eoa-password (or auth-token) is not correct
-    def test_error_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -265,19 +282,19 @@ class TestDeleteIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         auth_token.usage_start = datetime(2022, 7, 15, 12, 34, 56)
         auth_token.valid_duration = 120
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.apiurl.format(test_account["address"]),
             headers={
                 "eoa-password": E2EEUtils.encrypt("incorrect_password")
@@ -291,16 +308,19 @@ class TestDeleteIssuerAuthToken:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is not None
 
     # Error_4
     # NotFound
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -308,12 +328,12 @@ class TestDeleteIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.apiurl.format(test_account["address"]),
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )

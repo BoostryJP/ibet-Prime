@@ -64,13 +64,14 @@ class TestListShareTokenBulkTransfers:
     # Search all
     # - Header: issuer address is set
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
-            db.add(account)
+            async_db.add(account)
 
         # prepare data : BulkTransferUpload
         utc_now = datetime.now(UTC).replace(tzinfo=None)
@@ -78,16 +79,16 @@ class TestListShareTokenBulkTransfers:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
             bulk_transfer_upload.token_address = self.test_token_address
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url,
             headers={"issuer-address": self.upload_issuer_list[1]["address"]},
         )
@@ -99,7 +100,7 @@ class TestListShareTokenBulkTransfers:
             "bulk_transfer_uploads": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_address": self.test_token_address,
                     "upload_id": self.upload_id_list[1],
                     "status": 1,
@@ -115,23 +116,24 @@ class TestListShareTokenBulkTransfers:
     # Search all
     # - Header: issuer address is not set
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         # prepare data : BulkTransferUpload
         utc_now = datetime.now(UTC).replace(tzinfo=None)
         for i in range(0, 3):
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
             bulk_transfer_upload.token_address = self.test_token_address
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.test_url)
+        resp = await async_client.get(self.test_url)
 
         # assertion
         assert resp.status_code == 200
@@ -147,7 +149,7 @@ class TestListShareTokenBulkTransfers:
             assumed_response.append(
                 {
                     "issuer_address": self.upload_issuer_list[i]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_address": self.test_token_address,
                     "upload_id": self.upload_id_list[i],
                     "status": i,
@@ -166,13 +168,14 @@ class TestListShareTokenBulkTransfers:
     # <Normal_2>
     # Search by token_address
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
-            db.add(account)
+            async_db.add(account)
 
         # prepare data : BulkTransferUpload
         utc_now = datetime.now(UTC).replace(tzinfo=None)
@@ -180,60 +183,60 @@ class TestListShareTokenBulkTransfers:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[0]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
         # prepare data : BulkTransfer
         bulk_transfer_0_0 = BulkTransfer()
         bulk_transfer_0_0.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer_0_0.upload_id = self.upload_id_list[0]
-        bulk_transfer_0_0.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_0_0.token_type = TokenType.IBET_SHARE
         bulk_transfer_0_0.token_address = "test_token_address_1"  # 抽出対象
         bulk_transfer_0_0.from_address = "test_from_address_1"
         bulk_transfer_0_0.to_address = "test_to_address_1"
         bulk_transfer_0_0.amount = 10
         bulk_transfer_0_0.status = 1
-        db.add(bulk_transfer_0_0)
+        async_db.add(bulk_transfer_0_0)
 
         bulk_transfer_0_1 = BulkTransfer()
         bulk_transfer_0_1.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer_0_1.upload_id = self.upload_id_list[0]
-        bulk_transfer_0_1.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_0_1.token_type = TokenType.IBET_SHARE
         bulk_transfer_0_1.token_address = "test_token_address_1"  # 抽出対象
         bulk_transfer_0_1.from_address = "test_from_address_2"
         bulk_transfer_0_1.to_address = "test_to_address_2"
         bulk_transfer_0_1.amount = 10
         bulk_transfer_0_1.status = 1
-        db.add(bulk_transfer_0_1)
+        async_db.add(bulk_transfer_0_1)
 
         bulk_transfer_1_0 = BulkTransfer()
         bulk_transfer_1_0.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer_1_0.upload_id = self.upload_id_list[1]
-        bulk_transfer_1_0.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_1_0.token_type = TokenType.IBET_SHARE
         bulk_transfer_1_0.token_address = "test_token_address_other"  # 抽出対象外
         bulk_transfer_1_0.from_address = "test_from_address_2"
         bulk_transfer_1_0.to_address = "test_to_address_2"
         bulk_transfer_1_0.amount = 10
         bulk_transfer_1_0.status = 1
-        db.add(bulk_transfer_1_0)
+        async_db.add(bulk_transfer_1_0)
 
         bulk_transfer_2_0 = BulkTransfer()
         bulk_transfer_2_0.issuer_address = self.upload_issuer_list[0]["address"]
         bulk_transfer_2_0.upload_id = self.upload_id_list[2]
-        bulk_transfer_2_0.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_2_0.token_type = TokenType.IBET_SHARE
         bulk_transfer_2_0.token_address = "test_token_address_1"  # 抽出対象
         bulk_transfer_2_0.from_address = "test_from_address_3"
         bulk_transfer_2_0.to_address = "test_to_address_3"
         bulk_transfer_2_0.amount = 10
         bulk_transfer_2_0.status = 1
-        db.add(bulk_transfer_2_0)
+        async_db.add(bulk_transfer_2_0)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url,
             headers={"issuer-address": self.upload_issuer_list[0]["address"]},
             params={"token_address": "test_token_address_1"},
@@ -246,7 +249,7 @@ class TestListShareTokenBulkTransfers:
             "bulk_transfer_uploads": [
                 {
                     "issuer_address": self.upload_issuer_list[0]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_address": None,
                     "upload_id": self.upload_id_list[0],
                     "status": 0,
@@ -257,7 +260,7 @@ class TestListShareTokenBulkTransfers:
                 },
                 {
                     "issuer_address": self.upload_issuer_list[0]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_address": None,
                     "upload_id": self.upload_id_list[2],
                     "status": 2,
@@ -272,13 +275,14 @@ class TestListShareTokenBulkTransfers:
     # <Normal_3>
     # offset / limit
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
-            db.add(account)
+            async_db.add(account)
 
         # prepare data : BulkTransferUpload
         utc_now = datetime.now(UTC).replace(tzinfo=None)
@@ -286,16 +290,16 @@ class TestListShareTokenBulkTransfers:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[1]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
             bulk_transfer_upload.token_address = self.test_token_address
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
-            db.add(bulk_transfer_upload)
+            async_db.add(bulk_transfer_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.test_url,
             headers={"issuer-address": self.upload_issuer_list[1]["address"]},
             params={"offset": 1, "limit": 1},
@@ -308,7 +312,7 @@ class TestListShareTokenBulkTransfers:
             "bulk_transfer_uploads": [
                 {
                     "issuer_address": self.upload_issuer_list[1]["address"],
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_address": self.test_token_address,
                     "upload_id": self.upload_id_list[1],
                     "status": 1,
@@ -327,9 +331,12 @@ class TestListShareTokenBulkTransfers:
     # <Error_1>
     # RequestValidationError
     # invalid type : issuer-address
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(self.test_url, headers={"issuer-address": "DUMMY ADDRESS"})
+        resp = await async_client.get(
+            self.test_url, headers={"issuer-address": "DUMMY ADDRESS"}
+        )
 
         # assertion
         assert resp.status_code == 422

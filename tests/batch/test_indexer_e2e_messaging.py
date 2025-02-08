@@ -29,6 +29,8 @@ from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
+from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 import batch.indexer_e2e_messaging as indexer_e2e_messaging
 from app.model.blockchain import E2EMessaging
@@ -39,15 +41,16 @@ from app.model.db import (
     IDXE2EMessagingBlockNumber,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_e2e_messaging import Processor
+from config import WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
-web3 = Web3Wrapper()
+web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(db, e2e_messaging_contract):
+def processor(async_db, e2e_messaging_contract):
     indexer_e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS = (
         e2e_messaging_contract.address
     )
@@ -132,25 +135,29 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_1>
     # No event logs
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db):
+    async def test_normal_1(self, processor, async_db):
         # Prepare data : BlockNumber
         _idx_e2e_messaging_block_number = IDXE2EMessagingBlockNumber()
         _idx_e2e_messaging_block_number.latest_block_number = 0
-        db.add(_idx_e2e_messaging_block_number)
+        async_db.add(_idx_e2e_messaging_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -159,7 +166,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Single event logs
     # not generated RSA key after send
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, db, e2e_messaging_contract):
+    async def test_normal_2_1(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -172,7 +179,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         _type = "test_type"
@@ -206,17 +213,20 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 1
         _e2e_messaging = _e2e_messaging_list[0]
@@ -228,8 +238,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         assert _e2e_messaging.message == message_message_str
         assert _e2e_messaging.send_timestamp == sending_block_timestamp
         assert _e2e_messaging.block_timestamp == sending_block_timestamp
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -238,7 +249,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Single event logs
     # generated RSA key after send
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, processor, db, e2e_messaging_contract):
+    async def test_normal_2_2(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -251,7 +262,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         _type = "test_type"
@@ -285,7 +296,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 3, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -296,7 +307,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 2, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -307,7 +318,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -318,7 +329,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] + 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -329,16 +340,19 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] + 2, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
-        db.commit()
+        async_db.add(_e2e_account_rsa_key)
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 1
         _e2e_messaging = _e2e_messaging_list[0]
@@ -350,8 +364,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         assert _e2e_messaging.message == message_message_str
         assert _e2e_messaging.send_timestamp == sending_block_timestamp
         assert _e2e_messaging.block_timestamp == sending_block_timestamp
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -359,7 +373,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_3>
     # Multi event logs
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, db, e2e_messaging_contract):
+    async def test_normal_3(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -374,13 +388,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_2
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message(user3 -> user1)
         _type_1 = "test_type1"
@@ -472,7 +486,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block_1["timestamp"] - 2, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -483,17 +497,20 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block_1["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 4
         _e2e_messaging = _e2e_messaging_list[0]
@@ -532,8 +549,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         assert _e2e_messaging.message == message_message_str_4
         assert _e2e_messaging.send_timestamp == sending_block_timestamp_4
         assert _e2e_messaging.block_timestamp == sending_block_timestamp_4
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -541,7 +558,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_4>
     # Not target message
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, db, e2e_messaging_contract):
+    async def test_normal_4(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -556,7 +573,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         _type = "test_type"
@@ -587,21 +604,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -614,7 +634,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # not json
     @pytest.mark.asyncio
-    async def test_error_1_1(self, processor, db, e2e_messaging_contract):
+    async def test_error_1_1(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -627,7 +647,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         message = "test"
@@ -645,21 +665,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -668,7 +691,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `type` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_2(self, processor, db, e2e_messaging_contract):
+    async def test_error_1_2(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -681,7 +704,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -716,21 +739,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -739,7 +765,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_3(self, processor, db, e2e_messaging_contract):
+    async def test_error_1_3(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -752,7 +778,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         message = json.dumps(
@@ -774,21 +800,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -797,7 +826,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text` max length over
     @pytest.mark.asyncio
-    async def test_error_1_4(self, processor, db, e2e_messaging_contract):
+    async def test_error_1_4(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -810,7 +839,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -843,21 +872,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -866,7 +898,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text.cipher_key` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_5(self, processor, db, e2e_messaging_contract):
+    async def test_error_1_5(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -879,7 +911,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -911,21 +943,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -934,7 +969,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text.message` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_6(self, processor, db, e2e_messaging_contract):
+    async def test_error_1_6(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -947,9 +982,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Send Message
         aes_key = os.urandom(32)
@@ -978,19 +1013,22 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -999,7 +1037,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # decoded `text.message` max length over
     @pytest.mark.asyncio
-    async def test_error_1_7(self, processor, db, e2e_messaging_contract):
+    async def test_error_1_7(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1012,7 +1050,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -1045,21 +1083,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -1067,7 +1108,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # RSA key does not exists
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, db, e2e_messaging_contract):
+    async def test_error_2(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1080,7 +1121,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         _type = "test_type"
@@ -1111,21 +1152,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] + 1, UTC
         ).replace(tzinfo=None)  # Registry after send message
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -1134,7 +1178,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` is not AES key
     @pytest.mark.asyncio
-    async def test_error_3_1(self, processor, db, e2e_messaging_contract):
+    async def test_error_3_1(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1147,7 +1191,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -1177,21 +1221,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -1200,7 +1247,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` does not encrypt with RSA key
     @pytest.mark.asyncio
-    async def test_error_3_2(self, processor, db, e2e_messaging_contract):
+    async def test_error_3_2(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1213,7 +1260,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -1244,21 +1291,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -1267,7 +1317,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` encrypted other RSA key
     @pytest.mark.asyncio
-    async def test_error_3_3(self, processor, db, e2e_messaging_contract):
+    async def test_error_3_3(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1280,7 +1330,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         random_func = Random.new().read
@@ -1316,21 +1366,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -1339,7 +1392,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.message` does not encrypt
     @pytest.mark.asyncio
-    async def test_error_3_4(self, processor, db, e2e_messaging_contract):
+    async def test_error_3_4(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1352,7 +1405,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -1379,21 +1432,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
@@ -1402,7 +1458,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.message` encrypted other AES key
     @pytest.mark.asyncio
-    async def test_error_3_5(self, processor, db, e2e_messaging_contract):
+    async def test_error_3_5(self, processor, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1415,7 +1471,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
         _e2e_account.is_deleted = False
-        db.add(_e2e_account)
+        async_db.add(_e2e_account)
 
         # Send Message
         aes_key = os.urandom(32)
@@ -1449,21 +1505,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
             sending_block["timestamp"] - 1, UTC
         ).replace(tzinfo=None)
-        db.add(_e2e_account_rsa_key)
+        async_db.add(_e2e_account_rsa_key)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _e2e_messaging_list = db.scalars(
-            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        _e2e_messaging_list = (
+            await async_db.scalars(
+                select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+            )
         ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.scalars(
-            select(IDXE2EMessagingBlockNumber).limit(1)
+        _idx_e2e_messaging_block_number = (
+            await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number

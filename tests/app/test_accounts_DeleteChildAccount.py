@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, ChildAccount, IDXPersonalInfo, PersonalInfoDataSource
@@ -34,17 +35,18 @@ class TestDeleteChildAccount:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         _child_account = ChildAccount()
         _child_account.issuer_address = self.issuer_address
         _child_account.child_account_index = 1
         _child_account.child_account_address = self.child_account_address
-        db.add(_child_account)
+        async_db.add(_child_account)
 
         _off_personal_info = IDXPersonalInfo()
         _off_personal_info.issuer_address = self.issuer_address
@@ -60,18 +62,20 @@ class TestDeleteChildAccount:
             "tax_category": 10,
         }
         _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
-        db.add(_off_personal_info)
+        async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.delete(self.base_url.format(self.issuer_address, 1))
+        resp = await async_client.delete(self.base_url.format(self.issuer_address, 1))
 
         # Assertion
         assert resp.status_code == 200
 
-        assert db.scalars(select(ChildAccount).limit(1)).first() is None
-        assert db.scalars(select(IDXPersonalInfo).limit(1)).first() is None
+        assert (await async_db.scalars(select(ChildAccount).limit(1))).first() is None
+        assert (
+            await async_db.scalars(select(IDXPersonalInfo).limit(1))
+        ).first() is None
 
     ###########################################################################
     # Error Case
@@ -79,9 +83,10 @@ class TestDeleteChildAccount:
 
     # <Error_1>
     # 404: Issuer does not exist
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Call API
-        resp = client.delete(self.base_url.format(self.issuer_address, 1))
+        resp = await async_client.delete(self.base_url.format(self.issuer_address, 1))
 
         # Assertion
         assert resp.status_code == 404
@@ -92,15 +97,16 @@ class TestDeleteChildAccount:
 
     # <Error_2>
     # 404: Issuer does not exist
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
-        db.commit()
+        async_db.add(_account)
+        await async_db.commit()
 
         # Call API
-        resp = client.delete(self.base_url.format(self.issuer_address, 1))
+        resp = await async_client.delete(self.base_url.format(self.issuer_address, 1))
 
         # Assertion
         assert resp.status_code == 404

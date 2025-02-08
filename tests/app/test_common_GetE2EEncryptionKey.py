@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 
 class TestGetE2EEncryptionKey:
     # target API endpoint
@@ -27,9 +29,10 @@ class TestGetE2EEncryptionKey:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # request target api
-        resp = client.get(self.apiurl)
+        resp = await async_client.get(self.apiurl)
 
         # assertion
         assert resp.status_code == 200

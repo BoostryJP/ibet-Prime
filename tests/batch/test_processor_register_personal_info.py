@@ -25,7 +25,6 @@ from unittest.mock import patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetShareContract
@@ -50,7 +49,7 @@ from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(db, caplog: pytest.LogCaptureFixture):
+def processor(async_db, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -146,7 +145,7 @@ class TestProcessor:
     # 0 Batch Task
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -158,7 +157,7 @@ class TestProcessor:
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
@@ -172,9 +171,9 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
@@ -185,13 +184,15 @@ class TestProcessor:
         with PersonalInfoContract_register_info as mock:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
+
             mock.assert_not_called()
 
     # <Normal_2>
     # Multiple upload / Multiple Register
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -203,7 +204,7 @@ class TestProcessor:
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
@@ -217,7 +218,7 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         # Only record with "pending" status should be processed
@@ -228,7 +229,7 @@ class TestProcessor:
             batch_register_upload.status = [
                 s.value for s in BatchRegisterPersonalInfoUploadStatus
             ][i % 3]
-            db.add(batch_register_upload)
+            async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
         for i in range(0, 3):
@@ -248,9 +249,9 @@ class TestProcessor:
                     "is_corporate": True,
                     "tax_category": 3,
                 }
-                db.add(batch_register)
+                async_db.add(batch_register)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
@@ -261,12 +262,15 @@ class TestProcessor:
         with PersonalInfoContract_register_info:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # Assertion
-            _batch_register_upload_list = db.scalars(
-                select(BatchRegisterPersonalInfoUpload).where(
-                    BatchRegisterPersonalInfoUpload.upload_id.in_(
-                        [self.upload_id_list[0], self.upload_id_list[4]]
+            _batch_register_upload_list = (
+                await async_db.scalars(
+                    select(BatchRegisterPersonalInfoUpload).where(
+                        BatchRegisterPersonalInfoUpload.upload_id.in_(
+                            [self.upload_id_list[0], self.upload_id_list[4]]
+                        )
                     )
                 )
             ).all()
@@ -275,10 +279,12 @@ class TestProcessor:
                     _upload.status == BatchRegisterPersonalInfoUploadStatus.DONE.value
                 )
 
-            _batch_register_list = db.scalars(
-                select(BatchRegisterPersonalInfo).where(
-                    BatchRegisterPersonalInfo.upload_id.in_(
-                        [self.upload_id_list[0], self.upload_id_list[4]]
+            _batch_register_list = (
+                await async_db.scalars(
+                    select(BatchRegisterPersonalInfo).where(
+                        BatchRegisterPersonalInfo.upload_id.in_(
+                            [self.upload_id_list[0], self.upload_id_list[4]]
+                        )
                     )
                 )
             ).all()
@@ -293,7 +299,7 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_3(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -306,7 +312,7 @@ class TestProcessor:
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
@@ -320,7 +326,7 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         # Only record with "pending" status should be processed
@@ -331,7 +337,7 @@ class TestProcessor:
             )
             batch_register_upload.upload_id = self.upload_id_list[i]
             batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
-            db.add(batch_register_upload)
+            async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
         for i in range(0, 6):
@@ -351,9 +357,9 @@ class TestProcessor:
                     "is_corporate": True,
                     "tax_category": 3,
                 }
-                db.add(batch_register)
+                async_db.add(batch_register)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
@@ -375,27 +381,30 @@ class TestProcessor:
         with PersonalInfoContract_register_info, processing_issuer:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # Assertion
             _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
-                db.scalars(
+                await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
                         BatchRegisterPersonalInfoUpload.status
                         == BatchRegisterPersonalInfoUploadStatus.DONE.value
                     )
                     .order_by(BatchRegisterPersonalInfoUpload.created)
-                ).all()
-            )
+                )
+            ).all()
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
             assert _batch_register_upload_list[1].issuer_address == _account["address"]
 
-            _batch_register_list = db.scalars(
-                select(BatchRegisterPersonalInfo).where(
-                    BatchRegisterPersonalInfo.upload_id.in_(
-                        [r.upload_id for r in _batch_register_upload_list]
+            _batch_register_list = (
+                await async_db.scalars(
+                    select(BatchRegisterPersonalInfo).where(
+                        BatchRegisterPersonalInfo.upload_id.in_(
+                            [r.upload_id for r in _batch_register_upload_list]
+                        )
                     )
                 )
             ).all()
@@ -403,16 +412,15 @@ class TestProcessor:
                 assert _batch_register.status == 1
 
             _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
-                db.scalars(
+                await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
                         BatchRegisterPersonalInfoUpload.status
                         == BatchRegisterPersonalInfoUploadStatus.PENDING.value
                     )
                     .order_by(BatchRegisterPersonalInfoUpload.created)
-                ).all()
-            )
-
+                )
+            ).all()
             assert len(_batch_register_upload_list) == 4
 
             assert (
@@ -432,10 +440,12 @@ class TestProcessor:
                 == _other_issuer["address"]
             )
 
-            _batch_register_list = db.scalars(
-                select(BatchRegisterPersonalInfo).where(
-                    BatchRegisterPersonalInfo.upload_id.in_(
-                        [r.upload_id for r in _batch_register_upload_list]
+            _batch_register_list = (
+                await async_db.scalars(
+                    select(BatchRegisterPersonalInfo).where(
+                        BatchRegisterPersonalInfo.upload_id.in_(
+                            [r.upload_id for r in _batch_register_upload_list]
+                        )
                     )
                 )
             ).all()
@@ -450,7 +460,7 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_4(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -463,7 +473,7 @@ class TestProcessor:
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
@@ -477,7 +487,7 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         # Only record with "pending" status should be processed
@@ -486,7 +496,7 @@ class TestProcessor:
             batch_register_upload.issuer_address = _account["address"]
             batch_register_upload.upload_id = self.upload_id_list[i]
             batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
-            db.add(batch_register_upload)
+            async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
         for i in range(0, 6):
@@ -506,9 +516,9 @@ class TestProcessor:
                     "is_corporate": True,
                     "tax_category": 3,
                 }
-                db.add(batch_register)
+                async_db.add(batch_register)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
@@ -529,27 +539,30 @@ class TestProcessor:
         with PersonalInfoContract_register_info, processing_issuer:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # Assertion
             _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
-                db.scalars(
+                await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
                         BatchRegisterPersonalInfoUpload.status
                         == BatchRegisterPersonalInfoUploadStatus.DONE.value
                     )
                     .order_by(BatchRegisterPersonalInfoUpload.created)
-                ).all()
-            )
+                )
+            ).all()
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
             assert _batch_register_upload_list[1].issuer_address == _account["address"]
 
-            _batch_register_list = db.scalars(
-                select(BatchRegisterPersonalInfo).where(
-                    BatchRegisterPersonalInfo.upload_id.in_(
-                        [r.upload_id for r in _batch_register_upload_list]
+            _batch_register_list = (
+                await async_db.scalars(
+                    select(BatchRegisterPersonalInfo).where(
+                        BatchRegisterPersonalInfo.upload_id.in_(
+                            [r.upload_id for r in _batch_register_upload_list]
+                        )
                     )
                 )
             ).all()
@@ -557,15 +570,15 @@ class TestProcessor:
                 assert _batch_register.status == 1
 
             _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
-                db.scalars(
+                await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
                         BatchRegisterPersonalInfoUpload.status
                         == BatchRegisterPersonalInfoUploadStatus.PENDING.value
                     )
                     .order_by(BatchRegisterPersonalInfoUpload.created)
-                ).all()
-            )
+                )
+            ).all()
 
             assert len(_batch_register_upload_list) == 4
 
@@ -574,10 +587,12 @@ class TestProcessor:
             assert _batch_register_upload_list[2].issuer_address == _account["address"]
             assert _batch_register_upload_list[3].issuer_address == _account["address"]
 
-            _batch_register_list = db.scalars(
-                select(BatchRegisterPersonalInfo).where(
-                    BatchRegisterPersonalInfo.upload_id.in_(
-                        [r.upload_id for r in _batch_register_upload_list[0:3]]
+            _batch_register_list = (
+                await async_db.scalars(
+                    select(BatchRegisterPersonalInfo).where(
+                        BatchRegisterPersonalInfo.upload_id.in_(
+                            [r.upload_id for r in _batch_register_upload_list[0:3]]
+                        )
                     )
                 )
             ).all()
@@ -594,7 +609,7 @@ class TestProcessor:
     async def test_error_1(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -615,7 +630,7 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
@@ -623,7 +638,7 @@ class TestProcessor:
         batch_register_upload.upload_id = self.upload_id_list[0]
         batch_register_upload.token_address = token_address_1
         batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
-        db.add(batch_register_upload)
+        async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
         batch_register = BatchRegisterPersonalInfo()
@@ -641,9 +656,9 @@ class TestProcessor:
             "is_corporate": True,
             "tax_category": 3,
         }
-        db.add(batch_register)
+        async_db.add(batch_register)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
@@ -654,19 +669,21 @@ class TestProcessor:
         with PersonalInfoContract_register_info as mock:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
+
             mock.assert_not_called()
 
             # Assertion
             _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
-                db.scalars(
+                await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
                         BatchRegisterPersonalInfoUpload.issuer_address
                         == _account["address"]
                     )
                     .limit(1)
-                ).first()
-            )
+                )
+            ).first()
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -680,7 +697,7 @@ class TestProcessor:
                 )
             )
 
-            _notification_list = db.scalars(select(Notification)).all()
+            _notification_list = (await async_db.scalars(select(Notification))).all()
             for _notification in _notification_list:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
@@ -702,7 +719,7 @@ class TestProcessor:
     async def test_error_2(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -716,7 +733,7 @@ class TestProcessor:
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
@@ -730,7 +747,7 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
@@ -738,10 +755,10 @@ class TestProcessor:
         batch_register_upload.upload_id = self.upload_id_list[0]
         batch_register_upload.token_address = token_address_1
         batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
-        db.add(batch_register_upload)
+        async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
-        batch_register_list = []
+        batch_register_id_list = []
         for i in range(0, 3):
             batch_register = BatchRegisterPersonalInfo()
             batch_register.upload_id = self.upload_id_list[0]
@@ -758,10 +775,11 @@ class TestProcessor:
                 "is_corporate": True,
                 "tax_category": 3,
             }
-            db.add(batch_register)
-            batch_register_list.append(batch_register)
+            async_db.add(batch_register)
+            await async_db.flush()
+            batch_register_id_list.append(batch_register.id)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
@@ -772,18 +790,19 @@ class TestProcessor:
         with PersonalInfoContract_register_info:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # Assertion
             _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
-                db.scalars(
+                await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
                         BatchRegisterPersonalInfoUpload.issuer_address
                         == _account["address"]
                     )
                     .limit(1)
-                ).first()
-            )
+                )
+            ).first()
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -793,25 +812,25 @@ class TestProcessor:
                 (
                     LOG.name,
                     logging.WARN,
-                    f"Failed to send transaction: id=<{batch_register_list[0].id}>",
+                    f"Failed to send transaction: id=<{batch_register_id_list[0]}>",
                 )
             )
             assert 1 == caplog.record_tuples.count(
                 (
                     LOG.name,
                     logging.WARN,
-                    f"Failed to send transaction: id=<{batch_register_list[1].id}>",
+                    f"Failed to send transaction: id=<{batch_register_id_list[1]}>",
                 )
             )
             assert 1 == caplog.record_tuples.count(
                 (
                     LOG.name,
                     logging.WARN,
-                    f"Failed to send transaction: id=<{batch_register_list[2].id}>",
+                    f"Failed to send transaction: id=<{batch_register_id_list[2]}>",
                 )
             )
 
-            _notification_list = db.scalars(select(Notification)).all()
+            _notification_list = (await async_db.scalars(select(Notification))).all()
             for _notification in _notification_list:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
@@ -824,9 +843,7 @@ class TestProcessor:
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
                     "token_address": batch_register_upload.token_address,
-                    "error_registration_id": [
-                        batch_register.id for batch_register in batch_register_list
-                    ],
+                    "error_registration_id": batch_register_id_list,
                 }
 
     # <Error_3>
@@ -835,7 +852,7 @@ class TestProcessor:
     async def test_error_3(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -849,7 +866,7 @@ class TestProcessor:
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
@@ -863,7 +880,7 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
@@ -871,10 +888,10 @@ class TestProcessor:
         batch_register_upload.upload_id = self.upload_id_list[0]
         batch_register_upload.token_address = token_address_1
         batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
-        db.add(batch_register_upload)
+        async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
-        batch_register_list = []
+        batch_register_id_list = []
         for i in range(0, 3):
             batch_register = BatchRegisterPersonalInfo()
             batch_register.upload_id = self.upload_id_list[0]
@@ -891,10 +908,11 @@ class TestProcessor:
                 "is_corporate": True,
                 "tax_category": 3,
             }
-            db.add(batch_register)
-            batch_register_list.append(batch_register)
+            async_db.add(batch_register)
+            await async_db.flush()
+            batch_register_id_list.append(batch_register.id)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
@@ -905,18 +923,19 @@ class TestProcessor:
         with PersonalInfoContract_register_info:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # Assertion
             _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
-                db.scalars(
+                await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
                         BatchRegisterPersonalInfoUpload.issuer_address
                         == _account["address"]
                     )
                     .limit(1)
-                ).first()
-            )
+                )
+            ).first()
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -926,25 +945,25 @@ class TestProcessor:
                 (
                     LOG.name,
                     logging.WARN,
-                    f"Transaction reverted: id=<{batch_register_list[0].id}> error_code:<999999> error_msg:<>",
+                    f"Transaction reverted: id=<{batch_register_id_list[0]}> error_code:<999999> error_msg:<>",
                 )
             )
             assert 1 == caplog.record_tuples.count(
                 (
                     LOG.name,
                     logging.WARN,
-                    f"Transaction reverted: id=<{batch_register_list[1].id}> error_code:<999999> error_msg:<>",
+                    f"Transaction reverted: id=<{batch_register_id_list[1]}> error_code:<999999> error_msg:<>",
                 )
             )
             assert 1 == caplog.record_tuples.count(
                 (
                     LOG.name,
                     logging.WARN,
-                    f"Transaction reverted: id=<{batch_register_list[2].id}> error_code:<999999> error_msg:<>",
+                    f"Transaction reverted: id=<{batch_register_id_list[2]}> error_code:<999999> error_msg:<>",
                 )
             )
 
-            _notification_list = db.scalars(select(Notification)).all()
+            _notification_list = (await async_db.scalars(select(Notification))).all()
             for _notification in _notification_list:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
@@ -957,9 +976,7 @@ class TestProcessor:
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
                     "token_address": batch_register_upload.token_address,
-                    "error_registration_id": [
-                        batch_register.id for batch_register in batch_register_list
-                    ],
+                    "error_registration_id": batch_register_id_list,
                 }
 
     # <Error_4>
@@ -968,7 +985,7 @@ class TestProcessor:
     async def test_error_4(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -997,7 +1014,7 @@ PhrKAc+Fywn8tNTkjicPHdzDYzUL2STwAzhrbSfIIc2HlZJSks0Fqs+tQ4Iugep6
 fdDfFGjZcF3BwH6NA0frWvUW5AhhkJyJZ8IJ4C0UqakBrRLn2rvThvdCPNPWJ/tx
 EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 -----END PUBLIC KEY-----"""
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
@@ -1011,7 +1028,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
@@ -1019,10 +1036,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         batch_register_upload.upload_id = self.upload_id_list[0]
         batch_register_upload.token_address = token_address_1
         batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
-        db.add(batch_register_upload)
+        async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
-        batch_register_list = []
+        batch_register_id_list = []
         for i in range(0, 3):
             batch_register = BatchRegisterPersonalInfo()
             batch_register.upload_id = self.upload_id_list[0]
@@ -1039,21 +1056,26 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "is_corporate": True,
                 "tax_category": 3,
             }
-            db.add(batch_register)
-            batch_register_list.append(batch_register)
+            async_db.add(batch_register)
+            await async_db.flush()
+            batch_register_id_list.append(batch_register.id)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = db.scalars(
-            select(BatchRegisterPersonalInfoUpload)
-            .where(
-                BatchRegisterPersonalInfoUpload.issuer_address == _account["address"]
+        _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+            await async_db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
+                    BatchRegisterPersonalInfoUpload.issuer_address
+                    == _account["address"]
+                )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert (
             _batch_register_upload.status
@@ -1064,25 +1086,25 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             (
                 LOG.name,
                 logging.WARN,
-                f"Failed to send transaction: id=<{batch_register_list[0].id}>",
+                f"Failed to send transaction: id=<{batch_register_id_list[0]}>",
             )
         )
         assert 1 == caplog.record_tuples.count(
             (
                 LOG.name,
                 logging.WARN,
-                f"Failed to send transaction: id=<{batch_register_list[1].id}>",
+                f"Failed to send transaction: id=<{batch_register_id_list[1]}>",
             )
         )
         assert 1 == caplog.record_tuples.count(
             (
                 LOG.name,
                 logging.WARN,
-                f"Failed to send transaction: id=<{batch_register_list[2].id}>",
+                f"Failed to send transaction: id=<{batch_register_id_list[2]}>",
             )
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == _account["address"]
@@ -1095,7 +1117,5 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             assert _notification.metainfo == {
                 "upload_id": batch_register_upload.upload_id,
                 "token_address": batch_register_upload.token_address,
-                "error_registration_id": [
-                    batch_register.id for batch_register in batch_register_list
-                ],
+                "error_registration_id": batch_register_id_list,
             }

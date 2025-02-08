@@ -79,7 +79,11 @@ class TestUpdateDVPDelivery:
     # Finish Delivery
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, ibet_security_token_dvp_contract, personal_info_contract, async_client, db
+        self,
+        ibet_security_token_dvp_contract,
+        personal_info_contract,
+        async_client,
+        async_db,
     ):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -102,13 +106,13 @@ class TestUpdateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = agent_address
         dvp_agent_account.keyfile = agent["keyfile_json"]
         dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(dvp_agent_account)
+        async_db.add(dvp_agent_account)
 
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
@@ -123,9 +127,9 @@ class TestUpdateDVPDelivery:
         token.token_address = token_contract_1.address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -188,7 +192,11 @@ class TestUpdateDVPDelivery:
     # Abort Delivery
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, ibet_security_token_dvp_contract, personal_info_contract, async_client, db
+        self,
+        ibet_security_token_dvp_contract,
+        personal_info_contract,
+        async_client,
+        async_db,
     ):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -211,13 +219,13 @@ class TestUpdateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = agent_address
         dvp_agent_account.keyfile = agent["keyfile_json"]
         dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(dvp_agent_account)
+        async_db.add(dvp_agent_account)
 
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
@@ -232,9 +240,9 @@ class TestUpdateDVPDelivery:
         token.token_address = token_contract_1.address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -305,7 +313,7 @@ class TestUpdateDVPDelivery:
         ["Finish", "Abort"],
     )
     async def test_error_1(
-        self, operation_type, async_client, db, ibet_security_token_dvp_contract
+        self, operation_type, async_client, async_db, ibet_security_token_dvp_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -316,9 +324,9 @@ class TestUpdateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -351,7 +359,7 @@ class TestUpdateDVPDelivery:
         self,
         operation_type,
         async_client,
-        db,
+        async_db,
         ibet_security_token_dvp_contract,
         personal_info_contract,
     ):
@@ -370,13 +378,13 @@ class TestUpdateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = agent_address
         dvp_agent_account.keyfile = agent["keyfile_json"]
         dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(dvp_agent_account)
+        async_db.add(dvp_agent_account)
 
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
@@ -391,9 +399,9 @@ class TestUpdateDVPDelivery:
         token.token_address = token_contract_1.address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -426,7 +434,7 @@ class TestUpdateDVPDelivery:
         self,
         operation_type,
         async_client,
-        db,
+        async_db,
         ibet_security_token_dvp_contract,
         personal_info_contract,
     ):
@@ -451,13 +459,13 @@ class TestUpdateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = agent_address
         dvp_agent_account.keyfile = agent["keyfile_json"]
         dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(dvp_agent_account)
+        async_db.add(dvp_agent_account)
 
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
@@ -472,9 +480,9 @@ class TestUpdateDVPDelivery:
         token.token_address = token_contract_1.address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(

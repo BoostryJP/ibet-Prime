@@ -35,7 +35,7 @@ from batch.processor_create_ledger import LOG, Processor
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -56,7 +56,7 @@ class TestProcessor:
     # <Normal_1>
     # The ledger creation request does not exist.
     # -> skip end
-    async def test_normal_1(self, processor, db, caplog):
+    async def test_normal_1(self, processor, async_db, caplog):
         # Execute batch
         await processor.process()
 
@@ -71,7 +71,7 @@ class TestProcessor:
         "batch.processor_create_ledger.sync_request_with_registered_personal_info",
         AsyncMock(return_value=(1, 0)),
     )
-    async def test_normal_2(self, token_mock, processor, db, caplog):
+    async def test_normal_2(self, token_mock, processor, async_db, caplog):
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -82,8 +82,8 @@ class TestProcessor:
         ledger_req.token_type = TokenType.IBET_SHARE
         ledger_req.token_address = token_address
         ledger_req.status = LedgerCreationStatus.PROCESSING
-        db.add(ledger_req)
-        db.commit()
+        async_db.add(ledger_req)
+        await async_db.commit()
 
         # Mock: IbetShareContract.get
         mock_token = IbetShareContract()
@@ -93,6 +93,7 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
         assert caplog.messages == [
@@ -112,7 +113,7 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_3_1(self, token_mock, processor, db, caplog):
+    async def test_normal_3_1(self, token_mock, processor, async_db, caplog):
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -123,8 +124,8 @@ class TestProcessor:
         ledger_req.token_type = TokenType.IBET_SHARE
         ledger_req.token_address = token_address
         ledger_req.status = LedgerCreationStatus.PROCESSING
-        db.add(ledger_req)
-        db.commit()
+        async_db.add(ledger_req)
+        await async_db.commit()
 
         # Mock: IbetShareContract.get
         mock_token = IbetShareContract()
@@ -134,9 +135,12 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        ledger_req = db.scalars(select(LedgerCreationRequest).limit(1)).first()
+        ledger_req = (
+            await async_db.scalars(select(LedgerCreationRequest).limit(1))
+        ).first()
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [
@@ -157,7 +161,7 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_3_2(self, token_mock, processor, db, caplog):
+    async def test_normal_3_2(self, token_mock, processor, async_db, caplog):
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -168,8 +172,8 @@ class TestProcessor:
         ledger_req.token_type = TokenType.IBET_STRAIGHT_BOND
         ledger_req.token_address = token_address
         ledger_req.status = LedgerCreationStatus.PROCESSING
-        db.add(ledger_req)
-        db.commit()
+        async_db.add(ledger_req)
+        await async_db.commit()
 
         # Mock: IbetShareContract.get
         mock_token = IbetStraightBondContract()
@@ -180,9 +184,12 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        ledger_req = db.scalars(select(LedgerCreationRequest).limit(1)).first()
+        ledger_req = (
+            await async_db.scalars(select(LedgerCreationRequest).limit(1))
+        ).first()
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [
@@ -204,7 +211,7 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_4_1(self, token_mock, processor, db, caplog):
+    async def test_normal_4_1(self, token_mock, processor, async_db, caplog):
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -216,8 +223,8 @@ class TestProcessor:
         ledger_req.token_address = token_address
         ledger_req.status = LedgerCreationStatus.PROCESSING
         ledger_req.created = datetime(2024, 11, 8, 18, 0, 0)
-        db.add(ledger_req)
-        db.commit()
+        async_db.add(ledger_req)
+        await async_db.commit()
 
         # Mock: IbetShareContract.get
         mock_token = IbetShareContract()
@@ -227,9 +234,12 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        ledger_req = db.scalars(select(LedgerCreationRequest).limit(1)).first()
+        ledger_req = (
+            await async_db.scalars(select(LedgerCreationRequest).limit(1))
+        ).first()
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [
@@ -251,7 +261,7 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_4_2(self, token_mock, processor, db, caplog):
+    async def test_normal_4_2(self, token_mock, processor, async_db, caplog):
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -263,8 +273,8 @@ class TestProcessor:
         ledger_req.token_address = token_address
         ledger_req.status = LedgerCreationStatus.PROCESSING
         ledger_req.created = datetime(2024, 11, 8, 18, 0, 0)
-        db.add(ledger_req)
-        db.commit()
+        async_db.add(ledger_req)
+        await async_db.commit()
 
         # Mock: IbetShareContract.get
         mock_token = IbetStraightBondContract()
@@ -275,9 +285,12 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        ledger_req = db.scalars(select(LedgerCreationRequest).limit(1)).first()
+        ledger_req = (
+            await async_db.scalars(select(LedgerCreationRequest).limit(1))
+        ).first()
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [

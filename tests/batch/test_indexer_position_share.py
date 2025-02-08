@@ -27,7 +27,8 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
@@ -53,9 +54,15 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.indexer_position_share import LOG, Processor, main
-from config import CHAIN_ID, TOKEN_CACHE_TTL, TX_GAS_LIMIT, ZERO_ADDRESS
+from config import (
+    CHAIN_ID,
+    TOKEN_CACHE_TTL,
+    TX_GAS_LIMIT,
+    WEB3_HTTP_PROVIDER,
+    ZERO_ADDRESS,
+)
 from tests.account_config import config_eth_account
 from tests.contract_utils import (
     IbetExchangeContractTestUtils,
@@ -65,7 +72,8 @@ from tests.contract_utils import (
     PersonalInfoContractTestUtils,
 )
 
-web3 = Web3Wrapper()
+web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
@@ -80,7 +88,7 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(db, caplog: pytest.LogCaptureFixture):
+def processor(async_db, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -171,7 +179,7 @@ class TestProcessor:
     # not issue token
     @pytest.mark.asyncio
     async def test_normal_1_1(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -181,40 +189,41 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token(bond token)
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = "test1"
         token_1.issuer_address = issuer_address
         token_1.abi = "abi"
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -225,7 +234,7 @@ class TestProcessor:
     # issued token
     @pytest.mark.asyncio
     async def test_normal_1_2(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -238,7 +247,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -246,53 +255,56 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
         # Prepare data : BlockNumber
         _idx_position_share_block_number = IDXPositionShareBlockNumber()
         _idx_position_share_block_number.latest_block_number = 0
-        db.add(_idx_position_share_block_number)
+        async_db.add(_idx_position_share_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -300,8 +312,9 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -312,7 +325,7 @@ class TestProcessor:
     # - Issue
     @pytest.mark.asyncio
     async def test_normal_2_1(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -327,7 +340,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -335,36 +348,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Issue
         tx = token_contract_1.functions.issueFrom(
@@ -382,14 +395,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 2
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -397,10 +413,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -408,8 +426,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -420,7 +438,7 @@ class TestProcessor:
     # - Transfer(to account)
     @pytest.mark.asyncio
     async def test_normal_2_2_1(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -435,7 +453,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -443,36 +461,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -490,14 +508,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 2
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -505,10 +526,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -516,8 +539,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -530,7 +553,7 @@ class TestProcessor:
     async def test_normal_2_2_2(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_escrow_contract,
     ):
@@ -545,7 +568,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -556,36 +579,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -603,14 +626,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -618,8 +644,8 @@ class TestProcessor:
         assert _position.exchange_balance == 40
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -632,7 +658,7 @@ class TestProcessor:
     async def test_normal_2_2_3(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_escrow_contract,
     ):
@@ -649,7 +675,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -660,36 +686,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -706,12 +732,16 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
-        _position_list = db.scalars(select(IDXPosition)).all()
+        async_db.expire_all()
+
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -748,18 +778,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-
-        # If we query in one session before and after update some record in another session,
-        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
-        db.expire_all()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 2
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -767,10 +796,12 @@ class TestProcessor:
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -778,8 +809,8 @@ class TestProcessor:
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -790,7 +821,7 @@ class TestProcessor:
     # - Lock
     @pytest.mark.asyncio
     async def test_normal_2_3(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -803,7 +834,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -811,36 +842,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Lock
         tx = token_contract_1.functions.lock(
@@ -858,15 +889,18 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
 
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -875,22 +909,26 @@ class TestProcessor:
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
 
-        _locked_position = db.scalars(
-            select(IDXLockedPosition)
-            .where(
-                and_(
-                    IDXLockedPosition.token_address == token_address_1,
-                    IDXLockedPosition.account_address == issuer_address,
+        _locked_position = (
+            await async_db.scalars(
+                select(IDXLockedPosition)
+                .where(
+                    and_(
+                        IDXLockedPosition.token_address == token_address_1,
+                        IDXLockedPosition.account_address == issuer_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
         assert _locked_position.value == 40
 
-        _lock_list = db.scalars(select(IDXLock).order_by(IDXLock.id)).all()
+        _lock_list = (
+            await async_db.scalars(select(IDXLock).order_by(IDXLock.id))
+        ).all()
         assert len(_lock_list) == 1
 
         _lock1 = _lock_list[0]
@@ -902,8 +940,8 @@ class TestProcessor:
         assert _lock1.value == 40
         assert _lock1.data == {"message": "locked1"}
 
-        _notification_list = db.scalars(
-            select(Notification).order_by(Notification.created)
+        _notification_list = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
         ).all()
         assert len(_notification_list) == 1
 
@@ -921,8 +959,8 @@ class TestProcessor:
             "data": {"message": "locked1"},
         }
 
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -933,7 +971,7 @@ class TestProcessor:
     # - Unlock
     @pytest.mark.asyncio
     async def test_normal_2_4(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -946,7 +984,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -954,36 +992,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Lock
         tx = token_contract_1.functions.lock(
@@ -1000,14 +1038,17 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
 
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1032,19 +1073,18 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-
-        # If we query in one session before and after update some record in another session,
-        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
-        db.expire_all()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
 
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1053,22 +1093,26 @@ class TestProcessor:
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
 
-        _locked_position = db.scalars(
-            select(IDXLockedPosition)
-            .where(
-                and_(
-                    IDXLockedPosition.token_address == token_address_1,
-                    IDXLockedPosition.account_address == issuer_address,
+        _locked_position = (
+            await async_db.scalars(
+                select(IDXLockedPosition)
+                .where(
+                    and_(
+                        IDXLockedPosition.token_address == token_address_1,
+                        IDXLockedPosition.account_address == issuer_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
         assert _locked_position.value == 40 - 30
 
-        _lock_list = db.scalars(select(IDXLock).order_by(IDXLock.id)).all()
+        _lock_list = (
+            await async_db.scalars(select(IDXLock).order_by(IDXLock.id))
+        ).all()
         assert len(_lock_list) == 1
 
         _lock1 = _lock_list[0]
@@ -1080,7 +1124,9 @@ class TestProcessor:
         assert _lock1.value == 40
         assert _lock1.data == {"message": "locked1"}
 
-        _unlock_list = db.scalars(select(IDXUnlock).order_by(IDXUnlock.id)).all()
+        _unlock_list = (
+            await async_db.scalars(select(IDXUnlock).order_by(IDXUnlock.id))
+        ).all()
         assert len(_unlock_list) == 1
 
         _unlock1 = _unlock_list[0]
@@ -1093,8 +1139,8 @@ class TestProcessor:
         assert _unlock1.value == 30
         assert _unlock1.data == {"message": "unlocked1"}
 
-        _notification_list = db.scalars(
-            select(Notification).order_by(Notification.created)
+        _notification_list = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
         ).all()
         assert len(_notification_list) == 2
 
@@ -1127,8 +1173,8 @@ class TestProcessor:
             "data": {"message": "unlocked1"},
         }
 
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -1139,7 +1185,7 @@ class TestProcessor:
     # - Redeem
     @pytest.mark.asyncio
     async def test_normal_2_5(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1152,7 +1198,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1160,36 +1206,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Redeem
         tx = token_contract_1.functions.redeemFrom(
@@ -1207,14 +1253,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1222,8 +1271,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -1234,7 +1283,7 @@ class TestProcessor:
     # - ApplyForTransfer
     @pytest.mark.asyncio
     async def test_normal_2_6(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1252,7 +1301,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1263,36 +1312,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # ApplyForTransfer
         PersonalInfoContractTestUtils.register(
@@ -1316,14 +1365,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1331,8 +1383,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 40
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -1343,7 +1395,7 @@ class TestProcessor:
     # - CancelTransfer
     @pytest.mark.asyncio
     async def test_normal_2_7(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1361,7 +1413,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1372,36 +1424,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # ApplyForTransfer
         PersonalInfoContractTestUtils.register(
@@ -1424,12 +1476,16 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
-        _position_list = db.scalars(select(IDXPosition)).all()
+        async_db.expire_all()
+
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1452,18 +1508,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-
-        # If we query in one session before and after update some record in another session,
-        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
-        db.expire_all()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1471,8 +1526,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -1483,7 +1538,7 @@ class TestProcessor:
     # - ApproveTransfer
     @pytest.mark.asyncio
     async def test_normal_2_8(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1501,7 +1556,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1512,36 +1567,36 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # ApplyForTransfer
         PersonalInfoContractTestUtils.register(
@@ -1564,12 +1619,16 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
-        _position_list = db.scalars(select(IDXPosition)).all()
+        async_db.expire_all()
+
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1592,18 +1651,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-
-        # If we query in one session before and after update some record in another session,
-        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
-        db.expire_all()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 2
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1611,10 +1669,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -1622,8 +1682,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -1636,7 +1696,7 @@ class TestProcessor:
     async def test_normal_2_9_1(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
     ):
@@ -1651,7 +1711,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1662,13 +1722,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_contract_2 = await deploy_bond_token_contract(
@@ -1679,26 +1739,26 @@ class TestProcessor:
         )
         token_address_2 = token_contract_2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -1728,12 +1788,16 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
-        _position_list = db.scalars(select(IDXPosition)).all()
+        async_db.expire_all()
+
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1758,18 +1822,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-
-        # If we query in one session before and after update some record in another session,
-        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
-        db.expire_all()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1777,8 +1840,8 @@ class TestProcessor:
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 30
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -1791,7 +1854,7 @@ class TestProcessor:
     async def test_normal_2_9_2(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
     ):
@@ -1817,7 +1880,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -1829,18 +1892,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -1897,14 +1961,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -1912,10 +1979,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -1923,10 +1992,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -1934,8 +2005,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -1948,7 +2019,7 @@ class TestProcessor:
     async def test_normal_2_9_3(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
     ):
@@ -1974,7 +2045,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -1986,18 +2057,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2057,14 +2129,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -2072,10 +2147,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -2083,10 +2160,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -2094,8 +2173,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -2108,7 +2187,7 @@ class TestProcessor:
     async def test_normal_2_9_4(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
     ):
@@ -2134,7 +2213,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -2146,18 +2225,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2217,14 +2297,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -2232,10 +2315,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -2243,10 +2328,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 10
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -2254,8 +2341,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -2268,7 +2355,7 @@ class TestProcessor:
     async def test_normal_2_9_5(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
     ):
@@ -2294,7 +2381,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -2306,18 +2393,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2386,14 +2474,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -2401,10 +2492,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -2412,10 +2505,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -2423,8 +2518,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -2437,7 +2532,7 @@ class TestProcessor:
     async def test_normal_2_9_6(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
     ):
@@ -2463,7 +2558,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -2475,18 +2570,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2555,14 +2651,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -2570,10 +2669,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -2581,10 +2682,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 10
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -2592,8 +2695,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -2606,7 +2709,7 @@ class TestProcessor:
     async def test_normal_2_10_1(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -2623,7 +2726,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -2634,13 +2737,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_contract_2 = await deploy_bond_token_contract(
@@ -2651,26 +2754,26 @@ class TestProcessor:
         )
         token_address_2 = token_contract_2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -2700,12 +2803,16 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
-        _position_list = db.scalars(select(IDXPosition)).all()
+        async_db.expire_all()
+
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -2730,18 +2837,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-
-        # If we query in one session before and after update some record in another session,
-        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
-        db.expire_all()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -2749,8 +2855,8 @@ class TestProcessor:
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 30
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -2763,7 +2869,7 @@ class TestProcessor:
     async def test_normal_2_10_2(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -2789,7 +2895,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -2801,18 +2907,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2870,14 +2977,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -2885,10 +2995,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -2896,10 +3008,12 @@ class TestProcessor:
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -2907,8 +3021,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -2921,7 +3035,7 @@ class TestProcessor:
     async def test_normal_2_10_3(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -2947,7 +3061,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -2959,18 +3073,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3030,14 +3145,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -3045,10 +3163,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -3056,10 +3176,12 @@ class TestProcessor:
         assert _position.exchange_balance == 20
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -3067,8 +3189,8 @@ class TestProcessor:
         assert _position.exchange_balance == 10
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -3081,7 +3203,7 @@ class TestProcessor:
     async def test_normal_2_11_1(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
     ):
@@ -3098,7 +3220,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -3109,13 +3231,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_contract_2 = await deploy_bond_token_contract(
@@ -3126,26 +3248,26 @@ class TestProcessor:
         )
         token_address_2 = token_contract_2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -3175,12 +3297,16 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
-        _position_list = db.scalars(select(IDXPosition)).all()
+        async_db.expire_all()
+
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -3205,18 +3331,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-
-        # If we query in one session before and after update some record in another session,
-        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
-        db.expire_all()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -3224,8 +3349,8 @@ class TestProcessor:
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 30
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -3238,7 +3363,7 @@ class TestProcessor:
     async def test_normal_2_11_2(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
     ):
@@ -3263,7 +3388,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -3275,18 +3400,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3347,14 +3473,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -3362,10 +3491,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -3373,10 +3504,12 @@ class TestProcessor:
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -3384,8 +3517,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -3398,7 +3531,7 @@ class TestProcessor:
     async def test_normal_2_11_3(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
     ):
@@ -3423,7 +3556,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -3435,18 +3568,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3512,14 +3646,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -3527,10 +3664,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -3538,10 +3677,12 @@ class TestProcessor:
         assert _position.exchange_balance == 20
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -3549,8 +3690,8 @@ class TestProcessor:
         assert _position.exchange_balance == 10
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -3563,7 +3704,7 @@ class TestProcessor:
     async def test_normal_2_11_4(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
     ):
@@ -3588,7 +3729,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -3600,18 +3741,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -3678,14 +3820,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -3693,10 +3838,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -3704,10 +3851,12 @@ class TestProcessor:
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -3715,8 +3864,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -3727,7 +3876,7 @@ class TestProcessor:
     # - Transfer(twice)
     @pytest.mark.asyncio
     async def test_normal_3_1(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -3750,7 +3899,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -3758,39 +3907,40 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(bond token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : Token(processing token)
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.token_address = "test1"
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
         token_3.token_status = 0
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Transfer: 1st
         tx = token_contract_1.functions.transferFrom(
@@ -3831,14 +3981,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -3846,10 +3999,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -3857,10 +4012,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -3868,8 +4025,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -3880,7 +4037,7 @@ class TestProcessor:
     # - Transfer(BulkTransfer)
     @pytest.mark.asyncio
     async def test_normal_3_2(
-        self, processor: Processor, db: Session, personal_info_contract
+        self, processor: Processor, async_db, personal_info_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -3913,7 +4070,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -3921,28 +4078,29 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(share token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -4008,13 +4166,16 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 5
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -4022,10 +4183,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -4033,10 +4196,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -4044,10 +4209,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_3)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_3)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_3
@@ -4055,10 +4222,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_4)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_4)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_4
@@ -4066,14 +4235,14 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -4087,7 +4256,7 @@ class TestProcessor:
     async def test_normal_3_3(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
     ):
@@ -4113,7 +4282,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -4125,18 +4294,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -4207,14 +4377,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -4222,10 +4395,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -4233,10 +4408,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -4244,8 +4421,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -4259,7 +4436,7 @@ class TestProcessor:
     async def test_normal_3_4(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -4285,7 +4462,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -4297,18 +4474,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -4366,14 +4544,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == issuer_address)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -4381,10 +4562,12 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_1)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -4392,10 +4575,12 @@ class TestProcessor:
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(IDXPosition.account_address == user_address_2)
-            .limit(1)
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == user_address_2)
+                .limit(1)
+            )
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -4403,8 +4588,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -4415,7 +4600,7 @@ class TestProcessor:
     async def test_normal_4(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -4441,7 +4626,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues share token.
         token_contract1 = await deploy_share_token_contract(
@@ -4453,13 +4638,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Issuer issues share token.
         token_contract2 = await deploy_share_token_contract(
@@ -4471,18 +4656,19 @@ class TestProcessor:
         )
         token_address_2 = token_contract2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Before run(consume accumulated events)
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -4532,19 +4718,22 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _position_list = db.scalars(select(IDXPosition)).all()
+        _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 6
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(
-                and_(
-                    IDXPosition.account_address == issuer_address,
-                    IDXPosition.token_address == token_address_1,
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(
+                    and_(
+                        IDXPosition.account_address == issuer_address,
+                        IDXPosition.token_address == token_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -4552,15 +4741,17 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(
-                and_(
-                    IDXPosition.account_address == user_address_1,
-                    IDXPosition.token_address == token_address_1,
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(
+                    and_(
+                        IDXPosition.account_address == user_address_1,
+                        IDXPosition.token_address == token_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
@@ -4568,15 +4759,17 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(
-                and_(
-                    IDXPosition.account_address == user_address_2,
-                    IDXPosition.token_address == token_address_1,
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(
+                    and_(
+                        IDXPosition.account_address == user_address_2,
+                        IDXPosition.token_address == token_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
@@ -4584,15 +4777,17 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(
-                and_(
-                    IDXPosition.account_address == issuer_address,
-                    IDXPosition.token_address == token_address_2,
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(
+                    and_(
+                        IDXPosition.account_address == issuer_address,
+                        IDXPosition.token_address == token_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _position.token_address == token_address_2
         assert _position.account_address == issuer_address
@@ -4600,15 +4795,17 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(
-                and_(
-                    IDXPosition.account_address == user_address_1,
-                    IDXPosition.token_address == token_address_2,
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(
+                    and_(
+                        IDXPosition.account_address == user_address_1,
+                        IDXPosition.token_address == token_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _position.token_address == token_address_2
         assert _position.account_address == user_address_1
@@ -4616,15 +4813,17 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _position = db.scalars(
-            select(IDXPosition)
-            .where(
-                and_(
-                    IDXPosition.account_address == user_address_2,
-                    IDXPosition.token_address == token_address_2,
+        _position = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(
+                    and_(
+                        IDXPosition.account_address == user_address_2,
+                        IDXPosition.token_address == token_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert _position.token_address == token_address_2
         assert _position.account_address == user_address_2
@@ -4632,8 +4831,8 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
-        _idx_position_share_block_number = db.scalars(
-            select(IDXPositionShareBlockNumber).limit(1)
+        _idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -4644,15 +4843,16 @@ class TestProcessor:
     @mock.patch("web3.eth.Eth.block_number", 100)
     @pytest.mark.asyncio
     async def test_normal_5(
-        self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
+        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
     ):
         _idx_position_share_block_number = IDXPositionShareBlockNumber()
         _idx_position_share_block_number.id = 1
         _idx_position_share_block_number.latest_block_number = 1000
-        db.add(_idx_position_share_block_number)
-        db.commit()
+        async_db.add(_idx_position_share_block_number)
+        await async_db.commit()
 
         await processor.sync_new_logs()
+        async_db.expire_all()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.DEBUG, "skip process")
         )
@@ -4664,7 +4864,7 @@ class TestProcessor:
     async def test_normal_6_1(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -4680,7 +4880,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues bond token.
         token_contract1 = await deploy_share_token_contract(
@@ -4692,24 +4892,27 @@ class TestProcessor:
         )
         token_address_1 = token_contract1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
+        async_db.expire_all()
+
         assert len(processor.token_list.keys()) == 1
         assert len(processor.exchange_address_list) == 1
 
-        positions = db.scalars(select(IDXPosition)).all()
+        positions = (await async_db.scalars(select(IDXPosition))).all()
         assert len(positions) == 1
         issuer_position = positions[0]
         assert issuer_position.json() == {
@@ -4720,7 +4923,7 @@ class TestProcessor:
             "pending_transfer": 0,
         }
 
-        token_af = db.scalars(select(Token).limit(1)).first()
+        token_af = (await async_db.scalars(select(Token).limit(1))).first()
         assert token_af.initial_position_synced is True
 
         # Prepare additional token
@@ -4733,18 +4936,19 @@ class TestProcessor:
         )
         token_address_2 = token_contract2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
         # newly issued token is loaded properly
@@ -4758,7 +4962,7 @@ class TestProcessor:
     async def test_normal_6_2(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -4774,7 +4978,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues bond token.
         token_contract1 = await deploy_share_token_contract(
@@ -4788,25 +4992,26 @@ class TestProcessor:
         # Prepare data: Token (Already init synced)
         token_address_1 = token_contract1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
         token_1.initial_position_synced = True  # already synced
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
         assert len(processor.token_list.keys()) == 1
         assert len(processor.exchange_address_list) == 1
 
-        positions = db.scalars(select(IDXPosition)).all()
+        positions = (await async_db.scalars(select(IDXPosition))).all()
         assert len(positions) == 0
 
     ###########################################################################
@@ -4819,7 +5024,7 @@ class TestProcessor:
     async def test_error_1(
         self,
         main_func,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -4836,7 +5041,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -4844,13 +5049,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : TokenCache
         token_attr = {
@@ -4883,9 +5088,9 @@ class TestProcessor:
         token_cache.expiration_datetime = datetime.now(UTC).replace(
             tzinfo=None
         ) + timedelta(seconds=TOKEN_CACHE_TTL)
-        db.add(token_cache)
+        async_db.add(token_cache)
 
-        db.commit()
+        await async_db.commit()
 
         # Issue
         tx = token_contract_1.functions.issueFrom(

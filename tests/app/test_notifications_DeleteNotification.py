@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Notification, NotificationType
@@ -35,7 +36,8 @@ class TestDeleteNotification:
 
     # <Normal_1>
     # Non filtered
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -52,7 +54,7 @@ class TestDeleteNotification:
         _notification_1.created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_notification_1)
+        async_db.add(_notification_1)
 
         _notification_2 = Notification()
         _notification_2.notice_id = "notice_id_2"
@@ -64,7 +66,7 @@ class TestDeleteNotification:
         _notification_2.created = datetime.strptime(
             "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_notification_2)
+        async_db.add(_notification_2)
 
         _notification_3 = Notification()
         _notification_3.notice_id = "notice_id_3"
@@ -76,7 +78,7 @@ class TestDeleteNotification:
         _notification_3.created = datetime.strptime(
             "2022/01/02 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/03
-        db.add(_notification_3)
+        async_db.add(_notification_3)
 
         _notification_4 = Notification()
         _notification_4.notice_id = "notice_id_4"
@@ -88,12 +90,12 @@ class TestDeleteNotification:
         _notification_4.created = datetime.strptime(
             "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/03
-        db.add(_notification_4)
+        async_db.add(_notification_4)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(notice_id="notice_id_2"),
             headers={
                 "issuer-address": issuer_address_1,
@@ -103,8 +105,8 @@ class TestDeleteNotification:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _notification_list = db.scalars(
-            select(Notification).order_by(Notification.created)
+        _notification_list = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
         ).all()
         assert len(_notification_list) == 3
         _notification = _notification_list[0]
@@ -138,9 +140,10 @@ class TestDeleteNotification:
 
     # <Error_1>
     # Parameter Error(required)
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(notice_id="notice_id_2"),
         )
 
@@ -160,9 +163,10 @@ class TestDeleteNotification:
 
     # <Error_2>
     # Parameter Error(invalid address)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(notice_id="notice_id_2"),
             headers={
                 "issuer-address": "test",
@@ -185,12 +189,13 @@ class TestDeleteNotification:
 
     # <Error_3>
     # notification does not exist
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(notice_id="notice_id_2"),
             headers={
                 "issuer-address": issuer_address_1,

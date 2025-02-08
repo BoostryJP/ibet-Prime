@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import UTC, datetime
 
+import pytest
+
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
 
@@ -32,39 +34,40 @@ class TestRetrieveE2EMessagingAccount:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
-        db.add(_account)
+        async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_2"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -82,17 +85,18 @@ class TestRetrieveE2EMessagingAccount:
 
     # <Normal_2>
     # deleted(RSA key is None)
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
         _account.is_deleted = True
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -114,9 +118,10 @@ class TestRetrieveE2EMessagingAccount:
 
     # <Error_1>
     # No data
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address="test"),
         )
 

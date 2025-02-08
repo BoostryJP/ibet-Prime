@@ -43,7 +43,7 @@ web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
-def initialize(issuer, db):
+async def initialize(issuer, async_db):
     _account = Account()
     _account.issuer_address = issuer["address"]
     _account.keyfile = issuer["keyfile_json"]
@@ -53,8 +53,8 @@ def initialize(issuer, db):
     _account.rsa_public_key = issuer["rsa_public_key"]
     rsa_password = "password"
     _account.rsa_passphrase = E2EEUtils.encrypt(rsa_password)
-    db.add(_account)
-    db.commit()
+    async_db.add(_account)
+    await async_db.commit()
 
     private_key = decode_keyfile_json(
         raw_keyfile_json=issuer["keyfile_json"], password=eoa_password.encode("utf-8")
@@ -78,9 +78,9 @@ class TestGetInfo:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -129,9 +129,9 @@ class TestGetInfo:
     # <Normal_2>
     # Unset Information
     @pytest.mark.asyncio
-    async def test_normal_2(self, db):
+    async def test_normal_2(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -175,9 +175,9 @@ class TestGetInfo:
     # <Error_1>
     # Invalid RSA Private Key
     @pytest.mark.asyncio
-    async def test_error_1(self, db):
+    async def test_error_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -240,9 +240,9 @@ class TestGetInfo:
     # <Error_2>
     # Decrypt Fail
     @pytest.mark.asyncio
-    async def test_error_2(self, db):
+    async def test_error_2(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -290,9 +290,9 @@ class TestRegisterInfo:
     # <Normal_1>
     # not register
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Run Test
         setting_user = config_eth_account("user2")
@@ -317,9 +317,9 @@ class TestRegisterInfo:
     # <Normal_2>
     # registered
     @pytest.mark.asyncio
-    async def test_normal_2(self, db):
+    async def test_normal_2(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -384,9 +384,9 @@ class TestRegisterInfo:
     # <Error_1>
     # SendTransactionError(Timeout)
     @pytest.mark.asyncio
-    async def test_error_1(self, db):
+    async def test_error_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Run Test
         setting_user = config_eth_account("user2")
@@ -412,9 +412,9 @@ class TestRegisterInfo:
     # <Error_2>
     # SendTransactionError(Other Error)
     @pytest.mark.asyncio
-    async def test_error_2(self, db):
+    async def test_error_2(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Run Test
         setting_user = config_eth_account("user2")
@@ -440,7 +440,7 @@ class TestRegisterInfo:
     # <Error_3>
     # Transaction REVERT
     @pytest.mark.asyncio
-    async def test_error_3(self, db):
+    async def test_error_3(self, async_db):
         # Transaction REVERT would not occur in PersonalInfo_register
         pass
 
@@ -452,9 +452,9 @@ class TestModifyInfo:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -519,9 +519,9 @@ class TestModifyInfo:
     # <Error_1>
     # SendTransactionError(Timeout)
     @pytest.mark.asyncio
-    async def test_error_1(self, db):
+    async def test_error_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -585,9 +585,9 @@ class TestModifyInfo:
     # <Error_2>
     # SendTransactionError(Other Error)
     @pytest.mark.asyncio
-    async def test_error_2(self, db):
+    async def test_error_2(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -651,9 +651,9 @@ class TestModifyInfo:
     # <Error_3>
     # Transaction REVERT(not registered)
     @pytest.mark.asyncio
-    async def test_error_3(self, db):
+    async def test_error_3(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")
@@ -693,9 +693,9 @@ class TestGetRegisterEvent:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         block_number_before = web3.eth.block_number
 
@@ -756,9 +756,9 @@ class TestGetModifyEvent:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         issuer = config_eth_account("user1")
-        personal_info_contract = initialize(issuer, db)
+        personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
         setting_user = config_eth_account("user2")

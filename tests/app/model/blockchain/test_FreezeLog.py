@@ -44,7 +44,7 @@ class TestRecordLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db, freeze_log_contract):
+    async def test_normal_1(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -81,7 +81,7 @@ class TestRecordLog:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, db, freeze_log_contract):
+    async def test_error_1(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -111,7 +111,7 @@ class TestRecordLog:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, db, freeze_log_contract):
+    async def test_error_2(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -146,7 +146,7 @@ class TestUpdateLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db, freeze_log_contract):
+    async def test_normal_1(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -183,7 +183,7 @@ class TestUpdateLog:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, db, freeze_log_contract):
+    async def test_error_1(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -213,7 +213,7 @@ class TestUpdateLog:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, db, freeze_log_contract):
+    async def test_error_2(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -248,7 +248,7 @@ class TestGetLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db, freeze_log_contract):
+    async def test_normal_1(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -278,7 +278,7 @@ class TestGetLog:
     # <Normal_2>
     # Default value
     @pytest.mark.asyncio
-    async def test_normal_2(self, db, freeze_log_contract):
+    async def test_normal_2(self, async_db, freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 

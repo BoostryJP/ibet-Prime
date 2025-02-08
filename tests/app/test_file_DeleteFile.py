@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import UploadFile
@@ -33,7 +34,8 @@ class TestDeleteFile:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -52,12 +54,12 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(file_id="file_id_1"),
             headers={
                 "issuer-address": self.issuer_address,
@@ -68,7 +70,7 @@ abc def"""
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _upload_file_list = db.scalars(select(UploadFile)).all()
+        _upload_file_list = (await async_db.scalars(select(UploadFile))).all()
         assert len(_upload_file_list) == 0
 
     ###########################################################################
@@ -79,9 +81,10 @@ abc def"""
     # Parameter Error
     # Required
     # Header
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(file_id="file_id_1"),
         )
 
@@ -102,9 +105,10 @@ abc def"""
     # <Error_2>
     # Parameter Error
     # Invalid
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # request target api
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(file_id="file_id_1"),
             headers={
                 "issuer-address": "test",
@@ -127,7 +131,8 @@ abc def"""
 
     # <Error_3>
     # Not Found
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -148,12 +153,12 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(file_id="file_id_1"),
             headers={
                 "issuer-address": self.issuer_address,

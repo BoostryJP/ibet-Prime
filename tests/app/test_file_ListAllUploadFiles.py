@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
+import pytest
+
 from app.model.db import UploadFile
 
 
@@ -39,9 +41,10 @@ abc def"""
 
     # <Normal_1>
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # request target api
-        resp = client.get(self.base_url)
+        resp = await async_client.get(self.base_url)
 
         # assertion
         assert resp.status_code == 200
@@ -52,7 +55,8 @@ abc def"""
 
     # <Normal_2>
     # 1 record
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         file_content_1_bin = self.file_content.encode()
 
         # prepare data
@@ -68,12 +72,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -97,7 +101,8 @@ abc def"""
 
     # <Normal_3>
     # 2 record
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -113,7 +118,7 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
@@ -127,12 +132,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -167,7 +172,8 @@ abc def"""
     # <Normal_4_1>
     # Search Filter
     # issuer_address
-    def test_normal_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, async_client, async_db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -183,7 +189,7 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
@@ -199,12 +205,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             headers={
                 "issuer-address": self.issuer_address,
@@ -232,7 +238,8 @@ abc def"""
     # <Normal_4_2>
     # Search Filter
     # relation
-    def test_normal_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, async_client, async_db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -248,7 +255,7 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
@@ -262,12 +269,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={
                 "relation": self.token_address,
@@ -295,7 +302,8 @@ abc def"""
     # <Normal_4_3>
     # Search Filter
     # file_name
-    def test_normal_4_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3(self, async_client, async_db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -311,7 +319,7 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
@@ -325,12 +333,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={
                 "file_name": "name",
@@ -358,7 +366,8 @@ abc def"""
     # <Normal_4_4_1>
     # Search Filter
     # label: default value
-    def test_normal_4_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_4_1(self, async_client, async_db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -374,7 +383,7 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
@@ -388,7 +397,7 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_3"
@@ -402,7 +411,7 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_4"
@@ -416,12 +425,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={
                 "label": "",
@@ -449,7 +458,8 @@ abc def"""
     # <Normal_4_4_2>
     # Search Filter
     # label
-    def test_normal_4_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_4_2(self, async_client, async_db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -465,9 +475,9 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
@@ -481,9 +491,9 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_3"
@@ -497,9 +507,9 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_4"
@@ -513,12 +523,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={
                 "label": "単語",
@@ -565,7 +575,8 @@ abc def"""
 
     # <Normal_5>
     # Pagination
-    def test_normal_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -581,9 +592,9 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
@@ -597,9 +608,9 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_3"
@@ -613,9 +624,9 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/02 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_4"
@@ -629,12 +640,12 @@ abc def"""
         _upload_file.created = datetime.strptime(
             "2022/01/03 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_upload_file)
+        async_db.add(_upload_file)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={"offset": 1, "limit": 2},
         )
@@ -674,9 +685,10 @@ abc def"""
     # <Error_1>
     # Parameter Error
     # Query
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={"offset": "test", "limit": "test"},
         )
@@ -706,9 +718,10 @@ abc def"""
     # <Error_2>
     # Parameter Error
     # Header
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             headers={
                 "issuer-address": "test",

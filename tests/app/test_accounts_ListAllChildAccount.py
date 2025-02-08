@@ -47,23 +47,26 @@ class TestListAllChildAccount:
     # Base query
     # - Personal information is not set
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 6):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(self.base_url.format(self.issuer_address), params=None)
+        resp = await async_client.get(
+            self.base_url.format(self.issuer_address), params=None
+        )
 
         # Assertion
         assert resp.status_code == 200
@@ -117,18 +120,19 @@ class TestListAllChildAccount:
     # Base query
     # - Personal information is set
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -144,12 +148,14 @@ class TestListAllChildAccount:
                 "tax_category": i,
             }
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
-            db.add(_off_personal_info)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(self.base_url.format(self.issuer_address), params=None)
+        resp = await async_client.get(
+            self.base_url.format(self.issuer_address), params=None
+        )
 
         # Assertion
         assert resp.status_code == 200
@@ -214,18 +220,19 @@ class TestListAllChildAccount:
     # Search query
     # - child_account_address (partial match)
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
-    def test_normal_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -241,12 +248,12 @@ class TestListAllChildAccount:
                 "tax_category": i,
             }
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
-            db.add(_off_personal_info)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"child_account_address": "0xfc"},
         )
@@ -280,18 +287,19 @@ class TestListAllChildAccount:
     # Search query
     # - name (partial match)
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
-    def test_normal_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -307,12 +315,12 @@ class TestListAllChildAccount:
                 "tax_category": i,
             }
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
-            db.add(_off_personal_info)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address), params={"name": "test_2"}
         )
 
@@ -344,18 +352,19 @@ class TestListAllChildAccount:
     # <Normal_2_3>
     # Search query
     # - created_from
-    def test_normal_2_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_3(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -373,13 +382,13 @@ class TestListAllChildAccount:
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
             _off_personal_info.created = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
-            db.add(_off_personal_info)
+            ).replace(tzinfo=None)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"created_from": "2024-10-28 09:00:02"},
         )
@@ -429,18 +438,19 @@ class TestListAllChildAccount:
     # <Normal_2_4>
     # Search query
     # - created_to
-    def test_normal_2_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_4(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -458,13 +468,13 @@ class TestListAllChildAccount:
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
             _off_personal_info.created = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
-            db.add(_off_personal_info)
+            ).replace(tzinfo=None)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"created_to": "2024-10-28 09:00:02"},
         )
@@ -514,18 +524,19 @@ class TestListAllChildAccount:
     # <Normal_2_5>
     # Search query
     # - modified_from
-    def test_normal_2_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_5(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -543,13 +554,13 @@ class TestListAllChildAccount:
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
             _off_personal_info.modified = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
-            db.add(_off_personal_info)
+            ).replace(tzinfo=None)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"modified_from": "2024-10-28 09:00:02"},
         )
@@ -599,18 +610,19 @@ class TestListAllChildAccount:
     # <Normal_2_6>
     # Search query
     # - modified_to
-    def test_normal_2_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_6(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -628,13 +640,13 @@ class TestListAllChildAccount:
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
             _off_personal_info.modified = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
-            db.add(_off_personal_info)
+            ).replace(tzinfo=None)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"modified_to": "2024-10-28 09:00:02"},
         )
@@ -684,23 +696,24 @@ class TestListAllChildAccount:
     # <Normal_3_1>
     # Sort order
     # - child_account_index (default)
-    def test_normal_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 6):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address), params={"sort_order": 1}
         )
 
@@ -755,23 +768,24 @@ class TestListAllChildAccount:
     # <Normal_3_2>
     # Sort order
     # - child_account_address
-    def test_normal_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 6):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"sort_item": "child_account_address", "sort_order": 1},
         )
@@ -827,18 +841,19 @@ class TestListAllChildAccount:
     # <Normal_3_3>
     # Sort order
     # - name
-    def test_normal_3_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -856,16 +871,16 @@ class TestListAllChildAccount:
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
             _off_personal_info.created = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
+            ).replace(tzinfo=None)
             _off_personal_info.modified = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
-            db.add(_off_personal_info)
+            ).replace(tzinfo=None)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"sort_item": "name", "sort_order": 1},
         )
@@ -932,18 +947,19 @@ class TestListAllChildAccount:
     # <Normal_3_4>
     # Sort order
     # - created
-    def test_normal_3_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_4(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -961,16 +977,16 @@ class TestListAllChildAccount:
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
             _off_personal_info.created = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
+            ).replace(tzinfo=None)
             _off_personal_info.modified = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
-            db.add(_off_personal_info)
+            ).replace(tzinfo=None)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"sort_item": "created", "sort_order": 1},
         )
@@ -1037,18 +1053,19 @@ class TestListAllChildAccount:
     # <Normal_3_5>
     # Sort order
     # - modified
-    def test_normal_3_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_5(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 4):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
             _off_personal_info = IDXPersonalInfo()
             _off_personal_info.issuer_address = self.issuer_address
@@ -1066,16 +1083,16 @@ class TestListAllChildAccount:
             _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
             _off_personal_info.created = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
+            ).replace(tzinfo=None)
             _off_personal_info.modified = datetime.datetime(
                 2024, 10, 28, 0, 0, i, tzinfo=datetime.UTC
-            )
-            db.add(_off_personal_info)
+            ).replace(tzinfo=None)
+            async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address),
             params={"sort_item": "modified", "sort_order": 1},
         )
@@ -1141,23 +1158,24 @@ class TestListAllChildAccount:
 
     # <Normal_4>
     # Offset / Limit
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         for i in range(1, 6):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.issuer_address), params={"offset": 2, "limit": 1}
         )
 
@@ -1183,19 +1201,22 @@ class TestListAllChildAccount:
 
     # <Error_1>
     # 404: Issuer does not exist
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Prepare data
         for i in range(1, 6):
             _child_account = ChildAccount()
             _child_account.issuer_address = self.issuer_address
             _child_account.child_account_index = i
             _child_account.child_account_address = self.child_account_address[i - 1]
-            db.add(_child_account)
+            async_db.add(_child_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(self.base_url.format(self.issuer_address), params=None)
+        resp = await async_client.get(
+            self.base_url.format(self.issuer_address), params=None
+        )
 
         # Assertion
         assert resp.status_code == 404

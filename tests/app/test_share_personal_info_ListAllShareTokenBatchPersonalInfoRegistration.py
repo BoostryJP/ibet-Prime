@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
+import pytest
+
 from app.model.db import (
     BatchRegisterPersonalInfoUpload,
     BatchRegisterPersonalInfoUploadStatus,
@@ -48,7 +50,8 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
     # Normal_1
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -56,18 +59,18 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
         # prepare data: token issued by issuer_address
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
             headers={"issuer-address": _issuer_address},
         )
@@ -81,7 +84,8 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
     # Normal_2
     # multi records
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -89,33 +93,31 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
         # prepare data: token issued by issuer_address
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE.value
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE
+        async_db.add(batch_register_upload)
 
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
+        async_db.add(batch_register_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
             headers={"issuer-address": _issuer_address},
         )
@@ -127,12 +129,12 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
             "uploads": [
                 {
                     "batch_id": self.upload_id_list[1],
-                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING,
                     "created": mock.ANY,
                 },
                 {
                     "batch_id": self.upload_id_list[0],
-                    "status": BatchRegisterPersonalInfoUploadStatus.DONE.value,
+                    "status": BatchRegisterPersonalInfoUploadStatus.DONE,
                     "created": mock.ANY,
                 },
             ],
@@ -140,7 +142,8 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
     # Normal_3
     # filter by status
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -148,36 +151,34 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
         # prepare data: token issued by issuer_address
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE.value
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE
+        async_db.add(batch_register_upload)
 
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
+        async_db.add(batch_register_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
             headers={"issuer-address": _issuer_address},
-            params={"status": BatchRegisterPersonalInfoUploadStatus.DONE.value},
+            params={"status": BatchRegisterPersonalInfoUploadStatus.DONE},
         )
 
         # assertion
@@ -187,7 +188,7 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
             "uploads": [
                 {
                     "batch_id": self.upload_id_list[0],
-                    "status": BatchRegisterPersonalInfoUploadStatus.DONE.value,
+                    "status": BatchRegisterPersonalInfoUploadStatus.DONE,
                     "created": mock.ANY,
                 }
             ],
@@ -195,7 +196,8 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
     # Normal_4
     # pagination
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -203,33 +205,31 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
         # prepare data: token issued by issuer_address
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE.value
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE
+        async_db.add(batch_register_upload)
 
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
+        async_db.add(batch_register_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
             headers={"issuer-address": _issuer_address},
             params={"offset": 0, "limit": 1},
@@ -242,7 +242,7 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
             "uploads": [
                 {
                     "batch_id": self.upload_id_list[1],
-                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING,
                     "created": mock.ANY,
                 }
             ],
@@ -250,7 +250,8 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
     # Normal_5
     # sort
-    def test_normal_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -258,33 +259,31 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
         # prepare data: token issued by issuer_address
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE.value
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE
+        async_db.add(batch_register_upload)
 
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
+        async_db.add(batch_register_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
             headers={"issuer-address": _issuer_address},
             params={"sort_order": 0},
@@ -297,12 +296,12 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
             "uploads": [
                 {
                     "batch_id": self.upload_id_list[0],
-                    "status": BatchRegisterPersonalInfoUploadStatus.DONE.value,
+                    "status": BatchRegisterPersonalInfoUploadStatus.DONE,
                     "created": mock.ANY,
                 },
                 {
                     "batch_id": self.upload_id_list[1],
-                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING,
                     "created": mock.ANY,
                 },
             ],
@@ -314,7 +313,8 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
     # Error_1
     # RequestValidationError: issuer_address
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -322,18 +322,18 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
         # prepare data: token issued by issuer_address
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]), headers={}
         )
 
@@ -354,7 +354,8 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
     # Error_2
     # NotFound
     # token not found
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         _issuer_account_1 = config_eth_account("user1")
         _issuer_address_1 = _issuer_account_1["address"]
 
@@ -365,25 +366,25 @@ class TestListAllShareTokenBatchPersonalInfoRegistration:
 
         # prepare data: token issued by issuer_address_2
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address_2
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address_2
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE.value
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.DONE
+        async_db.add(batch_register_upload)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
             headers={"issuer-address": _issuer_address_1},
         )

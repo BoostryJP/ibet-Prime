@@ -21,6 +21,8 @@ from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import ANY
 
+import pytest
+
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
 
@@ -35,23 +37,24 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_1
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000010"
         _token.issuer_address = "0x1234567890123456789012345678900000000100"
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -70,7 +73,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_2_1
     # Bond
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_2_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -85,11 +91,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -102,7 +108,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -115,9 +121,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -125,7 +131,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -140,7 +146,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -155,7 +161,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -170,7 +176,8 @@ class TestListAccountLockUnlockEvents:
     # Normal_2_2
     # Share
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_2_2(self, mock_IbetShareContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -185,11 +192,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -202,7 +209,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -215,9 +222,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         share_1 = IbetShareContract()
@@ -225,7 +232,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetShareContract_get.side_effect = [share_1, share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -240,7 +247,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -255,7 +262,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -271,7 +278,10 @@ class TestListAccountLockUnlockEvents:
     # Records not subject to extraction
     # account_address
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -286,11 +296,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -303,7 +313,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -316,9 +326,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -326,7 +336,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -341,7 +351,10 @@ class TestListAccountLockUnlockEvents:
     # Records not subject to extraction
     # token_status
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_2(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -356,12 +369,12 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.token_status = 2
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -374,7 +387,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -387,9 +400,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -397,7 +410,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
         )
 
@@ -411,7 +424,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_4
     # issuer_address is not None
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_4(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         other_issuer_address = "0x1234567890123456789012345678900000000200"
 
@@ -428,20 +444,20 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = token_address_2
         _token.issuer_address = other_issuer_address  # others
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -454,7 +470,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -467,7 +483,7 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_3"
@@ -479,7 +495,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -492,9 +508,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -502,7 +518,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             headers={"issuer-address": issuer_address},
         )
@@ -518,7 +534,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -533,7 +549,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -548,7 +564,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_5_1
     # Search filter: category
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -563,11 +582,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -580,7 +599,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -593,9 +612,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -603,7 +622,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"category": "Unlock"},
         )
@@ -619,7 +638,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -634,7 +653,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_5_2
     # Search filter: token_address
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_2(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_2(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -650,20 +672,20 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = token_address_2
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -676,7 +698,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -689,9 +711,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -699,7 +721,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"token_address": token_address_1},
         )
@@ -715,7 +737,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -730,7 +752,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_5_3
     # Search filter: token_type
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_3(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_3(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -746,20 +771,20 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
+        _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = token_address_2
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_SHARE.value  # share
+        _token.type = TokenType.IBET_SHARE  # share
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -772,7 +797,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -785,9 +810,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -795,9 +820,9 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value},
+            params={"token_type": TokenType.IBET_STRAIGHT_BOND},
         )
 
         # assertion
@@ -811,7 +836,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -826,7 +851,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_5_4
     # Search filter: msg_sender
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_4(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_4(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -841,11 +869,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
+        _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXUnlock()
@@ -859,7 +887,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "unlocked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
@@ -872,9 +900,9 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "unlocked_2"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -882,7 +910,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"msg_sender": lock_address_1},
         )
@@ -898,7 +926,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -913,7 +941,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_5_5
     # Search filter: lock_address
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_5(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_5(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -928,11 +959,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
+        _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -945,7 +976,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
@@ -957,9 +988,9 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_2"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -967,7 +998,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"lock_address": lock_address_1},
         )
@@ -983,7 +1014,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -998,7 +1029,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_5_6
     # Search filter: recipient_address
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_6(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_6(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -1014,11 +1048,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
+        _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _unlock = IDXUnlock()
@@ -1032,7 +1066,7 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
@@ -1045,9 +1079,9 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_2"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_unlock)
+        async_db.add(_unlock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -1055,7 +1089,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"recipient_address": other_account_address_1},
         )
@@ -1071,7 +1105,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -1086,7 +1120,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_6
     # Sort
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_6(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_6(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -1101,11 +1138,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -1118,7 +1155,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
@@ -1130,7 +1167,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_2"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_3"
@@ -1142,7 +1179,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_3"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_4"
@@ -1154,9 +1191,9 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_4"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -1164,7 +1201,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_1, bond_1, bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"sort_item": "lock_address", "sort_order": 0},
         )
@@ -1180,7 +1217,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -1195,7 +1232,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -1210,7 +1247,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_2,
                     "account_address": account_address,
@@ -1225,7 +1262,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_2,
                     "account_address": account_address,
@@ -1240,7 +1277,10 @@ class TestListAccountLockUnlockEvents:
     # Normal_7
     # Pagination
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_7(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_7(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -1254,11 +1294,11 @@ class TestListAccountLockUnlockEvents:
         _token = Token()
         _token.token_address = token_address_1
         _token.issuer_address = issuer_address
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
-        _token.abi = ""
+        _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Lock events
         _lock = IDXLock()
@@ -1271,7 +1311,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
@@ -1283,7 +1323,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_2"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_3"
@@ -1295,9 +1335,9 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_3"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_lock)
+        async_db.add(_lock)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -1305,7 +1345,7 @@ class TestListAccountLockUnlockEvents:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={"offset": 1, "limit": 1},
         )
@@ -1321,7 +1361,7 @@ class TestListAccountLockUnlockEvents:
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "token_name": token_name_1,
                     "lock_address": lock_address_1,
                     "account_address": account_address,
@@ -1340,11 +1380,12 @@ class TestListAccountLockUnlockEvents:
     # Error_1_1
     # RequestValidationError
     # header
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             headers={
                 "issuer-address": "test",
@@ -1368,11 +1409,12 @@ class TestListAccountLockUnlockEvents:
     # Error_1_2
     # RequestValidationError
     # query(invalid value)
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(account_address=account_address),
             params={
                 "token_type": "test",
