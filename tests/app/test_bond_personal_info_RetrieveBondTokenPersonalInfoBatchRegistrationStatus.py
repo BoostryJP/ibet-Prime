@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import (
     Account,
     BatchRegisterPersonalInfo,
@@ -72,7 +74,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
 
     # <Normal_1>
     # With issuer_address(header)
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -87,25 +90,23 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = (
-            BatchRegisterPersonalInfoUploadStatus.PENDING.value
-        )
-        db.add(batch_register_upload)
+        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING
+        async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
         for i in range(0, 3):
@@ -124,12 +125,12 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
                 "is_corporate": True,
                 "tax_category": 3,
             }
-            db.add(batch_register)
+            async_db.add(batch_register)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
             headers={"issuer-address": _issuer_address},
         )
@@ -137,7 +138,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+            "status": BatchRegisterPersonalInfoUploadStatus.PENDING,
             "results": [
                 {
                     "status": 0,
@@ -184,13 +185,14 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
 
     # <Error_1>
     # RequestValidationError: issuer_address
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         test_account = config_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, "test_batch_id"), headers={}
         )
 
@@ -210,13 +212,14 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
 
     # <Error_2>
     # Batch not found
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         test_account = config_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address, "test_batch_id"),
             headers={
                 "issuer-address": _issuer_address,

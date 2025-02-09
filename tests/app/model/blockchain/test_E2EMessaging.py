@@ -49,7 +49,7 @@ class TestSendMessage:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db, e2e_messaging_contract):
+    async def test_normal_1(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -87,7 +87,7 @@ class TestSendMessage:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, db, e2e_messaging_contract):
+    async def test_error_1(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -118,7 +118,7 @@ class TestSendMessage:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, db, e2e_messaging_contract):
+    async def test_error_2(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -224,7 +224,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db, e2e_messaging_contract):
+    async def test_normal_1(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -277,7 +277,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         "app.model.blockchain.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
     )
     @mock.patch("boto3.client")
-    async def test_normal_2(self, boto3_mock, db, e2e_messaging_contract):
+    async def test_normal_2(self, boto3_mock, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -346,7 +346,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, db, e2e_messaging_contract):
+    async def test_error_1(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -383,7 +383,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, db, e2e_messaging_contract):
+    async def test_error_2(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -440,7 +440,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db, e2e_messaging_contract):
+    async def test_normal_1(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -474,7 +474,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, db, e2e_messaging_contract):
+    async def test_error_1(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -504,7 +504,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, db, e2e_messaging_contract):
+    async def test_error_2(self, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(

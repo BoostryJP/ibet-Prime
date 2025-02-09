@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 
+import pytest
 from pytz import timezone as tz
 from sqlalchemy import and_, select
 
@@ -44,7 +45,8 @@ class TestScheduleShareTokenUpdateEvent:
 
     # <Normal_1>
     # Timezone of input data is UTC
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -55,18 +57,18 @@ class TestScheduleShareTokenUpdateEvent:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # test data
         datetime_now_utc = datetime.now(UTC)  # utc
@@ -96,7 +98,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp_1 = client.post(
+        resp_1 = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -106,29 +108,32 @@ class TestScheduleShareTokenUpdateEvent:
         )
 
         # assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(
-                and_(
-                    ScheduledEvents.issuer_address == _issuer_address,
-                    ScheduledEvents.token_address == _token_address,
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(
+                    and_(
+                        ScheduledEvents.issuer_address == _issuer_address,
+                        ScheduledEvents.token_address == _token_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         assert resp_1.status_code == 200
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
-        assert _scheduled_event.token_type == TokenType.IBET_SHARE.value
+        assert _scheduled_event.token_type == TokenType.IBET_SHARE
         assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(
             tzinfo=None
         )
-        assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
+        assert _scheduled_event.event_type == ScheduledEventType.UPDATE
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
 
     # <Normal_2>
     # Timezone of input data is JST
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -139,18 +144,18 @@ class TestScheduleShareTokenUpdateEvent:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # test data
         datetime_now_jst = datetime.now(tz("Asia/Tokyo"))  # jst
@@ -180,7 +185,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -190,19 +195,21 @@ class TestScheduleShareTokenUpdateEvent:
         )
 
         # assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.issuer_address == _issuer_address)
-            .where(ScheduledEvents.token_address == _token_address)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.issuer_address == _issuer_address)
+                .where(ScheduledEvents.token_address == _token_address)
+                .limit(1)
+            )
         ).first()
         assert resp.status_code == 200
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
-        assert _scheduled_event.token_type == TokenType.IBET_SHARE.value
+        assert _scheduled_event.token_type == TokenType.IBET_SHARE
         assert _scheduled_event.scheduled_datetime == datetime_now_jst.astimezone(
             UTC
         ).replace(tzinfo=None)
-        assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
+        assert _scheduled_event.event_type == ScheduledEventType.UPDATE
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
 
@@ -212,7 +219,8 @@ class TestScheduleShareTokenUpdateEvent:
 
     # <Error_1_1>
     # RequestValidationError: issuer_address
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -228,7 +236,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -257,7 +265,8 @@ class TestScheduleShareTokenUpdateEvent:
 
     # <Error_1_2>
     # RequestValidationError: is_canceled
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -273,7 +282,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -298,7 +307,8 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_2>
     # AuthorizationError
     # issuer_address does not exists
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -314,7 +324,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -331,7 +341,8 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_3>
     # AuthorizationError
     # password mismatch
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -342,18 +353,18 @@ class TestScheduleShareTokenUpdateEvent:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # test data
         datetime_now_utc = datetime.now(UTC)
@@ -366,7 +377,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -383,7 +394,8 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_4>
     # NotFound
     # token not found
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -394,9 +406,9 @@ class TestScheduleShareTokenUpdateEvent:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # test data
         datetime_now_utc = datetime.now(UTC)
@@ -409,7 +421,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -426,7 +438,8 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_5>
     # RequestValidationError
     # event_data
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -439,7 +452,7 @@ class TestScheduleShareTokenUpdateEvent:
                 "dividends": "must be integer, but string",
             },
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -477,7 +490,8 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_6>
     # InvalidParameterError
     # processing token
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -488,19 +502,19 @@ class TestScheduleShareTokenUpdateEvent:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # test data
         datetime_now_utc = datetime.now(UTC)
@@ -513,7 +527,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -531,7 +545,8 @@ class TestScheduleShareTokenUpdateEvent:
 
     # <Error_7>
     # OperationNotSupportedVersionError: v24.6
-    def test_error_7(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -542,19 +557,19 @@ class TestScheduleShareTokenUpdateEvent:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 1
         token.version = TokenVersion.V_22_12
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # test data
         datetime_now_utc = datetime.now(UTC)
@@ -569,7 +584,7 @@ class TestScheduleShareTokenUpdateEvent:
             "event_type": "Update",
             "data": update_data,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={

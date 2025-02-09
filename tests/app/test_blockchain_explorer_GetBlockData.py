@@ -19,8 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+import pytest
 
 from app.model.db import IDXBlockData
 
@@ -92,7 +91,7 @@ class TestGetBlockData:
     }
 
     @staticmethod
-    def insert_block_data(db, block_data):
+    async def insert_block_data(async_db, block_data):
         block_model = IDXBlockData()
         block_model.number = block_data.get("number")
         block_model.parent_hash = block_data.get("parent_hash")
@@ -112,22 +111,23 @@ class TestGetBlockData:
         block_model.hash = block_data.get("hash")
         block_model.size = block_data.get("size")
         block_model.transactions = block_data.get("transactions")
-        db.add(block_model)
-        db.commit()
+        async_db.add(block_model)
+        await async_db.commit()
 
     ###########################################################################
     # Normal
     ###########################################################################
 
     # Normal_1
-    def test_normal_1(self, client: TestClient, db: Session):
-        self.insert_block_data(db, self.block_0)
-        self.insert_block_data(db, self.block_1)
-        self.insert_block_data(db, self.block_2)
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
+        await self.insert_block_data(async_db, self.block_0)
+        await self.insert_block_data(async_db, self.block_1)
+        await self.insert_block_data(async_db, self.block_2)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = client.get(self.apiurl.format(1))
+            resp = await async_client.get(self.apiurl.format(1))
 
         # Assertion
         assert resp.status_code == 200
@@ -139,10 +139,11 @@ class TestGetBlockData:
 
     # Error_1
     # BC_EXPLORER_ENABLED = False (default)
-    def test_error_1(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
-            resp = client.get(self.apiurl.format(0))
+            resp = await async_client.get(self.apiurl.format(0))
 
         # Assertion
         assert resp.status_code == 404
@@ -153,10 +154,11 @@ class TestGetBlockData:
 
     # Error_2
     # DataNotExistsError
-    def test_error_2(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = client.get(self.apiurl.format(0))
+            resp = await async_client.get(self.apiurl.format(0))
 
         # Assertion
         assert resp.status_code == 404
@@ -167,10 +169,11 @@ class TestGetBlockData:
 
     # Error_3
     # Invalid Parameter
-    def test_error_3(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = client.get(self.apiurl.format(-1))
+            resp = await async_client.get(self.apiurl.format(-1))
 
         # Assertion
         assert resp.status_code == 422

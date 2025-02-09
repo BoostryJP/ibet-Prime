@@ -137,7 +137,7 @@ class TestGetAccountBalance:
     # balance = 0, commitment = 0
     # Default value
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         user1_account = config_eth_account("user1")
 
         # deploy contract
@@ -159,7 +159,7 @@ class TestGetAccountBalance:
 
     # <Normal_2>
     @pytest.mark.asyncio
-    async def test_normal_2(self, db):
+    async def test_normal_2(self, async_db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -217,7 +217,7 @@ class TestGetAccountBalance:
     # <Normal_3>
     # Not deployed contract
     @pytest.mark.asyncio
-    async def test_normal_3(self, db):
+    async def test_normal_3(self, async_db):
         user1_account = config_eth_account("user1")
 
         # test IbetExchangeInterface.get_account_balance

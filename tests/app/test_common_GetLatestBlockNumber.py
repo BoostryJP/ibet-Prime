@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 from unittest.mock import AsyncMock
 
+import pytest
+
 from app.exceptions import ServiceUnavailableError
 
 
@@ -32,9 +34,10 @@ class TestGetLatestBlockNumber:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # request target api
-        resp = client.get(self.apiurl)
+        resp = await async_client.get(self.apiurl)
 
         # assertion
         assert resp.status_code == 200
@@ -50,9 +53,10 @@ class TestGetLatestBlockNumber:
         "web3.eth.async_eth.AsyncEth.get_block_number",
         AsyncMock(side_effect=ServiceUnavailableError("")),
     )
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target api
-        resp = client.get(self.apiurl)
+        resp = await async_client.get(self.apiurl)
 
         # assertion
         assert resp.status_code == 503

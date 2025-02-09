@@ -38,7 +38,7 @@ class TestChangeE2EMessagingAccountEOAPassword:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, client, db, e2e_messaging_contract):
+    async def test_normal_1(self, async_client, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -50,22 +50,24 @@ class TestChangeE2EMessagingAccountEOAPassword:
         _account.account_address = user_address_1
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt(old_password)
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt(old_password),
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
+        _account = (
+            await async_db.scalars(select(E2EMessagingAccount).limit(1))
+        ).first()
         assert _account.keyfile != user_keyfile_1
         assert E2EEUtils.decrypt(_account.eoa_password) == new_password
 
@@ -97,8 +99,9 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_1_1>
     # Parameter Error
     # no body
-    def test_error_1_1(self, client, db):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             )
@@ -121,9 +124,10 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_1_2>
     # Parameter Error
     # no required field
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -153,14 +157,15 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_1_3>
     # Parameter Error
     # not decrypt
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         old_password = "password"
         new_password = "passwordnew"
         req_param = {
             "old_eoa_password": old_password,
             "eoa_password": new_password,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -193,14 +198,15 @@ class TestChangeE2EMessagingAccountEOAPassword:
 
     # <Error_2>
     # No data
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         old_password = "password"
         new_password = "passwordnew"
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt(old_password),
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -216,7 +222,8 @@ class TestChangeE2EMessagingAccountEOAPassword:
 
     # <Error_3>
     # old password mismatch
-    def test_error_3(self, client, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -228,15 +235,15 @@ class TestChangeE2EMessagingAccountEOAPassword:
         _account.account_address = user_address_1
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt(old_password)
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt("passwordtest"),
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 
@@ -249,7 +256,8 @@ class TestChangeE2EMessagingAccountEOAPassword:
 
     # <Error_4>
     # Passphrase Policy Violation
-    def test_error_4(self, client, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -261,15 +269,15 @@ class TestChangeE2EMessagingAccountEOAPassword:
         _account.account_address = user_address_1
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt(old_password)
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt(old_password),
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 

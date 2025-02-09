@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import DVPAgentAccount
 
 
@@ -30,9 +32,10 @@ class TestListAllDVPAgentAccounts:
 
     # <Normal_1>
     # Data does not exist
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # Request target api
-        resp = client.get(self.test_url)
+        resp = await async_client.get(self.test_url)
 
         # Assertion
         assert resp.status_code == 200
@@ -40,24 +43,25 @@ class TestListAllDVPAgentAccounts:
 
     # <Normal_2>
     # Data exist
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # Prepare data
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = "0x1234567890123456789012345678900000000000"
         dvp_agent_account.keyfile = "test_keyfile_0"
         dvp_agent_account.eoa_password = "test_password_0"
-        db.add(dvp_agent_account)
+        async_db.add(dvp_agent_account)
 
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = "0x1234567890123456789012345678900000000001"
         dvp_agent_account.keyfile = "test_keyfile_1"
         dvp_agent_account.eoa_password = "test_password_1"
-        db.add(dvp_agent_account)
+        async_db.add(dvp_agent_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
-        resp = client.get(self.test_url)
+        resp = await async_client.get(self.test_url)
 
         # Assertion
         assert resp.status_code == 200

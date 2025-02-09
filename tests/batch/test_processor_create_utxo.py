@@ -73,7 +73,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     return Processor()
 
 
@@ -144,7 +144,7 @@ class TestProcessor:
     # Execute Batch Run 1st: No Event
     # Execute Batch Run 2nd: Executed Transfer Event
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_1(self, mock_func, processor, db):
+    async def test_normal_1(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -160,43 +160,46 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE.value
+        _token_2.type = TokenType.IBET_SHARE
         _token_2.tx_hash = ""
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch(Run 1st)
         # Assume: Skip processing
         latest_block = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        _utxo_list = db.scalars(select(UTXO)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO))).all()
         assert len(_utxo_list) == 0
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
         # Execute Transfer Event
@@ -239,10 +242,10 @@ class TestProcessor:
         # Execute batch(Run 2nd)
         # Assume: Create UTXO
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        db.rollback()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         # 1.Bond token:issuer -> user1 (tx2)
         # 2.Bond token:issuer -> user2 (tx3)
         # 3.Share token:issuer -> user1 (tx1)
@@ -276,7 +279,9 @@ class TestProcessor:
         assert _utxo.amount == 10
         assert _utxo.block_number > _utxo_list[1].block_number
         assert _utxo.block_timestamp > _utxo_list[1].block_timestamp
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == _utxo_list[3].block_number
 
         mock_func.assert_has_calls(
@@ -290,7 +295,7 @@ class TestProcessor:
     # Over max block lot
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @mock.patch("batch.processor_create_utxo.CREATE_UTXO_BLOCK_LOT_MAX_SIZE", 5)
-    async def test_normal_2(self, mock_func, processor, db):
+    async def test_normal_2(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -306,26 +311,26 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         latest_block_number = web3.eth.block_number
         _utxo_block_number = UTXOBlockNumber()
         _utxo_block_number.latest_block_number = latest_block_number
-        db.add(_utxo_block_number)
+        async_db.add(_utxo_block_number)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer event 6 times
         _transfer = IbetStraightBondTransferParams(
@@ -361,11 +366,14 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block_number + 5
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 5
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -401,7 +409,7 @@ class TestProcessor:
     # <Normal_3>
     # bulk transfer(same transaction-hash)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_3(self, mock_func, processor, db):
+    async def test_normal_3(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -423,21 +431,21 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         token_contract = ContractUtils.get_contract("IbetStraightBond", token_address_1)
 
@@ -489,9 +497,10 @@ class TestProcessor:
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 2
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -507,7 +516,7 @@ class TestProcessor:
     # <Normal_4>
     # to Exchange transfer only
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_4(self, mock_func, processor, db):
+    async def test_normal_4(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -519,21 +528,21 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # set exchange address
         storage_address, _, _ = ContractUtils.deploy_contract(
@@ -573,9 +582,10 @@ class TestProcessor:
         # Execute batch
         # Assume: Not Create UTXO and Ledger
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        _utxo_list = db.scalars(select(UTXO)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO))).all()
         assert len(_utxo_list) == 0
         mock_func.assert_not_called()
 
@@ -583,7 +593,12 @@ class TestProcessor:
     # Holder Changed
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_5(
-        self, mock_func, processor, db, personal_info_contract, ibet_exchange_contract
+        self,
+        mock_func,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_exchange_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -609,13 +624,13 @@ class TestProcessor:
             tradable_exchange_contract_address=ibet_exchange_contract.address,
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -735,17 +750,17 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         # Assume: Not Create UTXO and Ledger
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        db.rollback()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
 
         assert len(_utxo_list) == 3
         _utxo = _utxo_list[0]
@@ -768,7 +783,9 @@ class TestProcessor:
         assert _utxo.token_address == token_address_1
         assert _utxo.amount == 10
 
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number >= _utxo_list[1].block_number
 
         mock_func.assert_has_calls([call(token_address=token_address_1, db=ANY)])
@@ -776,7 +793,7 @@ class TestProcessor:
     # <Normal_6>
     # Additional Issue
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_6(self, mock_func, processor, db):
+    async def test_normal_6(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -792,33 +809,33 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE.value
+        _token_2.type = TokenType.IBET_SHARE
         _token_2.tx_hash = ""
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute Issue Event
         # Share
@@ -842,9 +859,10 @@ class TestProcessor:
         # Execute batch
         latest_block = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 2
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -857,13 +875,15 @@ class TestProcessor:
         assert _utxo.token_address == token_address_2
         assert _utxo.amount == 80
 
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_7>
     # Redeem
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_7(self, mock_func, processor, db):
+    async def test_normal_7(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -879,33 +899,33 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE.value
+        _token_2.type = TokenType.IBET_SHARE
         _token_2.tx_hash = ""
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute Issue Event
         # Share
@@ -942,7 +962,9 @@ class TestProcessor:
 
         # Before execute
         await processor.process()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        async_db.expire_all()
+
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -985,10 +1007,10 @@ class TestProcessor:
         # Execute batch
         latest_block = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        db.rollback()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.account_address == user_address_1
@@ -1007,13 +1029,15 @@ class TestProcessor:
         assert _utxo.token_address == token_address_2
         assert _utxo.amount == 30
 
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_8_1>
     # Unlock(account_address!=recipient_address)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_8_1(self, mock_func, processor, db):
+    async def test_normal_8_1(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1037,33 +1061,33 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE.value
+        _token_2.type = TokenType.IBET_SHARE
         _token_2.tx_hash = ""
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute Issue Event
         # Share
@@ -1100,7 +1124,9 @@ class TestProcessor:
 
         # Before execute
         await processor.process()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        async_db.expire_all()
+
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -1169,10 +1195,10 @@ class TestProcessor:
         # Execute batch
         latest_block = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        db.rollback()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 6
         _utxo = _utxo_list[0]
         assert _utxo.account_address == user_address_1
@@ -1199,13 +1225,15 @@ class TestProcessor:
         assert _utxo.token_address == token_address_2
         assert _utxo.amount == 10
 
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_8_2>
     # Unlock(account_address==recipient_address)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_8_2(self, mock_func, processor, db):
+    async def test_normal_8_2(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1229,33 +1257,33 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE.value
+        _token_2.type = TokenType.IBET_SHARE
         _token_2.tx_hash = ""
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute Issue Event
         # Share
@@ -1292,7 +1320,9 @@ class TestProcessor:
 
         # Before execute
         await processor.process()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        async_db.expire_all()
+
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -1361,10 +1391,10 @@ class TestProcessor:
         # Execute batch
         latest_block = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        db.rollback()
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.account_address == user_address_1
@@ -1383,13 +1413,15 @@ class TestProcessor:
         assert _utxo.token_address == token_address_2
         assert _utxo.amount == 40
 
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_9>
     # Transfer & Additional Issue & Redeem
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
-    async def test_normal_9(self, mock_func, processor, db):
+    async def test_normal_9(self, mock_func, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1405,19 +1437,19 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _utxo = UTXO()
         _utxo.transaction_hash = "deploy"
@@ -1426,10 +1458,12 @@ class TestProcessor:
         _utxo.amount = 100
         _utxo.block_number = web3.eth.block_number
         _utxo.block_timestamp = None
-        db.add(_utxo)
+        async_db.add(_utxo)
 
-        db.commit()
+        await async_db.commit()
+
         await processor.process()
+        async_db.expire_all()
 
         # Execute Issue Event
         # Bond
@@ -1480,12 +1514,15 @@ class TestProcessor:
         # Execute batch
         latest_block = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # assertion
-        _utxo_list = db.scalars(
-            select(UTXO)
-            .where(UTXO.account_address == issuer_address)
-            .order_by(UTXO.created)
+        _utxo_list = (
+            await async_db.scalars(
+                select(UTXO)
+                .where(UTXO.account_address == issuer_address)
+                .order_by(UTXO.created)
+            )
         ).all()
         assert len(_utxo_list) == 2
         _utxo = _utxo_list[0]
@@ -1497,10 +1534,12 @@ class TestProcessor:
         assert _utxo.token_address == token_address_1
         assert _utxo.amount == 0
 
-        _utxo_list = db.scalars(
-            select(UTXO)
-            .where(UTXO.account_address == user_address_1)
-            .order_by(UTXO.created)
+        _utxo_list = (
+            await async_db.scalars(
+                select(UTXO)
+                .where(UTXO.account_address == user_address_1)
+                .order_by(UTXO.created)
+            )
         ).all()
         assert len(_utxo_list) == 1
         _utxo = _utxo_list[0]
@@ -1508,10 +1547,12 @@ class TestProcessor:
         assert _utxo.token_address == token_address_1
         assert _utxo.amount == 0
 
-        _utxo_list = db.scalars(
-            select(UTXO)
-            .where(UTXO.account_address == user_address_2)
-            .order_by(UTXO.created)
+        _utxo_list = (
+            await async_db.scalars(
+                select(UTXO)
+                .where(UTXO.account_address == user_address_2)
+                .order_by(UTXO.created)
+            )
         ).all()
         assert len(_utxo_list) == 1
         _utxo = _utxo_list[0]
@@ -1519,7 +1560,9 @@ class TestProcessor:
         assert _utxo.token_address == token_address_1
         assert _utxo.amount == 0
 
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     ###########################################################################
@@ -1528,7 +1571,7 @@ class TestProcessor:
 
     # <Error_1>
     # Web3 Error
-    async def test_error_1(self, processor, db):
+    async def test_error_1(self, processor, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1540,15 +1583,15 @@ class TestProcessor:
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         latest_block = web3.eth.block_number
@@ -1557,16 +1600,20 @@ class TestProcessor:
             MagicMock(side_effect=Exception("mock test")),
         ):
             await processor.process()
+            async_db.expire_all()
 
-        _utxo_list = db.scalars(select(UTXO)).all()
+        # Assertion
+        _utxo_list = (await async_db.scalars(select(UTXO))).all()
         assert len(_utxo_list) == 0
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     # <Error_2>
     # An invalid record including the number exceeding the database limit is found
     # => Discarded ledger creation request but saved UTXO data
-    async def test_error_2(self, processor, db):
+    async def test_error_2(self, processor, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1584,20 +1631,20 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token_address_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key
         )
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.type = TokenType.IBET_SHARE
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_24_09
         _token_1.token_status = 1
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         # Prepare data: LedgerTemplate
         _template = LedgerTemplate()
@@ -1638,7 +1685,7 @@ class TestProcessor:
                 },
             },
         ]
-        db.add(_template)
+        async_db.add(_template)
 
         # Execute Issue Event
         # Share
@@ -1671,21 +1718,28 @@ class TestProcessor:
         _details_template.token_detail_type = "劣後受益権"
         _details_template.data_type = LedgerDataType.IBET_FIN
         _details_template.data_source = None
-        db.add(_details_template)
+        async_db.add(_details_template)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         latest_block = web3.eth.block_number
         await processor.process()
+        async_db.expire_all()
 
         # Assert
-        _ledger_creation_list = db.scalars(select(LedgerCreationRequest)).all()
+        _ledger_creation_list = (
+            await async_db.scalars(select(LedgerCreationRequest))
+        ).all()
         assert len(_ledger_creation_list) == 0
-        _ledger_creation_data_list = db.scalars(select(LedgerCreationRequestData)).all()
+        _ledger_creation_data_list = (
+            await async_db.scalars(select(LedgerCreationRequestData))
+        ).all()
         assert len(_ledger_creation_data_list) == 0
 
-        _utxo_list = db.scalars(select(UTXO)).all()
+        _utxo_list = (await async_db.scalars(select(UTXO))).all()
         assert len(_utxo_list) == 3
-        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
         assert _utxo_block_number.latest_block_number == latest_block

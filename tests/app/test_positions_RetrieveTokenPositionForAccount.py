@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
+import pytest
+
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType, TokenVersion
 
@@ -35,7 +37,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # specify header
     # bond token
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_1_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
         token_address = "0x1234567890123456789012345678900000000010"
@@ -49,7 +54,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -59,7 +64,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -69,7 +74,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
@@ -78,16 +83,16 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
         _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
         _locked_position.account_address = other_account_address  # not to be included
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -138,7 +143,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -164,7 +169,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # specify header
     # share token
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_1_2(self, mock_IbetShareContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, mock_IbetShareContract_get, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
         token_address = "0x1234567890123456789012345678900000000010"
@@ -178,7 +184,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -188,7 +194,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -198,7 +204,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
@@ -207,16 +213,16 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
         _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
         _locked_position.account_address = other_account_address  # not to be included
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         share_1 = IbetShareContract()
@@ -248,7 +254,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -273,7 +279,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Normal_2>
     # not specify header
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_2(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -286,7 +295,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -296,9 +305,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 0
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -349,7 +358,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -374,7 +383,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # position is None, locked position is not None
     # - Data sets that do not normally occur -> locked amount = 0
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -387,7 +399,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -397,9 +409,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5  # not zero
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -450,7 +462,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -475,7 +487,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Normal_3_2>
     # position is not None (but zero), locked position is not None
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_2(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -488,7 +503,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -498,7 +513,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 0
         _position.exchange_commitment = 0
         _position.pending_transfer = 0
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -508,9 +523,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 5
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -561,7 +576,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -587,7 +602,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # position is not None, locked position is None
     # -> locked amount = 0
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_3(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -600,7 +618,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -610,9 +628,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 10
         _position.exchange_commitment = 15
         _position.pending_transfer = 20
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -663,7 +681,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -688,7 +706,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Normal_3_4>
     # position is not None, locked position is not None (but zero)
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_4(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_4(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -701,7 +722,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -711,7 +732,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 10
         _position.exchange_commitment = 15
         _position.pending_transfer = 20
-        db.add(_position)
+        async_db.add(_position)
 
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
@@ -721,9 +742,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         )
         _locked_position.account_address = account_address
         _locked_position.value = 0
-        db.add(_locked_position)
+        async_db.add(_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -774,7 +795,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -803,12 +824,13 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Error_1>
     # RequestValidationError
     # header
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -832,12 +854,13 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Error_2_1>
     # NotFound: Token
     # not set header
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -853,7 +876,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Error_2_2>
     # NotFound: Token
     # set header
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -868,7 +892,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -878,12 +902,12 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),
@@ -899,7 +923,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
     # <Error_3>
     # InvalidParameterError
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -913,7 +938,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Position
         _position = IDXPosition()
@@ -923,12 +948,12 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
-        db.add(_position)
+        async_db.add(_position)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(
                 account_address=account_address, token_address=token_address
             ),

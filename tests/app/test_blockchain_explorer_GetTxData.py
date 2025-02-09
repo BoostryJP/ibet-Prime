@@ -19,9 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
+import pytest
 from eth_utils import to_checksum_address
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from app.model.db import IDXTxData, Token, TokenVersion
 
@@ -46,7 +45,7 @@ class TestGetTxData:
     }
 
     @staticmethod
-    def insert_tx_data(session, tx_data):
+    async def insert_tx_data(session, tx_data):
         tx_model = IDXTxData()
         tx_model.hash = tx_data.get("hash")
         tx_model.block_hash = tx_data.get("block_hash")
@@ -60,19 +59,19 @@ class TestGetTxData:
         tx_model.value = tx_data.get("value")
         tx_model.nonce = tx_data.get("nonce")
         session.add(tx_model)
-        session.commit()
+        await session.commit()
 
     @staticmethod
-    def insert_token_data(session, token_info):
+    async def insert_token_data(session, token_info):
         token = Token()
         token.type = token_info.get("type")
         token.tx_hash = ""
         token.issuer_address = ""
         token.token_address = token_info.get("token_address")
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
         session.add(token)
-        session.commit()
+        await session.commit()
 
     ###########################################################################
     # Normal
@@ -80,12 +79,13 @@ class TestGetTxData:
 
     # Normal_1
     # Contract information is not set
-    def test_normal_1(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.tx_data)
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.tx_data)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = client.get(
+            resp = await async_client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"
                 )
@@ -111,18 +111,19 @@ class TestGetTxData:
 
     # Normal_2
     # Contract information is set
-    def test_normal_2(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.tx_data)
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.tx_data)
 
         token_info = {
             "token_address": to_checksum_address(self.tx_data.get("to_address")),
             "type": "IbetShare",
         }
-        self.insert_token_data(db, token_info)
+        await self.insert_token_data(async_db, token_info)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = client.get(
+            resp = await async_client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"
                 )
@@ -152,10 +153,11 @@ class TestGetTxData:
 
     # Error_1
     # BC_EXPLORER_ENABLED = False (default)
-    def test_error_1(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
-            resp = client.get(
+            resp = await async_client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"
                 )
@@ -170,10 +172,11 @@ class TestGetTxData:
 
     # Error_2
     # DataNotExistsError
-    def test_error_2(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = client.get(
+            resp = await async_client.get(
                 self.apiurl.format(
                     "0x403f9cea4db07aecf71a440c45ae415569cb218bb1a7f4d3a2d83004e29d1644"
                 )

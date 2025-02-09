@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from datetime import datetime
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, AuthToken
@@ -40,7 +41,8 @@ class TestGenerateIssuerAuthToken:
 
     # Normal_1
     # New token
-    def test_normal_1(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -48,22 +50,24 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
-        db.commit()
+        async_db.add(account)
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
@@ -80,7 +84,8 @@ class TestGenerateIssuerAuthToken:
 
     # Normal_2
     # Update token
-    def test_normal_2(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -88,7 +93,7 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
@@ -97,23 +102,25 @@ class TestGenerateIssuerAuthToken:
             2022, 7, 15, 12, 32, 55
         )  # 2022-07-15 12:34:56 - 121sec
         auth_token.valid_duration = 120
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token: AuthToken = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token: AuthToken = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
@@ -135,7 +142,8 @@ class TestGenerateIssuerAuthToken:
     # Error_1_1
     # RequestValidationError
     # [header] missing
-    def test_error_1_1(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -143,21 +151,23 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]), json={"valid_duration": 120}
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -177,7 +187,8 @@ class TestGenerateIssuerAuthToken:
     # Error_1_2
     # RequestValidationError
     # [body] missing
-    def test_error_1_2(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -185,22 +196,24 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -220,7 +233,8 @@ class TestGenerateIssuerAuthToken:
     # Error_2
     # RequestValidationError
     # issuer-address is not a valid address
-    def test_error_2(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -228,23 +242,25 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"][::-1]),  # invalid address
             json={"valid_duration": 120},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -264,7 +280,8 @@ class TestGenerateIssuerAuthToken:
     # Error_3
     # RequestValidationError
     # [header] eoa-password is not a Base64-encoded encrypted data
-    def test_error_3(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -272,13 +289,13 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
             headers={
@@ -287,10 +304,12 @@ class TestGenerateIssuerAuthToken:
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -310,7 +329,8 @@ class TestGenerateIssuerAuthToken:
     # Error_4_1
     # RequestValidationError
     # [body] type error
-    def test_error_4_1(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_4_1(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -318,23 +338,25 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": "invalid_duration"},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -355,7 +377,8 @@ class TestGenerateIssuerAuthToken:
     # Error_4_2
     # RequestValidationError
     # [body] valid_duration is greater than or equal to 0
-    def test_error_4_2(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_4_2(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -363,23 +386,25 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": -1},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -400,7 +425,8 @@ class TestGenerateIssuerAuthToken:
     # Error_4_3
     # RequestValidationError
     # [body] valid_duration is less than or equal to 259200
-    def test_error_4_3(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_4_3(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -408,23 +434,25 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 259201},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -444,7 +472,8 @@ class TestGenerateIssuerAuthToken:
 
     # Error_5
     # AuthorizationError
-    def test_error_5(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -452,13 +481,13 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
             headers={
@@ -467,10 +496,12 @@ class TestGenerateIssuerAuthToken:
         )
 
         # assertion
-        auth_token = db.scalars(
-            select(AuthToken)
-            .where(AuthToken.issuer_address == test_account["address"])
-            .limit(1)
+        auth_token = (
+            await async_db.scalars(
+                select(AuthToken)
+                .where(AuthToken.issuer_address == test_account["address"])
+                .limit(1)
+            )
         ).first()
         assert auth_token is None
 
@@ -483,7 +514,8 @@ class TestGenerateIssuerAuthToken:
     # Error_6_1
     # AuthTokenAlreadyExistsError
     # valid_duration = 0
-    def test_error_6_1(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_6_1(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -491,20 +523,20 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = "hashed_token"
         auth_token.usage_start = datetime(2022, 7, 15, 12, 32, 55)
         auth_token.valid_duration = 0  # endless
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
@@ -519,7 +551,8 @@ class TestGenerateIssuerAuthToken:
     # Error_6_2
     # AuthTokenAlreadyExistsError
     # valid token already exists
-    def test_error_6_2(self, client, db, freezer):
+    @pytest.mark.asyncio
+    async def test_error_6_2(self, async_client, async_db, freezer):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -527,7 +560,7 @@ class TestGenerateIssuerAuthToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
@@ -536,13 +569,13 @@ class TestGenerateIssuerAuthToken:
             2022, 7, 15, 12, 32, 56
         )  # 2022-07-15 12:34:56 - 120sec
         auth_token.valid_duration = 120
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         freezer.move_to("2022-07-15 12:34:56")
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
             headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},

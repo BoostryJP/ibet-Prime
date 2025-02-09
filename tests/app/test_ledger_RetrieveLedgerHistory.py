@@ -21,6 +21,8 @@ from datetime import datetime
 from unittest import mock
 from unittest.mock import call
 
+import pytest
+
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     IDXPersonalInfo,
@@ -45,7 +47,8 @@ class TestRetrieveLedgerHistory:
 
     # <Normal_1_1>
     # Set issue-address in the header
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -54,17 +57,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -171,12 +174,12 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 0,
@@ -294,7 +297,8 @@ class TestRetrieveLedgerHistory:
 
     # <Normal_1_2>
     # Do not set issue-address in the header
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -303,17 +307,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -420,12 +424,12 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 0,
@@ -541,7 +545,8 @@ class TestRetrieveLedgerHistory:
     # <Normal_2>
     # latest_flg = 0 (Get the latest personal info)
     # - ledger detail contains None value in "name" and "value": some_personal_info_not_registered = True
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -551,17 +556,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -668,7 +673,7 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -689,9 +694,9 @@ class TestRetrieveLedgerHistory:
         ]
         _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
-        db.add(_details_1)
+        async_db.add(_details_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -699,7 +704,7 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 0,
@@ -820,7 +825,8 @@ class TestRetrieveLedgerHistory:
     #   - address_1 has personal info in the DB
     #   - address_2 has no personal info in the DB
     # token.require_personal_info_registered = True
-    def test_normal_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -830,17 +836,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -947,7 +953,7 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
         _idx_personal_info_1 = (
             IDXPersonalInfo()
@@ -959,7 +965,7 @@ class TestRetrieveLedgerHistory:
             "address": "address_db_1",
         }
         _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_idx_personal_info_1)
+        async_db.add(_idx_personal_info_1)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -980,9 +986,9 @@ class TestRetrieveLedgerHistory:
         ]
         _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
-        db.add(_details_1)
+        async_db.add(_details_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -1011,7 +1017,7 @@ class TestRetrieveLedgerHistory:
                 }
             ]
 
-            resp = client.get(
+            resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
                     "latest_flg": 1,
@@ -1136,7 +1142,8 @@ class TestRetrieveLedgerHistory:
     #   - address_1 has partial personal info in the DB
     #   - address_2 has no personal info in the DB
     # token.require_personal_info_registered = True
-    def test_normal_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1146,17 +1153,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -1263,7 +1270,7 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
         _idx_personal_info_1 = (
             IDXPersonalInfo()
@@ -1272,7 +1279,7 @@ class TestRetrieveLedgerHistory:
         _idx_personal_info_1.issuer_address = issuer_address
         _idx_personal_info_1.personal_info = {"name": "name_test_1", "address": None}
         _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_idx_personal_info_1)
+        async_db.add(_idx_personal_info_1)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -1293,9 +1300,9 @@ class TestRetrieveLedgerHistory:
         ]
         _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
-        db.add(_details_1)
+        async_db.add(_details_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -1324,7 +1331,7 @@ class TestRetrieveLedgerHistory:
                 }
             ]
 
-            resp = client.get(
+            resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
                     "latest_flg": 1,
@@ -1448,7 +1455,8 @@ class TestRetrieveLedgerHistory:
     # latest_flg = 1 (Get the latest personal info)
     # token.require_personal_info_registered = False
     # Personal information has not been indexed yet
-    def test_normal_3_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1457,17 +1465,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -1527,7 +1535,7 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -1548,9 +1556,9 @@ class TestRetrieveLedgerHistory:
         ]
         _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
-        db.add(_details_1)
+        async_db.add(_details_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -1563,7 +1571,7 @@ class TestRetrieveLedgerHistory:
 
         # request target API
         with token_get_mock:
-            resp = client.get(
+            resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
                     "latest_flg": 1,
@@ -1635,7 +1643,8 @@ class TestRetrieveLedgerHistory:
     # <Normal_3_4>
     # latest_flg = 1 (Get the latest personal info)
     #   - address_1 is issuer's address
-    def test_normal_3_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_4(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1643,17 +1652,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -1713,7 +1722,7 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -1734,9 +1743,9 @@ class TestRetrieveLedgerHistory:
         ]
         _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
-        db.add(_details_1)
+        async_db.add(_details_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -1749,7 +1758,7 @@ class TestRetrieveLedgerHistory:
 
         # request target API
         with token_get_mock:
-            resp = client.get(
+            resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
                     "latest_flg": 1,
@@ -1825,7 +1834,8 @@ class TestRetrieveLedgerHistory:
     # latest_flg = 1 (Get the latest personal info)
     #   - address_1 has personal info in the DB but the values are null
     #   - address_2 has personal info in the DB
-    def test_normal_3_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_5(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1835,17 +1845,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -1952,7 +1962,7 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
         _idx_personal_info_1 = IDXPersonalInfo()  # Note: account_address_1 has personal information in DB but the values are null
         _idx_personal_info_1.account_address = account_address_1
@@ -1962,7 +1972,7 @@ class TestRetrieveLedgerHistory:
             "address": None,
         }
         _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_idx_personal_info_1)
+        async_db.add(_idx_personal_info_1)
 
         _idx_personal_info_2 = (
             IDXPersonalInfo()
@@ -1974,7 +1984,7 @@ class TestRetrieveLedgerHistory:
             "address": "address_db_2",
         }
         _idx_personal_info_2.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_idx_personal_info_2)
+        async_db.add(_idx_personal_info_2)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -1995,9 +2005,9 @@ class TestRetrieveLedgerHistory:
         ]
         _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
-        db.add(_details_1)
+        async_db.add(_details_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -2030,7 +2040,7 @@ class TestRetrieveLedgerHistory:
                 },
             ]
 
-            resp = client.get(
+            resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
                     "latest_flg": 1,
@@ -2152,7 +2162,8 @@ class TestRetrieveLedgerHistory:
 
     # <Normal_4>
     # Test `currency` backward compatibility
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2161,17 +2172,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -2277,12 +2288,12 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 0,
@@ -2402,7 +2413,8 @@ class TestRetrieveLedgerHistory:
     # `some_personal_info_not_registered` is not set in ledger data
     # Test backward compatibility for specifications earlier than v24.6
     # latest_flg != 1
-    def test_normal_5_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2411,17 +2423,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_23_12
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -2526,12 +2538,12 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 0,
@@ -2648,7 +2660,8 @@ class TestRetrieveLedgerHistory:
     # `some_personal_info_not_registered` is not set in ledger data
     # Test backward compatibility for specifications earlier than v24.6
     # latest_flg == 1
-    def test_normal_5_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_2(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2658,17 +2671,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_23_12
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -2773,7 +2786,7 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
         _idx_personal_info_1 = (
             IDXPersonalInfo()
@@ -2785,9 +2798,9 @@ class TestRetrieveLedgerHistory:
             "address": "address_db_1",
         }
         _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_idx_personal_info_1)
+        async_db.add(_idx_personal_info_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         token = IbetStraightBondContract()
@@ -2800,7 +2813,7 @@ class TestRetrieveLedgerHistory:
 
         # request target API
         with token_get_mock:
-            resp = client.get(
+            resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
                     "latest_flg": 1,
@@ -2919,11 +2932,12 @@ class TestRetrieveLedgerHistory:
 
     # <Error_1>
     # Parameter Error(issuer-address)
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 1,
@@ -2949,13 +2963,14 @@ class TestRetrieveLedgerHistory:
 
     # <Error_2>
     # Parameter Error(latest_flg less)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": -1,
@@ -2982,13 +2997,14 @@ class TestRetrieveLedgerHistory:
 
     # <Error_3>
     # Parameter Error(latest_flg greater)
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 2,
@@ -3016,14 +3032,15 @@ class TestRetrieveLedgerHistory:
     # <Error_4_1>
     # Token Not Found
     # set issuer-address
-    def test_error_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = (
             "0x1234567890123456789012345678901234567899"  # not target
@@ -3032,12 +3049,12 @@ class TestRetrieveLedgerHistory:
         _token.abi = {}
         _token.token_status = 2
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 1,
@@ -3057,11 +3074,12 @@ class TestRetrieveLedgerHistory:
     # <Error_4_2>
     # Token Not Found
     # unset issuer-address
-    def test_error_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_2(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 1,
@@ -3077,26 +3095,27 @@ class TestRetrieveLedgerHistory:
 
     # <Error_5>
     # Processing Token
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 1,
@@ -3115,25 +3134,26 @@ class TestRetrieveLedgerHistory:
 
     # <Error_6>
     # Ledger Not Found
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, ledger_id=1),
             params={
                 "latest_flg": 1,
@@ -3152,7 +3172,8 @@ class TestRetrieveLedgerHistory:
 
     # <Error_7>
     # Response data includes over 64-bit range int
-    def test_error_7(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -3161,17 +3182,17 @@ class TestRetrieveLedgerHistory:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -3238,13 +3259,13 @@ class TestRetrieveLedgerHistory:
         _ledger_1.ledger_created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
         )  # JST 2022/01/02
-        db.add(_ledger_1)
+        async_db.add(_ledger_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
-            resp = client.get(
+            resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
                     "latest_flg": 0,

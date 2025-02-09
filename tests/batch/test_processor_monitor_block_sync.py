@@ -34,7 +34,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     return Processor()
 
 
@@ -54,14 +54,15 @@ class TestProcessor:
         WEB3_HTTP_PROVIDER,
     )
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db):
+    async def test_normal_1(self, processor, async_db):
         await processor.initial_setup()
 
         # Run 1st: Normal state
         await processor.process()
+        async_db.expire_all()
 
-        db.rollback()
-        _node = db.scalars(select(Node).limit(1)).first()
+        await async_db.rollback()
+        _node = (await async_db.scalars(select(Node).limit(1))).first()
         assert _node.id == 1
         assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
         assert _node.priority == 0
@@ -73,16 +74,18 @@ class TestProcessor:
             "batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100
         ):
             await processor.process()
+            await async_db.rollback()
+            async_db.expire_all()
 
-        db.rollback()
-        _node = db.scalars(select(Node).limit(1)).first()
+        _node = (await async_db.scalars(select(Node).limit(1))).first()
         assert _node.is_synced == False
 
         # Run 3rd: Return to normal state
         await processor.process()
+        await async_db.rollback()
+        async_db.expire_all()
 
-        db.rollback()
-        _node = db.scalars(select(Node).limit(1)).first()
+        _node = (await async_db.scalars(select(Node).limit(1))).first()
         assert _node.is_synced == True
 
         # Run 4th: Abnormal state
@@ -95,9 +98,10 @@ class TestProcessor:
         }
         with mock.patch("web3.eth.async_eth.AsyncEth.syncing", is_syncing_mock()):
             await processor.process()
+            await async_db.rollback()
+            async_db.expire_all()
 
-        db.rollback()
-        _node = db.scalars(select(Node).limit(1)).first()
+        _node = (await async_db.scalars(select(Node).limit(1))).first()
         assert _node.is_synced == False
 
         # Run 5th: Return to normal state
@@ -110,9 +114,10 @@ class TestProcessor:
         }
         with mock.patch("web3.eth.async_eth.AsyncEth.syncing", is_syncing_mock()):
             await processor.process()
+            await async_db.rollback()
+            async_db.expire_all()
 
-        db.rollback()
-        _node = db.scalars(select(Node).limit(1)).first()
+        _node = (await async_db.scalars(select(Node).limit(1))).first()
         assert _node.is_synced == True
 
     # <Normal_2>
@@ -122,12 +127,12 @@ class TestProcessor:
         ["http://localhost:1000"],
     )
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, db):
+    async def test_normal_2(self, processor, async_db):
         await processor.initial_setup()
+        await async_db.rollback()
 
         # pre assertion
-        db.rollback()
-        _node = db.scalars(select(Node).limit(1)).first()
+        _node = (await async_db.scalars(select(Node).limit(1))).first()
         assert _node.id == 1
         assert _node.endpoint_uri == "http://localhost:1000"
         assert _node.priority == 1
@@ -143,42 +148,48 @@ class TestProcessor:
             WEB3_HTTP_PROVIDER  # Temporarily replace setting values
         )
         await processor.process()
+        await async_db.rollback()
+        async_db.expire_all()
 
         processor.node_info["http://localhost:1000"][
             "web3"
         ].manager.provider.endpoint_uri = org_value
 
         # assertion
-        db.rollback()
-        _node = db.scalars(
-            select(Node).where(Node.endpoint_uri == "http://localhost:1000").limit(1)
+        _node = (
+            await async_db.scalars(
+                select(Node)
+                .where(Node.endpoint_uri == "http://localhost:1000")
+                .limit(1)
+            )
         ).first()
         assert _node.is_synced == True
 
     # <Normal_3>
     # Delete old node data
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, db):
+    async def test_normal_3(self, processor, async_db):
         node = Node()
         node.id = 1
         node.endpoint_uri = "old_node"
         node.priority = 1
         node.is_synced = True
-        db.add(node)
-        db.commit()
+        async_db.add(node)
+        await async_db.commit()
 
         await processor.initial_setup()
 
         # assertion-1
-        old_node = db.scalars(select(Node)).all()
+        old_node = (await async_db.scalars(select(Node))).all()
         assert len(old_node) == 0
 
         # process
         await processor.process()
-        db.commit()
+        await async_db.rollback()
+        async_db.expire_all()
 
         # assertion-2
-        new_node = db.scalars(select(Node).limit(1)).first()
+        new_node = (await async_db.scalars(select(Node).limit(1))).first()
         assert new_node.id == 1
         assert new_node.endpoint_uri == WEB3_HTTP_PROVIDER
         assert new_node.priority == 0
@@ -199,12 +210,12 @@ class TestProcessor:
         ["http://localhost:1000", "http://localhost:2000"],
     )
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, db):
+    async def test_error_1(self, processor, async_db):
         await processor.initial_setup()
+        await async_db.rollback()
 
         # assertion
-        db.rollback()
-        _node_list = db.scalars(select(Node).order_by(Node.id)).all()
+        _node_list = (await async_db.scalars(select(Node).order_by(Node.id))).all()
         assert len(_node_list) == 2
 
         _node = _node_list[0]
@@ -230,13 +241,14 @@ class TestProcessor:
         ["http://localhost:1000", "http://localhost:2000"],
     )
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, db):
+    async def test_error_2(self, processor, async_db):
         await processor.initial_setup()
         await processor.process()
+        await async_db.rollback()
+        async_db.expire_all()
 
         # assertion
-        db.rollback()
-        _node_list = db.scalars(select(Node).order_by(Node.id)).all()
+        _node_list = (await async_db.scalars(select(Node).order_by(Node.id))).all()
         assert len(_node_list) == 3
 
         _node = _node_list[0]

@@ -43,9 +43,10 @@ class TestListAllIssuedTokens:
 
     # <Normal_1>
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # Request target API
-        resp = client.get(self.api_url)
+        resp = await async_client.get(self.api_url)
 
         # Assertion
         assert resp.status_code == 200
@@ -63,7 +64,10 @@ class TestListAllIssuedTokens:
     # TokenType = IbetStraightBond
     @pytest.mark.freeze_time("2025-01-31 12:34:56")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_2_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -72,8 +76,8 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
-        db.commit()
+        async_db.add(_token)
+        await async_db.commit()
 
         # Mock
         bond_1 = IbetStraightBondContract()
@@ -124,7 +128,7 @@ class TestListAllIssuedTokens:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # Request target API
-        resp = client.get(self.api_url)
+        resp = await async_client.get(self.api_url)
 
         # Assertion
         assert resp.status_code == 200
@@ -152,7 +156,8 @@ class TestListAllIssuedTokens:
     # TokenType = IbetShare
     @pytest.mark.freeze_time("2025-01-31 12:34:56")
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_2_2(self, mock_IbetShareContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -161,8 +166,8 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
-        db.commit()
+        async_db.add(_token)
+        await async_db.commit()
 
         # Mock
         share_1 = IbetShareContract()
@@ -194,7 +199,7 @@ class TestListAllIssuedTokens:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # Request target API
-        resp = client.get(self.api_url)
+        resp = await async_client.get(self.api_url)
 
         # Assertion
         assert resp.status_code == 200
@@ -222,8 +227,13 @@ class TestListAllIssuedTokens:
     # Multiple records
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_3(
-        self, mock_IbetShareContract_get, mock_IbetStraightBondContract_get, client, db
+    @pytest.mark.asyncio
+    async def test_normal_3(
+        self,
+        mock_IbetShareContract_get,
+        mock_IbetStraightBondContract_get,
+        async_client,
+        async_db,
     ):
         # Prepare data: Token
         _token = Token()
@@ -233,7 +243,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_2
@@ -242,9 +252,9 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         bond_1 = IbetStraightBondContract()
@@ -323,7 +333,7 @@ class TestListAllIssuedTokens:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # Request target API
-        resp = client.get(self.api_url)
+        resp = await async_client.get(self.api_url)
 
         # Assertion
         assert resp.status_code == 200
@@ -359,7 +369,10 @@ class TestListAllIssuedTokens:
     # <Normal_4_1>
     # Base query filtering: issuer address
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_4_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -368,7 +381,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_2
@@ -377,9 +390,9 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         bond_1 = IbetStraightBondContract()
@@ -430,7 +443,7 @@ class TestListAllIssuedTokens:
         mock_IbetStraightBondContract_get.side_effect = [bond_1]
 
         # Request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.api_url,
             headers={"issuer-address": self.issuer_address_1},
         )
@@ -460,7 +473,10 @@ class TestListAllIssuedTokens:
     # <Normal_4_2>
     # Base query filtering: token_address_list
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_4_2(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -469,7 +485,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_2
@@ -478,9 +494,9 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         bond_2 = IbetStraightBondContract()
@@ -531,7 +547,7 @@ class TestListAllIssuedTokens:
         mock_IbetStraightBondContract_get.side_effect = [bond_2]
 
         # Request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.api_url, params={"token_address_list": [self.token_address_2]}
         )
 
@@ -560,7 +576,8 @@ class TestListAllIssuedTokens:
     # <Normal_5>
     # Search filtering: token_type
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_5(self, mock_IbetShareContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, mock_IbetShareContract_get, async_client, async_db):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -569,7 +586,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_2
@@ -578,9 +595,9 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         share_1 = IbetShareContract()
@@ -612,7 +629,7 @@ class TestListAllIssuedTokens:
         mock_IbetShareContract_get.side_effect = [share_1]
 
         # Request target API
-        resp = client.get(self.api_url, params={"token_type": "IbetShare"})
+        resp = await async_client.get(self.api_url, params={"token_type": "IbetShare"})
 
         # Assertion
         assert resp.status_code == 200
@@ -639,7 +656,10 @@ class TestListAllIssuedTokens:
     # <Normal_6_1>
     # Sort: created
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_6_1(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_6_1(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -648,7 +668,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_2
@@ -657,9 +677,9 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         bond_1 = IbetStraightBondContract()
@@ -757,7 +777,7 @@ class TestListAllIssuedTokens:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_2]
 
         # Request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.api_url, params={"sort_item": "created", "sort_order": 0}
         )
 
@@ -795,7 +815,10 @@ class TestListAllIssuedTokens:
     # <Normal_6_2>
     # Sort: token_address
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_6_2(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_6_2(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -804,7 +827,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_2
@@ -813,9 +836,9 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         bond_1 = IbetStraightBondContract()
@@ -913,7 +936,7 @@ class TestListAllIssuedTokens:
         mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_2]
 
         # Request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.api_url, params={"sort_item": "token_address", "sort_order": 0}
         )
 
@@ -951,7 +974,10 @@ class TestListAllIssuedTokens:
     # <Normal_7>
     # Offset/Limit
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_7(self, mock_IbetStraightBondContract_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_7(
+        self, mock_IbetStraightBondContract_get, async_client, async_db
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -960,7 +986,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_2
@@ -969,7 +995,7 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
         _token.token_address = self.token_address_3
@@ -978,9 +1004,9 @@ class TestListAllIssuedTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # Mock
         bond_2 = IbetStraightBondContract()
@@ -1032,7 +1058,7 @@ class TestListAllIssuedTokens:
         mock_IbetStraightBondContract_get.side_effect = [bond_2]
 
         # Request target API
-        resp = client.get(self.api_url, params={"offset": 1, "limit": 1})
+        resp = await async_client.get(self.api_url, params={"offset": 1, "limit": 1})
 
         # Assertion
         assert resp.status_code == 200
@@ -1063,9 +1089,10 @@ class TestListAllIssuedTokens:
     # <Error_1_1>
     # token_address_list: Invalid token address
     # -> 422: RequestValidationError
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         # Request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.api_url, params={"token_address_list": ["invalid_token_address"]}
         )
 
@@ -1087,9 +1114,12 @@ class TestListAllIssuedTokens:
     # <Error_1_2>
     # token_type: Invalid token address
     # -> 422: RequestValidationError
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         # Request target API
-        resp = client.get(self.api_url, params={"token_type": "invalid_token_type"})
+        resp = await async_client.get(
+            self.api_url, params={"token_type": "invalid_token_type"}
+        )
 
         # Assertion
         assert resp.status_code == 422

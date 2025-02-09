@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import sys
 from unittest import mock
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
@@ -36,7 +37,8 @@ class TestUpdateLedgerDetailsData:
 
     # <Normal_1>
     @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
-    def test_normal_1(self, mock_func, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, mock_func, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -50,7 +52,7 @@ class TestUpdateLedgerDetailsData:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
         _details_1_data_1.token_address = token_address
@@ -61,9 +63,9 @@ class TestUpdateLedgerDetailsData:
         _details_1_data_1.price = 1
         _details_1_data_1.balance = 2
         _details_1_data_1.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_1)
+        async_db.add(_details_1_data_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = [
@@ -84,7 +86,7 @@ class TestUpdateLedgerDetailsData:
                 "acquisition_date": "2020/01/02",
             },
         ]
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address, data_id=data_id),
             json=req_param,
             headers={
@@ -95,8 +97,10 @@ class TestUpdateLedgerDetailsData:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _details_data_list = db.scalars(
-            select(LedgerDetailsData).order_by(LedgerDetailsData.id)
+        _details_data_list = (
+            await async_db.scalars(
+                select(LedgerDetailsData).order_by(LedgerDetailsData.id)
+            )
         ).all()
         assert len(_details_data_list) == 2
         _details_data = _details_data_list[0]
@@ -121,7 +125,8 @@ class TestUpdateLedgerDetailsData:
     # <Normal_2>
     # Max value
     @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
-    def test_normal_2(self, mock_func, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, mock_func, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -135,7 +140,7 @@ class TestUpdateLedgerDetailsData:
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
         _details_1_data_1.token_address = token_address
@@ -146,9 +151,9 @@ class TestUpdateLedgerDetailsData:
         _details_1_data_1.price = 1
         _details_1_data_1.balance = 2
         _details_1_data_1.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_1)
+        async_db.add(_details_1_data_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = [
@@ -161,7 +166,7 @@ class TestUpdateLedgerDetailsData:
                 "acquisition_date": "2020/01/01",
             },
         ]
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address, data_id=data_id),
             json=req_param,
             headers={
@@ -173,8 +178,10 @@ class TestUpdateLedgerDetailsData:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _details_data_list = db.scalars(
-            select(LedgerDetailsData).order_by(LedgerDetailsData.id)
+        _details_data_list = (
+            await async_db.scalars(
+                select(LedgerDetailsData).order_by(LedgerDetailsData.id)
+            )
         ).all()
         assert len(_details_data_list) == 1
 
@@ -194,12 +201,13 @@ class TestUpdateLedgerDetailsData:
 
     # <Error_1>
     # Parameter Error
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
 
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address, data_id=data_id),
         )
 
@@ -225,7 +233,8 @@ class TestUpdateLedgerDetailsData:
 
     # <Error_2>
     # Parameter Error(issuer-address)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
 
@@ -248,7 +257,7 @@ class TestUpdateLedgerDetailsData:
                 "acquisition_date": "2020/01/02",
             },
         ]
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address, data_id=data_id),
             json=req_param,
             headers={
@@ -272,7 +281,8 @@ class TestUpdateLedgerDetailsData:
 
     # <Error_3>
     # Parameter Error(body request)
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -301,7 +311,7 @@ class TestUpdateLedgerDetailsData:
                 "acquisition_date": "2020/02/31",
             },
         ]
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address, data_id=data_id),
             json=req_param,
             headers={
@@ -389,7 +399,8 @@ class TestUpdateLedgerDetailsData:
 
     # <Error_4>
     # Token Not Found
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -414,7 +425,7 @@ class TestUpdateLedgerDetailsData:
                 "acquisition_date": "2020/01/02",
             },
         ]
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address, data_id=data_id),
             json=req_param,
             headers={
@@ -431,7 +442,8 @@ class TestUpdateLedgerDetailsData:
 
     # <Error_5>
     # Processing Token
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -446,9 +458,9 @@ class TestUpdateLedgerDetailsData:
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = [
@@ -469,7 +481,7 @@ class TestUpdateLedgerDetailsData:
                 "acquisition_date": "2020/01/02",
             },
         ]
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(token_address=token_address, data_id=data_id),
             json=req_param,
             headers={

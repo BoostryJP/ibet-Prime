@@ -22,6 +22,8 @@ import json
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
+import pytest
+
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain.tx_params.ibet_security_token import ForceUnlockParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
@@ -40,7 +42,10 @@ class TestForceUnlock:
     # <Normal_1>
     # Authorization by eoa-password
     @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
-    def test_normal_1(self, IbetSecurityTokenInterface_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(
+        self, IbetSecurityTokenInterface_mock, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -57,18 +62,18 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenInterface_mock.side_effect = [None]
@@ -80,7 +85,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -110,7 +115,10 @@ class TestForceUnlock:
     # <Normal_2>
     # Authorization by auth-token
     @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
-    def test_normal_2(self, IbetSecurityTokenInterface_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(
+        self, IbetSecurityTokenInterface_mock, async_client, async_db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -127,24 +135,24 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = _admin_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenInterface_mock.side_effect = [None]
@@ -156,7 +164,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={"issuer-address": _admin_address, "auth-token": "test_auth_token"},
@@ -187,12 +195,13 @@ class TestForceUnlock:
     # <Error_1_1>
     # RequestValidationError
     # Required fields are not set
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={"issuer-address": "issuer-address"},
@@ -234,7 +243,8 @@ class TestForceUnlock:
     # RequestValidationError
     # - address is invalid
     # - value is not greater than 0
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
@@ -250,7 +260,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 0,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={"issuer-address": "issuer-address"},
@@ -295,10 +305,13 @@ class TestForceUnlock:
     # <Error_3>
     # RequestValidationError
     # Header and body are required
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
         # request target API
-        resp = client.post(self.test_url.format(account_address=account_address))
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address)
+        )
 
         # assertion
         assert resp.status_code == 422
@@ -323,7 +336,8 @@ class TestForceUnlock:
     # <Error_4>
     # RequestValidationError
     # issuer-address is not a valid address
-    def test_error_1_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -343,7 +357,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={"issuer-address": "issuer-address"},  # dummy address
@@ -366,7 +380,8 @@ class TestForceUnlock:
     # <Error_1_5>
     # RequestValidationError
     # eoa-password is not a Base64-encoded encrypted data
-    def test_error_1_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -386,7 +401,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -412,7 +427,8 @@ class TestForceUnlock:
     # <Error_2_1>
     # AuthorizationError
     # Issuer does not exist
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -432,7 +448,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -451,7 +467,8 @@ class TestForceUnlock:
     # <Error_2_2>
     # AuthorizationError
     # Password mismatch
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -468,9 +485,9 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -479,7 +496,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -498,7 +515,8 @@ class TestForceUnlock:
     # <Error_3_1>
     # InvalidParameterError
     # account_address is not a valid address
-    def test_error_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, async_client, async_db):
         account_address = "invalid_address"
 
         _admin_account = config_eth_account("user1")
@@ -515,18 +533,18 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -535,7 +553,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -554,7 +572,8 @@ class TestForceUnlock:
     # <Error_3_2>
     # InvalidParameterError
     # token not found
-    def test_error_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -571,9 +590,9 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -582,7 +601,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -601,7 +620,8 @@ class TestForceUnlock:
     # <Error_3_3>
     # InvalidParameterError
     # token is temporarily unavailable
-    def test_error_3_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_3(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -618,19 +638,19 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -639,7 +659,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -661,7 +681,8 @@ class TestForceUnlock:
         "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
         MagicMock(side_effect=ContractRevertError(code_msg="111201")),
     )
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -678,18 +699,18 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -698,7 +719,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
@@ -720,7 +741,8 @@ class TestForceUnlock:
         "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
         MagicMock(side_effect=SendTransactionError()),
     )
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = config_eth_account("user1")
@@ -737,18 +759,18 @@ class TestForceUnlock:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -757,7 +779,7 @@ class TestForceUnlock:
             "recipient_address": _recipient_address,
             "value": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={

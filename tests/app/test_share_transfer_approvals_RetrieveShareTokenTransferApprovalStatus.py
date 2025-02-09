@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
+import pytest
 from pytz import timezone
 
 import config
@@ -89,16 +90,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Normal_1_1>
     # unapproved data
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _personal_info_from = IDXPersonalInfo()
@@ -115,7 +117,7 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "tax_category": 10,
         }  # latest data
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -131,7 +133,7 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "tax_category": 10,
         }  # latest data
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -153,12 +155,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -204,16 +206,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Normal_1_2>
     # unapproved data (Personal information is not synchronized)
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -235,12 +238,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -269,16 +272,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
     # <Normal_2_1>
     # canceled data
     # operation completed, event synchronizing
-    def test_normal_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -300,14 +304,14 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None  # event synchronizing
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: TransferApprovalHistory
         _cancel_op = TransferApprovalHistory()
         _cancel_op.token_address = self.test_token_address
         _cancel_op.exchange_address = self.test_exchange_address
         _cancel_op.application_id = 100
-        _cancel_op.operation_type = TransferApprovalOperationType.CANCEL.value
+        _cancel_op.operation_type = TransferApprovalOperationType.CANCEL
         _cancel_op.from_address_personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -328,12 +332,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }  # snapshot
-        db.add(_cancel_op)
+        async_db.add(_cancel_op)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -379,16 +383,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Normal_2_2>
     # canceled data
-    def test_normal_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -412,14 +417,14 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = True  # event synced
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: TransferApprovalHistory
         _cancel_op = TransferApprovalHistory()
         _cancel_op.token_address = self.test_token_address
         _cancel_op.exchange_address = self.test_exchange_address
         _cancel_op.application_id = 100
-        _cancel_op.operation_type = TransferApprovalOperationType.CANCEL.value
+        _cancel_op.operation_type = TransferApprovalOperationType.CANCEL
         _cancel_op.from_address_personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -440,12 +445,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }  # snapshot
-        db.add(_cancel_op)
+        async_db.add(_cancel_op)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -491,16 +496,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Normal_3>
     # escrow finished data
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _personal_info_from = IDXPersonalInfo()
@@ -517,7 +523,7 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "tax_category": 10,
         }  # latest data
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -533,7 +539,7 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "tax_category": 10,
         }  # latest data
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -555,12 +561,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow finished
         _idx_transfer_approval.transfer_approved = False
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -607,16 +613,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
     # <Normal_4_1>
     # transferred data
     # operation completed, event synchronizing
-    def test_normal_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -640,14 +647,14 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None  # event synchronizing
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: TransferApprovalHistory
         _approval_op = TransferApprovalHistory()
         _approval_op.token_address = self.test_token_address
         _approval_op.exchange_address = self.test_exchange_address
         _approval_op.application_id = 100
-        _approval_op.operation_type = TransferApprovalOperationType.APPROVE.value
+        _approval_op.operation_type = TransferApprovalOperationType.APPROVE
         _approval_op.from_address_personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -668,12 +675,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }  # snapshot
-        db.add(_approval_op)
+        async_db.add(_approval_op)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -719,16 +726,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Normal_4_2>
     # transferred data
-    def test_normal_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -752,14 +760,14 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = True  # synced
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: TransferApprovalHistory
         _approval_op = TransferApprovalHistory()
         _approval_op.token_address = self.test_token_address
         _approval_op.exchange_address = self.test_exchange_address
         _approval_op.application_id = 100
-        _approval_op.operation_type = TransferApprovalOperationType.APPROVE.value
+        _approval_op.operation_type = TransferApprovalOperationType.APPROVE
         _approval_op.from_address_personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -780,12 +788,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "is_corporate": False,
             "tax_category": 10,
         }  # snapshot
-        db.add(_approval_op)
+        async_db.add(_approval_op)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -832,16 +840,17 @@ class TestRetrieveShareTokenTransferApprovalStatus:
     # <Normal_4_3>
     # transferred data
     # created from 22.12 to 23.9
-    def test_normal_4_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _personal_info_from = IDXPersonalInfo()
@@ -858,7 +867,7 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "tax_category": 10,
         }  # latest data
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -874,7 +883,7 @@ class TestRetrieveShareTokenTransferApprovalStatus:
             "tax_category": 10,
         }  # latest data
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
         # prepare data: IDXTransferApproval
         id = 10
@@ -898,22 +907,22 @@ class TestRetrieveShareTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None  # event synchronizing
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: TransferApprovalHistory
         _approval_op = TransferApprovalHistory()
         _approval_op.token_address = self.test_token_address
         _approval_op.exchange_address = self.test_exchange_address
         _approval_op.application_id = 100
-        _approval_op.operation_type = TransferApprovalOperationType.APPROVE.value
+        _approval_op.operation_type = TransferApprovalOperationType.APPROVE
         _approval_op.from_address_personal_info = None  # created from v22.12 to v23.9
         _approval_op.to_address_personal_info = None  # created from v22.12 to v23.9
-        db.add(_approval_op)
+        async_db.add(_approval_op)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 200
@@ -963,11 +972,12 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Error_1>
     # token not found
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         id = 10
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 404
@@ -978,24 +988,25 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Error_2>
     # processing token
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         id = 10
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 400
@@ -1006,24 +1017,25 @@ class TestRetrieveShareTokenTransferApprovalStatus:
 
     # <Error_3>
     # transfer approval not found
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         id = 10
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 1
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address, id))
+        resp = await async_client.get(self.base_url.format(self.test_token_address, id))
 
         # assertion
         assert resp.status_code == 404

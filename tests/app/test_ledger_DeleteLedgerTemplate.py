@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import (
@@ -39,20 +40,21 @@ class TestDeleteLedgerTemplate:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _template = LedgerTemplate()
         _template.token_address = token_address
@@ -78,7 +80,7 @@ class TestDeleteLedgerTemplate:
                 "f-fuga": "f-bbbb",
             },
         ]
-        db.add(_template)
+        async_db.add(_template)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
@@ -99,7 +101,7 @@ class TestDeleteLedgerTemplate:
         ]
         _details_1.data_type = LedgerDataType.IBET_FIN.value
         _details_1.data_source = token_address
-        db.add(_details_1)
+        async_db.add(_details_1)
 
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address
@@ -120,12 +122,12 @@ class TestDeleteLedgerTemplate:
         ]
         _details_2.data_type = LedgerDataType.DB.value
         _details_2.data_source = "data_id_2"
-        db.add(_details_2)
+        async_db.add(_details_2)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
@@ -135,9 +137,9 @@ class TestDeleteLedgerTemplate:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _template_list = db.scalars(select(LedgerTemplate)).all()
+        _template_list = (await async_db.scalars(select(LedgerTemplate))).all()
         assert len(_template_list) == 0
-        _details_list = db.scalars(select(LedgerDetailsTemplate)).all()
+        _details_list = (await async_db.scalars(select(LedgerDetailsTemplate))).all()
         assert len(_details_list) == 0
 
     ###########################################################################
@@ -146,11 +148,12 @@ class TestDeleteLedgerTemplate:
 
     # <Error_1>
     # Parameter Error
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(token_address=token_address),
         )
 
@@ -170,11 +173,12 @@ class TestDeleteLedgerTemplate:
 
     # <Error_2>
     # Parameter Error(issuer-address)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": "test",
@@ -197,13 +201,14 @@ class TestDeleteLedgerTemplate:
 
     # <Error_3>
     # Token Not Found
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
@@ -219,26 +224,27 @@ class TestDeleteLedgerTemplate:
 
     # <Error_4>
     # Processing Token
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
@@ -254,25 +260,26 @@ class TestDeleteLedgerTemplate:
 
     # <Error_5>
     # Ledger Template Not Found
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,

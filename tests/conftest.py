@@ -17,10 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any, AsyncGenerator
+
 import pytest
 import pytest_asyncio
 from eth_keyfile import decode_keyfile_json
-from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from pytest_asyncio import is_async_test
 from sqlalchemy import text
@@ -30,12 +31,8 @@ from web3.types import RPCEndpoint
 
 from app.database import (
     AsyncSessionLocal,
-    SessionLocal,
     async_engine,
-    batch_async_engine,
     db_async_session,
-    db_session,
-    engine,
 )
 from app.main import app
 from app.model.db import Base
@@ -57,14 +54,8 @@ def pytest_collection_modifyitems(items):
 #####################################################
 # Test Client
 #####################################################
-@pytest.fixture(scope="session")
-def client() -> TestClient:
-    client = TestClient(app)
-    return client
-
-
 @pytest_asyncio.fixture(scope="session")
-async def async_client() -> AsyncClient:
+async def async_client() -> AsyncGenerator[AsyncClient, Any]:
     async_client = AsyncClient(
         transport=ASGITransport(app=app), base_url="http://localhost"
     )
@@ -75,62 +66,18 @@ async def async_client() -> AsyncClient:
 #####################################################
 # DB
 #####################################################
-@pytest_asyncio.fixture(scope="function")
-async def db_engine():
-    Base.metadata.create_all(engine)
-    yield engine
-
-    engine.dispose()
-    await async_engine.dispose()
-    await batch_async_engine.dispose()
-
-
-@pytest_asyncio.fixture(scope="function")
-def db(db_engine):
-    # Create DB session
-    db = SessionLocal()
-
-    def override_inject_db_session():
-        return db
-
-    # Replace target API's dependency DB session.
-    app.dependency_overrides[db_session] = override_inject_db_session
-
-    # Create DB tables
-    yield db
-
-    # Remove DB tables
-    db.rollback()
-    db.begin()
-    for table in Base.metadata.sorted_tables:
-        db.execute(text(f'ALTER TABLE "{table.name}" DISABLE TRIGGER ALL;'))
-        db.execute(text(f'TRUNCATE TABLE "{table.name}";'))
-        if table.autoincrement_column is not None:
-            db.execute(
-                text(
-                    f"ALTER SEQUENCE {table.name}_{table.autoincrement_column.name}_seq RESTART WITH 1;"
-                )
-            )
-        db.execute(text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;'))
-    db.commit()
-    db.close()
-
-    app.dependency_overrides[db_session] = db_session
-
-
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="session")
 async def async_db_engine():
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     yield async_engine
 
-    engine.dispose()
-    await async_engine.dispose()
-    await batch_async_engine.dispose()
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function", loop_scope="session")
 async def async_db(async_db_engine):
     # Create DB session
     _db = AsyncSessionLocal()
@@ -142,11 +89,11 @@ async def async_db(async_db_engine):
     app.dependency_overrides[db_async_session] = override_inject_db_session
 
     async with _db as session:
-        # Create DB tables
+        await session.begin()
         yield session
+        await session.rollback()
 
         # Remove DB tables
-        await session.rollback()
         await session.begin()
         for table in Base.metadata.sorted_tables:
             await session.execute(
@@ -163,9 +110,8 @@ async def async_db(async_db_engine):
                 text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;')
             )
         await session.commit()
-        await session.close()
 
-        app.dependency_overrides[db_async_session] = db_async_session
+    app.dependency_overrides[db_async_session] = db_async_session
 
 
 #####################################################

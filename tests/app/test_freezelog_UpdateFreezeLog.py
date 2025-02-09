@@ -39,7 +39,7 @@ class TestUpdateFreezeLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, db, freeze_log_contract):
+    async def test_normal_1(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -50,9 +50,9 @@ class TestUpdateFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -92,7 +92,7 @@ class TestUpdateFreezeLog:
     # <Normal_2>
     # E2EE_REQUEST_ENABLED = False
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, db, freeze_log_contract):
+    async def test_normal_2(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -103,9 +103,9 @@ class TestUpdateFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         with (
             mock.patch(
@@ -160,7 +160,7 @@ class TestUpdateFreezeLog:
     # Missing required fields
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, db, freeze_log_contract):
+    async def test_error_1_1(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -171,9 +171,9 @@ class TestUpdateFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -226,7 +226,7 @@ class TestUpdateFreezeLog:
     # Invalid ethereum address: account_address
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, db, freeze_log_contract):
+    async def test_error_1_2(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -237,9 +237,9 @@ class TestUpdateFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -285,7 +285,7 @@ class TestUpdateFreezeLog:
     # Password is not encrypted
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, db, freeze_log_contract):
+    async def test_error_1_3(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -296,9 +296,9 @@ class TestUpdateFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -344,7 +344,7 @@ class TestUpdateFreezeLog:
     # Log account is not exists
     # -> NotFound
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, db, freeze_log_contract):
+    async def test_error_2(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         password = "password"
@@ -374,7 +374,7 @@ class TestUpdateFreezeLog:
     # Password mismatch
     # -> InvalidParameterError
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, db, freeze_log_contract):
+    async def test_error_3(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -385,9 +385,9 @@ class TestUpdateFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -413,7 +413,7 @@ class TestUpdateFreezeLog:
     # <Error_4>
     # SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, db, freeze_log_contract):
+    async def test_error_4(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -424,9 +424,9 @@ class TestUpdateFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         with (
             mock.patch(

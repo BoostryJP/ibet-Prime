@@ -19,8 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+import pytest
 
 from app.model.db import IDXTxData
 
@@ -82,7 +81,7 @@ class TestListTxData:
         }
 
     @staticmethod
-    def insert_tx_data(db, tx_data):
+    async def insert_tx_data(async_db, tx_data):
         tx_model = IDXTxData()
         tx_model.hash = tx_data.get("hash")
         tx_model.block_hash = tx_data.get("block_hash")
@@ -95,22 +94,23 @@ class TestListTxData:
         tx_model.gas_price = tx_data.get("gas_price")
         tx_model.value = tx_data.get("value")
         tx_model.nonce = tx_data.get("nonce")
-        db.add(tx_model)
-        db.commit()
+        async_db.add(tx_model)
+        await async_db.commit()
 
     ###########################################################################
     # Normal
     ###########################################################################
 
     # Normal_1
-    def test_normal_1(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.A_tx_1)
-        self.insert_tx_data(db, self.A_tx_2)
-        self.insert_tx_data(db, self.B_tx_1)
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = client.get(self.apiurl)
+            resp = await async_client.get(self.apiurl)
 
         # Assertion
         assert resp.status_code == 200
@@ -130,15 +130,16 @@ class TestListTxData:
 
     # Normal_2_1
     # Query parameter: block_number
-    def test_normal_2_1(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.A_tx_1)
-        self.insert_tx_data(db, self.A_tx_2)
-        self.insert_tx_data(db, self.B_tx_1)
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"block_number": 6791871}
-            resp = client.get(self.apiurl, params=params)
+            resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
         assert resp.status_code == 200
@@ -154,15 +155,16 @@ class TestListTxData:
 
     # Normal_2_2
     # Query parameter: from_address
-    def test_normal_2_2(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.A_tx_1)
-        self.insert_tx_data(db, self.A_tx_2)
-        self.insert_tx_data(db, self.B_tx_1)
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"from_address": "0x30406cd5f18dd87367b782b9d63b4d79f7f5ebb8"}
-            resp = client.get(self.apiurl, params=params)
+            resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
         assert resp.status_code == 200
@@ -181,15 +183,16 @@ class TestListTxData:
 
     # Normal_2_3
     # Query parameter: to_address
-    def test_normal_2_3(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.A_tx_1)
-        self.insert_tx_data(db, self.A_tx_2)
-        self.insert_tx_data(db, self.B_tx_1)
+    @pytest.mark.asyncio
+    async def test_normal_2_3(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"to_address": "0xeceb9fdbd2cf677be5fa8b1ceeb53e53d582f0eb"}
-            resp = client.get(self.apiurl, params=params)
+            resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
         assert resp.status_code == 200
@@ -205,15 +208,16 @@ class TestListTxData:
 
     # Normal_3_1
     # Pagination: offset
-    def test_normal_3_1(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.A_tx_1)
-        self.insert_tx_data(db, self.A_tx_2)
-        self.insert_tx_data(db, self.B_tx_1)
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"offset": 1}
-            resp = client.get(self.apiurl, params=params)
+            resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
         assert resp.status_code == 200
@@ -232,15 +236,16 @@ class TestListTxData:
 
     # Normal_3_2
     # Pagination: limit
-    def test_normal_3_2(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.A_tx_1)
-        self.insert_tx_data(db, self.A_tx_2)
-        self.insert_tx_data(db, self.B_tx_1)
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"limit": 1}
-            resp = client.get(self.apiurl, params=params)
+            resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
         assert resp.status_code == 200
@@ -260,10 +265,11 @@ class TestListTxData:
 
     # Error_1
     # BC_EXPLORER_ENABLED = False (default)
-    def test_error_1(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
-            resp = client.get(self.apiurl)
+            resp = await async_client.get(self.apiurl)
 
         # Assertion
         assert resp.status_code == 404
@@ -274,11 +280,12 @@ class TestListTxData:
 
     # Error_2_1
     # Invalid Parameter
-    def test_error_2_1(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"offset": -1, "limit": -1, "block_number": -1}
-            resp = client.get(self.apiurl, params=params)
+            resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
         assert resp.status_code == 422
@@ -311,11 +318,12 @@ class TestListTxData:
 
     # Error_2_2
     # Invalid Parameter
-    def test_error_2_2(self, client: TestClient, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"from_address": "abcd", "to_address": "abcd"}
-            resp = client.get(self.apiurl, params=params)
+            resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
         assert resp.status_code == 422
@@ -341,17 +349,18 @@ class TestListTxData:
 
     # Error_3
     # ResponseLimitExceededError
-    def test_error_3(self, client: TestClient, db: Session):
-        self.insert_tx_data(db, self.A_tx_1)
-        self.insert_tx_data(db, self.A_tx_2)
-        self.insert_tx_data(db, self.B_tx_1)
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with (
             mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True),
             mock.patch("app.routers.misc.bc_explorer.TX_RESPONSE_LIMIT", 2),
         ):
-            resp = client.get(self.apiurl)
+            resp = await async_client.get(self.apiurl)
 
         # Assertion
         assert resp.status_code == 400

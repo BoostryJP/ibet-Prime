@@ -23,7 +23,6 @@ from unittest.mock import patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.exceptions import ContractLogicError, TimeExhausted, Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -58,7 +57,8 @@ class TestGetContractCode:
     # Normal Case
     ###########################################################################
     # <Normal_1>
-    def test_normal_1(self):
+    @pytest.mark.asyncio
+    async def test_normal_1(self):
         for contract_name in self.contract_list:
             (
                 rtn_abi,
@@ -72,7 +72,8 @@ class TestGetContractCode:
 
     # <Normal_2>
     # ContractReceiver and IbetStandardTokenInterface does not have bytecode
-    def test_normal_2(self):
+    @pytest.mark.asyncio
+    async def test_normal_2(self):
         for contract_name in self.contract_interface_list:
             rtn = AsyncContractUtils.get_contract_code(contract_name=contract_name)
             expected_json = json.load(open(f"contracts/{contract_name}.json", "r"))
@@ -83,7 +84,8 @@ class TestGetContractCode:
     ###########################################################################
     # <Error_1>
     # Contract name does not exist
-    def test_error_1(self):
+    @pytest.mark.asyncio
+    async def test_error_1(self):
         with pytest.raises(FileNotFoundError):
             AsyncContractUtils.get_contract_code(contract_name="NO_EXISTS")
 
@@ -116,7 +118,7 @@ class TestDeployContract:
     ###########################################################################
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         (
             _,
             rtn_abi,
@@ -192,7 +194,8 @@ class TestGetContract:
     # Normal Case
     ###########################################################################
     # <Normal_1>
-    def test_normal_1(self):
+    @pytest.mark.asyncio
+    async def test_normal_1(self):
         test_address = "0x986eBe386b1D04C8d57387b60628fD8BBeEFF1b6"
         for _contract_name in self.contract_list:
             contract = AsyncContractUtils.get_contract(
@@ -207,7 +210,8 @@ class TestGetContract:
 
     # <Error_1>
     # Contract address is not address
-    def test_error_1(self):
+    @pytest.mark.asyncio
+    async def test_error_1(self):
         with pytest.raises(ValueError):
             AsyncContractUtils.get_contract(
                 contract_name="IbetShare",
@@ -216,7 +220,8 @@ class TestGetContract:
 
     # <Error_2>
     # Contract does not exists
-    def test_error_2(self):
+    @pytest.mark.asyncio
+    async def test_error_2(self):
         with pytest.raises(FileNotFoundError):
             AsyncContractUtils.get_contract(
                 contract_name="NotExistContract",
@@ -254,7 +259,7 @@ class TestSendTransaction:
     ###########################################################################
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db: Session):
+    async def test_normal_1(self, async_db):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -288,7 +293,7 @@ class TestSendTransaction:
     # <Error_1>
     # Transaction REVERT(Deploying invalid bytecode)
     @pytest.mark.asyncio
-    async def test_error_1(self, db: Session):
+    async def test_error_1(self, async_db):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -326,7 +331,7 @@ class TestSendTransaction:
     # <Error_2>
     # Value Error
     @pytest.mark.asyncio
-    async def test_error_2(self, db: Session):
+    async def test_error_2(self, async_db):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -359,12 +364,12 @@ class TestSendTransaction:
     # <Error_3>
     # Timeout waiting for lock release
     @pytest.mark.asyncio
-    async def test_error_3(self, db: Session):
+    async def test_error_3(self, async_db):
         # prepare data : TX lock
         _tx_mng = TransactionLock()
         _tx_mng.tx_from = self.test_account["address"]
-        db.add(_tx_mng)
-        db.commit()
+        async_db.add(_tx_mng)
+        await async_db.commit()
 
         # Contract
         contract = web3.eth.contract(
@@ -384,11 +389,13 @@ class TestSendTransaction:
         )
 
         # Transaction Lock
-        db.scalars(
-            select(TransactionLock)
-            .where(TransactionLock.tx_from == self.test_account["address"])
-            .limit(1)
-            .with_for_update()
+        (
+            await async_db.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == self.test_account["address"])
+                .limit(1)
+                .with_for_update()
+            )
         ).first()
 
         with pytest.raises(SendTransactionError) as ex_info:
@@ -397,7 +404,7 @@ class TestSendTransaction:
             )
         assert ex_info.typename == "SendTransactionError"
 
-        db.rollback()
+        await async_db.rollback()
 
 
 class TestSendTransactionNoWait:
@@ -430,7 +437,7 @@ class TestSendTransactionNoWait:
     ###########################################################################
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db: Session):
+    async def test_normal_1(self, async_db):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -470,12 +477,12 @@ class TestSendTransactionNoWait:
     # send_transaction_no_wait
     # Lock timeout
     @pytest.mark.asyncio
-    async def test_error_1(self, db: Session):
+    async def test_error_1(self, async_db):
         # prepare data : TX lock
         _tx_mng = TransactionLock()
         _tx_mng.tx_from = self.test_account["address"]
-        db.add(_tx_mng)
-        db.commit()
+        async_db.add(_tx_mng)
+        await async_db.commit()
 
         # Contract
         contract = web3.eth.contract(
@@ -495,11 +502,13 @@ class TestSendTransactionNoWait:
         )
 
         # Transaction Lock
-        db.scalars(
-            select(TransactionLock)
-            .where(TransactionLock.tx_from == self.test_account["address"])
-            .limit(1)
-            .with_for_update()
+        (
+            await async_db.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == self.test_account["address"])
+                .limit(1)
+                .with_for_update()
+            )
         ).first()
 
         # Call send_transaction_no_wait
@@ -508,18 +517,18 @@ class TestSendTransactionNoWait:
                 transaction=tx, private_key=self.private_key
             )
 
-        db.rollback()
+        await async_db.rollback()
 
     # <Error_2>
     # wait_for_transaction_receipt
     # TimeExhausted
     @pytest.mark.asyncio
-    async def test_error_2(self, db: Session):
+    async def test_error_2(self, async_db):
         # prepare data : TX lock
         _tx_mng = TransactionLock()
         _tx_mng.tx_from = self.test_account["address"]
-        db.add(_tx_mng)
-        db.commit()
+        async_db.add(_tx_mng)
+        await async_db.commit()
 
         # Contract
         contract = web3.eth.contract(
@@ -585,7 +594,7 @@ class TestGetBlockByTransactionHash:
     ###########################################################################
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, db: Session):
+    async def test_normal_1(self, async_db):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],

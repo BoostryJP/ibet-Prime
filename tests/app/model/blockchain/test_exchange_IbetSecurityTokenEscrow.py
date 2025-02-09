@@ -173,7 +173,7 @@ class TestApproveTransfer:
     # balance = 0, commitment = 0
     # Default value
     @pytest.mark.asyncio
-    async def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -296,7 +296,7 @@ class TestApproveTransfer:
     # <Error_1>
     # Send Transaction Failed with HTTP Connection Error
     @pytest.mark.asyncio
-    async def test_error_1(self, db):
+    async def test_error_1(self, async_db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -408,7 +408,7 @@ class TestApproveTransfer:
     # <Error_2>
     # Timeout Error
     @pytest.mark.asyncio
-    async def test_error_2(self, db):
+    async def test_error_2(self, async_db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -444,7 +444,7 @@ class TestApproveTransfer:
     # Transaction REVERT
     # Not apply
     @pytest.mark.asyncio
-    async def test_error_3(self, db):
+    async def test_error_3(self, async_db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],

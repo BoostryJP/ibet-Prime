@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import UTC, datetime
 
+import pytest
+
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
 
@@ -33,9 +35,10 @@ class TestListAllE2EMessagingAccounts:
 
     # <Normal_1>
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -45,25 +48,26 @@ class TestListAllE2EMessagingAccounts:
 
     # <Normal_2>
     # 1 record
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
-        db.add(_account)
+        async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -81,17 +85,18 @@ class TestListAllE2EMessagingAccounts:
 
     # <Normal_3>
     # multi record
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
-        db.add(_account)
+        async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _account = E2EMessagingAccount()
@@ -99,50 +104,50 @@ class TestListAllE2EMessagingAccounts:
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         _account.is_deleted = True
-        db.add(_account)
+        async_db.add(_account)
 
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000002"
         _account.rsa_key_generate_interval = 3
         _account.rsa_generation = 4
-        db.add(_account)
+        async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000002"
         _rsa_key.rsa_public_key = "rsa_public_key_2_1"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000003"
-        db.add(_account)
+        async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_1"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_2"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_3"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 

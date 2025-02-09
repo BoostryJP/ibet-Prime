@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from sqlalchemy import select
@@ -39,7 +40,8 @@ class TestChangeIssuerRSAPassphrase:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
@@ -54,21 +56,23 @@ class TestChangeIssuerRSAPassphrase:
         account.rsa_public_key = _rsa_public_key
         account.rsa_passphrase = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.SET.value
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt(_old_password),
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _account = db.scalars(select(Account).limit(1)).first()
+        _account = (await async_db.scalars(select(Account).limit(1))).first()
         _account_rsa_private_key = _account.rsa_private_key
         _account_rsa_passphrase = E2EEUtils.decrypt(_account.rsa_passphrase)
         assert _account_rsa_private_key != _old_rsa_private_key
@@ -92,12 +96,13 @@ class TestChangeIssuerRSAPassphrase:
 
     # <Error_1>
     # parameter error(required body)
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
 
         # request target API
-        resp = client.post(self.base_url.format(_issuer_address))
+        resp = await async_client.post(self.base_url.format(_issuer_address))
 
         # assertion
         assert resp.status_code == 422
@@ -115,7 +120,8 @@ class TestChangeIssuerRSAPassphrase:
 
     # <Error_2>
     # parameter error(required field)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
 
@@ -123,7 +129,9 @@ class TestChangeIssuerRSAPassphrase:
         req_param = {
             "dummy": "dummy",
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 422
@@ -147,7 +155,8 @@ class TestChangeIssuerRSAPassphrase:
 
     # <Error_3>
     # parameter error(not decrypt)
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_password = "password"
@@ -158,7 +167,9 @@ class TestChangeIssuerRSAPassphrase:
             "old_rsa_passphrase": _old_password,
             "rsa_passphrase": _new_password,
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 422
@@ -187,7 +198,8 @@ class TestChangeIssuerRSAPassphrase:
 
     # <Error_4>
     # No data
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         _old_password = "password"
         _new_password = self.valid_password
 
@@ -196,7 +208,7 @@ class TestChangeIssuerRSAPassphrase:
             "old_rsa_passphrase": E2EEUtils.encrypt(_old_password),
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format("non_existent_issuer_address"), json=req_param
         )
 
@@ -209,7 +221,8 @@ class TestChangeIssuerRSAPassphrase:
 
     # <Error_5>
     # old password mismatch
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
@@ -224,16 +237,18 @@ class TestChangeIssuerRSAPassphrase:
         account.rsa_public_key = _rsa_public_key
         account.rsa_passphrase = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.SET.value
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt("passwordtest"),
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 400
@@ -244,7 +259,8 @@ class TestChangeIssuerRSAPassphrase:
 
     # <Error_6>
     # password policy
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
@@ -259,16 +275,18 @@ class TestChangeIssuerRSAPassphrase:
         account.rsa_public_key = _rsa_public_key
         account.rsa_passphrase = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.SET.value
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt(_old_password),
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_issuer_address), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 400

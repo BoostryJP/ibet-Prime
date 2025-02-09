@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
+import pytest
 from pytz import timezone
 
 from app.model.blockchain import IbetShareContract
@@ -38,17 +39,18 @@ class TestRetrieveShareToken:
     # <Normal_1>
     # not exist Additional info
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_1(self, mock_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, mock_get, async_client, async_db):
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_24_09
-        db.add(token)
-        db.commit()
+        async_db.add(token)
+        await async_db.commit()
 
         _issue_time = (
             timezone("UTC")
@@ -87,7 +89,7 @@ class TestRetrieveShareToken:
         mock_token.memo = "memo_test1"
         mock_get.side_effect = [mock_token]
 
-        resp = client.get(self.base_apiurl + "token_address_test1")
+        resp = await async_client.get(self.base_apiurl + "token_address_test1")
 
         # assertion
         assumed_response = {
@@ -124,17 +126,18 @@ class TestRetrieveShareToken:
     # <Normal_2>
     # exist Additional info
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_2(self, mock_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, mock_get, async_client, async_db):
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_24_09
-        db.add(token)
-        db.commit()
+        async_db.add(token)
+        await async_db.commit()
 
         _issue_time = (
             timezone("UTC")
@@ -173,7 +176,7 @@ class TestRetrieveShareToken:
         mock_token.memo = "memo_test1"
         mock_get.side_effect = [mock_token]
 
-        resp = client.get(self.base_apiurl + "token_address_test1")
+        resp = await async_client.get(self.base_apiurl + "token_address_test1")
 
         # assertion
         assumed_response = {
@@ -213,8 +216,9 @@ class TestRetrieveShareToken:
 
     # <Error_1>
     # No data
-    def test_error_1(self, client, db):
-        resp = client.get(self.base_apiurl + "not_found_token_address")
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
+        resp = await async_client.get(self.base_apiurl + "not_found_token_address")
 
         assert resp.status_code == 404
         assert resp.json() == {
@@ -224,21 +228,22 @@ class TestRetrieveShareToken:
 
     # <Error_2>
     # Processing token
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
-        resp = client.get(self.base_apiurl + "token_address_test1")
+        resp = await async_client.get(self.base_apiurl + "token_address_test1")
 
         assert resp.status_code == 400
         assert resp.json() == {

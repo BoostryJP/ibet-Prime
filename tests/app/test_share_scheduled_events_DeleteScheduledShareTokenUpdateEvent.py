@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from datetime import UTC, datetime
 
+import pytest
 import pytz
 from sqlalchemy import select
 
@@ -39,7 +40,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -50,7 +52,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
         datetime_now_str = (
@@ -80,18 +82,18 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         token_event.event_id = event_id
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_SHARE.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
         token_event.data = data
         token_event.created = datetime_now_utc
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(_token_address, event_id),
             headers={
                 "issuer-address": _issuer_address,
@@ -104,15 +106,19 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         assert resp.json() == {
             "scheduled_event_id": event_id,
             "token_address": _token_address,
-            "token_type": TokenType.IBET_SHARE.value,
+            "token_type": TokenType.IBET_SHARE,
             "scheduled_datetime": datetime_now_str,
-            "event_type": ScheduledEventType.UPDATE.value,
+            "event_type": ScheduledEventType.UPDATE,
             "status": 0,
             "data": data,
             "created": datetime_now_str,
         }
-        token_event = db.scalars(
-            select(ScheduledEvents).where(ScheduledEvents.event_id == event_id).limit(1)
+        token_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.event_id == event_id)
+                .limit(1)
+            )
         ).first()
         assert token_event is None
 
@@ -123,13 +129,14 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
     # <Error_1>
     # RequestValidationError
     # invalid issuer_address, password not encrypted
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address[:-1],  # too short
@@ -158,13 +165,14 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
     # <Error_2>
     # AuthorizationError
     # issuer_address does not exists
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
@@ -180,7 +188,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
     # <Error_3>
     # AuthorizationError
     # password mismatch
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -191,12 +200,12 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
@@ -212,7 +221,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
     # <Error_4>
     # NotFound
     # event not found
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -223,12 +233,12 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(
+        resp = await async_client.delete(
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,

@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import UTC, datetime
+
 import pytest
 
 from app.model.db import IDXPersonalInfoHistory, PersonalInfoEventType
@@ -38,9 +40,10 @@ class TestListTokenHoldersPersonalInfoHistory:
 
     # <Normal_1>
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # Request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -57,7 +60,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_2>
     # Multiple records
     # No search filter
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -73,9 +77,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-12 23:59:59"
-        history.created = "2024-05-13 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 12, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 13, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -91,9 +99,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-13 23:59:59"
-        history.created = "2024-05-14 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 13, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_2
@@ -109,14 +121,18 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-13 23:59:59"
-        history.created = "2024-05-14 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 13, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -168,7 +184,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Search filter: key_manager_type = "SELF"
     @pytest.mark.freeze_time("2024-11-11 12:34:56")
-    def test_normal_3_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1_1(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -184,7 +201,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        db.add(history)
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -200,7 +217,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        db.add(history)
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -216,12 +233,12 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        db.add(history)
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -257,7 +274,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Search filter: key_manager_type = "OTHERS"
     @pytest.mark.freeze_time("2024-11-11 12:34:56")
-    def test_normal_3_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1_2(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -273,7 +291,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        db.add(history)
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -289,7 +307,7 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        db.add(history)
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -305,12 +323,12 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        db.add(history)
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -362,7 +380,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_3_2>
     # Multiple records
     # Search filter: account_address
-    def test_normal_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -378,9 +397,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-12 23:59:59"
-        history.created = "2024-05-13 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 12, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 13, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -396,9 +419,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-13 23:59:59"
-        history.created = "2024-05-14 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 13, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -414,14 +441,18 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-13 23:59:59"
-        history.created = "2024-05-14 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 13, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -473,7 +504,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_3_3>
     # Multiple records
     # Search filter: event_type
-    def test_normal_3_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -489,9 +521,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-12 23:59:59"
-        history.created = "2024-05-13 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 12, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 13, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -507,9 +543,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:00"
-        history.created = "2024-05-14 00:00:01"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -525,14 +565,18 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:01"
-        history.created = "2024-05-14 00:00:02"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -569,7 +613,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_3_4>
     # Multiple records
     # Search filter: created_from, created_to
-    def test_normal_3_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_4(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -585,9 +630,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-12 23:59:59"
-        history.created = "2024-05-13 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 12, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 13, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -603,9 +652,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:00"
-        history.created = "2024-05-14 00:00:01"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -621,14 +674,18 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:01"
-        history.created = "2024-05-14 00:00:02"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -666,7 +723,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_3_5>
     # Multiple records
     # Search filter: block_timestamp_from, block_timestamp_to
-    def test_normal_3_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_5(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -682,9 +740,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-12 23:59:59"
-        history.created = "2024-05-13 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 12, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 13, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -700,9 +762,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:00"
-        history.created = "2024-05-14 00:00:01"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -718,14 +784,18 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:01"
-        history.created = "2024-05-14 00:00:02"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -763,7 +833,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_4>
     # Multiple records
     # Sort: block_timestamp, DESC
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -779,9 +850,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-13 23:59:59"
-        history.created = "2024-05-14 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 13, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -797,9 +872,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:00"
-        history.created = "2024-05-14 00:00:01"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -815,14 +894,18 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:01"
-        history.created = "2024-05-14 00:00:02"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -893,7 +976,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_5>
     # Multiple records
     # Pagination: offset, limit
-    def test_normal_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -909,9 +993,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-12 23:59:59"
-        history.created = "2024-05-14 00:00:00"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 12, 23, 59, 59, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -927,9 +1015,13 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:00"
-        history.created = "2024-05-14 00:00:01"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -945,14 +1037,18 @@ class TestListTokenHoldersPersonalInfoHistory:
             "is_corporate": False,
             "tax_category": 10,
         }
-        history.block_timestamp = "2024-05-14 00:00:01"
-        history.created = "2024-05-14 00:00:02"
-        db.add(history)
+        history.block_timestamp = datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        history.created = datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        async_db.add(history)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,
@@ -990,9 +1086,10 @@ class TestListTokenHoldersPersonalInfoHistory:
 
     # <Error_1>
     # RequestValidationError: created_from, created_to
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": self.test_issuer_address_1,

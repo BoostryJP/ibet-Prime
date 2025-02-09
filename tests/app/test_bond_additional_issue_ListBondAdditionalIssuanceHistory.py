@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
+import pytest
 from pytz import timezone
 
 import config
@@ -66,16 +67,17 @@ class TestListBondAdditionalIssuanceHistory:
 
     # Normal_1
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXIssueRedeem
         _record = IDXIssueRedeem()
@@ -86,12 +88,12 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[0]
         _record.block_timestamp = self.test_block_timestamp[0]
-        db.add(_record)
+        async_db.add(_record)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
@@ -102,16 +104,17 @@ class TestListBondAdditionalIssuanceHistory:
 
     # Normal_2
     # multiple records
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXIssueRedeem
         _record = IDXIssueRedeem()
@@ -122,7 +125,7 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[0]
         _record.block_timestamp = self.test_block_timestamp[0]
-        db.add(_record)
+        async_db.add(_record)
 
         _record = IDXIssueRedeem()
         _record.event_type = IDXIssueRedeemEventType.ISSUE
@@ -132,7 +135,7 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[1]
         _record.block_timestamp = self.test_block_timestamp[1]
-        db.add(_record)
+        async_db.add(_record)
 
         _record = IDXIssueRedeem()
         _record.event_type = IDXIssueRedeemEventType.ISSUE
@@ -142,12 +145,12 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
-        db.add(_record)
+        async_db.add(_record)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
@@ -183,16 +186,17 @@ class TestListBondAdditionalIssuanceHistory:
 
     # Normal_3
     # sort
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXIssueRedeem
         _record = IDXIssueRedeem()
@@ -203,7 +207,7 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[0]
         _record.block_timestamp = self.test_block_timestamp[0]
-        db.add(_record)
+        async_db.add(_record)
 
         _record = IDXIssueRedeem()
         _record.event_type = IDXIssueRedeemEventType.ISSUE
@@ -213,7 +217,7 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[1]
         _record.block_timestamp = self.test_block_timestamp[1]
-        db.add(_record)
+        async_db.add(_record)
 
         _record = IDXIssueRedeem()
         _record.event_type = IDXIssueRedeemEventType.ISSUE
@@ -223,12 +227,12 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
-        db.add(_record)
+        async_db.add(_record)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={
                 "sort_item": IDXIssueRedeemSortItem.BLOCK_TIMESTAMP.value,
@@ -270,16 +274,17 @@ class TestListBondAdditionalIssuanceHistory:
 
     # Normal_4
     # pagination
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXIssueRedeem
         _record = IDXIssueRedeem()
@@ -290,7 +295,7 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[0]
         _record.block_timestamp = self.test_block_timestamp[0]
-        db.add(_record)
+        async_db.add(_record)
 
         _record = IDXIssueRedeem()
         _record.event_type = IDXIssueRedeemEventType.ISSUE
@@ -300,7 +305,7 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[1]
         _record.block_timestamp = self.test_block_timestamp[1]
-        db.add(_record)
+        async_db.add(_record)
 
         _record = IDXIssueRedeem()
         _record.event_type = IDXIssueRedeemEventType.ISSUE
@@ -310,12 +315,12 @@ class TestListBondAdditionalIssuanceHistory:
         _record.target_address = self.test_target_address
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
-        db.add(_record)
+        async_db.add(_record)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"offset": 1, "limit": 1},
         )
@@ -342,9 +347,10 @@ class TestListBondAdditionalIssuanceHistory:
 
     # Error_1
     # NotFound
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 404
@@ -356,22 +362,23 @@ class TestListBondAdditionalIssuanceHistory:
     # Error_2
     # InvalidParameterError
     # this token is temporarily unavailable
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(self.base_url.format(self.test_token_address))
+        resp = await async_client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 400
@@ -383,9 +390,10 @@ class TestListBondAdditionalIssuanceHistory:
     # Error_3
     # RequestValidationError
     # sort_item
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address),
             params={"sort_item": "block_timestamp12345"},
         )
@@ -412,9 +420,10 @@ class TestListBondAdditionalIssuanceHistory:
     # Error_4_1
     # RequestValidationError
     # sort_order(min)
-    def test_error_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": -1}
         )
 
@@ -436,9 +445,10 @@ class TestListBondAdditionalIssuanceHistory:
     # Error_4_2
     # RequestValidationError
     # sort_order(max)
-    def test_error_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_2(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": 2}
         )
 

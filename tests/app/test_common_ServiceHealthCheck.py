@@ -21,6 +21,8 @@ from datetime import datetime
 from unittest import mock
 from unittest.mock import MagicMock
 
+import pytest
+
 from app.model.db import Node
 
 
@@ -33,23 +35,24 @@ class TestServiceHealthCheck:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _node = Node()
         _node.endpoint_uri = "http://test1"
         _node.priority = 0
         _node.is_synced = False
-        db.add(_node)
+        async_db.add(_node)
 
         _node = Node()
         _node.endpoint_uri = "http://test2"
         _node.priority = 1
         _node.is_synced = True
-        db.add(_node)
+        async_db.add(_node)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(self.apiurl)
+        resp = await async_client.get(self.apiurl)
 
         # assertion
         assert resp.status_code == 200
@@ -74,23 +77,24 @@ class TestServiceHealthCheck:
     @mock.patch(
         "app.utils.e2ee_utils.E2EE_RSA_RESOURCE", "tests/data/account_config.yml"
     )
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         _node = Node()
         _node.endpoint_uri = "http://test1"
         _node.priority = 0
         _node.is_synced = False
-        db.add(_node)
+        async_db.add(_node)
 
         _node = Node()
         _node.endpoint_uri = "http://test2"
         _node.priority = 1
         _node.is_synced = False
-        db.add(_node)
+        async_db.add(_node)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.get(self.apiurl)
+        resp = await async_client.get(self.apiurl)
 
         # assertion
         assert resp.status_code == 503
@@ -104,13 +108,14 @@ class TestServiceHealthCheck:
 
     # <Error_2>
     # DB connect error
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # request target api
         with mock.patch(
             "sqlalchemy.ext.asyncio.AsyncSession.connection",
             MagicMock(side_effect=Exception()),
         ):
-            resp = client.get(self.apiurl)
+            resp = await async_client.get(self.apiurl)
 
         # assertion
         assert resp.status_code == 503
