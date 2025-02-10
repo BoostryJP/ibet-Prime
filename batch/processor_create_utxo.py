@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
-from sqlalchemy import and_, create_engine, select
+from sqlalchemy import and_, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,7 +39,6 @@ from batch.utils import batch_log
 from config import (
     CREATE_UTXO_BLOCK_LOT_MAX_SIZE,
     CREATE_UTXO_INTERVAL,
-    DATABASE_URL,
     ZERO_ADDRESS,
 )
 
@@ -51,8 +50,6 @@ Batch processing for creation of ledger data
 
 process_name = "PROCESSOR-Create-UTXO"
 LOG = batch_log.get_logger(process_name=process_name)
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 web3 = AsyncWeb3Wrapper()
 

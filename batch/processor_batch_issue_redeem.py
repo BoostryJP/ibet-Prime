@@ -25,7 +25,7 @@ from typing import Sequence
 
 import uvloop
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import and_, create_engine, select
+from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -54,7 +54,7 @@ from app.model.db import (
 from app.utils.e2ee_utils import E2EEUtils
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
-from config import BULK_TX_LOT_SIZE, DATABASE_URL
+from config import BULK_TX_LOT_SIZE
 
 """
 [PROCESSOR-Batch-Issue-Redeem]
@@ -64,8 +64,6 @@ Batch processing for additional issuance and redemption
 
 process_name = "PROCESSOR-Batch-Issue-Redeem"
 LOG = batch_log.get_logger(process_name=process_name)
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:

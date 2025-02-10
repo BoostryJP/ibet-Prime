@@ -22,7 +22,7 @@ import sys
 from typing import Dict, Optional, Sequence
 
 import uvloop
-from sqlalchemy import and_, create_engine, delete, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import AsyncContract
@@ -42,7 +42,6 @@ from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.utils import batch_log
 from config import (
-    DATABASE_URL,
     INDEXER_BLOCK_LOT_MAX_SIZE,
     INDEXER_SYNC_INTERVAL,
     ZERO_ADDRESS,
@@ -50,8 +49,6 @@ from config import (
 
 process_name = "INDEXER-Token-Holders"
 LOG = batch_log.get_logger(process_name=process_name)
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 web3 = AsyncWeb3Wrapper()
 
