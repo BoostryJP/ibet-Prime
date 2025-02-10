@@ -85,13 +85,13 @@ The main environment variables are as follows.
         <td>DATABASE_URL</td>
         <td>False</td>
         <td nowrap>Database URL</td>
-        <td>postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
+        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
     </tr>
     <tr>
         <td>TEST_DATABASE_URL</td>
         <td>False</td>
         <td nowrap>Test database URL</td>
-        <td>postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
+        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
     </tr>
     <tr>
         <td>DATABASE_SCHEMA</td>

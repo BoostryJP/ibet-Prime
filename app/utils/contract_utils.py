@@ -22,7 +22,7 @@ from typing import Tuple, Type, TypeVar
 
 from eth_typing import HexStr
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine, select
+from sqlalchemy import AsyncAdaptedQueuePool, create_engine, select
 from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
@@ -40,7 +40,7 @@ from web3.types import TxReceipt
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
 from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
-from config import CHAIN_ID, DATABASE_URL, TX_GAS_LIMIT
+from config import ASYNC_DATABASE_URL, CHAIN_ID, DATABASE_URL, TX_GAS_LIMIT
 
 web3 = Web3Wrapper()
 async_web3 = AsyncWeb3Wrapper()
@@ -435,17 +435,18 @@ class AsyncContractUtils:
         _tx_from = transaction["from"]
 
         # local database session
-        DB_URI = DATABASE_URL
-        db_engine = create_async_engine(
+        DB_URI = ASYNC_DATABASE_URL
+        async_engine = create_async_engine(
             DB_URI,
-            connect_args={"options": "-c lock_timeout=10000"},
+            connect_args={"server_settings": {"lock_timeout": "10000"}},
             echo=False,
             pool_pre_ping=True,
+            poolclass=AsyncAdaptedQueuePool,
         )
         local_session = AsyncSession(
             autocommit=False,
             autoflush=True,
-            bind=db_engine,
+            bind=async_engine,
         )
 
         # Exclusive control within transaction execution address
