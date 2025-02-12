@@ -279,17 +279,17 @@ class TestProcessor:
 
             # assertion(DB)
             _idx_position_list = (
-                await async_db.scalars(select(IDXPosition).order_by(IDXPosition.id))
+                await async_db.scalars(
+                    select(IDXPosition).order_by(IDXPosition.created)
+                )
             ).all()
             assert len(_idx_position_list) == 2
             _idx_position = _idx_position_list[0]
-            assert _idx_position.id == 1
             assert _idx_position.token_address == _token_address_1
             assert _idx_position.account_address == _issuer_address
             assert _idx_position.balance == 10000
             assert _idx_position.pending_transfer == 0
             _idx_position = _idx_position_list[1]
-            assert _idx_position.id == 2
             assert _idx_position.token_address == _token_address_2
             assert _idx_position.account_address == _issuer_address
             assert _idx_position.balance == 2000
@@ -475,7 +475,7 @@ class TestProcessor:
 
         # assertion(DB)
         _idx_position_list = (
-            await async_db.scalars(select(IDXPosition).order_by(IDXPosition.id))
+            await async_db.scalars(select(IDXPosition).order_by(IDXPosition.created))
         ).all()
         assert len(_idx_position_list) == 0
 
@@ -701,7 +701,7 @@ class TestProcessor:
 
         # assertion(DB)
         _idx_position_list = (
-            await async_db.scalars(select(IDXPosition).order_by(IDXPosition.id))
+            await async_db.scalars(select(IDXPosition).order_by(IDXPosition.created))
         ).all()
         assert len(_idx_position_list) == 0
 
@@ -937,7 +937,9 @@ class TestProcessor:
 
             # assertion(DB)
             _idx_position_list = (
-                await async_db.scalars(select(IDXPosition).order_by(IDXPosition.id))
+                await async_db.scalars(
+                    select(IDXPosition).order_by(IDXPosition.created)
+                )
             ).all()
             assert len(_idx_position_list) == 0
 
@@ -1218,7 +1220,9 @@ class TestProcessor:
 
             # assertion(DB)
             _idx_position_list = (
-                await async_db.scalars(select(IDXPosition).order_by(IDXPosition.id))
+                await async_db.scalars(
+                    select(IDXPosition).order_by(IDXPosition.created)
+                )
             ).all()
             assert len(_idx_position_list) == 0
 

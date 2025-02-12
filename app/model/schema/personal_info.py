@@ -63,7 +63,6 @@ class PersonalInfoInput(BaseModel):
 class PersonalInfoIndex(BaseModel):
     """Personal Information Index schema"""
 
-    id: int = Field(...)
     account_address: str = Field(...)
     personal_info: PersonalInfo = Field(...)
     created: datetime

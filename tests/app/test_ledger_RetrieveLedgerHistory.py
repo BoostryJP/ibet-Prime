@@ -1974,18 +1974,6 @@ class TestRetrieveLedgerHistory:
         _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         async_db.add(_idx_personal_info_1)
 
-        _idx_personal_info_2 = (
-            IDXPersonalInfo()
-        )  # Note: account_address_2 has personal information in DB
-        _idx_personal_info_2.account_address = account_address_1
-        _idx_personal_info_2.issuer_address = issuer_address
-        _idx_personal_info_2.personal_info = {
-            "name": "name_db_2",
-            "address": "address_db_2",
-        }
-        _idx_personal_info_2.data_source = PersonalInfoDataSource.ON_CHAIN
-        async_db.add(_idx_personal_info_2)
-
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
         _details_1.token_detail_type = "権利_test_1"
@@ -2051,7 +2039,7 @@ class TestRetrieveLedgerHistory:
             )
             # assertion
             personal_get_info_mock_patch.assert_has_calls(
-                [call(account_address=account_address_2, default_value=None)]
+                [call(account_address=account_address_1, default_value=None)]
             )
 
         # assertion

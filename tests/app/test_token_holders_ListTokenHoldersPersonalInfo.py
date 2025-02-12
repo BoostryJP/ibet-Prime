@@ -96,7 +96,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -190,7 +189,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -206,7 +204,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -222,7 +219,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -319,7 +315,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "SELF",
@@ -416,7 +411,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 2, "limit": None, "offset": None, "total": 2},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -432,7 +426,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -546,7 +539,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -661,7 +653,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -776,7 +767,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -889,7 +879,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -905,7 +894,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:02+09:00",
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -921,7 +909,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:01+09:00",
                 },
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -1025,7 +1012,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -1041,7 +1027,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": mock.ANY,
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -1057,7 +1042,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": mock.ANY,
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -1170,7 +1154,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -1186,7 +1169,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:00+09:00",
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -1202,7 +1184,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:01+09:00",
                 },
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -1297,7 +1278,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": 2, "offset": 1, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -1313,7 +1293,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",

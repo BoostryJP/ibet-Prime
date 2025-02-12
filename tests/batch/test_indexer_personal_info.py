@@ -347,7 +347,6 @@ class TestProcessor:
         _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
-        assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
@@ -459,7 +458,6 @@ class TestProcessor:
         _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
-        assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
@@ -504,7 +502,6 @@ class TestProcessor:
         _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
-        assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
@@ -622,7 +619,6 @@ class TestProcessor:
         _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
-        assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
@@ -663,7 +659,6 @@ class TestProcessor:
         _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
-        assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
@@ -729,7 +724,6 @@ class TestProcessor:
         _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
-        assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_3
@@ -924,7 +918,6 @@ class TestProcessor:
 
         for i in range(2):
             _personal_info = _personal_info_list[i]
-            assert _personal_info.id == i + 1
             assert _personal_info.account_address == stored_address_order[i]
             assert _personal_info.issuer_address == stored_address_order[i]
             assert (
