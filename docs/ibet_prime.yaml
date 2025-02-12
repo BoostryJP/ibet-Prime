@@ -8310,6 +8310,101 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /tokens/scheduled_events:
+    get:
+      tags:
+        - token_common
+      summary: List All Scheduled Events
+      description: List all scheduled token update events
+      operationId: ListAllScheduledEvents
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: token_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/TokenType'
+              - type: 'null'
+            description: Token type
+            title: Token Type
+          description: Token type
+        - name: token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: status
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ScheduledEventStatus'
+              - type: 'null'
+            description: Scheduled event processing status
+            title: Status
+          description: Scheduled event processing status
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListAllScheduledEventsSortItem'
+              - type: 'null'
+            default: created
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
+        - name: issuer-address
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Issuer-Address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllScheduledEventsResponse'
   /token/holders/personal_info:
     get:
       tags:
@@ -14058,6 +14153,28 @@ components:
         - positions
       title: ListAllPositionResponse
       description: List All Position schema (Response)
+    ListAllScheduledEventsResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        scheduled_events:
+          items:
+            $ref: '#/components/schemas/ScheduledEventWithTokenAttributes'
+          type: array
+          title: Scheduled Events
+      type: object
+      required:
+        - result_set
+        - scheduled_events
+      title: ListAllScheduledEventsResponse
+      description: List scheduled events schema
+    ListAllScheduledEventsSortItem:
+      type: string
+      enum:
+        - created
+        - scheduled_datetime
+        - token_address
+      title: ListAllScheduledEventsSortItem
     ListAllTokenHolderCollectionsResponse:
       properties:
         result_set:
@@ -15550,6 +15667,42 @@ components:
         - notice_type
         - metainfo
       title: ScheduleEventErrorNotification
+    ScheduledEvent:
+      properties:
+        scheduled_event_id:
+          type: string
+          title: Scheduled Event Id
+        token_address:
+          type: string
+          title: Token Address
+        token_type:
+          $ref: '#/components/schemas/TokenType'
+        scheduled_datetime:
+          type: string
+          format: date-time
+          title: Scheduled Datetime
+        event_type:
+          $ref: '#/components/schemas/ScheduledEventType'
+        status:
+          $ref: '#/components/schemas/ScheduledEventStatus'
+        data:
+          type: object
+          title: Data
+        created:
+          type: string
+          title: Created
+      type: object
+      required:
+        - scheduled_event_id
+        - token_address
+        - token_type
+        - scheduled_datetime
+        - event_type
+        - status
+        - data
+        - created
+      title: ScheduledEvent
+      description: Scheduled event
     ScheduledEventIdListResponse:
       properties:
         scheduled_event_id_list:
@@ -15573,6 +15726,22 @@ components:
       title: ScheduledEventIdResponse
       description: scheduled event (Response)
     ScheduledEventResponse:
+      $ref: '#/components/schemas/ScheduledEvent'
+      title: ScheduledEventResponse
+      description: scheduled event (Response)
+    ScheduledEventStatus:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
+      title: ScheduledEventStatus
+    ScheduledEventType:
+      type: string
+      enum:
+        - Update
+      title: ScheduledEventType
+    ScheduledEventWithTokenAttributes:
       properties:
         scheduled_event_id:
           type: string
@@ -15589,14 +15758,19 @@ components:
         event_type:
           $ref: '#/components/schemas/ScheduledEventType'
         status:
-          type: integer
-          title: Status
+          $ref: '#/components/schemas/ScheduledEventStatus'
         data:
           type: object
           title: Data
         created:
           type: string
           title: Created
+        token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+          title: Token Attributes
+          description: Token attributes
       type: object
       required:
         - scheduled_event_id
@@ -15607,13 +15781,9 @@ components:
         - status
         - data
         - created
-      title: ScheduledEventResponse
-      description: scheduled event (Response)
-    ScheduledEventType:
-      type: string
-      enum:
-        - Update
-      title: ScheduledEventType
+        - token_attributes
+      title: ScheduledEventWithTokenAttributes
+      description: Scheduled event with token attributes
     SealedTxPersonalInfoInput:
       properties:
         name:
