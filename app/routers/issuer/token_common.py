@@ -26,8 +26,14 @@ from sqlalchemy import asc, desc, func, select
 import config
 from app.database import DBAsyncSession
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import Token, TokenType
-from app.model.schema import ListAllIssuedTokensQuery, ListAllIssuedTokensResponse
+from app.model.db import ScheduledEvents, Token, TokenType
+from app.model.schema import (
+    ListAllIssuedTokensQuery,
+    ListAllIssuedTokensResponse,
+    ListAllScheduledEventsQuery,
+    ListAllScheduledEventsResponse,
+    ListAllScheduledEventsSortItem,
+)
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
@@ -131,5 +137,109 @@ async def list_all_issued_tokens(
             "total": total,
         },
         "tokens": tokens,
+    }
+    return json_response(resp)
+
+
+# GET: /tokens/scheduled_events
+@router.get(
+    "/tokens/scheduled_events",
+    operation_id="ListAllScheduledEvents",
+    response_model=ListAllScheduledEventsResponse,
+)
+async def list_all_scheduled_events(
+    db: DBAsyncSession,
+    request_query: Annotated[ListAllScheduledEventsQuery, Query()],
+    issuer_address: Annotated[Optional[str], Header()] = None,
+):
+    """List all scheduled token update events"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Base Query
+    if issuer_address is None:
+        stmt = select(ScheduledEvents)
+    else:
+        stmt = select(ScheduledEvents).where(
+            ScheduledEvents.issuer_address == issuer_address
+        )
+
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Search Filter
+    if request_query.token_type is not None:
+        stmt = stmt.where(ScheduledEvents.token_type == request_query.token_type)
+    if request_query.token_address is not None:
+        stmt = stmt.where(ScheduledEvents.token_address == request_query.token_address)
+    if request_query.status is not None:
+        stmt = stmt.where(ScheduledEvents.status == request_query.status)
+
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Sort
+    sort_attr = getattr(ScheduledEvents, request_query.sort_item, None)
+    if request_query.sort_order == 0:  # ASC
+        stmt = stmt.order_by(asc(sort_attr))
+    else:  # DESC
+        stmt = stmt.order_by(desc(sort_attr))
+
+    if request_query.sort_item != ListAllScheduledEventsSortItem.CREATED:
+        # NOTE: Set secondary sort for consistent results
+        stmt = stmt.order_by(desc(ScheduledEvents.created))
+
+    # Pagination
+    if request_query.limit is not None:
+        stmt = stmt.limit(request_query.limit)
+    if request_query.offset is not None:
+        stmt = stmt.offset(request_query.offset)
+
+    # Execute Query
+    rows = (await db.scalars(stmt)).all()
+
+    # Get Token Attributes
+    schedule_events = []
+    for _event in rows:
+        token_attr = None
+        if _event.token_type == TokenType.IBET_STRAIGHT_BOND:
+            token_attr = await IbetStraightBondContract(_event.token_address).get()
+        elif _event.token_type == TokenType.IBET_SHARE:
+            token_attr = await IbetShareContract(_event.token_address).get()
+
+        _scheduled_datetime = (
+            pytz.timezone("UTC")
+            .localize(_event.scheduled_datetime)
+            .astimezone(local_tz)
+            .isoformat()
+        )
+        _created = (
+            pytz.timezone("UTC")
+            .localize(_event.created)
+            .astimezone(local_tz)
+            .isoformat()
+        )
+
+        schedule_events.append(
+            {
+                "scheduled_event_id": _event.event_id,
+                "token_address": _event.token_address,
+                "token_type": _event.token_type,
+                "scheduled_datetime": _scheduled_datetime,
+                "event_type": _event.event_type,
+                "status": _event.status,
+                "data": _event.data,
+                "created": _created,
+                "token_attributes": token_attr.__dict__,
+            }
+        )
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": request_query.offset,
+            "limit": request_query.limit,
+            "total": total,
+        },
+        "scheduled_events": schedule_events,
     }
     return json_response(resp)

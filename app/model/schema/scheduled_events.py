@@ -18,14 +18,47 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from enum import StrEnum
+from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
-from app.model.db.scheduled_events import ScheduledEventType
+from app.model.db.scheduled_events import ScheduledEventStatus, ScheduledEventType
 
-from .base import TokenType
+from .. import EthereumAddress
+from .base import (
+    BasePaginationQuery,
+    IbetShare,
+    IbetStraightBond,
+    ResultSet,
+    SortOrder,
+    TokenType,
+)
 from .token import IbetShareUpdate, IbetStraightBondUpdate
+
+
+############################
+# COMMON
+############################
+class ScheduledEvent(BaseModel):
+    """Scheduled event"""
+
+    scheduled_event_id: str
+    token_address: str
+    token_type: TokenType
+    scheduled_datetime: datetime
+    event_type: ScheduledEventType
+    status: ScheduledEventStatus
+    data: Dict[str, Any]
+    created: str
+
+
+class ScheduledEventWithTokenAttributes(ScheduledEvent):
+    """Scheduled event with token attributes"""
+
+    token_attributes: IbetStraightBond | IbetShare = Field(
+        description="Token attributes"
+    )
 
 
 ############################
@@ -47,6 +80,29 @@ class IbetShareScheduledUpdate(BaseModel):
     data: IbetShareUpdate
 
 
+class ListAllScheduledEventsSortItem(StrEnum):
+    CREATED = "created"
+    SCHEDULED_DATETIME = "scheduled_datetime"
+    TOKEN_ADDRESS = "token_address"
+
+
+class ListAllScheduledEventsQuery(BasePaginationQuery):
+    """ListAllScheduledEvents query parameters"""
+
+    token_type: Optional[TokenType] = Field(None, description="Token type")
+    token_address: Optional[EthereumAddress] = Field(None, description="Token address")
+    status: Optional[ScheduledEventStatus] = Field(
+        None, description="Scheduled event processing status"
+    )
+
+    sort_item: Optional[ListAllScheduledEventsSortItem] = Field(
+        ListAllScheduledEventsSortItem.CREATED
+    )
+    sort_order: Optional[SortOrder] = Field(
+        SortOrder.DESC, description=SortOrder.__doc__
+    )
+
+
 ############################
 # RESPONSE
 ############################
@@ -62,14 +118,14 @@ class ScheduledEventIdListResponse(BaseModel):
     scheduled_event_id_list: list[str]
 
 
-class ScheduledEventResponse(BaseModel):
+class ScheduledEventResponse(RootModel[ScheduledEvent]):
     """scheduled event (Response)"""
 
-    scheduled_event_id: str
-    token_address: str
-    token_type: TokenType
-    scheduled_datetime: datetime
-    event_type: ScheduledEventType
-    status: int
-    data: Dict[str, Any]
-    created: str
+    pass
+
+
+class ListAllScheduledEventsResponse(BaseModel):
+    """List scheduled events schema"""
+
+    result_set: ResultSet
+    scheduled_events: list[ScheduledEventWithTokenAttributes]

@@ -15,12 +15,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 
 from sqlalchemy import JSON, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
+
+
+class ScheduledEventStatus(IntEnum):
+    PROCESSING = 0
+    SUCCEEDED = 1
+    FAILED = 2
+
+
+class ScheduledEventType(StrEnum):
+    UPDATE = "Update"
 
 
 class ScheduledEvents(Base):
@@ -41,12 +51,10 @@ class ScheduledEvents(Base):
     # datetime when the event is scheduled (UTC)
     scheduled_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     # event type
-    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    event_type: Mapped[ScheduledEventType] = mapped_column(String(40), nullable=False)
     # event processing status (pending:0, succeeded:1, failed:2)
-    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    status: Mapped[ScheduledEventStatus] = mapped_column(
+        Integer, nullable=False, index=True
+    )
     # transaction data
     data: Mapped[dict] = mapped_column(JSON, nullable=False)
-
-
-class ScheduledEventType(StrEnum):
-    UPDATE = "Update"
