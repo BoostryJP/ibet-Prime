@@ -14820,9 +14820,6 @@ components:
       description: Personal Information History schema
     PersonalInfoIndex:
       properties:
-        id:
-          type: integer
-          title: Id
         account_address:
           type: string
           title: Account Address
@@ -14838,7 +14835,6 @@ components:
           title: Modified
       type: object
       required:
-        - id
         - account_address
         - personal_info
         - created

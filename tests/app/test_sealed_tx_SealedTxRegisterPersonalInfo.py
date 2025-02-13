@@ -204,6 +204,8 @@ class TestSealedTxRegisterPersonalInfo:
             "tax_category": 10,
         }
         _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(_personal_info)
+        await async_db.commit()
 
         # Derive a signature
         _params = {
@@ -240,12 +242,11 @@ class TestSealedTxRegisterPersonalInfo:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _personal_info_af = (
-            await async_db.scalars(select(IDXPersonalInfo).limit(1))
-        ).first()
-        assert _personal_info_af.issuer_address == self.test_issuer_address
-        assert _personal_info_af.account_address == self.test_account_address
-        assert _personal_info_af.personal_info == {
+        _personal_info_list_af = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        assert len(_personal_info_list_af) == 1
+        assert _personal_info_list_af[0].issuer_address == self.test_issuer_address
+        assert _personal_info_list_af[0].account_address == self.test_account_address
+        assert _personal_info_list_af[0].personal_info == {
             "key_manager": "test_key_manager_2",
             "name": "test_name_2",
             "postal_code": "test_postal_code_2",
@@ -255,7 +256,7 @@ class TestSealedTxRegisterPersonalInfo:
             "is_corporate": True,
             "tax_category": 20,
         }
-        assert _personal_info_af.data_source == PersonalInfoDataSource.OFF_CHAIN
+        assert _personal_info_list_af[0].data_source == PersonalInfoDataSource.OFF_CHAIN
 
         _history = (
             await async_db.scalars(select(IDXPersonalInfoHistory).limit(1))

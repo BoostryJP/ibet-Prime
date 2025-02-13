@@ -43,11 +43,10 @@ class IDXPersonalInfo(Base):
 
     __tablename__ = "idx_personal_info"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # account address
-    account_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # issuer address
-    issuer_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # personal information
     #   {
     #       "key_manager": "string",  // If managed by the issuer itself, 'SELF' is set by default.
@@ -101,7 +100,6 @@ class IDXPersonalInfo(Base):
 
     def json(self):
         return {
-            "id": self.id,
             "account_address": self.account_address,
             "personal_info": self.personal_info,
             "created": self.localize_datetime(self.created),

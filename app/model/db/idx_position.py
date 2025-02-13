@@ -28,11 +28,10 @@ class IDXPosition(Base):
 
     __tablename__ = "idx_position"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # token address
-    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    token_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # account address
-    account_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # balance
     balance: Mapped[int | None] = mapped_column(BigInteger)
     # exchange balance

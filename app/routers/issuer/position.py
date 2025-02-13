@@ -113,7 +113,8 @@ async def list_all_positions(
             )
         )
         .group_by(
-            IDXPosition.id,
+            IDXPosition.token_address,
+            IDXPosition.account_address,
             Token.id,
             IDXLockedPosition.token_address,
             IDXLockedPosition.account_address,
@@ -626,7 +627,8 @@ async def retrieve_position(
                 )
             )
             .group_by(
-                IDXPosition.id,
+                IDXPosition.token_address,
+                IDXPosition.account_address,
                 IDXLockedPosition.token_address,
                 IDXLockedPosition.account_address,
             )

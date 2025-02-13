@@ -1974,10 +1974,8 @@ class TestRetrieveLedgerHistory:
         _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         async_db.add(_idx_personal_info_1)
 
-        _idx_personal_info_2 = (
-            IDXPersonalInfo()
-        )  # Note: account_address_2 has personal information in DB
-        _idx_personal_info_2.account_address = account_address_1
+        _idx_personal_info_2 = IDXPersonalInfo()  # Note: account_address_2 has personal information in DB
+        _idx_personal_info_2.account_address = account_address_2
         _idx_personal_info_2.issuer_address = issuer_address
         _idx_personal_info_2.personal_info = {
             "name": "name_db_2",
@@ -2003,7 +2001,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -2027,12 +2025,12 @@ class TestRetrieveLedgerHistory:
             personal_get_info_mock as personal_get_info_mock_patch,
         ):
             # Note:
-            # account_address_2 has no personal information in the DB
+            # account_address_1 has no personal information in the DB
             # and gets information from the contract
             personal_get_info_mock_patch.side_effect = [
                 {
-                    "name": None,
-                    "address": None,
+                    "name": "name_contract_1",
+                    "address": "address_contract_1",
                 },
                 {
                     "name": "name_contract_2",
@@ -2051,7 +2049,7 @@ class TestRetrieveLedgerHistory:
             )
             # assertion
             personal_get_info_mock_patch.assert_has_calls(
-                [call(account_address=account_address_2, default_value=None)]
+                [call(account_address=account_address_1, default_value=None)]
             )
 
         # assertion
@@ -2083,8 +2081,8 @@ class TestRetrieveLedgerHistory:
                     "data": [
                         {
                             "account_address": account_address_1,
-                            "name": None,
-                            "address": None,
+                            "name": "name_contract_1",
+                            "address": "address_contract_1",
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
@@ -2092,8 +2090,8 @@ class TestRetrieveLedgerHistory:
                         },
                         {
                             "account_address": account_address_2,
-                            "name": "name_contract_2",
-                            "address": "address_contract_2",
+                            "name": "name_db_2",
+                            "address": "address_db_2",
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
@@ -2107,7 +2105,7 @@ class TestRetrieveLedgerHistory:
                         },
                         {"f-test1": "a", "f-test2": "b"},
                     ],
-                    "some_personal_info_not_registered": True,
+                    "some_personal_info_not_registered": False,
                 },
                 {
                     "token_detail_type": "権利_test_2",
@@ -2145,7 +2143,7 @@ class TestRetrieveLedgerHistory:
                         },
                         {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
-                    "some_personal_info_not_registered": True,
+                    "some_personal_info_not_registered": False,
                 },
             ],
             "footers": [

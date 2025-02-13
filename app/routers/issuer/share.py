@@ -1923,8 +1923,10 @@ async def list_all_share_token_holders(
         )
         .where(IDXPosition.token_address == token_address)
         .group_by(
-            IDXPosition.id,
-            IDXPersonalInfo.id,
+            IDXPosition.token_address,
+            IDXPosition.account_address,
+            IDXPersonalInfo.issuer_address,
+            IDXPersonalInfo.account_address,
             TokenHolderExtraInfo.token_address,
             TokenHolderExtraInfo.account_address,
             IDXLockedPosition.token_address,
@@ -2192,7 +2194,8 @@ async def count_share_token_holders(
             )
         )
         .group_by(
-            IDXPosition.id,
+            IDXPosition.token_address,
+            IDXPosition.account_address,
             IDXLockedPosition.token_address,
             IDXLockedPosition.account_address,
         )
@@ -2273,7 +2276,8 @@ async def retrieve_share_token_holder(
                     )
                 )
                 .group_by(
-                    IDXPosition.id,
+                    IDXPosition.token_address,
+                    IDXPosition.account_address,
                     IDXLockedPosition.token_address,
                     IDXLockedPosition.account_address,
                 )
