@@ -966,6 +966,124 @@ class TestProcessor:
             (LOG.name, logging.DEBUG, "skip process")
         )
 
+    # <Normal_6>
+    # After off-chain registration
+    @pytest.mark.asyncio
+    async def test_normal_6(self, processor, async_db, personal_info_contract):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        issuer_rsa_private_key = user_1["rsa_private_key"]
+        issuer_rsa_public_key = user_1["rsa_public_key"]
+        issuer_rsa_passphrase = "password"
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_private_key_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.rsa_private_key = issuer_rsa_private_key
+        account.rsa_public_key = issuer_rsa_public_key
+        account.rsa_passphrase = E2EEUtils.encrypt(issuer_rsa_passphrase)
+        account.rsa_status = 3
+        async_db.add(account)
+
+        # Prepare data : Token
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
+        token_address_1 = token_contract_1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract_1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_24_09
+        async_db.add(token_1)
+
+        # Prepare data : Token(processing token)
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.token_address = "test1"
+        token_2.issuer_address = issuer_address
+        token_2.abi = {}
+        token_2.tx_hash = "tx_hash"
+        token_2.token_status = 0
+        token_2.version = TokenVersion.V_24_09
+        async_db.add(token_2)
+
+        idx_1 = IDXPersonalInfo()
+        idx_1.issuer_address = issuer_address
+        idx_1.account_address = user_address_1
+        idx_1.personal_info = {}
+        idx_1.data_source = PersonalInfoDataSource.OFF_CHAIN
+        async_db.add(idx_1)
+
+        await async_db.commit()
+
+        # Register
+        personal_info_1 = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        ciphertext = encrypt_personal_info(
+            personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
+        )
+        tx = personal_info_contract.functions.register(
+            issuer_address, ciphertext.decode("utf-8")
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, user_private_key_1)
+
+        # Run target process
+        block_number = web3.eth.block_number
+        await processor.process()
+        async_db.expire_all()
+
+        # Assertion
+        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        assert len(_personal_info_list) == 1
+        _personal_info = _personal_info_list[0]
+        assert _personal_info.account_address == user_address_1
+        assert _personal_info.issuer_address == issuer_address
+        assert _personal_info.personal_info == personal_info_1
+        assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
+
+        _personal_info_history_list = (
+            await async_db.scalars(select(IDXPersonalInfoHistory))
+        ).all()
+        assert len(_personal_info_history_list) == 1
+        _personal_info_history = _personal_info_history_list[0]
+        assert _personal_info_history.id == 1
+        assert _personal_info_history.account_address == user_address_1
+        assert _personal_info_history.event_type == PersonalInfoEventType.REGISTER
+        assert _personal_info_history.issuer_address == issuer_address
+        assert _personal_info_history.personal_info == personal_info_1
+
+        _idx_personal_info_block_number = (
+            await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
+        ).first()
+        assert _idx_personal_info_block_number.id == 1
+        assert _idx_personal_info_block_number.latest_block_number == block_number
+
     ###########################################################################
     # Error Case
     ###########################################################################
