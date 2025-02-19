@@ -280,7 +280,6 @@ class Processor:
                         == to_checksum_address(account_address),
                         IDXPersonalInfo.issuer_address
                         == to_checksum_address(issuer_address),
-                        IDXPersonalInfo.data_source == PersonalInfoDataSource.ON_CHAIN,
                     )
                 )
                 .limit(1)
@@ -288,6 +287,7 @@ class Processor:
         ).first()
         if _personal_info is not None:
             _personal_info.personal_info = personal_info
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             _personal_info.modified = timestamp
             await db_session.merge(_personal_info)
             LOG.debug(
