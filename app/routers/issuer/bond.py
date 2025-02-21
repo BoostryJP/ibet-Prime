@@ -1993,7 +1993,12 @@ async def list_all_bond_token_holders(
                 TokenHolderExtraInfo.account_address == IDXPosition.account_address,
             ),
         )
-        .where(IDXPosition.token_address == token_address)
+        .where(
+            and_(
+                IDXPosition.token_address == token_address,
+                IDXLockedPosition.token_address == token_address,
+            )
+        )
         .group_by(
             IDXPosition.token_address,
             IDXPosition.account_address,
@@ -2256,6 +2261,7 @@ async def count_bond_token_holders(
         .where(
             and_(
                 IDXPosition.token_address == token_address,
+                IDXLockedPosition.token_address == token_address,
                 or_(
                     IDXPosition.balance != 0,
                     IDXPosition.exchange_balance != 0,
