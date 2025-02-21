@@ -130,7 +130,7 @@ async def list_block_data(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    if max(total, get_query.limit) > BLOCK_RESPONSE_LIMIT:
+    if max(total, get_query.limit or 0) > BLOCK_RESPONSE_LIMIT:
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     block_data_tmp: Sequence[IDXBlockData] = (await db.scalars(stmt)).all()
@@ -268,7 +268,7 @@ async def list_tx_data(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    if max(total, get_query.limit) > BLOCK_RESPONSE_LIMIT:
+    if max(total, get_query.limit or 0) > TX_RESPONSE_LIMIT:
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     tx_data_tmp: Sequence[IDXTxData] = (await db.scalars(stmt)).all()
