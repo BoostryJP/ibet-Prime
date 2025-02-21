@@ -73,13 +73,17 @@ async def list_all_issued_tokens(
     if request_query.token_address_list is not None:
         stmt = stmt.where(Token.token_address.in_(request_query.token_address_list))
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(Token).order_by(None)
+    )
 
     # Search Filter
     if request_query.token_type is not None:
         stmt = stmt.where(Token.type == request_query.token_type)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(Token).order_by(None)
+    )
 
     # Sort
     sort_attr = getattr(Token, request_query.sort_item, None)
@@ -165,7 +169,9 @@ async def list_all_scheduled_events(
             ScheduledEvents.issuer_address == issuer_address
         )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(ScheduledEvents).order_by(None)
+    )
 
     # Search Filter
     if request_query.token_type is not None:
@@ -175,7 +181,9 @@ async def list_all_scheduled_events(
     if request_query.status is not None:
         stmt = stmt.where(ScheduledEvents.status == request_query.status)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(ScheduledEvents).order_by(None)
+    )
 
     # Sort
     sort_attr = getattr(ScheduledEvents, request_query.sort_item, None)

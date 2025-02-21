@@ -96,7 +96,9 @@ async def list_all_token_holders_personal_info(
             stmt = stmt.where(
                 IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
             )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXPersonalInfo).order_by(None)
+    )
 
     # Filter
     if get_query.account_address:
@@ -134,7 +136,9 @@ async def list_all_token_holders_personal_info(
             <= local_tz.localize(_modified_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXPersonalInfo).order_by(None)
+    )
 
     # Sort
     sort_attr = getattr(IDXPersonalInfo, get_query.sort_item, None)
@@ -200,7 +204,11 @@ async def list_all_token_holders_personal_info_history(
                 IDXPersonalInfoHistory.personal_info["key_manager"].as_string()
                 != "SELF"
             )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXPersonalInfoHistory)
+        .order_by(None)
+    )
 
     # Filter
     if get_query.account_address is not None:
@@ -246,7 +254,11 @@ async def list_all_token_holders_personal_info_history(
             <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXPersonalInfoHistory)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:
@@ -428,7 +440,11 @@ async def list_all_token_holders_collections(
     stmt = select(TokenHoldersList).where(
         TokenHoldersList.token_address == token_address
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenHoldersList)
+        .order_by(None)
+    )
 
     if status is not None:
         stmt = stmt.where(TokenHoldersList.batch_status == status.value)
@@ -440,7 +456,11 @@ async def list_all_token_holders_collections(
         stmt = stmt.order_by(desc(TokenHoldersList.created))
 
     # Count
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenHoldersList)
+        .order_by(None)
+    )
 
     # Pagination
     if limit is not None:
@@ -555,7 +575,9 @@ async def retrieve_token_holders_collection(
         )
         .where(TokenHolder.holder_list_id == _same_list_id_record.id)
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(TokenHolder).order_by(None)
+    )
 
     if (
         get_query.hold_balance is not None
@@ -605,7 +627,9 @@ async def retrieve_token_holders_collection(
             .like("%" + get_query.key_manager + "%")
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(TokenHolder).order_by(None)
+    )
 
     # Sort
     if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.tax_category:

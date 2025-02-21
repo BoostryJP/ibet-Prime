@@ -817,7 +817,9 @@ async def list_all_child_account(
             ),
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(ChildAccount).order_by(None)
+    )
 
     if get_query.child_account_address is not None:
         stmt = stmt.where(
@@ -864,7 +866,9 @@ async def list_all_child_account(
             <= local_tz.localize(_modified_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(ChildAccount).order_by(None)
+    )
 
     # Sort
     def _order(_order):

@@ -562,7 +562,9 @@ async def list_all_e2e_messages(
     # Get E2E Messaging
     stmt = select(IDXE2EMessaging).order_by(asc(IDXE2EMessaging.id))
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXE2EMessaging).order_by(None)
+    )
 
     # Search Filter
     if get_query.from_address is not None:
@@ -574,7 +576,9 @@ async def list_all_e2e_messages(
     if get_query.message is not None:
         stmt = stmt.where(IDXE2EMessaging.message.like("%" + get_query.message + "%"))
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXE2EMessaging).order_by(None)
+    )
 
     # Pagination
     if get_query.limit is not None:

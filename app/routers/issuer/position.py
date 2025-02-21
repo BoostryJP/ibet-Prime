@@ -137,13 +137,17 @@ async def list_all_positions(
     if issuer_address is not None:
         stmt = stmt.where(Token.issuer_address == issuer_address)
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Search Filter
     if request_query.token_type is not None:
         stmt = stmt.where(Token.type == request_query.token_type)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Pagination
     if request_query.limit is not None:
@@ -232,13 +236,21 @@ async def list_all_locked_position(
     if issuer_address is not None:
         stmt = stmt.where(Token.issuer_address == issuer_address)
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXLockedPosition)
+        .order_by(None)
+    )
 
     # Search Filter
     if request_query.token_type is not None:
         stmt = stmt.where(Token.type == request_query.token_type)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXLockedPosition)
+        .order_by(None)
+    )
 
     # Pagination
     if request_query.limit is not None:
@@ -355,8 +367,18 @@ async def list_account_lock_unlock_events(
         stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
     total = (
-        await db.scalar(select(func.count()).select_from(stmt_lock.subquery()))
-    ) + (await db.scalar(select(func.count()).select_from(stmt_unlock.subquery())))
+        await db.scalar(
+            stmt_lock.with_only_columns(func.count())
+            .select_from(IDXLock)
+            .order_by(None)
+        )
+    ) + (
+        await db.scalar(
+            stmt_unlock.with_only_columns(func.count())
+            .select_from(IDXUnlock)
+            .order_by(None)
+        )
+    )
 
     # Filter
     match request_query.category:
@@ -389,7 +411,11 @@ async def list_account_lock_unlock_events(
             all_lock_event_alias.c.recipient_address == request_query.recipient_address
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(all_lock_event_alias)
+        .order_by(None)
+    )
 
     # Sort
     sort_attr = column(request_query.sort_item)

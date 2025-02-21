@@ -268,7 +268,9 @@ async def list_all_dvp_agent_deliveries(
             IDXDelivery.agent_address == request_query.agent_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXDelivery).order_by(None)
+    )
 
     if request_query.token_address is not None:
         stmt = stmt.where(IDXDelivery.token_address == request_query.token_address)
@@ -293,7 +295,9 @@ async def list_all_dvp_agent_deliveries(
             .replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXDelivery).order_by(None)
+    )
 
     # Sort
     if request_query.sort_order == 0:  # ASC
