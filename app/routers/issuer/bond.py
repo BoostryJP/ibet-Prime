@@ -602,7 +602,11 @@ async def list_bond_operation_log_history(
             TokenUpdateOperationLog.token_address == token_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenUpdateOperationLog)
+        .order_by(None)
+    )
 
     if request_query.operation_category:
         stmt = stmt.where(
@@ -632,7 +636,11 @@ async def list_bond_operation_log_history(
             <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenUpdateOperationLog)
+        .order_by(None)
+    )
 
     # Sort
     sort_attr = getattr(TokenUpdateOperationLog, request_query.sort_item, None)
@@ -712,7 +720,9 @@ async def list_bond_additional_issuance_history(
             IDXIssueRedeem.token_address == token_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXIssueRedeem).order_by(None)
+    )
     count = total
 
     # Sort
@@ -866,12 +876,20 @@ async def list_all_batch_additional_bond_issue(
     if issuer_address is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.issuer_address == issuer_address)
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     if get_query.processed is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:  # ASC
@@ -1124,7 +1142,9 @@ async def list_bond_redemption_history(
             IDXIssueRedeem.token_address == token_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXIssueRedeem).order_by(None)
+    )
     count = total
 
     # Sort
@@ -1279,12 +1299,20 @@ async def list_all_batch_bond_redemption(
     if issuer_address is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.issuer_address == issuer_address)
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     if get_query.processed is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:  # ASC
@@ -2006,7 +2034,9 @@ async def list_all_bond_token_holders(
         )
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     if not get_query.include_former_holder:
         stmt = stmt.where(
@@ -2095,7 +2125,9 @@ async def list_all_bond_token_holders(
             .like("%" + get_query.key_manager + "%")
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Sort
     if get_query.sort_item == ListAllHoldersSortItem.holder_name:
@@ -2272,7 +2304,9 @@ async def count_bond_token_holders(
             IDXLockedPosition.account_address,
         )
     )
-    _count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    _count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     return json_response({"count": _count})
 
@@ -2668,12 +2702,20 @@ async def list_all_bond_token_batch_personal_info_registration(
         BatchRegisterPersonalInfoUpload.issuer_address == issuer_address
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchRegisterPersonalInfoUpload)
+        .order_by(None)
+    )
 
     if get_query.status is not None:
         stmt = stmt.where(BatchRegisterPersonalInfoUpload.status == get_query.status)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchRegisterPersonalInfoUpload)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:  # ASC
@@ -2975,8 +3017,18 @@ async def list_bond_token_lock_unlock_events(
         stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
     total = (
-        await db.scalar(select(func.count()).select_from(stmt_lock.subquery()))
-    ) + (await db.scalar(select(func.count()).select_from(stmt_unlock.subquery())))
+        await db.scalar(
+            stmt_lock.with_only_columns(func.count())
+            .select_from(IDXLock)
+            .order_by(None)
+        )
+    ) + (
+        await db.scalar(
+            stmt_unlock.with_only_columns(func.count())
+            .select_from(IDXUnlock)
+            .order_by(None)
+        )
+    )
 
     # Filter
     match request_query.category:
@@ -3005,7 +3057,11 @@ async def list_bond_token_lock_unlock_events(
             all_lock_event_alias.c.recipient_address == request_query.recipient_address
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(all_lock_event_alias)
+        .order_by(None)
+    )
 
     # Sort
     sort_attr = column(request_query.sort_item)
@@ -3209,7 +3265,9 @@ async def list_bond_token_transfer_history(
         )
         .where(IDXTransfer.token_address == token_address)
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTransfer).order_by(None)
+    )
 
     # Filter
     if query.block_timestamp_from is not None:
@@ -3256,7 +3314,9 @@ async def list_bond_token_transfer_history(
         stmt = stmt.where(cast(IDXTransfer.data, String).like("%" + query.data + "%"))
     if query.message is not None:
         stmt = stmt.where(IDXTransfer.message == query.message)
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTransfer).order_by(None)
+    )
 
     # Sort
     match query.sort_item:
@@ -3416,10 +3476,14 @@ async def list_all_bond_token_transfer_approval_history(
         Token.issuer_address, subquery.token_address
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # NOTE: Because no filtering is performed, `total` and `count` have the same value.
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Pagination
     if get_query.limit is not None:
@@ -3590,7 +3654,9 @@ async def list_specific_bond_token_transfer_approval_history(
         .where(subquery.token_address == token_address)
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Search Filter
     if get_query.from_address is not None:
@@ -3600,7 +3666,9 @@ async def list_specific_bond_token_transfer_approval_history(
     if get_query.status is not None:
         stmt = stmt.where(literal_column("status").in_(get_query.status))
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Sort
     if get_query.sort_item != IDXTransferApprovalsSortItem.STATUS:
@@ -4364,7 +4432,11 @@ async def list_bond_token_bulk_transfers(
             upload_id_subquery.c.upload_id == BulkTransferUpload.upload_id,
         )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BulkTransferUpload)
+        .order_by(None)
+    )
     count = total
 
     # Pagination
@@ -4480,7 +4552,9 @@ async def retrieve_bond_token_bulk_transfer(
             )
         )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(BulkTransfer).order_by(None)
+    )
     count = total
 
     # Pagination

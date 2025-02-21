@@ -131,7 +131,9 @@ async def list_all_ledger_history(
         .order_by(desc(Ledger.id))
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(Ledger).order_by(None)
+    )
 
     # NOTE: Because it don`t filter, `total` and `count` will be the same.
     count = total
@@ -628,7 +630,9 @@ async def list_all_ledger_details_data(
     )
 
     # NOTE: This API does not filter the data, so count equals total.
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
     count = total
 
     # Pagination

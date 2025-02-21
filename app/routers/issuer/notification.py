@@ -59,7 +59,9 @@ async def list_all_notifications(
 
     stmt = select(Notification).order_by(Notification.created)
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(Notification).order_by(None)
+    )
 
     # Search Filter
     if issuer_address is not None:
@@ -67,7 +69,9 @@ async def list_all_notifications(
     if notice_type is not None:
         stmt = stmt.where(Notification.type == notice_type)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(Notification).order_by(None)
+    )
 
     # Pagination
     if limit is not None:
