@@ -2035,7 +2035,7 @@ async def list_all_bond_token_holders(
     )
 
     total = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(IDXPosition).where(IDXPosition.token_address == token_address)
     )
 
     if not get_query.include_former_holder:
