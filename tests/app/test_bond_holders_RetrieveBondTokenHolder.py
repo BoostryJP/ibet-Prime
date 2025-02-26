@@ -108,12 +108,12 @@ class TestRetrieveBondTokenHolder:
                 "tax_category": 10,
             },
             "holder_extra_info": {
-                "external_id_1_type": None,
-                "external_id_1": None,
-                "external_id_2_type": None,
-                "external_id_2": None,
-                "external_id_3_type": None,
-                "external_id_3": None,
+                "external_id1_type": None,
+                "external_id1": None,
+                "external_id2_type": None,
+                "external_id2": None,
+                "external_id3_type": None,
+                "external_id3": None,
             },
             "balance": 0,
             "exchange_balance": 0,
@@ -199,12 +199,12 @@ class TestRetrieveBondTokenHolder:
                 "tax_category": 10,
             },
             "holder_extra_info": {
-                "external_id_1_type": None,
-                "external_id_1": None,
-                "external_id_2_type": None,
-                "external_id_2": None,
-                "external_id_3_type": None,
-                "external_id_3": None,
+                "external_id1_type": None,
+                "external_id1": None,
+                "external_id2_type": None,
+                "external_id2": None,
+                "external_id3_type": None,
+                "external_id3": None,
             },
             "balance": 10,
             "exchange_balance": 11,
@@ -311,12 +311,12 @@ class TestRetrieveBondTokenHolder:
                 "tax_category": 10,
             },
             "holder_extra_info": {
-                "external_id_1_type": None,
-                "external_id_1": None,
-                "external_id_2_type": None,
-                "external_id_2": None,
-                "external_id_3_type": None,
-                "external_id_3": None,
+                "external_id1_type": None,
+                "external_id1": None,
+                "external_id2_type": None,
+                "external_id2": None,
+                "external_id3_type": None,
+                "external_id3": None,
             },
             "balance": 10,
             "exchange_balance": 11,
@@ -382,12 +382,12 @@ class TestRetrieveBondTokenHolder:
                 "tax_category": None,
             },
             "holder_extra_info": {
-                "external_id_1_type": None,
-                "external_id_1": None,
-                "external_id_2_type": None,
-                "external_id_2": None,
-                "external_id_3_type": None,
-                "external_id_3": None,
+                "external_id1_type": None,
+                "external_id1": None,
+                "external_id2_type": None,
+                "external_id2": None,
+                "external_id3_type": None,
+                "external_id3": None,
             },
             "balance": 10,
             "exchange_balance": 11,
@@ -468,12 +468,12 @@ class TestRetrieveBondTokenHolder:
                 "tax_category": None,
             },
             "holder_extra_info": {
-                "external_id_1_type": None,
-                "external_id_1": None,
-                "external_id_2_type": None,
-                "external_id_2": None,
-                "external_id_3_type": None,
-                "external_id_3": None,
+                "external_id1_type": None,
+                "external_id1": None,
+                "external_id2_type": None,
+                "external_id2": None,
+                "external_id3_type": None,
+                "external_id3": None,
             },
             "balance": 10,
             "exchange_balance": 11,
@@ -519,12 +519,12 @@ class TestRetrieveBondTokenHolder:
         extra_info = TokenHolderExtraInfo()
         extra_info.token_address = _token_address
         extra_info.account_address = _account_address_1
-        extra_info.external_id_1_type = "test_id_type_1"
-        extra_info.external_id_1 = "test_id_1"
-        extra_info.external_id_2_type = "test_id_type_2"
-        extra_info.external_id_2 = "test_id_2"
-        extra_info.external_id_3_type = "test_id_type_3"
-        extra_info.external_id_3 = "test_id_3"
+        extra_info.external_id1_type = "test_id_type_1"
+        extra_info.external_id1 = "test_id_1"
+        extra_info.external_id2_type = "test_id_type_2"
+        extra_info.external_id2 = "test_id_2"
+        extra_info.external_id3_type = "test_id_type_3"
+        extra_info.external_id3 = "test_id_3"
         async_db.add(extra_info)
 
         await async_db.commit()
@@ -550,12 +550,12 @@ class TestRetrieveBondTokenHolder:
                 "tax_category": None,
             },
             "holder_extra_info": {
-                "external_id_1_type": "test_id_type_1",
-                "external_id_1": "test_id_1",
-                "external_id_2_type": "test_id_type_2",
-                "external_id_2": "test_id_2",
-                "external_id_3_type": "test_id_type_3",
-                "external_id_3": "test_id_3",
+                "external_id1_type": "test_id_type_1",
+                "external_id1": "test_id_1",
+                "external_id2_type": "test_id_type_2",
+                "external_id2": "test_id_2",
+                "external_id3_type": "test_id_type_3",
+                "external_id3": "test_id_3",
             },
             "balance": 10,
             "exchange_balance": 11,

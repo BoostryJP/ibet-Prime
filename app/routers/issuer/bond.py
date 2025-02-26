@@ -2035,7 +2035,9 @@ async def list_all_bond_token_holders(
     )
 
     total = await db.scalar(
-        select(func.count()).select_from(IDXPosition).where(IDXPosition.token_address == token_address)
+        select(func.count())
+        .select_from(IDXPosition)
+        .where(IDXPosition.token_address == token_address)
     )
 
     if not get_query.include_former_holder:
@@ -2542,12 +2544,12 @@ async def register_bond_token_holder_extra_info(
     _holder_extra_info = TokenHolderExtraInfo()
     _holder_extra_info.token_address = token_address
     _holder_extra_info.account_address = account_address
-    _holder_extra_info.external_id_1_type = extra_info.external_id_1_type
-    _holder_extra_info.external_id_1 = extra_info.external_id_1
-    _holder_extra_info.external_id_2_type = extra_info.external_id_2_type
-    _holder_extra_info.external_id_2 = extra_info.external_id_2
-    _holder_extra_info.external_id_3_type = extra_info.external_id_3_type
-    _holder_extra_info.external_id_3 = extra_info.external_id_3
+    _holder_extra_info.external_id1_type = extra_info.external_id1_type
+    _holder_extra_info.external_id1 = extra_info.external_id1
+    _holder_extra_info.external_id2_type = extra_info.external_id2_type
+    _holder_extra_info.external_id2 = extra_info.external_id2
+    _holder_extra_info.external_id3_type = extra_info.external_id3_type
+    _holder_extra_info.external_id3 = extra_info.external_id3
     await db.merge(_holder_extra_info)
     await db.commit()
 

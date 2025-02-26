@@ -12290,50 +12290,50 @@ components:
       description: Holder count schema (Response)
     HolderExtraInfo:
       properties:
-        external_id_1_type:
+        external_id1_type:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 1 Type
-          description: The type of external-id-1
-        external_id_1:
+          title: External Id1 Type
+          description: The type of external-id1
+        external_id1:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 1
-          description: external-id-1
-        external_id_2_type:
+          title: External Id1
+          description: external-id1
+        external_id2_type:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 2 Type
-          description: The type of external-id-2
-        external_id_2:
+          title: External Id2 Type
+          description: The type of external-id2
+        external_id2:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 2
-          description: external-id-2
-        external_id_3_type:
+          title: External Id2
+          description: external-id2
+        external_id3_type:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 3 Type
-          description: The type of external-id-3
-        external_id_3:
+          title: External Id3 Type
+          description: The type of external-id3
+        external_id3:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 3
-          description: external-id-3
+          title: External Id3
+          description: external-id3
       type: object
       required:
-        - external_id_1_type
-        - external_id_1
-        - external_id_2_type
-        - external_id_2
-        - external_id_3_type
-        - external_id_3
+        - external_id1_type
+        - external_id1
+        - external_id2_type
+        - external_id2
+        - external_id3_type
+        - external_id3
       title: HolderExtraInfo
     HolderResponse:
       properties:
@@ -14996,48 +14996,48 @@ components:
       description: New freeze-log recording schema (RESPONSE)
     RegisterHolderExtraInfoRequest:
       properties:
-        external_id_1_type:
+        external_id1_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1 Type
-          description: The type of external-id-1
-        external_id_1:
+          title: External Id1 Type
+          description: The type of external-id1
+        external_id1:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1
-          description: external-id-1
-        external_id_2_type:
+          title: External Id1
+          description: external-id1
+        external_id2_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2 Type
-          description: The type of external-id-2
-        external_id_2:
+          title: External Id2 Type
+          description: The type of external-id2
+        external_id2:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2
-          description: external-id-2
-        external_id_3_type:
+          title: External Id2
+          description: external-id2
+        external_id3_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3 Type
-          description: The type of external-id-3
-        external_id_3:
+          title: External Id3 Type
+          description: The type of external-id3
+        external_id3:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3
-          description: external-id-3
+          title: External Id3
+          description: external-id3
       type: object
       title: RegisterHolderExtraInfoRequest
       description: Schema for holder's extra information registration (REQUEST)
@@ -15830,48 +15830,48 @@ components:
         token_address:
           type: string
           title: Token Address
-        external_id_1_type:
+        external_id1_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1 Type
-          description: The type of external-id-1
-        external_id_1:
+          title: External Id1 Type
+          description: The type of external-id1
+        external_id1:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1
-          description: external-id-1
-        external_id_2_type:
+          title: External Id1
+          description: external-id1
+        external_id2_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2 Type
-          description: The type of external-id-2
-        external_id_2:
+          title: External Id2 Type
+          description: The type of external-id2
+        external_id2:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2
-          description: external-id-2
-        external_id_3_type:
+          title: External Id2
+          description: external-id2
+        external_id3_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3 Type
-          description: The type of external-id-3
-        external_id_3:
+          title: External Id3 Type
+          description: The type of external-id3
+        external_id3:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3
-          description: external-id-3
+          title: External Id3
+          description: external-id3
       type: object
       required:
         - token_address

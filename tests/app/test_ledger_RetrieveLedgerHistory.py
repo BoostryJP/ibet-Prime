@@ -1974,7 +1974,9 @@ class TestRetrieveLedgerHistory:
         _idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         async_db.add(_idx_personal_info_1)
 
-        _idx_personal_info_2 = IDXPersonalInfo()  # Note: account_address_2 has personal information in DB
+        _idx_personal_info_2 = (
+            IDXPersonalInfo()
+        )  # Note: account_address_2 has personal information in DB
         _idx_personal_info_2.account_address = account_address_2
         _idx_personal_info_2.issuer_address = issuer_address
         _idx_personal_info_2.personal_info = {

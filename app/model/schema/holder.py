@@ -31,18 +31,18 @@ from .personal_info import PersonalInfo
 # COMMON
 ############################
 class HolderExtraInfo(BaseModel):
-    external_id_1_type: Optional[str] = Field(
-        ..., description="The type of external-id-1"
+    external_id1_type: Optional[str] = Field(
+        ..., description="The type of external-id1"
     )
-    external_id_1: Optional[str] = Field(..., description="external-id-1")
-    external_id_2_type: Optional[str] = Field(
-        ..., description="The type of external-id-2"
+    external_id1: Optional[str] = Field(..., description="external-id1")
+    external_id2_type: Optional[str] = Field(
+        ..., description="The type of external-id2"
     )
-    external_id_2: Optional[str] = Field(..., description="external-id-2")
-    external_id_3_type: Optional[str] = Field(
-        ..., description="The type of external-id-3"
+    external_id2: Optional[str] = Field(..., description="external-id2")
+    external_id3_type: Optional[str] = Field(
+        ..., description="The type of external-id3"
     )
-    external_id_3: Optional[str] = Field(..., description="external-id-3")
+    external_id3: Optional[str] = Field(..., description="external-id3")
 
 
 ############################
@@ -51,24 +51,18 @@ class HolderExtraInfo(BaseModel):
 class RegisterHolderExtraInfoRequest(BaseModel):
     """Schema for holder's extra information registration (REQUEST)"""
 
-    external_id_1_type: Optional[str] = Field(
-        None, description="The type of external-id-1", max_length=50
+    external_id1_type: Optional[str] = Field(
+        None, description="The type of external-id1", max_length=50
     )
-    external_id_1: Optional[str] = Field(
-        None, description="external-id-1", max_length=50
+    external_id1: Optional[str] = Field(None, description="external-id1", max_length=50)
+    external_id2_type: Optional[str] = Field(
+        None, description="The type of external-id2", max_length=50
     )
-    external_id_2_type: Optional[str] = Field(
-        None, description="The type of external-id-2", max_length=50
+    external_id2: Optional[str] = Field(None, description="external-id2", max_length=50)
+    external_id3_type: Optional[str] = Field(
+        None, description="The type of external-id3", max_length=50
     )
-    external_id_2: Optional[str] = Field(
-        None, description="external-id-2", max_length=50
-    )
-    external_id_3_type: Optional[str] = Field(
-        None, description="The type of external-id-3", max_length=50
-    )
-    external_id_3: Optional[str] = Field(
-        None, description="external-id-3", max_length=50
-    )
+    external_id3: Optional[str] = Field(None, description="external-id3", max_length=50)
 
 
 ############################

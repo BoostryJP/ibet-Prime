@@ -48,21 +48,15 @@ class SealedTxRegisterHolderExtraInfoRequest(BaseModel):
     """Schema for holder's extra information registration using sealed tx (REQUEST)"""
 
     token_address: EthereumAddress
-    external_id_1_type: Optional[str] = Field(
-        None, description="The type of external-id-1", max_length=50
+    external_id1_type: Optional[str] = Field(
+        None, description="The type of external-id1", max_length=50
     )
-    external_id_1: Optional[str] = Field(
-        None, description="external-id-1", max_length=50
+    external_id1: Optional[str] = Field(None, description="external-id1", max_length=50)
+    external_id2_type: Optional[str] = Field(
+        None, description="The type of external-id2", max_length=50
     )
-    external_id_2_type: Optional[str] = Field(
-        None, description="The type of external-id-2", max_length=50
+    external_id2: Optional[str] = Field(None, description="external-id2", max_length=50)
+    external_id3_type: Optional[str] = Field(
+        None, description="The type of external-id3", max_length=50
     )
-    external_id_2: Optional[str] = Field(
-        None, description="external-id-2", max_length=50
-    )
-    external_id_3_type: Optional[str] = Field(
-        None, description="The type of external-id-3", max_length=50
-    )
-    external_id_3: Optional[str] = Field(
-        None, description="external-id-3", max_length=50
-    )
+    external_id3: Optional[str] = Field(None, description="external-id3", max_length=50)
