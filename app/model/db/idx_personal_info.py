@@ -21,7 +21,7 @@ from datetime import datetime
 from enum import StrEnum
 
 import pytz
-from sqlalchemy import JSON, BigInteger, DateTime, String
+from sqlalchemy import JSON, BigInteger, DateTime, Index, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -62,6 +62,15 @@ class IDXPersonalInfo(Base):
     # data source
     data_source: Mapped[PersonalInfoDataSource] = mapped_column(
         String(10), nullable=False
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_personal_info_issuer_account",
+            issuer_address,
+            account_address,
+            postgresql_include=["personal_info", "data_source", "created", "modified"],
+        ),
     )
 
     @hybrid_property
