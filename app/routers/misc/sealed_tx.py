@@ -111,12 +111,12 @@ async def sealed_tx_register_holder_extra_info(
     _holder_extra_info = TokenHolderExtraInfo()
     _holder_extra_info.token_address = extra_info.token_address
     _holder_extra_info.account_address = account_address
-    _holder_extra_info.external_id_1_type = extra_info.external_id_1_type
-    _holder_extra_info.external_id_1 = extra_info.external_id_1
-    _holder_extra_info.external_id_2_type = extra_info.external_id_2_type
-    _holder_extra_info.external_id_2 = extra_info.external_id_2
-    _holder_extra_info.external_id_3_type = extra_info.external_id_3_type
-    _holder_extra_info.external_id_3 = extra_info.external_id_3
+    _holder_extra_info.external_id1_type = extra_info.external_id1_type
+    _holder_extra_info.external_id1 = extra_info.external_id1
+    _holder_extra_info.external_id2_type = extra_info.external_id2_type
+    _holder_extra_info.external_id2 = extra_info.external_id2
+    _holder_extra_info.external_id3_type = extra_info.external_id3_type
+    _holder_extra_info.external_id3 = extra_info.external_id3
     await db.merge(_holder_extra_info)
     await db.commit()
 
