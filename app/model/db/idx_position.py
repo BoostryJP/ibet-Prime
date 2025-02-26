@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from sqlalchemy import BigInteger, String
+from sqlalchemy import BigInteger, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -40,6 +40,31 @@ class IDXPosition(Base):
     exchange_commitment: Mapped[int | None] = mapped_column(BigInteger)
     # pendingTransfer
     pending_transfer: Mapped[int | None] = mapped_column(BigInteger)
+
+    __table_args__ = (
+        Index(
+            "idx_position_token_account_value",
+            token_address,
+            account_address,
+            balance,
+            exchange_balance,
+            pending_transfer,
+            exchange_commitment,
+        ),
+        Index(
+            "idx_position_token_account",
+            token_address,
+            account_address,
+            postgresql_include=[
+                "balance",
+                "exchange_balance",
+                "exchange_commitment",
+                "pending_transfer",
+                "created",
+                "modified",
+            ],
+        ),
+    )
 
     def json(self):
         return {
@@ -86,6 +111,16 @@ class IDXLockedPosition(Base):
     account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # locked amount
     value: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    __table_args__ = (
+        Index(
+            "idx_locked_position_token_account_value_modified",
+            token_address,
+            account_address,
+            value,
+            "modified",
+        ),
+    )
 
     def json(self):
         return {
