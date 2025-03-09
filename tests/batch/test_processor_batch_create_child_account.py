@@ -118,9 +118,9 @@ class TestProcessor:
 
         off_personal_info = (
             await async_db.scalars(
-                select(IDXPersonalInfo).where(
-                    IDXPersonalInfo.issuer_address == self.issuer_address
-                )
+                select(IDXPersonalInfo)
+                .where(IDXPersonalInfo.issuer_address == self.issuer_address)
+                .order_by(IDXPersonalInfo.created)
             )
         ).all()
         assert len(off_personal_info) == 3
@@ -140,9 +140,9 @@ class TestProcessor:
 
         personal_info_history = (
             await async_db.scalars(
-                select(IDXPersonalInfoHistory).where(
-                    IDXPersonalInfoHistory.issuer_address == self.issuer_address
-                )
+                select(IDXPersonalInfoHistory)
+                .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
+                .order_by(IDXPersonalInfoHistory.created)
             )
         ).all()
         assert len(personal_info_history) == 3
