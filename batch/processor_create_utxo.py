@@ -35,6 +35,7 @@ from app.model.db import UTXO, Account, Token, TokenStatus, TokenType, UTXOBlock
 from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.ledger_utils import request_ledger_creation
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
 from config import (
     CREATE_UTXO_BLOCK_LOT_MAX_SIZE,
@@ -530,6 +531,7 @@ async def main():
         else:
             elapsed_time = time.time() - start_time
             await asyncio.sleep(max(CREATE_UTXO_INTERVAL - elapsed_time, 0))
+        free_malloc()
 
 
 if __name__ == "__main__":

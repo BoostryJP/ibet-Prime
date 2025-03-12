@@ -43,6 +43,7 @@ from app.model.db import (
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
 from config import (
     E2E_MESSAGING_CONTRACT_ADDRESS,
@@ -338,6 +339,7 @@ async def main():
 
         elapsed_time = time.time() - start_time
         await asyncio.sleep(max(INDEXER_SYNC_INTERVAL - elapsed_time, 0))
+        free_malloc()
 
 
 if __name__ == "__main__":

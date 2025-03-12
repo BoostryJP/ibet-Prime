@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import BatchAsyncSessionLocal
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
+from batch import free_malloc
 from batch.utils import batch_log
 
 """
@@ -144,6 +145,7 @@ async def main():
             LOG.exception(ex)
 
         await asyncio.sleep(10)
+        free_malloc()
 
 
 if __name__ == "__main__":
