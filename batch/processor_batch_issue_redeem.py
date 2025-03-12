@@ -52,6 +52,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
+from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
 from config import BULK_TX_LOT_SIZE
@@ -465,6 +466,7 @@ async def main():
                 if is_shutdown.is_set():
                     break
                 await asyncio.sleep(1)
+            free_malloc()
     finally:
         LOG.info("Service is shutdown")
 

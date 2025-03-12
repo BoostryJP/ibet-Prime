@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import ctypes
+from ctypes.util import find_library
 from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request
@@ -126,6 +128,8 @@ async def api_call_handler(request: Request, call_next):
 
 app.openapi = custom_openapi(app)
 
+libc = ctypes.CDLL(find_library("c"))
+
 
 ###############################################################
 # ROUTER
@@ -134,6 +138,7 @@ app.openapi = custom_openapi(app)
 
 @app.get("/", tags=["root"])
 async def root():
+    libc.malloc_trim(0)
     return {"server": SERVER_NAME}
 
 

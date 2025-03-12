@@ -43,6 +43,7 @@ from app.utils.ledger_utils import (
     finalize_ledger,
     sync_request_with_registered_personal_info,
 )
+from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
 
@@ -167,6 +168,7 @@ async def main():
                 LOG.exception("An error occurred during processing")
 
             await asyncio.sleep(10)
+            free_malloc()
     finally:
         LOG.info("Service is shutdown")
 

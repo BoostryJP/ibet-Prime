@@ -49,6 +49,7 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
 from config import (
@@ -585,6 +586,7 @@ class Worker:
                 if self.is_shutdown.is_set():
                     break
                 await asyncio.sleep(1)
+            free_malloc()
 
 
 async def main():
