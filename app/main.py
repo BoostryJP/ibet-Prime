@@ -30,13 +30,14 @@ from pydantic_core import ArgsKwargs, ErrorDetails
 from starlette import status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
     BadRequestError,
     ContractRevertError,
     ServiceUnavailableError,
 )
-from app.log import output_access_log
+from app.log import LOG, output_access_log
 from app.routers.issuer import (
     account,
     bond,
@@ -137,7 +138,13 @@ libc = ctypes.CDLL(find_library("c"))
 
 
 @app.get("/", tags=["root"])
-async def root():
+async def root(db: DBAsyncSession):
+    try:
+        # Check DB Connection
+        await db.connection()
+    except Exception as err:
+        LOG.exception("error")
+        raise ServiceUnavailableError(err)
     libc.malloc_trim(0)
     return {"server": SERVER_NAME}
 
