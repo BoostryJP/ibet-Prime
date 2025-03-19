@@ -265,16 +265,24 @@ async def retrieve_ledger_history(
         for details in resp["details"]:
             if details["token_detail_type"] in _ibet_fin_token_detail_type_list:
                 for data in details["data"]:
-                    personal_info, _pi_not_registered = await __get_personal_info(
-                        token_address=token_address,
-                        token_type=_token.type,
-                        account_address=data["account_address"],
-                        db=db,
-                    )
-                    data["name"] = personal_info.get("name", None)
-                    data["address"] = personal_info.get("address", None)
-                    if _pi_not_registered:
-                        some_personal_info_not_registered = True
+                    if data["account_address"] == "":
+                        # For data whose data source is DB, the account_address is set to "".
+                        # Here, control logic is implemented assuming that
+                        # an inconsistency has occurred in the data_type of LedgerDetailsTemplate,
+                        # resulting in a value other than "DB".
+                        # In this case, personal information will not be updated.
+                        continue
+                    else:
+                        personal_info, _pi_not_registered = await __get_personal_info(
+                            token_address=token_address,
+                            token_type=_token.type,
+                            account_address=data["account_address"],
+                            db=db,
+                        )
+                        data["name"] = personal_info.get("name", None)
+                        data["address"] = personal_info.get("address", None)
+                        if _pi_not_registered:
+                            some_personal_info_not_registered = True
             details["some_personal_info_not_registered"] = (
                 some_personal_info_not_registered
             )
