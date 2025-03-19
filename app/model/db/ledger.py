@@ -159,7 +159,7 @@ NOTE: Ledger.ledger's JSON structures
       "headers": [],
       "data": [
         {
-          "account_address": "string",
+          "account_address": "string",  // For data whose data_type is DB, account_address is set to "".
           "name": "string",
           "address": "string",
           "amount": 0,
