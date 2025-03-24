@@ -28,9 +28,9 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
-import config
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
@@ -51,12 +51,13 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch.indexer_transfer_approval import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT
+from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
-web3 = Web3Wrapper()
+web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
@@ -71,7 +72,7 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(db, caplog: pytest.LogCaptureFixture):
+def processor(async_db, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -160,36 +161,39 @@ class TestProcessor:
     # No event log
     #   - Token not yet issued
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, db, personal_info_contract):
+    async def test_normal_1_1(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Token(processing token)
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = "test1"
         token_1.issuer_address = issuer_address
-        token_1.abi = "abi"
+        token_1.abi = {}
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 0
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 0
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -198,7 +202,7 @@ class TestProcessor:
     # No event log
     #   - Issued tokens but no events have occurred.
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, db, personal_info_contract):
+    async def test_normal_1_2(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -214,45 +218,48 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 0
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 0
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -262,7 +269,7 @@ class TestProcessor:
     #   - ibetSecurityToken: ApplyForTransfer
     # -> One notification
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, db, personal_info_contract):
+    async def test_normal_2_1(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -279,7 +286,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -290,31 +297,31 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -345,14 +352,17 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
+        assert _transfer_approval.exchange_address == ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address
@@ -368,7 +378,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 1
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -378,13 +388,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -395,7 +405,7 @@ class TestProcessor:
     # Cancel from issuer
     #   -> No notification
     @pytest.mark.asyncio
-    async def test_normal_2_2_1(self, processor, db, personal_info_contract):
+    async def test_normal_2_2_1(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -412,7 +422,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -423,20 +433,20 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer: issuer -> user
         tx_1 = token_contract_1.functions.transferFrom(
@@ -478,18 +488,21 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-        db.commit()
+        await async_db.commit()
+        async_db.expire_all()
 
         # Assertion
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
         block_3 = web3.eth.get_block(tx_receipt_3["blockNumber"])
 
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
+        assert _transfer_approval.exchange_address == ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address
@@ -506,7 +519,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 1
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -516,13 +529,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -533,7 +546,7 @@ class TestProcessor:
     # Cancel from applicant
     #   -> One notification
     @pytest.mark.asyncio
-    async def test_normal_2_2_2(self, processor, db, personal_info_contract):
+    async def test_normal_2_2_2(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -550,7 +563,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -561,20 +574,20 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer: issuer -> user
         tx_1 = token_contract_1.functions.transferFrom(
@@ -616,18 +629,21 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
-        db.commit()
+        await async_db.commit()
+        async_db.expire_all()
 
         # Assertion
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
         block_3 = web3.eth.get_block(tx_receipt_3["blockNumber"])
 
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
+        assert _transfer_approval.exchange_address == ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address
@@ -644,7 +660,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -654,13 +670,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 1
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -670,7 +686,7 @@ class TestProcessor:
     #   - ibetSecurityToken: ApproveTransfer (from issuer)
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2_3(self, processor, db, personal_info_contract):
+    async def test_normal_2_3(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -687,7 +703,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -698,20 +714,20 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer: issuer -> user
         tx = token_contract_1.functions.transferFrom(
@@ -757,15 +773,18 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
 
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
+        assert _transfer_approval.exchange_address == ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address
@@ -783,7 +802,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -793,13 +812,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 2
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -810,7 +829,11 @@ class TestProcessor:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_2_4(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -830,7 +853,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -842,20 +865,20 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -904,9 +927,12 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -930,7 +956,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 1
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -940,13 +966,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -957,7 +983,11 @@ class TestProcessor:
     # Cancel from applicant
     @pytest.mark.asyncio
     async def test_normal_2_5(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -977,7 +1007,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -989,31 +1019,31 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -1071,9 +1101,12 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -1098,7 +1131,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -1108,13 +1141,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 1
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -1126,7 +1159,11 @@ class TestProcessor:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_2_6(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1146,7 +1183,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1158,20 +1195,20 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -1228,9 +1265,12 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -1253,7 +1293,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -1263,13 +1303,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 3
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -1280,7 +1320,11 @@ class TestProcessor:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_2_7(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1300,7 +1344,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1312,20 +1356,20 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : BlockNumber
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
+        async_db.add(_idx_transfer_approval_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
@@ -1396,9 +1440,12 @@ class TestProcessor:
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
+        _transfer_approval_list = (
+            await async_db.scalars(select(IDXTransferApproval))
+        ).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -1423,7 +1470,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert len(_notification_list) == 3
         _notification = _notification_list[2]
         assert _notification.id == 3
@@ -1433,13 +1480,13 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 2
         assert _notification.metainfo == {
-            "token_type": token_1.type,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": token_address_1,
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.scalars(
-            select(IDXTransferApprovalBlockNumber).limit(1)
+        _idx_transfer_approval_block_number = (
+            await async_db.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -1450,15 +1497,16 @@ class TestProcessor:
     @mock.patch("web3.eth.Eth.block_number", 100)
     @pytest.mark.asyncio
     async def test_normal_3(
-        self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
+        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
     ):
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.id = 1
         _idx_transfer_approval_block_number.latest_block_number = 1000
-        db.add(_idx_transfer_approval_block_number)
-        db.commit()
+        async_db.add(_idx_transfer_approval_block_number)
+        await async_db.commit()
 
         await processor.sync_new_logs()
+        async_db.expire_all()
         assert (
             caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process")) == 1
         )
@@ -1469,7 +1517,7 @@ class TestProcessor:
     async def test_normal_4(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -1485,7 +1533,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues bond token.
         token_contract1 = await deploy_bond_token_contract(
@@ -1497,18 +1545,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
         assert len(processor.token_list.keys()) == 1
@@ -1524,18 +1573,19 @@ class TestProcessor:
         )
         token_address_2 = token_contract2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
         # newly issued token is loaded properly
@@ -1552,7 +1602,7 @@ class TestProcessor:
     async def test_error_1(
         self,
         main_func,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1567,7 +1617,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract = await deploy_bond_token_contract(
@@ -1575,15 +1625,15 @@ class TestProcessor:
         )
         token_address = token_contract.address
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.token_address = token_address
         token.issuer_address = issuer_address
         token.abi = token_contract.abi
         token.tx_hash = "tx_hash"
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # Run mainloop once and fail with web3 utils error
         with (

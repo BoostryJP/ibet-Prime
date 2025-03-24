@@ -48,6 +48,7 @@ from app.model.db import (
     IDXDelivery,
     IDXPersonalInfo,
     Token,
+    TokenStatus,
 )
 from app.model.schema import (
     CancelDVPDeliveryRequest,
@@ -111,7 +112,9 @@ async def list_all_dvp_deliveries(
             )
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXDelivery).order_by(None)
+    )
 
     if request_query.token_address is not None:
         stmt = stmt.where(IDXDelivery.token_address == request_query.token_address)
@@ -126,19 +129,21 @@ async def list_all_dvp_deliveries(
     if request_query.create_blocktimestamp_from is not None:
         stmt = stmt.where(
             IDXDelivery.create_blocktimestamp
-            >= local_tz.localize(request_query.create_blocktimestamp_from).astimezone(
-                tz=UTC
-            )
+            >= local_tz.localize(request_query.create_blocktimestamp_from)
+            .astimezone(tz=UTC)
+            .replace(tzinfo=None)
         )
     if request_query.create_blocktimestamp_to is not None:
         stmt = stmt.where(
             IDXDelivery.create_blocktimestamp
-            <= local_tz.localize(request_query.create_blocktimestamp_to).astimezone(
-                tz=UTC
-            )
+            <= local_tz.localize(request_query.create_blocktimestamp_to)
+            .astimezone(tz=UTC)
+            .replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXDelivery).order_by(None)
+    )
 
     # Sort
     if request_query.sort_order == 0:  # ASC
@@ -288,7 +293,7 @@ async def create_dvp_delivery(
                 and_(
                     Token.issuer_address == issuer_address,
                     Token.token_address == create_req.token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -296,7 +301,7 @@ async def create_dvp_delivery(
     ).first()
     if _token is None:
         raise InvalidParameterError("token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get private key

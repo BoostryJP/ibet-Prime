@@ -26,7 +26,6 @@ from unittest.mock import ANY, patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain.tx_params.ibet_share import (
@@ -54,7 +53,7 @@ from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(db, caplog: pytest.LogCaptureFixture):
+def processor(async_db, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -73,7 +72,7 @@ class TestProcessor:
     # token type: IBET_STRAIGHT_BOND
     # processing category: ISSUE
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db, caplog):
+    async def test_normal_1(self, processor, async_db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -96,43 +95,43 @@ class TestProcessor:
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
         _account.rsa_status = 3
-        db.add(_account)
+        async_db.add(_account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
         _upload.upload_id = upload_id
         _upload.issuer_address = issuer_address
-        _upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
-        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
         _upload.processed = 0
-        db.add(_upload)
+        async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         with patch(
@@ -140,6 +139,7 @@ class TestProcessor:
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_bulk_additional_issue:
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: contract
         IbetStraightBondContract_bulk_additional_issue.assert_called_with(
@@ -156,15 +156,19 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_id)
-            .limit(1)
+        _upload_after: BatchIssueRedeemUpload = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        _upload_data_after: List[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+            )
         ).all()
         assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
@@ -178,7 +182,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -186,7 +190,7 @@ class TestProcessor:
             assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
             assert _notification.code == 0  # Successful
             assert _notification.metainfo == {
-                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "category": BatchIssueRedeemProcessingCategory.ISSUE,
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
@@ -197,7 +201,7 @@ class TestProcessor:
     # token type: IBET_STRAIGHT_BOND
     # processing category: REDEEM
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, db, caplog):
+    async def test_normal_2(self, processor, async_db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -220,43 +224,43 @@ class TestProcessor:
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
         _account.rsa_status = 3
-        db.add(_account)
+        async_db.add(_account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
         _upload.upload_id = upload_id
         _upload.issuer_address = issuer_address
-        _upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
-        _upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
+        _upload.category = BatchIssueRedeemProcessingCategory.REDEEM
         _upload.processed = 0
-        db.add(_upload)
+        async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         with patch(
@@ -264,6 +268,7 @@ class TestProcessor:
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_bulk_redeem:
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: contract
         IbetStraightBondContract_bulk_redeem.assert_called_with(
@@ -280,15 +285,19 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_id)
-            .limit(1)
+        _upload_after: BatchIssueRedeemUpload = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        _upload_data_after: List[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+            )
         ).all()
         assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
@@ -302,7 +311,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -310,7 +319,7 @@ class TestProcessor:
             assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
             assert _notification.code == 0  # Successful
             assert _notification.metainfo == {
-                "category": BatchIssueRedeemProcessingCategory.REDEEM.value,
+                "category": BatchIssueRedeemProcessingCategory.REDEEM,
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
@@ -321,7 +330,7 @@ class TestProcessor:
     # token type: IBET_SHARE
     # processing category: ISSUE
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, db, caplog):
+    async def test_normal_3(self, processor, async_db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -344,43 +353,43 @@ class TestProcessor:
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
         _account.rsa_status = 3
-        db.add(_account)
+        async_db.add(_account)
 
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
         _upload.upload_id = upload_id
         _upload.issuer_address = issuer_address
-        _upload.token_type = TokenType.IBET_SHARE.value
+        _upload.token_type = TokenType.IBET_SHARE
         _upload.token_address = token_address
-        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
         _upload.processed = 0
-        db.add(_upload)
+        async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         with patch(
@@ -388,6 +397,7 @@ class TestProcessor:
             return_value="mock_tx_hash",
         ) as IbetShareContract_bulk_additional_issue:
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: contract
         IbetShareContract_bulk_additional_issue.assert_called_with(
@@ -404,15 +414,19 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_id)
-            .limit(1)
+        _upload_after: BatchIssueRedeemUpload = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        _upload_data_after: List[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+            )
         ).all()
         assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
@@ -426,7 +440,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -434,7 +448,7 @@ class TestProcessor:
             assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
             assert _notification.code == 0  # Successful
             assert _notification.metainfo == {
-                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "category": BatchIssueRedeemProcessingCategory.ISSUE,
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
@@ -445,7 +459,7 @@ class TestProcessor:
     # token type: IBET_SHARE
     # processing category: REDEEM
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, db, caplog):
+    async def test_normal_4(self, processor, async_db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -468,43 +482,43 @@ class TestProcessor:
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
         _account.rsa_status = 3
-        db.add(_account)
+        async_db.add(_account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
         _upload.upload_id = upload_id
         _upload.issuer_address = issuer_address
-        _upload.token_type = TokenType.IBET_SHARE.value
+        _upload.token_type = TokenType.IBET_SHARE
         _upload.token_address = token_address
-        _upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
+        _upload.category = BatchIssueRedeemProcessingCategory.REDEEM
         _upload.processed = 0
-        db.add(_upload)
+        async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         with patch(
@@ -512,6 +526,7 @@ class TestProcessor:
             return_value="mock_tx_hash",
         ) as IbetShareContract_bulk_redeem:
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: contract
         IbetShareContract_bulk_redeem.assert_called_with(
@@ -528,15 +543,19 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_id)
-            .limit(1)
+        _upload_after: BatchIssueRedeemUpload = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        _upload_data_after: List[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+            )
         ).all()
         assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 1
@@ -550,7 +569,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -558,7 +577,7 @@ class TestProcessor:
             assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
             assert _notification.code == 0  # Successful
             assert _notification.metainfo == {
-                "category": BatchIssueRedeemProcessingCategory.REDEEM.value,
+                "category": BatchIssueRedeemProcessingCategory.REDEEM,
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
@@ -572,7 +591,7 @@ class TestProcessor:
     # Error_1
     # Issuer account does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, db, caplog):
+    async def test_error_1(self, processor, async_db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -585,33 +604,33 @@ class TestProcessor:
 
         # Prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
         _upload.upload_id = upload_id
         _upload.issuer_address = issuer_address
-        _upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
-        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
         _upload.processed = 0
-        db.add(_upload)
+        async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         with patch(
@@ -619,20 +638,25 @@ class TestProcessor:
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_bulk_additional_issue:
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: contract
         IbetStraightBondContract_bulk_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_id)
-            .limit(1)
+        _upload_after: BatchIssueRedeemUpload = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        _upload_data_after: List[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+            )
         ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 0
@@ -645,7 +669,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -653,7 +677,7 @@ class TestProcessor:
             assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
             assert _notification.code == 1  # Failed
             assert _notification.metainfo == {
-                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "category": BatchIssueRedeemProcessingCategory.ISSUE,
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
@@ -663,7 +687,7 @@ class TestProcessor:
     # Error_2
     # Failed to decode keyfile
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, db, caplog):
+    async def test_error_2(self, processor, async_db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -682,36 +706,36 @@ class TestProcessor:
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
         _account.rsa_status = 3
-        db.add(_account)
+        async_db.add(_account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
         _upload.upload_id = upload_id
         _upload.issuer_address = issuer_address
-        _upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
-        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
         _upload.processed = 0
-        db.add(_upload)
+        async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         with patch(
@@ -719,20 +743,25 @@ class TestProcessor:
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_bulk_additional_issue:
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: contract
         IbetStraightBondContract_bulk_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_id)
-            .limit(1)
+        _upload_after: BatchIssueRedeemUpload = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        _upload_data_after: List[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+            )
         ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 0
@@ -745,7 +774,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -753,7 +782,7 @@ class TestProcessor:
             assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
             assert _notification.code == 2  # Failed
             assert _notification.metainfo == {
-                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "category": BatchIssueRedeemProcessingCategory.ISSUE,
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
@@ -763,7 +792,7 @@ class TestProcessor:
     # Error_3
     # Failed to send transaction
     @pytest.mark.asyncio
-    async def test_error_3(self, processor, db, caplog):
+    async def test_error_3(self, processor, async_db, caplog):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -782,43 +811,43 @@ class TestProcessor:
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
         _account.rsa_status = 3
-        db.add(_account)
+        async_db.add(_account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
 
         _upload = BatchIssueRedeemUpload()
         _upload.upload_id = upload_id
         _upload.issuer_address = issuer_address
-        _upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
-        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+        _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
         _upload.processed = 0
-        db.add(_upload)
+        async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
         _upload_data = BatchIssueRedeem()
         _upload_data.upload_id = upload_id
         _upload_data.account_address = target_address
         _upload_data.amount = target_amount
         _upload_data.status = 0
-        db.add(_upload_data)
+        async_db.add(_upload_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         with patch(
@@ -826,17 +855,22 @@ class TestProcessor:
             side_effect=SendTransactionError(),
         ):
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_id)
-            .limit(1)
+        _upload_after: BatchIssueRedeemUpload = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        _upload_data_after: List[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+            )
         ).all()
         assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 2
@@ -850,7 +884,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -858,7 +892,7 @@ class TestProcessor:
             assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
             assert _notification.code == 3  # Failed
             assert _notification.metainfo == {
-                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "category": BatchIssueRedeemProcessingCategory.ISSUE,
                 "upload_id": upload_id,
                 "error_data_id": ANY,
                 "token_address": token_address,
@@ -870,7 +904,7 @@ class TestProcessor:
     # ContractRevertError
     @pytest.mark.asyncio
     async def test_error_4(
-        self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
+        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
     ):
         # Test settings
         issuer_account = config_eth_account("user1")
@@ -890,54 +924,54 @@ class TestProcessor:
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
         _account.rsa_status = 3
-        db.add(_account)
+        async_db.add(_account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.token_address = token_address
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         upload_1_id = str(uuid.uuid4())
 
         _upload_1 = BatchIssueRedeemUpload()
         _upload_1.upload_id = upload_1_id
         _upload_1.issuer_address = issuer_address
-        _upload_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _upload_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload_1.token_address = token_address
-        _upload_1.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+        _upload_1.category = BatchIssueRedeemProcessingCategory.ISSUE
         _upload_1.processed = 0
-        db.add(_upload_1)
+        async_db.add(_upload_1)
 
         _upload_data_1 = BatchIssueRedeem()
         _upload_data_1.upload_id = upload_1_id
         _upload_data_1.account_address = target_address
         _upload_data_1.amount = target_amount
         _upload_data_1.status = 0
-        db.add(_upload_data_1)
+        async_db.add(_upload_data_1)
 
         upload_2_id = str(uuid.uuid4())
 
         _upload_2 = BatchIssueRedeemUpload()
         _upload_2.upload_id = upload_2_id
         _upload_2.issuer_address = issuer_address
-        _upload_2.token_type = TokenType.IBET_SHARE.value
+        _upload_2.token_type = TokenType.IBET_SHARE
         _upload_2.token_address = token_address
-        _upload_2.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+        _upload_2.category = BatchIssueRedeemProcessingCategory.ISSUE
         _upload_2.processed = 0
-        db.add(_upload_2)
+        async_db.add(_upload_2)
 
         _upload_data_2 = BatchIssueRedeem()
         _upload_data_2.upload_id = upload_2_id
         _upload_data_2.account_address = target_address
         _upload_data_2.amount = target_amount
         _upload_data_2.status = 0
-        db.add(_upload_data_2)
+        async_db.add(_upload_data_2)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         with (
@@ -951,30 +985,43 @@ class TestProcessor:
             ),
         ):
             await processor.process()
+            async_db.expire_all()
 
         # Assertion: DB
-        _upload_1_after: BatchIssueRedeemUpload | None = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_1_id)
-            .limit(1)
+        _upload_1_after: BatchIssueRedeemUpload | None = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_1_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_1_after.processed == True
 
-        _upload_1_data_after: Sequence[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_1_id)
+        _upload_1_data_after: Sequence[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(
+                    BatchIssueRedeem.upload_id == upload_1_id
+                )
+            )
         ).all()
         assert len(_upload_1_data_after) == 1
         assert _upload_1_data_after[0].status == 2
 
-        _upload_2_after: BatchIssueRedeemUpload | None = db.scalars(
-            select(BatchIssueRedeemUpload)
-            .where(BatchIssueRedeemUpload.upload_id == upload_2_id)
-            .limit(1)
+        _upload_2_after: BatchIssueRedeemUpload | None = (
+            await async_db.scalars(
+                select(BatchIssueRedeemUpload)
+                .where(BatchIssueRedeemUpload.upload_id == upload_2_id)
+                .limit(1)
+            )
         ).first()
         assert _upload_2_after.processed == True
 
-        _upload_2_data_after: Sequence[BatchIssueRedeem] = db.scalars(
-            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_2_id)
+        _upload_2_data_after: Sequence[BatchIssueRedeem] = (
+            await async_db.scalars(
+                select(BatchIssueRedeem).where(
+                    BatchIssueRedeem.upload_id == upload_2_id
+                )
+            )
         ).all()
         assert len(_upload_2_data_after) == 1
         assert _upload_2_data_after[0].status == 2
@@ -1001,7 +1048,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.scalars(select(Notification)).all()
+        _notification_list = (await async_db.scalars(select(Notification))).all()
         assert _notification_list[0].notice_id is not None
         assert _notification_list[0].issuer_address == issuer_address
         assert _notification_list[0].priority == 1
@@ -1010,7 +1057,7 @@ class TestProcessor:
         )
         assert _notification_list[0].code == 3  # Failed
         assert _notification_list[0].metainfo == {
-            "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+            "category": BatchIssueRedeemProcessingCategory.ISSUE,
             "upload_id": upload_1_id,
             "error_data_id": ANY,
             "token_address": token_address,
@@ -1026,7 +1073,7 @@ class TestProcessor:
         )
         assert _notification_list[1].code == 3  # Failed
         assert _notification_list[1].metainfo == {
-            "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+            "category": BatchIssueRedeemProcessingCategory.ISSUE,
             "upload_id": upload_2_id,
             "error_data_id": ANY,
             "token_address": token_address,

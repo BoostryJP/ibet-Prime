@@ -24,15 +24,15 @@ from typing import Sequence
 import uvloop
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from sqlalchemy import and_, create_engine, or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
+from batch import free_malloc
 from batch.utils import batch_log
-from config import DATABASE_URL
 
 """
 [PROCESSOR-Generate-RSA-Key]
@@ -42,8 +42,6 @@ Process for generating and updating issuer RSA keys
 
 process_name = "PROCESSOR-Generate-RSA-Key"
 LOG = batch_log.get_logger(process_name=process_name)
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
@@ -147,6 +145,7 @@ async def main():
             LOG.exception(ex)
 
         await asyncio.sleep(10)
+        free_malloc()
 
 
 if __name__ == "__main__":

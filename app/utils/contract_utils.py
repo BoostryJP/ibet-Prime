@@ -22,11 +22,12 @@ from typing import Tuple, Type, TypeVar
 
 from eth_typing import HexStr
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine, select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy import AsyncAdaptedQueuePool, create_engine, select
+from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
 from web3.contract import AsyncContract, Contract
+from web3.contract.async_contract import AsyncContractEvents
 from web3.exceptions import (
     ABIEventNotFound,
     ABIFunctionNotFound,
@@ -39,7 +40,7 @@ from web3.types import TxReceipt
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
 from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
-from config import CHAIN_ID, DATABASE_URL, TX_GAS_LIMIT
+from config import ASYNC_DATABASE_URL, CHAIN_ID, DATABASE_URL, TX_GAS_LIMIT
 
 web3 = Web3Wrapper()
 async_web3 = AsyncWeb3Wrapper()
@@ -191,10 +192,10 @@ class ContractUtils:
                 .limit(1)
                 .with_for_update()
             ).first()
-        except OperationalError as op_err:
+        except (OperationalError, DBAPIError) as err:
             local_session.rollback()
             local_session.close()
-            raise SendTransactionError(op_err)
+            raise SendTransactionError(err)
 
         try:
             # Get nonce
@@ -288,6 +289,20 @@ class ContractUtils:
             return []
 
         return result
+
+
+class AsyncContractEventsView:
+    def __init__(self, address: str, contract_events: AsyncContractEvents) -> None:
+        self._address = address
+        self._events = contract_events
+
+    @property
+    def address(self) -> str:
+        return self._address
+
+    @property
+    def events(self) -> AsyncContractEvents:
+        return self._events
 
 
 class AsyncContractUtils:
@@ -420,17 +435,18 @@ class AsyncContractUtils:
         _tx_from = transaction["from"]
 
         # local database session
-        DB_URI = DATABASE_URL
-        db_engine = create_async_engine(
+        DB_URI = ASYNC_DATABASE_URL
+        async_engine = create_async_engine(
             DB_URI,
-            connect_args={"options": "-c lock_timeout=10000"},
+            connect_args={"server_settings": {"lock_timeout": "10000"}},
             echo=False,
             pool_pre_ping=True,
+            poolclass=AsyncAdaptedQueuePool,
         )
         local_session = AsyncSession(
             autocommit=False,
             autoflush=True,
-            bind=db_engine,
+            bind=async_engine,
         )
 
         # Exclusive control within transaction execution address
@@ -445,10 +461,10 @@ class AsyncContractUtils:
                     .with_for_update()
                 )
             ).first()
-        except OperationalError as op_err:
+        except (OperationalError, DBAPIError) as err:
             await local_session.rollback()
             await local_session.close()
-            raise SendTransactionError(op_err)
+            raise SendTransactionError(err)
 
         try:
             # Get nonce
@@ -509,10 +525,10 @@ class AsyncContractUtils:
                     .with_for_update()
                 )
             ).first()
-        except OperationalError as op_err:
+        except (OperationalError, DBAPIError) as err:
             await local_session.rollback()
             await local_session.close()
-            raise SendTransactionError(op_err)
+            raise SendTransactionError(err)
 
         try:
             # Get nonce
@@ -585,7 +601,7 @@ class AsyncContractUtils:
 
     @staticmethod
     async def get_event_logs(
-        contract: AsyncContract,
+        contract: AsyncContract | AsyncContractEventsView,
         event: str,
         block_from: int = None,
         block_to: int = None,

@@ -21,6 +21,8 @@ import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
+import pytest
+
 from app.exceptions import SendTransactionError
 from app.model.blockchain.tx_params.ibet_straight_bond import RedeemParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
@@ -39,7 +41,10 @@ class TestRedeemBond:
     # <Normal_1>
     # Authorization by eoa-password
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.redeem")
-    def test_normal_1(self, IbetStraightBondContract_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(
+        self, IbetStraightBondContract_mock, async_client, async_db
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -50,25 +55,25 @@ class TestRedeemBond:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -88,7 +93,10 @@ class TestRedeemBond:
     # <Normal_2>
     # Authorization by auth-token
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.redeem")
-    def test_normal_2(self, IbetStraightBondContract_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(
+        self, IbetStraightBondContract_mock, async_client, async_db
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -99,31 +107,31 @@ class TestRedeemBond:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = _issuer_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -146,7 +154,8 @@ class TestRedeemBond:
 
     # <Error_1>
     # RequestValidationError: account_address
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -154,20 +163,20 @@ class TestRedeemBond:
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": "0x0", "amount": 10}
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -193,7 +202,8 @@ class TestRedeemBond:
 
     # <Error_2>
     # RequestValidationError: amount(min)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -201,20 +211,20 @@ class TestRedeemBond:
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 0}
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -240,7 +250,8 @@ class TestRedeemBond:
 
     # <Error_3>
     # RequestValidationError: amount(max)
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -248,20 +259,20 @@ class TestRedeemBond:
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 1_000_000_000_001}
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -287,11 +298,12 @@ class TestRedeemBond:
 
     # <Error_4>
     # RequestValidationError: headers and body required
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         _token_address = "token_address_test"
 
         # request target API
-        resp = client.post(self.base_url.format(_token_address))
+        resp = await async_client.post(self.base_url.format(_token_address))
 
         # assertion
         assert resp.status_code == 422
@@ -315,7 +327,8 @@ class TestRedeemBond:
 
     # <Error_5>
     # RequestValidationError: issuer-address
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -323,7 +336,7 @@ class TestRedeemBond:
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": "issuer-address"},
@@ -345,7 +358,8 @@ class TestRedeemBond:
 
     # <Error_6>
     # RequestValidationError: eoa-password(not decrypt)
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -356,13 +370,13 @@ class TestRedeemBond:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": _issuer_address, "eoa-password": "password"},
@@ -383,7 +397,8 @@ class TestRedeemBond:
 
     # <Error_7>
     # issuer does not exist
-    def test_error_7(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -391,20 +406,20 @@ class TestRedeemBond:
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -422,7 +437,8 @@ class TestRedeemBond:
 
     # <Error_8>
     # password mismatch
-    def test_error_8(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_8(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -433,13 +449,13 @@ class TestRedeemBond:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -456,7 +472,8 @@ class TestRedeemBond:
 
     # <Error_9>
     # token not found
-    def test_error_9(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_9(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -467,13 +484,13 @@ class TestRedeemBond:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -490,7 +507,8 @@ class TestRedeemBond:
 
     # <Error_10>
     # Processing Token
-    def test_error_10(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_10(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -501,23 +519,23 @@ class TestRedeemBond:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -539,7 +557,8 @@ class TestRedeemBond:
         "app.model.blockchain.token.IbetStraightBondContract.redeem",
         MagicMock(side_effect=SendTransactionError()),
     )
-    def test_error_11(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_11(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -550,22 +569,22 @@ class TestRedeemBond:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -575,7 +594,7 @@ class TestRedeemBond:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",

@@ -105,6 +105,7 @@ from app.model.db import (
     ScheduledEvents,
     Token,
     TokenHolderExtraInfo,
+    TokenStatus,
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
@@ -294,13 +295,13 @@ async def issue_bond_token(
         _update_token = UpdateToken()
         _update_token.token_address = contract_address
         _update_token.issuer_address = issuer_address
-        _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token.type = TokenType.IBET_STRAIGHT_BOND
         _update_token.arguments = token_dict
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
         db.add(_update_token)
 
-        token_status = 0  # processing
+        token_status = TokenStatus.PENDING
     else:
         # Register token_address token list
         try:
@@ -336,11 +337,11 @@ async def issue_bond_token(
         )
         db.add(_utxo)
 
-        token_status = 1  # succeeded
+        token_status = TokenStatus.SUCCEEDED
 
     # Register token data
     _token = Token()
-    _token.type = TokenType.IBET_STRAIGHT_BOND.value
+    _token.type = TokenType.IBET_STRAIGHT_BOND
     _token.tx_hash = tx_hash
     _token.issuer_address = issuer_address
     _token.token_address = contract_address
@@ -353,10 +354,10 @@ async def issue_bond_token(
     operation_log = TokenUpdateOperationLog()
     operation_log.token_address = contract_address
     operation_log.issuer_address = issuer_address
-    operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
+    operation_log.type = TokenType.IBET_STRAIGHT_BOND
     operation_log.arguments = token.model_dump()
     operation_log.original_contents = None
-    operation_log.operation_category = TokenUpdateOperationCategory.ISSUE.value
+    operation_log.operation_category = TokenUpdateOperationCategory.ISSUE
     db.add(operation_log)
 
     await db.commit()
@@ -442,7 +443,7 @@ async def retrieve_bond_token(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -450,7 +451,7 @@ async def retrieve_bond_token(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get contract data
@@ -521,7 +522,7 @@ async def update_bond_token(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -529,7 +530,7 @@ async def update_bond_token(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Verify that the token version supports the operation
@@ -572,10 +573,10 @@ async def update_bond_token(
     operation_log = TokenUpdateOperationLog()
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
-    operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
+    operation_log.type = TokenType.IBET_STRAIGHT_BOND
     operation_log.arguments = update_data.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
-    operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
+    operation_log.operation_category = TokenUpdateOperationCategory.UPDATE
     db.add(operation_log)
 
     await db.commit()
@@ -601,7 +602,11 @@ async def list_bond_operation_log_history(
             TokenUpdateOperationLog.token_address == token_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenUpdateOperationLog)
+        .order_by(None)
+    )
 
     if request_query.operation_category:
         stmt = stmt.where(
@@ -620,7 +625,7 @@ async def list_bond_operation_log_history(
         )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            >= local_tz.localize(_created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if request_query.created_to:
         _created_to = datetime.strptime(
@@ -628,10 +633,14 @@ async def list_bond_operation_log_history(
         )
         stmt = stmt.where(
             TokenUpdateOperationLog.created
-            <= local_tz.localize(_created_to).astimezone(utc_tz)
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenUpdateOperationLog)
+        .order_by(None)
+    )
 
     # Sort
     sort_attr = getattr(TokenUpdateOperationLog, request_query.sort_item, None)
@@ -693,7 +702,7 @@ async def list_bond_additional_issuance_history(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -701,7 +710,7 @@ async def list_bond_additional_issuance_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get history record
@@ -711,7 +720,9 @@ async def list_bond_additional_issuance_history(
             IDXIssueRedeem.token_address == token_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXIssueRedeem).order_by(None)
+    )
     count = total
 
     # Sort
@@ -815,7 +826,7 @@ async def issue_additional_bond(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -823,7 +834,7 @@ async def issue_additional_bond(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
@@ -865,12 +876,20 @@ async def list_all_batch_additional_bond_issue(
     if issuer_address is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.issuer_address == issuer_address)
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     if get_query.processed is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:  # ASC
@@ -960,7 +979,7 @@ async def issue_additional_bonds_in_batch(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -968,19 +987,19 @@ async def issue_additional_bonds_in_batch(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Generate upload_id
-    upload_id = uuid.uuid4()
+    upload_id = str(uuid.uuid4())
 
     # Add batch data
     _batch_upload = BatchIssueRedeemUpload()
     _batch_upload.upload_id = upload_id
     _batch_upload.issuer_address = issuer_address
-    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND
     _batch_upload.token_address = token_address
-    _batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE
     _batch_upload.processed = False
     db.add(_batch_upload)
 
@@ -1105,7 +1124,7 @@ async def list_bond_redemption_history(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1113,7 +1132,7 @@ async def list_bond_redemption_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get history record
@@ -1123,7 +1142,9 @@ async def list_bond_redemption_history(
             IDXIssueRedeem.token_address == token_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXIssueRedeem).order_by(None)
+    )
     count = total
 
     # Sort
@@ -1227,7 +1248,7 @@ async def redeem_bond(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1235,7 +1256,7 @@ async def redeem_bond(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
@@ -1278,12 +1299,20 @@ async def list_all_batch_bond_redemption(
     if issuer_address is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.issuer_address == issuer_address)
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     if get_query.processed is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.processed == get_query.processed)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchIssueRedeemUpload)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:  # ASC
@@ -1373,7 +1402,7 @@ async def redeem_bonds_in_batch(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1381,19 +1410,19 @@ async def redeem_bonds_in_batch(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Generate upload_id
-    upload_id = uuid.uuid4()
+    upload_id = str(uuid.uuid4())
 
     # Add batch data
     _batch_upload = BatchIssueRedeemUpload()
     _batch_upload.upload_id = upload_id
     _batch_upload.issuer_address = issuer_address
-    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND
     _batch_upload.token_address = token_address
-    _batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM
     _batch_upload.processed = False
     db.add(_batch_upload)
 
@@ -1548,7 +1577,7 @@ async def list_all_scheduled_bond_token_update_events(
             {
                 "scheduled_event_id": _token_event.event_id,
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "scheduled_datetime": scheduled_datetime_utc.astimezone(
                     local_tz
                 ).isoformat(),
@@ -1610,7 +1639,7 @@ async def schedule_bond_token_update_event(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1618,7 +1647,7 @@ async def schedule_bond_token_update_event(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Verify that the token version supports the operation
@@ -1653,8 +1682,10 @@ async def schedule_bond_token_update_event(
     _scheduled_event.event_id = str(uuid.uuid4())
     _scheduled_event.issuer_address = issuer_address
     _scheduled_event.token_address = token_address
-    _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-    _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
+    _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND
+    _scheduled_event.scheduled_datetime = event_data.scheduled_datetime.astimezone(
+        UTC
+    ).replace(tzinfo=None)
     _scheduled_event.event_type = event_data.event_type
     _scheduled_event.data = event_data.data.model_dump()
     _scheduled_event.status = 0
@@ -1713,7 +1744,7 @@ async def schedule_bond_token_update_events_in_batch(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1721,7 +1752,7 @@ async def schedule_bond_token_update_events_in_batch(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     _event_id_list = []
@@ -1758,8 +1789,10 @@ async def schedule_bond_token_update_events_in_batch(
         _scheduled_event.event_id = str(uuid.uuid4())
         _scheduled_event.issuer_address = issuer_address
         _scheduled_event.token_address = token_address
-        _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
+        _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        _scheduled_event.scheduled_datetime = event_data.scheduled_datetime.astimezone(
+            UTC
+        ).replace(tzinfo=None)
         _scheduled_event.event_type = event_data.event_type
         _scheduled_event.data = event_data.data.model_dump()
         _scheduled_event.status = 0
@@ -1827,7 +1860,7 @@ async def retrieve_scheduled_bond_token_update_event(
         {
             "scheduled_event_id": _token_event.event_id,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "scheduled_datetime": scheduled_datetime_utc.astimezone(
                 local_tz
             ).isoformat(),
@@ -1897,7 +1930,7 @@ async def delete_scheduled_bond_token_update_event(
     rtn = {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
-        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+        "token_type": TokenType.IBET_STRAIGHT_BOND,
         "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
@@ -1946,7 +1979,7 @@ async def list_all_bond_token_holders(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -1954,7 +1987,7 @@ async def list_all_bond_token_holders(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
@@ -1990,8 +2023,10 @@ async def list_all_bond_token_holders(
         )
         .where(IDXPosition.token_address == token_address)
         .group_by(
-            IDXPosition.id,
-            IDXPersonalInfo.id,
+            IDXPosition.token_address,
+            IDXPosition.account_address,
+            IDXPersonalInfo.issuer_address,
+            IDXPersonalInfo.account_address,
             TokenHolderExtraInfo.token_address,
             TokenHolderExtraInfo.account_address,
             IDXLockedPosition.token_address,
@@ -1999,7 +2034,11 @@ async def list_all_bond_token_holders(
         )
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count())
+        .select_from(IDXPosition)
+        .where(IDXPosition.token_address == token_address)
+    )
 
     if not get_query.include_former_holder:
         stmt = stmt.where(
@@ -2088,7 +2127,9 @@ async def list_all_bond_token_holders(
             .like("%" + get_query.key_manager + "%")
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Sort
     if get_query.sort_item == ListAllHoldersSortItem.holder_name:
@@ -2225,7 +2266,7 @@ async def count_bond_token_holders(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2233,7 +2274,7 @@ async def count_bond_token_holders(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
@@ -2259,12 +2300,15 @@ async def count_bond_token_holders(
             )
         )
         .group_by(
-            IDXPosition.id,
+            IDXPosition.token_address,
+            IDXPosition.account_address,
             IDXLockedPosition.token_address,
             IDXLockedPosition.account_address,
         )
     )
-    _count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    _count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     return json_response({"count": _count})
 
@@ -2305,7 +2349,7 @@ async def retrieve_bond_token_holder(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2313,7 +2357,7 @@ async def retrieve_bond_token_holder(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
@@ -2340,7 +2384,8 @@ async def retrieve_bond_token_holder(
                     )
                 )
                 .group_by(
-                    IDXPosition.id,
+                    IDXPosition.token_address,
+                    IDXPosition.account_address,
                     IDXLockedPosition.token_address,
                     IDXLockedPosition.account_address,
                 )
@@ -2483,7 +2528,7 @@ async def register_bond_token_holder_extra_info(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2491,7 +2536,7 @@ async def register_bond_token_holder_extra_info(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Insert/Update token holder's extra information
@@ -2499,12 +2544,12 @@ async def register_bond_token_holder_extra_info(
     _holder_extra_info = TokenHolderExtraInfo()
     _holder_extra_info.token_address = token_address
     _holder_extra_info.account_address = account_address
-    _holder_extra_info.external_id_1_type = extra_info.external_id_1_type
-    _holder_extra_info.external_id_1 = extra_info.external_id_1
-    _holder_extra_info.external_id_2_type = extra_info.external_id_2_type
-    _holder_extra_info.external_id_2 = extra_info.external_id_2
-    _holder_extra_info.external_id_3_type = extra_info.external_id_3_type
-    _holder_extra_info.external_id_3 = extra_info.external_id_3
+    _holder_extra_info.external_id1_type = extra_info.external_id1_type
+    _holder_extra_info.external_id1 = extra_info.external_id1
+    _holder_extra_info.external_id2_type = extra_info.external_id2_type
+    _holder_extra_info.external_id2 = extra_info.external_id2
+    _holder_extra_info.external_id3_type = extra_info.external_id3_type
+    _holder_extra_info.external_id3 = extra_info.external_id3
     await db.merge(_holder_extra_info)
     await db.commit()
 
@@ -2562,7 +2607,7 @@ async def register_bond_token_holder_personal_info(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2570,7 +2615,7 @@ async def register_bond_token_holder_personal_info(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
@@ -2643,7 +2688,7 @@ async def list_all_bond_token_batch_personal_info_registration(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2651,7 +2696,7 @@ async def list_all_bond_token_batch_personal_info_registration(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get a list of uploads
@@ -2659,12 +2704,20 @@ async def list_all_bond_token_batch_personal_info_registration(
         BatchRegisterPersonalInfoUpload.issuer_address == issuer_address
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchRegisterPersonalInfoUpload)
+        .order_by(None)
+    )
 
     if get_query.status is not None:
         stmt = stmt.where(BatchRegisterPersonalInfoUpload.status == get_query.status)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BatchRegisterPersonalInfoUpload)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:  # ASC
@@ -2755,7 +2808,7 @@ async def initiate_bond_token_batch_personal_info_registration(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -2763,7 +2816,7 @@ async def initiate_bond_token_batch_personal_info_registration(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
     if len(personal_info_list) == 0:
         raise InvalidParameterError("personal information list must not be empty")
@@ -2772,7 +2825,8 @@ async def initiate_bond_token_batch_personal_info_registration(
     batch = BatchRegisterPersonalInfoUpload()
     batch.upload_id = batch_id
     batch.issuer_address = issuer_address
-    batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+    batch.token_address = token_address
+    batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING
     db.add(batch)
 
     errs = []
@@ -2929,7 +2983,7 @@ async def list_bond_token_lock_unlock_events(
             and_(
                 Token.type == TokenType.IBET_STRAIGHT_BOND,
                 Token.token_address == token_address,
-                Token.token_status != 2,
+                Token.token_status != TokenStatus.FAILED,
             )
         )
     )
@@ -2957,7 +3011,7 @@ async def list_bond_token_lock_unlock_events(
             and_(
                 Token.type == TokenType.IBET_STRAIGHT_BOND,
                 Token.token_address == token_address,
-                Token.token_status != 2,
+                Token.token_status != TokenStatus.FAILED,
             )
         )
     )
@@ -2965,8 +3019,18 @@ async def list_bond_token_lock_unlock_events(
         stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
     total = (
-        await db.scalar(select(func.count()).select_from(stmt_lock.subquery()))
-    ) + (await db.scalar(select(func.count()).select_from(stmt_unlock.subquery())))
+        await db.scalar(
+            stmt_lock.with_only_columns(func.count())
+            .select_from(IDXLock)
+            .order_by(None)
+        )
+    ) + (
+        await db.scalar(
+            stmt_unlock.with_only_columns(func.count())
+            .select_from(IDXUnlock)
+            .order_by(None)
+        )
+    )
 
     # Filter
     match request_query.category:
@@ -2995,7 +3059,11 @@ async def list_bond_token_lock_unlock_events(
             all_lock_event_alias.c.recipient_address == request_query.recipient_address
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(all_lock_event_alias)
+        .order_by(None)
+    )
 
     # Sort
     sort_attr = column(request_query.sort_item)
@@ -3122,7 +3190,7 @@ async def transfer_bond_token_ownership(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token.token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3130,7 +3198,7 @@ async def transfer_bond_token_ownership(
     ).first()
     if _token is None:
         raise InvalidParameterError("token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     try:
@@ -3166,7 +3234,7 @@ async def list_bond_token_transfer_history(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3174,7 +3242,7 @@ async def list_bond_token_transfer_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer history
@@ -3199,18 +3267,24 @@ async def list_bond_token_transfer_history(
         )
         .where(IDXTransfer.token_address == token_address)
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTransfer).order_by(None)
+    )
 
     # Filter
     if query.block_timestamp_from is not None:
         stmt = stmt.where(
             IDXTransfer.block_timestamp
-            >= local_tz.localize(query.block_timestamp_from).astimezone(UTC)
+            >= local_tz.localize(query.block_timestamp_from)
+            .astimezone(UTC)
+            .replace(tzinfo=None)
         )
     if query.block_timestamp_to is not None:
         stmt = stmt.where(
             IDXTransfer.block_timestamp
-            <= local_tz.localize(query.block_timestamp_to).astimezone(UTC)
+            <= local_tz.localize(query.block_timestamp_to)
+            .astimezone(UTC)
+            .replace(tzinfo=None)
         )
     if query.from_address is not None:
         stmt = stmt.where(IDXTransfer.from_address == query.from_address)
@@ -3242,7 +3316,9 @@ async def list_bond_token_transfer_history(
         stmt = stmt.where(cast(IDXTransfer.data, String).like("%" + query.data + "%"))
     if query.message is not None:
         stmt = stmt.where(IDXTransfer.message == query.message)
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTransfer).order_by(None)
+    )
 
     # Sort
     match query.sort_item:
@@ -3389,7 +3465,10 @@ async def list_all_bond_token_transfer_approval_history(
         )
         .join(Token, subquery.token_address == Token.token_address)
         .where(
-            and_(Token.type == TokenType.IBET_STRAIGHT_BOND, Token.token_status != 2)
+            and_(
+                Token.type == TokenType.IBET_STRAIGHT_BOND,
+                Token.token_status != TokenStatus.FAILED,
+            )
         )
     )
     if issuer_address is not None:
@@ -3399,10 +3478,14 @@ async def list_all_bond_token_transfer_approval_history(
         Token.issuer_address, subquery.token_address
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # NOTE: Because no filtering is performed, `total` and `count` have the same value.
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Pagination
     if get_query.limit is not None:
@@ -3468,7 +3551,7 @@ async def list_specific_bond_token_transfer_approval_history(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3476,7 +3559,7 @@ async def list_specific_bond_token_transfer_approval_history(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Create a subquery for 'status' added IDXTransferApproval
@@ -3573,7 +3656,9 @@ async def list_specific_bond_token_transfer_approval_history(
         .where(subquery.token_address == token_address)
     )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Search Filter
     if get_query.from_address is not None:
@@ -3583,7 +3668,9 @@ async def list_specific_bond_token_transfer_approval_history(
     if get_query.status is not None:
         stmt = stmt.where(literal_column("status").in_(get_query.status))
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+    )
 
     # Sort
     if get_query.sort_item != IDXTransferApprovalsSortItem.STATUS:
@@ -3795,7 +3882,7 @@ async def update_bond_token_transfer_approval_status(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -3803,7 +3890,7 @@ async def update_bond_token_transfer_approval_status(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
@@ -3999,7 +4086,7 @@ async def retrieve_bond_token_transfer_approval_status(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -4007,7 +4094,7 @@ async def retrieve_bond_token_transfer_approval_status(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
@@ -4261,7 +4348,7 @@ async def bulk_transfer_bond_token_ownership(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
                     Token.issuer_address == issuer_address,
                     Token.token_address == token_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -4269,19 +4356,19 @@ async def bulk_transfer_bond_token_ownership(
     ).first()
     if _issued_token is None:
         raise TokenNotExistError(f"token not found: {token_address}")
-    if _issued_token.token_status == 0:
+    if _issued_token.token_status == TokenStatus.PENDING:
         raise NonTransferableTokenError(
             f"this token is temporarily unavailable: {token_address}"
         )
 
     # Generate upload_id
-    upload_id = uuid.uuid4()
+    upload_id = str(uuid.uuid4())
 
     # Add bulk transfer upload record
     _bulk_transfer_upload = BulkTransferUpload()
     _bulk_transfer_upload.upload_id = upload_id
     _bulk_transfer_upload.issuer_address = issuer_address
-    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
     _bulk_transfer_upload.token_address = token_address
     _bulk_transfer_upload.status = 0
     db.add(_bulk_transfer_upload)
@@ -4292,7 +4379,7 @@ async def bulk_transfer_bond_token_ownership(
         _bulk_transfer.issuer_address = issuer_address
         _bulk_transfer.upload_id = upload_id
         _bulk_transfer.token_address = _transfer.token_address
-        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
         _bulk_transfer.from_address = _transfer.from_address
         _bulk_transfer.to_address = _transfer.to_address
         _bulk_transfer.amount = _transfer.amount
@@ -4347,7 +4434,11 @@ async def list_bond_token_bulk_transfers(
             upload_id_subquery.c.upload_id == BulkTransferUpload.upload_id,
         )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(BulkTransferUpload)
+        .order_by(None)
+    )
     count = total
 
     # Pagination
@@ -4463,7 +4554,9 @@ async def retrieve_bond_token_bulk_transfer(
             )
         )
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(BulkTransfer).order_by(None)
+    )
     count = total
 
     # Pagination

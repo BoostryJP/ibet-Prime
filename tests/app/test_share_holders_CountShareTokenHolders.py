@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import (
     Account,
     IDXLockedPosition,
@@ -39,7 +41,8 @@ class TestCountShareTokenHolders:
     # <Normal_1_1>
     # position is None
     # locked_position is None
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -47,21 +50,21 @@ class TestCountShareTokenHolders:
         # prepare data
         account = Account()
         account.issuer_address = _issuer_address
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )
@@ -73,7 +76,8 @@ class TestCountShareTokenHolders:
     # <Normal_1_2>
     # position is not None
     # locked_position is None
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -82,16 +86,16 @@ class TestCountShareTokenHolders:
         # prepare data
         account = Account()
         account.issuer_address = _issuer_address
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         idx_position_1 = IDXPosition()
         idx_position_1.token_address = _token_address
@@ -100,12 +104,12 @@ class TestCountShareTokenHolders:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
-        db.add(idx_position_1)
+        async_db.add(idx_position_1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )
@@ -117,7 +121,8 @@ class TestCountShareTokenHolders:
     # <Normal_1_3>
     # position is not None
     # locked_position is not None
-    def test_normal_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_3(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -126,16 +131,16 @@ class TestCountShareTokenHolders:
         # prepare data
         account = Account()
         account.issuer_address = _issuer_address
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         idx_position_1 = IDXPosition()
         idx_position_1.token_address = _token_address
@@ -144,7 +149,7 @@ class TestCountShareTokenHolders:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
-        db.add(idx_position_1)
+        async_db.add(idx_position_1)
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
@@ -153,7 +158,7 @@ class TestCountShareTokenHolders:
         )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 5
-        db.add(idx_locked_position)
+        async_db.add(idx_locked_position)
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
@@ -162,12 +167,12 @@ class TestCountShareTokenHolders:
         )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 5
-        db.add(idx_locked_position)
+        async_db.add(idx_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )
@@ -179,7 +184,8 @@ class TestCountShareTokenHolders:
     # <Normal_1_4>
     # position is not None (but zero)
     # locked_position is not None (but zero)
-    def test_normal_1_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_4(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -188,16 +194,16 @@ class TestCountShareTokenHolders:
         # prepare data
         account = Account()
         account.issuer_address = _issuer_address
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         idx_position_1 = IDXPosition()
         idx_position_1.token_address = _token_address
@@ -206,7 +212,7 @@ class TestCountShareTokenHolders:
         idx_position_1.exchange_balance = 0
         idx_position_1.exchange_commitment = 0
         idx_position_1.pending_transfer = 0
-        db.add(idx_position_1)
+        async_db.add(idx_position_1)
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
@@ -215,12 +221,12 @@ class TestCountShareTokenHolders:
         )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 0
-        db.add(idx_locked_position)
+        async_db.add(idx_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )
@@ -231,7 +237,8 @@ class TestCountShareTokenHolders:
 
     # <Normal_2>
     # Multiple records
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -242,16 +249,16 @@ class TestCountShareTokenHolders:
         # prepare data
         account = Account()
         account.issuer_address = _issuer_address
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         idx_position_1 = IDXPosition()
         idx_position_1.token_address = _token_address
@@ -260,7 +267,7 @@ class TestCountShareTokenHolders:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
-        db.add(idx_position_1)
+        async_db.add(idx_position_1)
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
@@ -269,7 +276,7 @@ class TestCountShareTokenHolders:
         )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 5
-        db.add(idx_locked_position)
+        async_db.add(idx_locked_position)
 
         idx_position_2 = IDXPosition()
         idx_position_2.token_address = _token_address
@@ -278,7 +285,7 @@ class TestCountShareTokenHolders:
         idx_position_2.exchange_balance = 21
         idx_position_2.exchange_commitment = 22
         idx_position_2.pending_transfer = 10
-        db.add(idx_position_2)
+        async_db.add(idx_position_2)
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
@@ -287,7 +294,7 @@ class TestCountShareTokenHolders:
         )
         idx_locked_position.account_address = _account_address_2
         idx_locked_position.value = 5
-        db.add(idx_locked_position)
+        async_db.add(idx_locked_position)
 
         idx_position_3 = IDXPosition()
         idx_position_3.token_address = _token_address
@@ -296,7 +303,7 @@ class TestCountShareTokenHolders:
         idx_position_3.exchange_balance = 99
         idx_position_3.exchange_commitment = 99
         idx_position_3.pending_transfer = 99
-        db.add(idx_position_3)
+        async_db.add(idx_position_3)
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
@@ -305,12 +312,12 @@ class TestCountShareTokenHolders:
         )
         idx_locked_position.account_address = _account_address_3
         idx_locked_position.value = 5
-        db.add(idx_locked_position)
+        async_db.add(idx_locked_position)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )
@@ -326,11 +333,12 @@ class TestCountShareTokenHolders:
     # <Error_1>
     # RequestValidationError
     # issuer-address is not a valid address
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address), headers={"issuer-address": "0x0"}
         )
 
@@ -351,13 +359,14 @@ class TestCountShareTokenHolders:
     # <Error_2>
     # InvalidParameterError
     # issuer does not exist
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )
@@ -372,7 +381,8 @@ class TestCountShareTokenHolders:
     # <Error_3>
     # NotFound
     # token not found
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -380,12 +390,12 @@ class TestCountShareTokenHolders:
         # prepare data
         account = Account()
         account.issuer_address = _issuer_address
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )
@@ -400,7 +410,8 @@ class TestCountShareTokenHolders:
     # <Error_4>
     # InvalidParameterError
     # this token is temporarily unavailable
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -408,22 +419,22 @@ class TestCountShareTokenHolders:
         # prepare data
         account = Account()
         account.issuer_address = _issuer_address
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={"issuer-address": _issuer_address},
         )

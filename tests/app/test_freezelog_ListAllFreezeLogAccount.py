@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import FreezeLogAccount
 
 
@@ -30,9 +32,10 @@ class TestListAllFreezeLogAccount:
 
     # <Normal_1>
     # Data does not exist
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # Request target api
-        resp = client.get(self.test_url)
+        resp = await async_client.get(self.test_url)
 
         # Assertion
         assert resp.status_code == 200
@@ -40,24 +43,25 @@ class TestListAllFreezeLogAccount:
 
     # <Normal_2>
     # Data exist
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # Prepare data
         log_account = FreezeLogAccount()
         log_account.account_address = "0x1234567890123456789012345678900000000000"
         log_account.keyfile = "test_keyfile_0"
         log_account.eoa_password = "test_password_0"
-        db.add(log_account)
+        async_db.add(log_account)
 
         log_account = FreezeLogAccount()
         log_account.account_address = "0x1234567890123456789012345678900000000001"
         log_account.keyfile = "test_keyfile_1"
         log_account.eoa_password = "test_password_1"
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
-        resp = client.get(self.test_url)
+        resp = await async_client.get(self.test_url)
 
         # Assertion
         assert resp.status_code == 200

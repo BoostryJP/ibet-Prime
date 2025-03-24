@@ -29,7 +29,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import Account, Token, TokenType
+from app.model.db import Account, Token, TokenStatus, TokenType
+from batch import free_malloc
 from batch.utils import batch_log
 from config import INDEXER_SYNC_INTERVAL
 
@@ -55,7 +56,7 @@ class Processor:
                                 Account.is_deleted == False,
                             ),
                         )
-                        .where(Token.token_status == 1)
+                        .where(Token.token_status == TokenStatus.SUCCEEDED)
                         .order_by(Token.created)
                     )
                 )
@@ -95,6 +96,7 @@ async def main():
             LOG.exception("An exception occurred during event synchronization")
 
         await asyncio.sleep(INDEXER_SYNC_INTERVAL)
+        free_malloc()
 
 
 if __name__ == "__main__":

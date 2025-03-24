@@ -63,6 +63,6 @@ class BatchIssueRedeem(Base):
     # target account
     account_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # amount
-    amount: Mapped[str] = mapped_column(BigInteger, nullable=False)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
     status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)

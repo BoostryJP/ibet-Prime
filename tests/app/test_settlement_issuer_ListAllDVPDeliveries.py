@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from datetime import UTC, datetime
 
+import pytest
+
 from app.model.db import (
     DeliveryStatus,
     IDXDelivery,
@@ -41,12 +43,13 @@ class TestListAllDVPDeliveries:
 
     # Normal_1
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             headers={
                 "issuer-address": issuer_address,
@@ -67,7 +70,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_2_1
     # Multi record
-    def test_normal_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -84,22 +88,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -120,12 +124,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -146,14 +152,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -174,14 +184,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -202,16 +216,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -232,18 +252,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -264,16 +290,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             headers={
                 "issuer-address": issuer_address,
@@ -482,7 +510,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_2_2
     # Multi record (PersonalInfo is set)
-    def test_normal_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -499,22 +528,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
         _personal_info = IDXPersonalInfo()
@@ -531,7 +560,7 @@ class TestListAllDVPDeliveries:
             "tax_category": 10,
         }
         _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info)
+        async_db.add(_personal_info)
 
         _personal_info = IDXPersonalInfo()
         _personal_info.account_address = seller_address_1
@@ -547,7 +576,7 @@ class TestListAllDVPDeliveries:
             "tax_category": 10,
         }
         _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info)
+        async_db.add(_personal_info)
 
         _personal_info = IDXPersonalInfo()
         _personal_info.account_address = seller_address_2
@@ -563,7 +592,7 @@ class TestListAllDVPDeliveries:
             "tax_category": 10,
         }
         _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info)
+        async_db.add(_personal_info)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -584,12 +613,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -610,14 +641,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -638,14 +673,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -666,16 +705,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -696,18 +741,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -728,16 +779,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             headers={
                 "issuer-address": issuer_address,
@@ -1045,7 +1098,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_1
     # Search filter: token_address
-    def test_normal_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -1062,22 +1116,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1098,12 +1152,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -1124,14 +1180,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -1152,14 +1212,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -1180,16 +1244,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -1210,18 +1280,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1242,16 +1318,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"token_address": token_address_1},
             headers={
@@ -1429,7 +1507,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_2
     # Search filter: seller_address
-    def test_normal_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -1446,22 +1525,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1482,12 +1561,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -1508,14 +1589,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -1536,14 +1621,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -1564,16 +1653,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -1594,18 +1689,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1626,16 +1727,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 2, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"seller_address": seller_address_1},
             headers={
@@ -1813,7 +1916,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_3
     # Search filter: agent_address
-    def test_normal_3_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -1830,22 +1934,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -1866,12 +1970,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -1892,14 +1998,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -1920,14 +2030,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -1948,16 +2062,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -1978,18 +2098,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2010,16 +2136,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 2, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"agent_address": agent_address_1},
             headers={
@@ -2197,7 +2325,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_4
     # Search filter: valid
-    def test_normal_3_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_4(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -2214,22 +2343,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2250,12 +2379,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -2276,14 +2407,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -2304,14 +2439,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -2332,16 +2471,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -2362,18 +2507,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2394,16 +2545,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 2, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"valid": False},
             headers={
@@ -2485,7 +2638,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_5
     # Search filter: status
-    def test_normal_3_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_5(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -2502,22 +2656,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2538,12 +2692,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -2564,14 +2720,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -2592,14 +2752,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -2620,16 +2784,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -2650,18 +2820,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2682,16 +2858,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 2, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"status": DeliveryStatus.DELIVERY_FINISHED.value},
             headers={
@@ -2741,7 +2919,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_6_1
     # Search filter: create_blocktimestamp_from
-    def test_normal_3_6_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_6_1(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -2758,22 +2937,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2794,12 +2973,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -2820,14 +3001,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -2848,14 +3033,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -2876,16 +3065,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -2906,18 +3101,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -2938,16 +3139,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"create_blocktimestamp_from": str(datetime(2024, 1, 1, 9, 0, 1))},
             headers={
@@ -2997,7 +3200,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_6_2
     # Search filter: create_blocktimestamp_to
-    def test_normal_3_6_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_6_2(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -3014,22 +3218,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -3050,12 +3254,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -3076,14 +3282,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -3104,14 +3314,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -3132,16 +3346,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -3162,18 +3382,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -3199,11 +3425,11 @@ class TestListAllDVPDeliveries:
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"create_blocktimestamp_to": str(datetime(2024, 1, 1, 9, 0, 1))},
             headers={
@@ -3285,7 +3511,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_3_6_3
     # Search filter: create_blocktimestamp_from & create_blocktimestamp_to
-    def test_normal_3_6_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_6_3(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -3302,22 +3529,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -3338,12 +3565,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -3364,14 +3593,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -3392,14 +3625,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -3420,16 +3657,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -3450,18 +3693,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -3487,11 +3736,11 @@ class TestListAllDVPDeliveries:
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={
                 "create_blocktimestamp_from": str(datetime(2024, 1, 1, 9, 0, 1)),
@@ -3544,7 +3793,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_4
     # Sort
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -3561,22 +3811,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -3597,12 +3847,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -3623,14 +3875,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -3651,14 +3907,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -3679,16 +3939,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -3709,18 +3975,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -3741,16 +4013,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 2, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"sort_order": 0},
             headers={
@@ -3960,7 +4234,8 @@ class TestListAllDVPDeliveries:
 
     # Normal_5
     # Pagination
-    def test_normal_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -3977,22 +4252,22 @@ class TestListAllDVPDeliveries:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -4013,12 +4288,14 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Canceled)
         _idx_delivery = IDXDelivery()
@@ -4039,14 +4316,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.cancel_blocktimestamp = datetime(2024, 1, 1, 0, 0, 1, tzinfo=UTC)
+        _idx_delivery.cancel_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.cancel_transaction_hash = "tx_hash_2"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_CANCELED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Confirmed)
         _idx_delivery = IDXDelivery()
@@ -4067,14 +4348,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CONFIRMED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Finished)
         _idx_delivery = IDXDelivery()
@@ -4095,16 +4380,22 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
-        _idx_delivery.finish_blocktimestamp = datetime(2024, 1, 1, 0, 0, 3, tzinfo=UTC)
+        _idx_delivery.finish_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 3, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.finish_transaction_hash = "tx_hash_4"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_FINISHED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Aborted)
         _idx_delivery = IDXDelivery()
@@ -4125,18 +4416,24 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
-        _idx_delivery.confirm_blocktimestamp = datetime(2024, 1, 1, 0, 0, 2, tzinfo=UTC)
+        _idx_delivery.confirm_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.confirm_transaction_hash = "tx_hash_3"
         _idx_delivery.finish_blocktimestamp = None
         _idx_delivery.finish_transaction_hash = None
-        _idx_delivery.abort_blocktimestamp = datetime(2024, 1, 1, 0, 0, 4, tzinfo=UTC)
+        _idx_delivery.abort_blocktimestamp = datetime(
+            2024, 1, 1, 0, 0, 4, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.abort_transaction_hash = "tx_hash_5"
         _idx_delivery.confirmed = True
         _idx_delivery.valid = False
         _idx_delivery.status = DeliveryStatus.DELIVERY_ABORTED.value
-        db.add(_idx_delivery)
+        async_db.add(_idx_delivery)
 
         # prepare data: IDXDelivery(Created)
         _idx_delivery = IDXDelivery()
@@ -4157,16 +4454,18 @@ class TestListAllDVPDeliveries:
             }
         )
         _idx_delivery.settlement_service_type = "test_service_type"
-        _idx_delivery.create_blocktimestamp = datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC)
+        _idx_delivery.create_blocktimestamp = datetime(
+            2024, 1, 2, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         _idx_delivery.create_transaction_hash = "tx_hash_1"
         _idx_delivery.confirmed = False
         _idx_delivery.valid = True
         _idx_delivery.status = DeliveryStatus.DELIVERY_CREATED.value
-        db.add(_idx_delivery)
-        db.commit()
+        async_db.add(_idx_delivery)
+        await async_db.commit()
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={"offset": 2, "limit": 2},
             headers={
@@ -4253,11 +4552,12 @@ class TestListAllDVPDeliveries:
     # Error_1
     # RequestValidationError
     # Missing header
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
         )
 
@@ -4278,12 +4578,13 @@ class TestListAllDVPDeliveries:
     # Error_2
     # RequestValidationError
     # query(invalid value)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         exchange_address = "0x1234567890123456789012345678900000000000"
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(exchange_address=exchange_address),
             params={
                 "valid": "invalid_value",

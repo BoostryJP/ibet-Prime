@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 from unittest import mock
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import FreezeLogAccount, TransactionLock
@@ -40,23 +41,28 @@ class TestCreateFreezeLogAccount:
 
     # <Normal_1>
     # Use Linux RNG
-    def test_normal_1(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db, freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
-            resp = client.post(self.test_url, json=req_param)
+            resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
-        log_account = db.scalars(select(FreezeLogAccount).limit(1)).first()
+        log_account = (
+            await async_db.scalars(select(FreezeLogAccount).limit(1))
+        ).first()
         assert log_account is not None
 
-        tx_lock = db.scalars(
-            select(TransactionLock)
-            .where(TransactionLock.tx_from == log_account.account_address)
-            .limit(1)
+        tx_lock = (
+            await async_db.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == log_account.account_address)
+                .limit(1)
+            )
         ).first()
         assert tx_lock is not None
 
@@ -68,7 +74,8 @@ class TestCreateFreezeLogAccount:
 
     # <Normal_2>
     # Use AWS RNG
-    def test_normal_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db, freeze_log_contract):
         # Mock setting
         class KMSClientMock:
             def generate_random(self, NumberOfBytes):
@@ -91,16 +98,20 @@ class TestCreateFreezeLogAccount:
             mock_boto3_client,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
-            resp = client.post(self.test_url, json=req_param)
+            resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
-        log_account = db.scalars(select(FreezeLogAccount).limit(1)).first()
+        log_account = (
+            await async_db.scalars(select(FreezeLogAccount).limit(1))
+        ).first()
         assert log_account is not None
 
-        tx_lock = db.scalars(
-            select(TransactionLock)
-            .where(TransactionLock.tx_from == log_account.account_address)
-            .limit(1)
+        tx_lock = (
+            await async_db.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == log_account.account_address)
+                .limit(1)
+            )
         ).first()
         assert tx_lock is not None
 
@@ -118,14 +129,15 @@ class TestCreateFreezeLogAccount:
     # Parameter Error
     # Missing required field
     # -> RequestValidationError
-    def test_error_1(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db, freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {}
-            resp = client.post(self.test_url, json=req_param)
+            resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
         assert resp.status_code == 422
@@ -145,7 +157,8 @@ class TestCreateFreezeLogAccount:
     # Parameter Error
     # Not encrypted password
     # -> RequestValidationError
-    def test_error_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db, freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -156,7 +169,7 @@ class TestCreateFreezeLogAccount:
                     "password".encode("utf-8")
                 ).decode(),  # Not encrypted
             }
-            resp = client.post(self.test_url, json=req_param)
+            resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
         assert resp.status_code == 422
@@ -176,14 +189,15 @@ class TestCreateFreezeLogAccount:
     # <Error_3>
     # Password policy violation
     # -> InvalidParameterError
-    def test_error_3(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db, freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}
-            resp = client.post(self.test_url, json=req_param)
+            resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
         assert resp.status_code == 400

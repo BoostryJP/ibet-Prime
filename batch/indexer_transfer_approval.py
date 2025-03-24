@@ -39,10 +39,12 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
 
@@ -71,7 +73,7 @@ ibetSecurityTokenEscrow
 
 class Processor:
     def __init__(self):
-        self.token_list: dict[str, AsyncContract] = {}
+        self.token_list: dict[str, AsyncContractEventsView] = {}
         self.exchange_list: list[AsyncContract] = []
         self.token_type_map: dict[str, TokenType] = {}
 
@@ -139,7 +141,7 @@ class Processor:
                                 Account.is_deleted == False,
                             ),
                         )
-                        .where(Token.token_status == 1)
+                        .where(Token.token_status == TokenStatus.SUCCEEDED)
                     )
                 )
                 .tuples()
@@ -155,7 +157,7 @@ class Processor:
             await db_session.scalars(
                 select(Token).where(
                     and_(
-                        Token.token_status == 1,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                         Token.token_address.in_(load_required_address_list),
                     )
                 )
@@ -165,7 +167,9 @@ class Processor:
             token_contract = web3.eth.contract(
                 address=load_required_token.token_address, abi=load_required_token.abi
             )
-            self.token_list[load_required_token.token_address] = token_contract
+            self.token_list[load_required_token.token_address] = (
+                AsyncContractEventsView(token_contract.address, token_contract.events)
+            )
             self.token_type_map[load_required_token.token_address] = (
                 load_required_token.type
             )
@@ -666,17 +670,17 @@ class Processor:
             try:
                 transfer_approval.application_datetime = datetime.fromtimestamp(
                     float(optional_data_applicant), tz=UTC
-                )
+                ).replace(tzinfo=None)
             except ValueError:
                 transfer_approval.application_datetime = None
             transfer_approval.application_blocktimestamp = datetime.fromtimestamp(
                 block_timestamp, tz=UTC
-            )
+            ).replace(tzinfo=None)
         elif event_type == "Cancel":
             if transfer_approval is not None:
                 transfer_approval.cancellation_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 transfer_approval.cancelled = True
         elif event_type == "EscrowFinish":
             if transfer_approval is not None:
@@ -686,12 +690,12 @@ class Processor:
                 try:
                     transfer_approval.approval_datetime = datetime.fromtimestamp(
                         float(optional_data_approver), tz=UTC
-                    )
+                    ).replace(tzinfo=None)
                 except ValueError:
                     transfer_approval.approval_datetime = None
                 transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
-                )
+                ).replace(tzinfo=None)
                 transfer_approval.transfer_approved = True
         await db_session.merge(transfer_approval)
 
@@ -705,7 +709,7 @@ class Processor:
         id: int,
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 0  # Low
         notification.type = NotificationType.TRANSFER_APPROVAL_INFO
@@ -733,6 +737,7 @@ async def main():
             LOG.error(ex)
 
         await asyncio.sleep(INDEXER_SYNC_INTERVAL)
+        free_malloc()
 
 
 if __name__ == "__main__":

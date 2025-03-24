@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 from unittest import mock
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import DVPAgentAccount, TransactionLock
@@ -40,19 +41,26 @@ class TestCreateDVPAgentAccount:
 
     # <Normal_1>
     # Use Linux RNG
-    def test_normal_1(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         # Request target api
         req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
-        resp = client.post(self.test_url, json=req_param)
+        resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
-        dvp_agent_account = db.scalars(select(DVPAgentAccount).limit(1)).first()
+        dvp_agent_account = (
+            await async_db.scalars(select(DVPAgentAccount).limit(1))
+        ).first()
         assert dvp_agent_account is not None
 
-        tx_lock = db.scalars(
-            select(TransactionLock)
-            .where(TransactionLock.tx_from == dvp_agent_account.account_address)
-            .limit(1)
+        tx_lock = (
+            await async_db.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == dvp_agent_account.account_address)
+                .limit(1)
+            )
         ).first()
         assert tx_lock is not None
 
@@ -64,7 +72,10 @@ class TestCreateDVPAgentAccount:
 
     # <Normal_2>
     # Use AWS RNG
-    def test_normal_2(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         # Mock setting
         class KMSClientMock:
             def generate_random(self, NumberOfBytes):
@@ -84,16 +95,20 @@ class TestCreateDVPAgentAccount:
             mock_boto3_client,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
-            resp = client.post(self.test_url, json=req_param)
+            resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
-        dvp_agent_account = db.scalars(select(DVPAgentAccount).limit(1)).first()
+        dvp_agent_account = (
+            await async_db.scalars(select(DVPAgentAccount).limit(1))
+        ).first()
         assert dvp_agent_account is not None
 
-        tx_lock = db.scalars(
-            select(TransactionLock)
-            .where(TransactionLock.tx_from == dvp_agent_account.account_address)
-            .limit(1)
+        tx_lock = (
+            await async_db.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == dvp_agent_account.account_address)
+                .limit(1)
+            )
         ).first()
         assert tx_lock is not None
 
@@ -111,10 +126,13 @@ class TestCreateDVPAgentAccount:
     # Parameter Error
     # Missing required field
     # -> RequestValidationError
-    def test_error_1(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_1(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         # Request target api
         req_param = {}
-        resp = client.post(self.test_url, json=req_param)
+        resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
         assert resp.status_code == 422
@@ -134,14 +152,17 @@ class TestCreateDVPAgentAccount:
     # Parameter Error
     # Not encrypted password
     # -> RequestValidationError
-    def test_error_2(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         # Request target api
         req_param = {
             "eoa_password": base64.encodebytes(
                 "password".encode("utf-8")
             ).decode(),  # Not encrypted
         }
-        resp = client.post(self.test_url, json=req_param)
+        resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
         assert resp.status_code == 422
@@ -161,10 +182,13 @@ class TestCreateDVPAgentAccount:
     # <Error_3>
     # Password policy violation
     # -> InvalidParameterError
-    def test_error_3(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_3(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         # Request target api
         req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}
-        resp = client.post(self.test_url, json=req_param)
+        resp = await async_client.post(self.test_url, json=req_param)
 
         # Assertion
         assert resp.status_code == 400

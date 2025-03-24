@@ -39,7 +39,7 @@ from batch.processor_batch_create_child_account import LOG, Processor
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -75,7 +75,7 @@ class TestProcessor:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db, caplog):
+    async def test_normal_1(self, processor, async_db, caplog):
         # Prepare data
         for i in range(3):
             _tmp_data = TmpChildAccountBatchCreate()
@@ -91,33 +91,36 @@ class TestProcessor:
                 "is_corporate": False,
                 "tax_category": i,
             }
-            db.add(_tmp_data)
+            async_db.add(_tmp_data)
 
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        tmp_list = db.scalars(select(TmpChildAccountBatchCreate)).all()
+        tmp_list = (await async_db.scalars(select(TmpChildAccountBatchCreate))).all()
         assert len(tmp_list) == 0
 
-        child_account_list = db.scalars(
-            select(ChildAccount).order_by(ChildAccount.created)
+        child_account_list = (
+            await async_db.scalars(select(ChildAccount).order_by(ChildAccount.created))
         ).all()
         assert len(child_account_list) == 3
         assert child_account_list[0].issuer_address == self.issuer_address
         assert child_account_list[0].child_account_index == 1
         assert child_account_list[0].child_account_address == self.child_1_address
 
-        off_personal_info = db.scalars(
-            select(IDXPersonalInfo).where(
-                IDXPersonalInfo.issuer_address == self.issuer_address
+        off_personal_info = (
+            await async_db.scalars(
+                select(IDXPersonalInfo)
+                .where(IDXPersonalInfo.issuer_address == self.issuer_address)
+                .order_by(IDXPersonalInfo.created)
             )
         ).all()
         assert len(off_personal_info) == 3
@@ -135,9 +138,11 @@ class TestProcessor:
         }
         assert off_personal_info[0].data_source == PersonalInfoDataSource.OFF_CHAIN
 
-        personal_info_history = db.scalars(
-            select(IDXPersonalInfoHistory).where(
-                IDXPersonalInfoHistory.issuer_address == self.issuer_address
+        personal_info_history = (
+            await async_db.scalars(
+                select(IDXPersonalInfoHistory)
+                .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
+                .order_by(IDXPersonalInfoHistory.created)
             )
         ).all()
         assert len(personal_info_history) == 3
@@ -159,7 +164,7 @@ class TestProcessor:
     # Issuer account not found
     # - Account is None
     @pytest.mark.asyncio
-    async def test_error_1_1(self, processor, db, caplog):
+    async def test_error_1_1(self, processor, async_db, caplog):
         # Prepare data
         _tmp_data = TmpChildAccountBatchCreate()
         _tmp_data.issuer_address = self.issuer_address
@@ -174,32 +179,37 @@ class TestProcessor:
             "is_corporate": False,
             "tax_category": 1,
         }
-        db.add(_tmp_data)
+        async_db.add(_tmp_data)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        tmp_list = db.scalars(select(TmpChildAccountBatchCreate)).all()
+        tmp_list = (await async_db.scalars(select(TmpChildAccountBatchCreate))).all()
         assert len(tmp_list) == 0
 
-        child_account_list = db.scalars(
-            select(ChildAccount).order_by(ChildAccount.created)
+        child_account_list = (
+            await async_db.scalars(select(ChildAccount).order_by(ChildAccount.created))
         ).all()
         assert len(child_account_list) == 0
 
-        off_personal_info = db.scalars(
-            select(IDXPersonalInfo).where(
-                IDXPersonalInfo.issuer_address == self.issuer_address
+        off_personal_info = (
+            await async_db.scalars(
+                select(IDXPersonalInfo).where(
+                    IDXPersonalInfo.issuer_address == self.issuer_address
+                )
             )
         ).all()
         assert len(off_personal_info) == 0
 
-        personal_info_history = db.scalars(
-            select(IDXPersonalInfoHistory).where(
-                IDXPersonalInfoHistory.issuer_address == self.issuer_address
+        personal_info_history = (
+            await async_db.scalars(
+                select(IDXPersonalInfoHistory).where(
+                    IDXPersonalInfoHistory.issuer_address == self.issuer_address
+                )
             )
         ).all()
         assert len(personal_info_history) == 0
@@ -214,7 +224,7 @@ class TestProcessor:
     # Issuer account not found
     # - Account.public_key is None
     @pytest.mark.asyncio
-    async def test_error_1_2(self, processor, db, caplog):
+    async def test_error_1_2(self, processor, async_db, caplog):
         # Prepare data
         _tmp_data = TmpChildAccountBatchCreate()
         _tmp_data.issuer_address = self.issuer_address
@@ -229,37 +239,42 @@ class TestProcessor:
             "is_corporate": False,
             "tax_category": 1,
         }
-        db.add(_tmp_data)
+        async_db.add(_tmp_data)
 
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = None
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        tmp_list = db.scalars(select(TmpChildAccountBatchCreate)).all()
+        tmp_list = (await async_db.scalars(select(TmpChildAccountBatchCreate))).all()
         assert len(tmp_list) == 0
 
-        child_account_list = db.scalars(
-            select(ChildAccount).order_by(ChildAccount.created)
+        child_account_list = (
+            await async_db.scalars(select(ChildAccount).order_by(ChildAccount.created))
         ).all()
         assert len(child_account_list) == 0
 
-        off_personal_info = db.scalars(
-            select(IDXPersonalInfo).where(
-                IDXPersonalInfo.issuer_address == self.issuer_address
+        off_personal_info = (
+            await async_db.scalars(
+                select(IDXPersonalInfo).where(
+                    IDXPersonalInfo.issuer_address == self.issuer_address
+                )
             )
         ).all()
         assert len(off_personal_info) == 0
 
-        personal_info_history = db.scalars(
-            select(IDXPersonalInfoHistory).where(
-                IDXPersonalInfoHistory.issuer_address == self.issuer_address
+        personal_info_history = (
+            await async_db.scalars(
+                select(IDXPersonalInfoHistory).where(
+                    IDXPersonalInfoHistory.issuer_address == self.issuer_address
+                )
             )
         ).all()
         assert len(personal_info_history) == 0

@@ -75,7 +75,9 @@ async def list_all_upload_files(
     ]
     stmt = select(*rows).order_by(desc(UploadFile.modified))
 
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(UploadFile).order_by(None)
+    )
 
     # Search Filter
     if issuer_address is not None:
@@ -90,7 +92,9 @@ async def list_all_upload_files(
         else:
             stmt = stmt.where(UploadFile.label.like("%" + get_query.label + "%"))
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(UploadFile).order_by(None)
+    )
 
     # Pagination
     if get_query.limit is not None:

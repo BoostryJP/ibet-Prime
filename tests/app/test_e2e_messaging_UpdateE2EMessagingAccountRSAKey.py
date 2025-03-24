@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import UTC, datetime
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
@@ -34,41 +35,42 @@ class TestUpdateE2EMessagingAccountRSAKey:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
-        db.add(_account)
+        async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_2"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         req_param = {
             "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -84,44 +86,47 @@ class TestUpdateE2EMessagingAccountRSAKey:
             "rsa_public_key": "rsa_public_key_1_3",
             "is_deleted": False,
         }
-        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
+        _account = (
+            await async_db.scalars(select(E2EMessagingAccount).limit(1))
+        ).first()
         assert _account.rsa_key_generate_interval == 1
         assert _account.rsa_generation == 2
 
     # <Normal_2>
     # default value
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
-        db.add(_account)
+        async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_2"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        db.add(_rsa_key)
+        async_db.add(_rsa_key)
         time.sleep(1)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -137,7 +142,9 @@ class TestUpdateE2EMessagingAccountRSAKey:
             "rsa_public_key": "rsa_public_key_1_3",
             "is_deleted": False,
         }
-        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
+        _account = (
+            await async_db.scalars(select(E2EMessagingAccount).limit(1))
+        ).first()
         assert _account.rsa_key_generate_interval == 24
         assert _account.rsa_generation == 7
 
@@ -148,8 +155,9 @@ class TestUpdateE2EMessagingAccountRSAKey:
     # <Error_1_1>
     # Parameter Error
     # no body
-    def test_error_1_1(self, client, db):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             )
@@ -172,12 +180,13 @@ class TestUpdateE2EMessagingAccountRSAKey:
     # <Error_1_2>
     # Parameter Error
     # min
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         req_param = {
             "rsa_key_generate_interval": -1,
             "rsa_generation": -1,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -209,12 +218,13 @@ class TestUpdateE2EMessagingAccountRSAKey:
     # <Error_1_3>
     # Parameter Error
     # max
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         req_param = {
             "rsa_key_generate_interval": 10_001,
             "rsa_generation": 101,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
@@ -245,9 +255,10 @@ class TestUpdateE2EMessagingAccountRSAKey:
 
     # <Error_2>
     # no data
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),

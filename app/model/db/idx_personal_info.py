@@ -21,7 +21,7 @@ from datetime import datetime
 from enum import StrEnum
 
 import pytz
-from sqlalchemy import JSON, BigInteger, DateTime, String
+from sqlalchemy import JSON, BigInteger, DateTime, Index, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -43,11 +43,10 @@ class IDXPersonalInfo(Base):
 
     __tablename__ = "idx_personal_info"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # account address
-    account_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # issuer address
-    issuer_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # personal information
     #   {
     #       "key_manager": "string",  // If managed by the issuer itself, 'SELF' is set by default.
@@ -63,6 +62,15 @@ class IDXPersonalInfo(Base):
     # data source
     data_source: Mapped[PersonalInfoDataSource] = mapped_column(
         String(10), nullable=False
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_personal_info_issuer_account",
+            issuer_address,
+            account_address,
+            postgresql_include=["personal_info", "data_source", "created", "modified"],
+        ),
     )
 
     @hybrid_property
@@ -101,7 +109,6 @@ class IDXPersonalInfo(Base):
 
     def json(self):
         return {
-            "id": self.id,
             "account_address": self.account_address,
             "personal_info": self.personal_info,
             "created": self.localize_datetime(self.created),

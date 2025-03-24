@@ -17,13 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import asyncio
 import base64
 import hashlib
 import json
 import secrets
 from unittest import mock
 
+import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 
@@ -91,8 +91,13 @@ class TestCreateDVPDelivery:
     # <Normal_1_1>
     # No data encryption
     # - Authorization by eoa-password
-    def test_normal_1_1(
-        self, ibet_security_token_dvp_contract, personal_info_contract, client, db
+    @pytest.mark.asyncio
+    async def test_normal_1_1(
+        self,
+        ibet_security_token_dvp_contract,
+        personal_info_contract,
+        async_client,
+        async_db,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -111,26 +116,24 @@ class TestCreateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        token_contract_1 = asyncio.run(
-            deploy_bond_token_contract(
-                issuer_address,
-                issuer_private_key,
-                personal_info_contract.address,
-                tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
-            )
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -141,7 +144,7 @@ class TestCreateDVPDelivery:
             "data": json.dumps({}),
             "settlement_service_type": "test_service",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -156,7 +159,7 @@ class TestCreateDVPDelivery:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list) == 1
 
         _async_process: DVPAsyncProcess = _async_process_list[0]
@@ -187,8 +190,13 @@ class TestCreateDVPDelivery:
     # <Normal_1_2>
     # No data encryption
     # - Authorization by auth-token
-    def test_normal_1_2(
-        self, ibet_security_token_dvp_contract, personal_info_contract, client, db
+    @pytest.mark.asyncio
+    async def test_normal_1_2(
+        self,
+        ibet_security_token_dvp_contract,
+        personal_info_contract,
+        async_client,
+        async_db,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -207,32 +215,30 @@ class TestCreateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        token_contract_1 = asyncio.run(
-            deploy_bond_token_contract(
-                issuer_address,
-                issuer_private_key,
-                personal_info_contract.address,
-                tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
-            )
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         auth_token = AuthToken()
         auth_token.issuer_address = issuer_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -243,7 +249,7 @@ class TestCreateDVPDelivery:
             "data": json.dumps({}),
             "settlement_service_type": "test_service",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -258,7 +264,7 @@ class TestCreateDVPDelivery:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list) == 1
 
         _async_process: DVPAsyncProcess = _async_process_list[0]
@@ -288,6 +294,7 @@ class TestCreateDVPDelivery:
 
     # <Normal_2>
     # Data encryption
+    @pytest.mark.asyncio
     @mock.patch(
         "config.DVP_DATA_ENCRYPTION_MODE",
         "aes-256-cbc",
@@ -296,8 +303,12 @@ class TestCreateDVPDelivery:
         "config.DVP_DATA_ENCRYPTION_KEY",
         base64.b64encode(secrets.token_bytes(32)).decode("utf-8"),
     )
-    def test_normal_2(
-        self, ibet_security_token_dvp_contract, personal_info_contract, client, db
+    async def test_normal_2(
+        self,
+        ibet_security_token_dvp_contract,
+        personal_info_contract,
+        async_client,
+        async_db,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -316,26 +327,24 @@ class TestCreateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        token_contract_1 = asyncio.run(
-            deploy_bond_token_contract(
-                issuer_address,
-                issuer_private_key,
-                personal_info_contract.address,
-                tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
-            )
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -346,7 +355,7 @@ class TestCreateDVPDelivery:
             "data": json.dumps({}),
             "settlement_service_type": "test_service",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -361,7 +370,7 @@ class TestCreateDVPDelivery:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list) == 1
 
         _async_process: DVPAsyncProcess = _async_process_list[0]
@@ -398,22 +407,25 @@ class TestCreateDVPDelivery:
 
     # <Error_1>
     # RequestValidationError: token_address, buyer_address, agent_address
-    def test_error_1(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_1(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = "0x0000000000000000000000000000000000000000"
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -425,7 +437,7 @@ class TestCreateDVPDelivery:
             "settlement_service_type": "test_service",
         }
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -467,22 +479,25 @@ class TestCreateDVPDelivery:
 
     # <Error_2>
     # RequestValidationError: amount(min)
-    def test_error_2(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = "0x0000000000000000000000000000000000000000"
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -494,7 +509,7 @@ class TestCreateDVPDelivery:
             "settlement_service_type": "test_service",
         }
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -522,7 +537,10 @@ class TestCreateDVPDelivery:
 
     # <Error_3>
     # RequestValidationError: amount(max)
-    def test_error_3(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_3(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
@@ -537,7 +555,7 @@ class TestCreateDVPDelivery:
             "settlement_service_type": "test_service",
         }
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -565,9 +583,12 @@ class TestCreateDVPDelivery:
 
     # <Error_4>
     # RequestValidationError: headers and body required
-    def test_error_4(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_4(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address="0x0000000000000000000000000000000000000000"
             )
@@ -595,7 +616,10 @@ class TestCreateDVPDelivery:
 
     # <Error_5>
     # RequestValidationError: issuer-address
-    def test_error_5(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_5(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         # request target API
         req_param = {
             "token_address": "0x0000000000000000000000000000000000000000",
@@ -606,7 +630,7 @@ class TestCreateDVPDelivery:
             "settlement_service_type": "test_service",
         }
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -630,7 +654,10 @@ class TestCreateDVPDelivery:
 
     # <Error_6>
     # RequestValidationError: eoa-password(not decrypt)
-    def test_error_6(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_6(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
@@ -640,9 +667,9 @@ class TestCreateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -654,7 +681,7 @@ class TestCreateDVPDelivery:
             "settlement_service_type": "test_service",
         }
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -677,22 +704,25 @@ class TestCreateDVPDelivery:
 
     # <Error_7>
     # issuer does not exist
-    def test_error_7(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_7(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = "0x0000000000000000000000000000000000000000"
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -704,7 +734,7 @@ class TestCreateDVPDelivery:
             "settlement_service_type": "test_service",
         }
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -724,7 +754,10 @@ class TestCreateDVPDelivery:
 
     # <Error_8>
     # password mismatch
-    def test_error_8(self, client, db, ibet_security_token_dvp_contract):
+    @pytest.mark.asyncio
+    async def test_error_8(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
@@ -734,9 +767,9 @@ class TestCreateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -748,7 +781,7 @@ class TestCreateDVPDelivery:
             "settlement_service_type": "test_service",
         }
 
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -767,8 +800,13 @@ class TestCreateDVPDelivery:
 
     # <Error_9>
     # Send Transaction Error
-    def test_error_9(
-        self, client, db, ibet_security_token_dvp_contract, personal_info_contract
+    @pytest.mark.asyncio
+    async def test_error_9(
+        self,
+        async_client,
+        async_db,
+        ibet_security_token_dvp_contract,
+        personal_info_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -787,27 +825,25 @@ class TestCreateDVPDelivery:
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        token_contract_1 = asyncio.run(
-            deploy_bond_token_contract(
-                issuer_address,
-                issuer_private_key,
-                personal_info_contract.address,
-                tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
-            )
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -818,7 +854,7 @@ class TestCreateDVPDelivery:
             "data": json.dumps({}),
             "settlement_service_type": "test_service",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(
                 exchange_address=ibet_security_token_dvp_contract.address
             ),
@@ -830,7 +866,7 @@ class TestCreateDVPDelivery:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",

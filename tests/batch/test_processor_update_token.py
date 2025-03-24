@@ -48,7 +48,7 @@ from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     return Processor(is_shutdown=asyncio.Event())
 
 
@@ -60,7 +60,7 @@ class TestProcessor:
     # <Normal_1>
     # Issuing(IbetShare, IbetStraightBond)
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db):
+    async def test_normal_1(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -74,24 +74,24 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.type = TokenType.IBET_SHARE
         _token_1.tx_hash = (
             "0x0000000000000000000000000000000000000000000000000000000000000001"
         )
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
-        _token_1.abi = ""
+        _token_1.abi = {}
         _token_1.token_status = 0
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE.value
+        _update_token_1.type = TokenType.IBET_SHARE
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -115,24 +115,24 @@ class TestProcessor:
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
-        db.add(_update_token_1)
+        async_db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND
         _token_2.tx_hash = (
             "0x0000000000000000000000000000000000000000000000000000000000000002"
         )
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
-        _token_2.abi = ""
+        _token_2.abi = {}
         _token_2.token_status = 0
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -158,29 +158,29 @@ class TestProcessor:
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
-        db.add(_update_token_2)
+        async_db.add(_update_token_2)
 
         # not target
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE.value
+        _update_token_3.type = TokenType.IBET_SHARE
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
-        db.add(_update_token_3)
+        async_db.add(_update_token_3)
 
         # not target
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE.value
+        _update_token_4.type = TokenType.IBET_SHARE
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
-        db.add(_update_token_4)
+        async_db.add(_update_token_4)
 
-        db.commit()
+        await async_db.commit()
 
         mock_block = {
             "number": 12345,
@@ -206,6 +206,7 @@ class TestProcessor:
         ):
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
@@ -252,13 +253,13 @@ class TestProcessor:
                 [
                     call(
                         token_address=_token_address_1,
-                        token_template=TokenType.IBET_SHARE.value,
+                        token_template=TokenType.IBET_SHARE,
                         tx_from=_issuer_address,
                         private_key=ANY,
                     ),
                     call(
                         token_address=_token_address_2,
-                        token_template=TokenType.IBET_STRAIGHT_BOND.value,
+                        token_template=TokenType.IBET_STRAIGHT_BOND,
                         tx_from=_issuer_address,
                         private_key=ANY,
                     ),
@@ -277,18 +278,18 @@ class TestProcessor:
             )
 
             # assertion(DB)
-            _idx_position_list = db.scalars(
-                select(IDXPosition).order_by(IDXPosition.id)
+            _idx_position_list = (
+                await async_db.scalars(
+                    select(IDXPosition).order_by(IDXPosition.created)
+                )
             ).all()
             assert len(_idx_position_list) == 2
             _idx_position = _idx_position_list[0]
-            assert _idx_position.id == 1
             assert _idx_position.token_address == _token_address_1
             assert _idx_position.account_address == _issuer_address
             assert _idx_position.balance == 10000
             assert _idx_position.pending_transfer == 0
             _idx_position = _idx_position_list[1]
-            assert _idx_position.id == 2
             assert _idx_position.token_address == _token_address_2
             assert _idx_position.account_address == _issuer_address
             assert _idx_position.balance == 2000
@@ -296,7 +297,9 @@ class TestProcessor:
             assert _idx_position.exchange_commitment == 0
             assert _idx_position.pending_transfer == 0
 
-            _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
+            _utxo_list = (
+                await async_db.scalars(select(UTXO).order_by(UTXO.transaction_hash))
+            ).all()
             _utxo = _utxo_list[0]
             assert (
                 _utxo.transaction_hash
@@ -318,14 +321,16 @@ class TestProcessor:
             assert _utxo.block_number == 12345
             assert _utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            _token_list = db.scalars(select(Token).order_by(Token.id)).all()
+            _token_list = (
+                await async_db.scalars(select(Token).order_by(Token.id))
+            ).all()
             _token = _token_list[0]
             assert _token.token_status == 1
             _token = _token_list[1]
             assert _token.token_status == 1
 
-            _update_token_list = db.scalars(
-                select(UpdateToken).order_by(UpdateToken.id)
+            _update_token_list = (
+                await async_db.scalars(select(UpdateToken).order_by(UpdateToken.id))
             ).all()
             _update_token = _update_token_list[0]
             assert _update_token.status == 1
@@ -336,8 +341,8 @@ class TestProcessor:
             _update_token = _update_token_list[3]
             assert _update_token.status == 2
 
-            _notification_list = db.scalars(
-                select(Notification).order_by(Notification.id)
+            _notification_list = (
+                await async_db.scalars(select(Notification).order_by(Notification.id))
             ).all()
             assert len(_notification_list) == 0
 
@@ -348,7 +353,7 @@ class TestProcessor:
     # <Error_1>
     # Issuing: Account does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, db):
+    async def test_error_1(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -362,22 +367,22 @@ class TestProcessor:
         account.issuer_address = "test"  # not target
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.type = TokenType.IBET_SHARE
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
-        _token_1.abi = ""
+        _token_1.abi = {}
         _token_1.token_status = 0
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE.value
+        _update_token_1.type = TokenType.IBET_SHARE
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -400,22 +405,22 @@ class TestProcessor:
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
-        db.add(_update_token_1)
+        async_db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
-        _token_2.abi = ""
+        _token_2.abi = {}
         _token_2.token_status = 0
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -440,50 +445,53 @@ class TestProcessor:
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
-        db.add(_update_token_2)
+        async_db.add(_update_token_2)
 
         # not target
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE.value
+        _update_token_3.type = TokenType.IBET_SHARE
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
-        db.add(_update_token_3)
+        async_db.add(_update_token_3)
 
         # not target
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE.value
+        _update_token_4.type = TokenType.IBET_SHARE
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
-        db.add(_update_token_4)
+        async_db.add(_update_token_4)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # assertion(DB)
-        _idx_position_list = db.scalars(
-            select(IDXPosition).order_by(IDXPosition.id)
+        _idx_position_list = (
+            await async_db.scalars(select(IDXPosition).order_by(IDXPosition.created))
         ).all()
         assert len(_idx_position_list) == 0
 
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
+        _utxo_list = (
+            await async_db.scalars(select(UTXO).order_by(UTXO.transaction_hash))
+        ).all()
         assert len(_utxo_list) == 0
 
-        _token_list = db.scalars(select(Token).order_by(Token.id)).all()
+        _token_list = (await async_db.scalars(select(Token).order_by(Token.id))).all()
         _token = _token_list[0]
         assert _token.token_status == 2
         _token = _token_list[1]
         assert _token.token_status == 2
 
-        _update_token_list = db.scalars(
-            select(UpdateToken).order_by(UpdateToken.id)
+        _update_token_list = (
+            await async_db.scalars(select(UpdateToken).order_by(UpdateToken.id))
         ).all()
         _update_token = _update_token_list[0]
         assert _update_token.status == 2
@@ -494,8 +502,8 @@ class TestProcessor:
         _update_token = _update_token_list[3]
         assert _update_token.status == 2
 
-        _notification_list = db.scalars(
-            select(Notification).order_by(Notification.id)
+        _notification_list = (
+            await async_db.scalars(select(Notification).order_by(Notification.id))
         ).all()
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -508,7 +516,7 @@ class TestProcessor:
             _notification.metainfo
             == {
                 "token_address": _token_address_1,
-                "token_type": TokenType.IBET_SHARE.value,
+                "token_type": TokenType.IBET_SHARE,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -542,7 +550,7 @@ class TestProcessor:
             _notification.metainfo
             == {
                 "token_address": _token_address_2,
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -571,7 +579,7 @@ class TestProcessor:
     # <Error_2>
     # Issuing: Fail to get the private key
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, db):
+    async def test_error_2(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -585,22 +593,22 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password_ng")  # invalid
-        db.add(account)
+        async_db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.type = TokenType.IBET_SHARE
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
-        _token_1.abi = ""
+        _token_1.abi = {}
         _token_1.token_status = 0
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE.value
+        _update_token_1.type = TokenType.IBET_SHARE
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -623,22 +631,22 @@ class TestProcessor:
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
-        db.add(_update_token_1)
+        async_db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
-        _token_2.abi = ""
+        _token_2.abi = {}
         _token_2.token_status = 0
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -663,50 +671,53 @@ class TestProcessor:
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
-        db.add(_update_token_2)
+        async_db.add(_update_token_2)
 
         # not target
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE.value
+        _update_token_3.type = TokenType.IBET_SHARE
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
-        db.add(_update_token_3)
+        async_db.add(_update_token_3)
 
         # not target
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE.value
+        _update_token_4.type = TokenType.IBET_SHARE
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
-        db.add(_update_token_4)
+        async_db.add(_update_token_4)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # assertion(DB)
-        _idx_position_list = db.scalars(
-            select(IDXPosition).order_by(IDXPosition.id)
+        _idx_position_list = (
+            await async_db.scalars(select(IDXPosition).order_by(IDXPosition.created))
         ).all()
         assert len(_idx_position_list) == 0
 
-        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
+        _utxo_list = (
+            await async_db.scalars(select(UTXO).order_by(UTXO.transaction_hash))
+        ).all()
         assert len(_utxo_list) == 0
 
-        _token_list = db.scalars(select(Token).order_by(Token.id)).all()
+        _token_list = (await async_db.scalars(select(Token).order_by(Token.id))).all()
         _token = _token_list[0]
         assert _token.token_status == 2
         _token = _token_list[1]
         assert _token.token_status == 2
 
-        _update_token_list = db.scalars(
-            select(UpdateToken).order_by(UpdateToken.id)
+        _update_token_list = (
+            await async_db.scalars(select(UpdateToken).order_by(UpdateToken.id))
         ).all()
         _update_token = _update_token_list[0]
         assert _update_token.status == 2
@@ -717,8 +728,8 @@ class TestProcessor:
         _update_token = _update_token_list[3]
         assert _update_token.status == 2
 
-        _notification_list = db.scalars(
-            select(Notification).order_by(Notification.id)
+        _notification_list = (
+            await async_db.scalars(select(Notification).order_by(Notification.id))
         ).all()
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -731,7 +742,7 @@ class TestProcessor:
             _notification.metainfo
             == {
                 "token_address": _token_address_1,
-                "token_type": TokenType.IBET_SHARE.value,
+                "token_type": TokenType.IBET_SHARE,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -765,7 +776,7 @@ class TestProcessor:
             _notification.metainfo
             == {
                 "token_address": _token_address_2,
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -794,7 +805,7 @@ class TestProcessor:
     # <Error_3>
     # Issuing: Send transaction error(token update)
     @pytest.mark.asyncio
-    async def test_error_3(self, processor, db):
+    async def test_error_3(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -808,22 +819,22 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.type = TokenType.IBET_SHARE
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
-        _token_1.abi = ""
+        _token_1.abi = {}
         _token_1.token_status = 0
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE.value
+        _update_token_1.type = TokenType.IBET_SHARE
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -846,22 +857,22 @@ class TestProcessor:
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
-        db.add(_update_token_1)
+        async_db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
-        _token_2.abi = ""
+        _token_2.abi = {}
         _token_2.token_status = 0
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -886,29 +897,29 @@ class TestProcessor:
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
-        db.add(_update_token_2)
+        async_db.add(_update_token_2)
 
         # not target
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE.value
+        _update_token_3.type = TokenType.IBET_SHARE
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
-        db.add(_update_token_3)
+        async_db.add(_update_token_3)
 
         # not target
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE.value
+        _update_token_4.type = TokenType.IBET_SHARE
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
-        db.add(_update_token_4)
+        async_db.add(_update_token_4)
 
-        db.commit()
+        await async_db.commit()
 
         with (
             patch(
@@ -922,24 +933,31 @@ class TestProcessor:
         ):
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # assertion(DB)
-            _idx_position_list = db.scalars(
-                select(IDXPosition).order_by(IDXPosition.id)
+            _idx_position_list = (
+                await async_db.scalars(
+                    select(IDXPosition).order_by(IDXPosition.created)
+                )
             ).all()
             assert len(_idx_position_list) == 0
 
-            _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
+            _utxo_list = (
+                await async_db.scalars(select(UTXO).order_by(UTXO.transaction_hash))
+            ).all()
             assert len(_utxo_list) == 0
 
-            _token_list = db.scalars(select(Token).order_by(Token.id)).all()
+            _token_list = (
+                await async_db.scalars(select(Token).order_by(Token.id))
+            ).all()
             _token = _token_list[0]
             assert _token.token_status == 2
             _token = _token_list[1]
             assert _token.token_status == 2
 
-            _update_token_list = db.scalars(
-                select(UpdateToken).order_by(UpdateToken.id)
+            _update_token_list = (
+                await async_db.scalars(select(UpdateToken).order_by(UpdateToken.id))
             ).all()
             _update_token = _update_token_list[0]
             assert _update_token.status == 2
@@ -950,8 +968,8 @@ class TestProcessor:
             _update_token = _update_token_list[3]
             assert _update_token.status == 2
 
-            _notification_list = db.scalars(
-                select(Notification).order_by(Notification.id)
+            _notification_list = (
+                await async_db.scalars(select(Notification).order_by(Notification.id))
             ).all()
             _notification = _notification_list[0]
             assert _notification.id == 1
@@ -964,7 +982,7 @@ class TestProcessor:
                 _notification.metainfo
                 == {
                     "token_address": _token_address_1,
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "arguments": {
                         "name": "name_test1",
                         "symbol": "symbol_test1",
@@ -998,7 +1016,7 @@ class TestProcessor:
                 _notification.metainfo
                 == {
                     "token_address": _token_address_2,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "arguments": {
                         "name": "name_test1",
                         "symbol": "symbol_test1",
@@ -1027,7 +1045,7 @@ class TestProcessor:
     # <Error_4>
     # Issuing: Send transaction error(TokenList register)
     @pytest.mark.asyncio
-    async def test_error_4(self, processor, db):
+    async def test_error_4(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1041,22 +1059,22 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE.value
+        _token_1.type = TokenType.IBET_SHARE
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
-        _token_1.abi = ""
+        _token_1.abi = {}
         _token_1.token_status = 0
         _token_1.version = TokenVersion.V_24_09
-        db.add(_token_1)
+        async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE.value
+        _update_token_1.type = TokenType.IBET_SHARE
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -1079,22 +1097,22 @@ class TestProcessor:
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
-        db.add(_update_token_1)
+        async_db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
-        _token_2.abi = ""
+        _token_2.abi = {}
         _token_2.token_status = 0
         _token_2.version = TokenVersion.V_24_09
-        db.add(_token_2)
+        async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -1119,29 +1137,29 @@ class TestProcessor:
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
-        db.add(_update_token_2)
+        async_db.add(_update_token_2)
 
         # not target
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE.value
+        _update_token_3.type = TokenType.IBET_SHARE
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
-        db.add(_update_token_3)
+        async_db.add(_update_token_3)
 
         # not target
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE.value
+        _update_token_4.type = TokenType.IBET_SHARE
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
-        db.add(_update_token_4)
+        async_db.add(_update_token_4)
 
-        db.commit()
+        await async_db.commit()
 
         with (
             patch(
@@ -1159,6 +1177,7 @@ class TestProcessor:
         ):
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
@@ -1200,22 +1219,28 @@ class TestProcessor:
             )
 
             # assertion(DB)
-            _idx_position_list = db.scalars(
-                select(IDXPosition).order_by(IDXPosition.id)
+            _idx_position_list = (
+                await async_db.scalars(
+                    select(IDXPosition).order_by(IDXPosition.created)
+                )
             ).all()
             assert len(_idx_position_list) == 0
 
-            _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
+            _utxo_list = (
+                await async_db.scalars(select(UTXO).order_by(UTXO.transaction_hash))
+            ).all()
             assert len(_utxo_list) == 0
 
-            _token_list = db.scalars(select(Token).order_by(Token.id)).all()
+            _token_list = (
+                await async_db.scalars(select(Token).order_by(Token.id))
+            ).all()
             _token = _token_list[0]
             assert _token.token_status == 2
             _token = _token_list[1]
             assert _token.token_status == 2
 
-            _update_token_list = db.scalars(
-                select(UpdateToken).order_by(UpdateToken.id)
+            _update_token_list = (
+                await async_db.scalars(select(UpdateToken).order_by(UpdateToken.id))
             ).all()
             _update_token = _update_token_list[0]
             assert _update_token.status == 2
@@ -1226,8 +1251,8 @@ class TestProcessor:
             _update_token = _update_token_list[3]
             assert _update_token.status == 2
 
-            _notification_list = db.scalars(
-                select(Notification).order_by(Notification.id)
+            _notification_list = (
+                await async_db.scalars(select(Notification).order_by(Notification.id))
             ).all()
             _notification = _notification_list[0]
             assert _notification.id == 1
@@ -1240,7 +1265,7 @@ class TestProcessor:
                 _notification.metainfo
                 == {
                     "token_address": _token_address_1,
-                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_type": TokenType.IBET_SHARE,
                     "arguments": {
                         "name": "name_test1",
                         "symbol": "symbol_test1",
@@ -1274,7 +1299,7 @@ class TestProcessor:
                 _notification.metainfo
                 == {
                     "token_address": _token_address_2,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "arguments": {
                         "name": "name_test1",
                         "symbol": "symbol_test1",

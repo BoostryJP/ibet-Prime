@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-24.12-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-25.3-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -85,13 +85,13 @@ The main environment variables are as follows.
         <td>DATABASE_URL</td>
         <td>False</td>
         <td nowrap>Database URL</td>
-        <td>postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
+        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
     </tr>
     <tr>
         <td>TEST_DATABASE_URL</td>
         <td>False</td>
         <td nowrap>Test database URL</td>
-        <td>postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
+        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
     </tr>
     <tr>
         <td>DATABASE_SCHEMA</td>

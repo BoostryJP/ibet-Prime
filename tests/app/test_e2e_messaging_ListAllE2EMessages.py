@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from datetime import datetime
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import E2EMessagingAccount, IDXE2EMessaging
@@ -29,26 +30,30 @@ class TestListAllE2EMessages:
     # target API endpoint
     base_url = "/e2e_messaging/messages"
 
-    def insert_data(self, db, e2e_messaging):
+    async def insert_data(self, async_db, e2e_messaging):
         _e2e_messaging = IDXE2EMessaging()
         _e2e_messaging.from_address = e2e_messaging["from_address"]
         _e2e_messaging.to_address = e2e_messaging["to_address"]
         _e2e_messaging.type = e2e_messaging["type"]
         _e2e_messaging.message = e2e_messaging["message"]
         _e2e_messaging.send_timestamp = e2e_messaging["send_timestamp"]
-        db.add(_e2e_messaging)
+        async_db.add(_e2e_messaging)
 
-        _account = db.scalars(
-            select(E2EMessagingAccount)
-            .where(E2EMessagingAccount.account_address == e2e_messaging["to_address"])
-            .limit(1)
+        _account = (
+            await async_db.scalars(
+                select(E2EMessagingAccount)
+                .where(
+                    E2EMessagingAccount.account_address == e2e_messaging["to_address"]
+                )
+                .limit(1)
+            )
         ).first()
         if _account is None:
             _account = E2EMessagingAccount()
             _account.account_address = e2e_messaging["to_address"]
-            db.add(_account)
+            async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
     ###########################################################################
     # Normal Case
@@ -56,9 +61,10 @@ class TestListAllE2EMessages:
 
     # <Normal_1>
     # 0 record(not E2E account)
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -71,7 +77,8 @@ class TestListAllE2EMessages:
 
     # <Normal_2>
     # 1 record
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -82,10 +89,10 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -107,7 +114,8 @@ class TestListAllE2EMessages:
 
     # <Normal_3>
     # multi record
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -118,7 +126,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000000",
@@ -128,7 +136,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:31.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -138,7 +146,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:32.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -148,7 +156,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:33.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
             "to_address": "0x1234567890123456789012345678900000000000",
@@ -163,10 +171,10 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -224,7 +232,8 @@ class TestListAllE2EMessages:
     # <Normal_4_1>
     # Search Filter
     # from_address
-    def test_normal_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, async_client, async_db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -235,7 +244,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -245,7 +254,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
             "to_address": "0x1234567890123456789012345678900000000002",
@@ -255,10 +264,10 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={"from_address": "0x1234567890123456789012345678900000000010"},
         )
@@ -290,7 +299,8 @@ class TestListAllE2EMessages:
     # <Normal_4_2>
     # Search Filter
     # to_address
-    def test_normal_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, async_client, async_db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -301,7 +311,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -311,7 +321,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000012",
             "to_address": "0x1234567890123456789012345678900000000000",
@@ -321,10 +331,10 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={"to_address": "0x1234567890123456789012345678900000000000"},
         )
@@ -356,7 +366,8 @@ class TestListAllE2EMessages:
     # <Normal_4_3>
     # Search Filter
     # type
-    def test_normal_4_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3(self, async_client, async_db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -367,7 +378,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -377,7 +388,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000012",
             "to_address": "0x1234567890123456789012345678900000000002",
@@ -387,10 +398,10 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
 
         # request target api
-        resp = client.get(self.base_url, params={"type": "type_test1"})
+        resp = await async_client.get(self.base_url, params={"type": "type_test1"})
 
         # assertion
         assert resp.status_code == 200
@@ -419,7 +430,8 @@ class TestListAllE2EMessages:
     # <Normal_4_4>
     # Search Filter
     # message
-    def test_normal_4_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_4(self, async_client, async_db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -430,7 +442,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -440,7 +452,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000012",
             "to_address": "0x1234567890123456789012345678900000000002",
@@ -450,7 +462,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000013",
             "to_address": "0x1234567890123456789012345678900000000003",
@@ -460,7 +472,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000014",
             "to_address": "0x1234567890123456789012345678900000000004",
@@ -470,10 +482,10 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
 
         # request target api
-        resp = client.get(self.base_url, params={"message": "word"})
+        resp = await async_client.get(self.base_url, params={"message": "word"})
 
         # assertion
         assert resp.status_code == 200
@@ -517,7 +529,8 @@ class TestListAllE2EMessages:
 
     # <Normal_5>
     # Pagination
-    def test_normal_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -528,7 +541,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000000",
@@ -538,7 +551,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:31.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -548,7 +561,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:32.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000011",
             "to_address": "0x1234567890123456789012345678900000000001",
@@ -558,7 +571,7 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:33.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
             "to_address": "0x1234567890123456789012345678900000000000",
@@ -573,10 +586,10 @@ class TestListAllE2EMessages:
                 "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
             ),  # JST 2022/01/02
         }
-        self.insert_data(db, e2e_messaging)
+        await self.insert_data(async_db, e2e_messaging)
 
         # request target api
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={
                 "offset": 1,
@@ -615,9 +628,10 @@ class TestListAllE2EMessages:
     # <Error_1>
     # Parameter Error
     # Query
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={"offset": "test", "limit": "test"},
         )

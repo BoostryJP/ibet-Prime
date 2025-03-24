@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: ibet Prime
   description: Security token management system for ibet network
-  version: '24.12'
+  version: '25.3'
 paths:
   /:
     get:
@@ -789,16 +789,19 @@ paths:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issuebondtoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
             Revert Error etc
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Issuebondtoken
+                $ref: '#/components/schemas/ContractRevertErrorResponse'
     get:
       tags:
         - bond
@@ -939,8 +942,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatebondtoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/history:
     get:
       tags:
@@ -1215,8 +1223,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Issueadditionalbond
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/additional_issue/batch:
     get:
       tags:
@@ -1575,8 +1588,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeembond
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/redeem/batch:
     get:
       tags:
@@ -2548,8 +2566,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Registerbondtokenholderpersonalinfo
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/tokens/{token_address}/personal_info/batch:
     get:
       tags:
@@ -2962,8 +2985,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transferbondtokenownership
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /bond/transfers/{token_address}:
     get:
       tags:
@@ -3415,8 +3443,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatebondtokentransferapprovalstatus
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
     get:
       tags:
         - bond
@@ -3709,8 +3742,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Createe2Emessagingaccount
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /e2e_messaging/accounts/{account_address}:
     get:
       tags:
@@ -4810,13 +4848,48 @@ paths:
           schema:
             type: string
             title: Account Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: include_former_position
           in: query
           required: false
           schema:
             type: boolean
+            description: Whether to include positions that were held in the past but
+              currently have a zero balance.
             default: false
             title: Include Former Position
+          description: Whether to include positions that were held in the past but
+            currently have a zero balance.
+        - name: include_token_attributes
+          in: query
+          required: false
+          schema:
+            type: boolean
+            description: Whether to include token attribute information in the response.
+            default: false
+            title: Include Token Attributes
+          description: Whether to include token attribute information in the response.
         - name: token_type
           in: query
           required: false
@@ -4824,23 +4897,9 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/TokenType'
               - type: 'null'
+            description: Token type
             title: Token Type
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Offset
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Limit
+          description: Token type
         - name: issuer-address
           in: header
           required: false
@@ -4876,6 +4935,28 @@ paths:
           schema:
             type: string
             title: Account Address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
         - name: token_type
           in: query
           required: false
@@ -4883,23 +4964,9 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/TokenType'
               - type: 'null'
+            description: Token type
             title: Token Type
-        - name: offset
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Offset
-        - name: limit
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: integer
-              - type: 'null'
-            title: Limit
+          description: Token type
         - name: issuer-address
           in: header
           required: false
@@ -5129,8 +5196,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Forceunlock
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /positions/{account_address}/{token_address}:
     get:
       tags:
@@ -5243,16 +5315,19 @@ paths:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Issuesharetoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
         '400':
           description: Invalid Parameter Error / Send Transaction Error / Contract
             Revert Error etc
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Issuesharetoken
+                $ref: '#/components/schemas/ContractRevertErrorResponse'
     get:
       tags:
         - share
@@ -5393,8 +5468,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatesharetoken
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/history:
     get:
       tags:
@@ -5669,8 +5749,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Issueadditionalshare
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/additional_issue/batch:
     get:
       tags:
@@ -6029,8 +6114,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Redeemshare
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/redeem/batch:
     get:
       tags:
@@ -7002,8 +7092,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Registersharetokenholderpersonalinfo
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/tokens/{token_address}/personal_info/batch:
     get:
       tags:
@@ -7416,8 +7511,13 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Transfersharetokenownership
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /share/transfers/{token_address}:
     get:
       tags:
@@ -7869,8 +7969,13 @@ paths:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
                 title: Response 400 Updatesharetokentransferapprovalstatus
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
     get:
       tags:
         - share
@@ -8112,6 +8217,194 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /tokens:
+    get:
+      tags:
+        - token_common
+      summary: List All Issued Tokens
+      description: List all tokens issued from ibet-Prime
+      operationId: ListAllIssuedTokens
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: token_address_list
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: array
+                items:
+                  type: string
+              - type: 'null'
+            description: Token address to filter (**this affects total number**)
+            title: Token Address List
+          description: Token address to filter (**this affects total number**)
+        - name: token_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/TokenType'
+              - type: 'null'
+            description: Token type
+            title: Token Type
+          description: Token type
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListAllIssuedTokensSortItem'
+              - type: 'null'
+            default: created
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
+        - name: issuer-address
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Issuer-Address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllIssuedTokensResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /tokens/scheduled_events:
+    get:
+      tags:
+        - token_common
+      summary: List All Scheduled Events
+      description: List all scheduled token update events
+      operationId: ListAllScheduledEvents
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: token_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/TokenType'
+              - type: 'null'
+            description: Token type
+            title: Token Type
+          description: Token type
+        - name: token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: status
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ScheduledEventStatus'
+              - type: 'null'
+            description: Scheduled event processing status
+            title: Status
+          description: Scheduled event processing status
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListAllScheduledEventsSortItem'
+              - type: 'null'
+            default: created
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
+        - name: issuer-address
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Issuer-Address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllScheduledEventsResponse'
   /token/holders/personal_info:
     get:
       tags:
@@ -8902,10 +9195,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Createdvpdelivery
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /settlement/dvp/{exchange_address}/delivery/{delivery_id}:
     get:
       tags:
@@ -9025,10 +9321,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatedvpdelivery
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /sealed_tx/personal_info:
     post:
       tags:
@@ -9405,10 +9704,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatedvpagentdelivery
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /blockchain_explorer/block_data:
     get:
       tags:
@@ -9784,10 +10086,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Recordnewfreezelog
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /freeze_log/logs/{log_index}:
     post:
       tags:
@@ -9830,10 +10135,13 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                  - $ref: '#/components/schemas/SendTransactionErrorResponse'
-                title: Response 400 Updatefreezelog
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
     get:
       tags:
         - '[misc] freeze_log'
@@ -9859,6 +10167,10 @@ paths:
       responses:
         '200':
           description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrieveFreezeLogResponse'
         '404':
           description: Not Found Error
           content:
@@ -10253,6 +10565,11 @@ components:
         upload_id:
           type: string
           title: Upload Id
+        token_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Token Address
         error_registration_id:
           items:
             type: integer
@@ -11973,50 +12290,50 @@ components:
       description: Holder count schema (Response)
     HolderExtraInfo:
       properties:
-        external_id_1_type:
+        external_id1_type:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 1 Type
-          description: The type of external-id-1
-        external_id_1:
+          title: External Id1 Type
+          description: The type of external-id1
+        external_id1:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 1
-          description: external-id-1
-        external_id_2_type:
+          title: External Id1
+          description: external-id1
+        external_id2_type:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 2 Type
-          description: The type of external-id-2
-        external_id_2:
+          title: External Id2 Type
+          description: The type of external-id2
+        external_id2:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 2
-          description: external-id-2
-        external_id_3_type:
+          title: External Id2
+          description: external-id2
+        external_id3_type:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 3 Type
-          description: The type of external-id-3
-        external_id_3:
+          title: External Id3 Type
+          description: The type of external-id3
+        external_id3:
           anyOf:
             - type: string
             - type: 'null'
-          title: External Id 3
-          description: external-id-3
+          title: External Id3
+          description: external-id3
       type: object
       required:
-        - external_id_1_type
-        - external_id_1
-        - external_id_2_type
-        - external_id_2
-        - external_id_3_type
-        - external_id_3
+        - external_id1_type
+        - external_id1
+        - external_id2_type
+        - external_id2
+        - external_id3_type
+        - external_id3
       title: HolderExtraInfo
     HolderResponse:
       properties:
@@ -12079,6 +12396,100 @@ components:
         - holders
       title: HoldersResponse
       description: Holders schema (Response)
+    IbetShare:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+        token_address:
+          type: string
+          title: Token Address
+        name:
+          type: string
+          title: Name
+        symbol:
+          type: string
+          title: Symbol
+        issue_price:
+          type: integer
+          title: Issue Price
+        principal_value:
+          type: integer
+          title: Principal Value
+        total_supply:
+          type: integer
+          title: Total Supply
+        dividends:
+          type: number
+          title: Dividends
+        dividend_record_date:
+          type: string
+          title: Dividend Record Date
+        dividend_payment_date:
+          type: string
+          title: Dividend Payment Date
+        cancellation_date:
+          type: string
+          title: Cancellation Date
+        transferable:
+          type: boolean
+          title: Transferable
+        transfer_approval_required:
+          type: boolean
+          title: Transfer Approval Required
+        status:
+          type: boolean
+          title: Status
+        is_offering:
+          type: boolean
+          title: Is Offering
+        tradable_exchange_contract_address:
+          type: string
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          type: string
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          type: boolean
+          title: Require Personal Info Registered
+        contact_information:
+          type: string
+          title: Contact Information
+        privacy_policy:
+          type: string
+          title: Privacy Policy
+        is_canceled:
+          type: boolean
+          title: Is Canceled
+        memo:
+          type: string
+          title: Memo
+      type: object
+      required:
+        - issuer_address
+        - token_address
+        - name
+        - symbol
+        - issue_price
+        - principal_value
+        - total_supply
+        - dividends
+        - dividend_record_date
+        - dividend_payment_date
+        - cancellation_date
+        - transferable
+        - transfer_approval_required
+        - status
+        - is_offering
+        - tradable_exchange_contract_address
+        - personal_info_contract_address
+        - require_personal_info_registered
+        - contact_information
+        - privacy_policy
+        - is_canceled
+        - memo
+      title: IbetShare
+      description: IbetShare schema
     IbetShareAdditionalIssue:
       properties:
         account_address:
@@ -12312,18 +12723,19 @@ components:
         privacy_policy:
           type: string
           title: Privacy Policy
-        issue_datetime:
-          type: string
-          title: Issue Datetime
-        token_status:
-          type: integer
-          title: Token Status
         is_canceled:
           type: boolean
           title: Is Canceled
         memo:
           type: string
           title: Memo
+        issue_datetime:
+          type: string
+          title: Issue Datetime
+        token_status:
+          anyOf:
+            - $ref: '#/components/schemas/TokenStatus'
+            - type: 'null'
         contract_version:
           $ref: '#/components/schemas/IbetShareContractVersion'
       type: object
@@ -12348,10 +12760,10 @@ components:
         - require_personal_info_registered
         - contact_information
         - privacy_policy
-        - issue_datetime
-        - token_status
         - is_canceled
         - memo
+        - issue_datetime
+        - token_status
         - contract_version
       title: IbetShareResponse
       description: ibet Share schema (Response)
@@ -12497,6 +12909,126 @@ components:
       type: object
       title: IbetShareUpdate
       description: ibet Share schema (Update)
+    IbetStraightBond:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+        token_address:
+          type: string
+          title: Token Address
+        name:
+          type: string
+          title: Name
+        symbol:
+          type: string
+          title: Symbol
+        total_supply:
+          type: integer
+          title: Total Supply
+        face_value:
+          type: integer
+          title: Face Value
+        face_value_currency:
+          type: string
+          title: Face Value Currency
+        redemption_date:
+          type: string
+          title: Redemption Date
+        redemption_value:
+          type: integer
+          title: Redemption Value
+        redemption_value_currency:
+          type: string
+          title: Redemption Value Currency
+        return_date:
+          type: string
+          title: Return Date
+        return_amount:
+          type: string
+          title: Return Amount
+        purpose:
+          type: string
+          title: Purpose
+        interest_rate:
+          type: number
+          title: Interest Rate
+        interest_payment_date:
+          items:
+            type: string
+          type: array
+          title: Interest Payment Date
+        interest_payment_currency:
+          type: string
+          title: Interest Payment Currency
+        base_fx_rate:
+          type: number
+          title: Base Fx Rate
+        transferable:
+          type: boolean
+          title: Transferable
+        is_redeemed:
+          type: boolean
+          title: Is Redeemed
+        status:
+          type: boolean
+          title: Status
+        is_offering:
+          type: boolean
+          title: Is Offering
+        tradable_exchange_contract_address:
+          type: string
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          type: string
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          type: boolean
+          title: Require Personal Info Registered
+        contact_information:
+          type: string
+          title: Contact Information
+        privacy_policy:
+          type: string
+          title: Privacy Policy
+        transfer_approval_required:
+          type: boolean
+          title: Transfer Approval Required
+        memo:
+          type: string
+          title: Memo
+      type: object
+      required:
+        - issuer_address
+        - token_address
+        - name
+        - symbol
+        - total_supply
+        - face_value
+        - face_value_currency
+        - redemption_date
+        - redemption_value
+        - redemption_value_currency
+        - return_date
+        - return_amount
+        - purpose
+        - interest_rate
+        - interest_payment_date
+        - interest_payment_currency
+        - base_fx_rate
+        - transferable
+        - is_redeemed
+        - status
+        - is_offering
+        - tradable_exchange_contract_address
+        - personal_info_contract_address
+        - require_personal_info_registered
+        - contact_information
+        - privacy_policy
+        - transfer_approval_required
+        - memo
+      title: IbetStraightBond
+      description: IbetStraightBond schema
     IbetStraightBondAdditionalIssue:
       properties:
         account_address:
@@ -12792,18 +13324,19 @@ components:
         privacy_policy:
           type: string
           title: Privacy Policy
-        issue_datetime:
-          type: string
-          title: Issue Datetime
-        token_status:
-          type: integer
-          title: Token Status
         transfer_approval_required:
           type: boolean
           title: Transfer Approval Required
         memo:
           type: string
           title: Memo
+        issue_datetime:
+          type: string
+          title: Issue Datetime
+        token_status:
+          anyOf:
+            - $ref: '#/components/schemas/TokenStatus'
+            - type: 'null'
         contract_version:
           $ref: '#/components/schemas/IbetStraightBondContractVersion'
       type: object
@@ -12834,10 +13367,10 @@ components:
         - require_personal_info_registered
         - contact_information
         - privacy_policy
-        - issue_datetime
-        - token_status
         - transfer_approval_required
         - memo
+        - issue_datetime
+        - token_status
         - contract_version
       title: IbetStraightBondResponse
       description: ibet Straight Bond schema (Response)
@@ -13205,6 +13738,51 @@ components:
         - amount
       title: IssueRedeemSortItem
       description: Issue/Redeem sort item
+    IssuedToken:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+          description: Issuer address
+        token_address:
+          type: string
+          title: Token Address
+          description: Token address
+        token_type:
+          $ref: '#/components/schemas/TokenType'
+          description: Token type
+        created:
+          type: string
+          title: Created
+          description: Created(Issued) datetime
+        token_status:
+          anyOf:
+            - $ref: '#/components/schemas/TokenStatus'
+            - type: 'null'
+          description: Token status
+        contract_version:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBondContractVersion'
+            - $ref: '#/components/schemas/IbetShareContractVersion'
+          title: Contract Version
+          description: Contract version
+        token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+          title: Token Attributes
+          description: Token attributes
+      type: object
+      required:
+        - issuer_address
+        - token_address
+        - token_type
+        - created
+        - token_status
+        - contract_version
+        - token_attributes
+      title: IssuedToken
+      description: Issued Token
     KeyManagerType:
       type: string
       enum:
@@ -13452,6 +14030,27 @@ components:
         - key_manager
         - holder_name
       title: ListAllHoldersSortItem
+    ListAllIssuedTokensResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        tokens:
+          items:
+            $ref: '#/components/schemas/IssuedToken'
+          type: array
+          title: Tokens
+      type: object
+      required:
+        - result_set
+        - tokens
+      title: ListAllIssuedTokensResponse
+      description: List issued tokens schema
+    ListAllIssuedTokensSortItem:
+      type: string
+      enum:
+        - created
+        - token_address
+      title: ListAllIssuedTokensSortItem
     ListAllLedgerDetailsDataResponse:
       properties:
         result_set:
@@ -13554,6 +14153,28 @@ components:
         - positions
       title: ListAllPositionResponse
       description: List All Position schema (Response)
+    ListAllScheduledEventsResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        scheduled_events:
+          items:
+            $ref: '#/components/schemas/ScheduledEventWithTokenAttributes'
+          type: array
+          title: Scheduled Events
+      type: object
+      required:
+        - result_set
+        - scheduled_events
+      title: ListAllScheduledEventsResponse
+      description: List scheduled events schema
+    ListAllScheduledEventsSortItem:
+      type: string
+      enum:
+        - created
+        - scheduled_datetime
+        - token_address
+      title: ListAllScheduledEventsSortItem
     ListAllTokenHolderCollectionsResponse:
       properties:
         result_set:
@@ -14199,9 +14820,6 @@ components:
       description: Personal Information History schema
     PersonalInfoIndex:
       properties:
-        id:
-          type: integer
-          title: Id
         account_address:
           type: string
           title: Account Address
@@ -14217,7 +14835,6 @@ components:
           title: Modified
       type: object
       required:
-        - id
         - account_address
         - personal_info
         - created
@@ -14281,6 +14898,13 @@ components:
           type: string
           title: Token Name
           description: Token name
+        token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+            - type: 'null'
+          title: Token Attributes
+          description: Token attributes
         balance:
           type: integer
           title: Balance
@@ -14307,6 +14931,7 @@ components:
         - token_address
         - token_type
         - token_name
+        - token_attributes
         - balance
         - exchange_balance
         - exchange_commitment
@@ -14371,48 +14996,48 @@ components:
       description: New freeze-log recording schema (RESPONSE)
     RegisterHolderExtraInfoRequest:
       properties:
-        external_id_1_type:
+        external_id1_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1 Type
-          description: The type of external-id-1
-        external_id_1:
+          title: External Id1 Type
+          description: The type of external-id1
+        external_id1:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1
-          description: external-id-1
-        external_id_2_type:
+          title: External Id1
+          description: external-id1
+        external_id2_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2 Type
-          description: The type of external-id-2
-        external_id_2:
+          title: External Id2 Type
+          description: The type of external-id2
+        external_id2:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2
-          description: external-id-2
-        external_id_3_type:
+          title: External Id2
+          description: external-id2
+        external_id3_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3 Type
-          description: The type of external-id-3
-        external_id_3:
+          title: External Id3 Type
+          description: The type of external-id3
+        external_id3:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3
-          description: external-id-3
+          title: External Id3
+          description: external-id3
       type: object
       title: RegisterHolderExtraInfoRequest
       description: Schema for holder's extra information registration (REQUEST)
@@ -14766,6 +15391,24 @@ components:
         - status
       title: RetrieveDVPDeliveryResponse
       description: Retrieve DVP delivery schema (Response)
+    RetrieveFreezeLogResponse:
+      properties:
+        block_number:
+          type: integer
+          title: Block Number
+        freezing_grace_block_count:
+          type: integer
+          title: Freezing Grace Block Count
+        log_message:
+          type: string
+          title: Log Message
+      type: object
+      required:
+        - block_number
+        - freezing_grace_block_count
+        - log_message
+      title: RetrieveFreezeLogResponse
+      description: Frozen log data (RESPONSE)
     RetrieveLedgerDetailsDataHistoryResponse:
       properties:
         account_address:
@@ -15020,6 +15663,42 @@ components:
         - notice_type
         - metainfo
       title: ScheduleEventErrorNotification
+    ScheduledEvent:
+      properties:
+        scheduled_event_id:
+          type: string
+          title: Scheduled Event Id
+        token_address:
+          type: string
+          title: Token Address
+        token_type:
+          $ref: '#/components/schemas/TokenType'
+        scheduled_datetime:
+          type: string
+          format: date-time
+          title: Scheduled Datetime
+        event_type:
+          $ref: '#/components/schemas/ScheduledEventType'
+        status:
+          $ref: '#/components/schemas/ScheduledEventStatus'
+        data:
+          type: object
+          title: Data
+        created:
+          type: string
+          title: Created
+      type: object
+      required:
+        - scheduled_event_id
+        - token_address
+        - token_type
+        - scheduled_datetime
+        - event_type
+        - status
+        - data
+        - created
+      title: ScheduledEvent
+      description: Scheduled event
     ScheduledEventIdListResponse:
       properties:
         scheduled_event_id_list:
@@ -15043,6 +15722,22 @@ components:
       title: ScheduledEventIdResponse
       description: scheduled event (Response)
     ScheduledEventResponse:
+      $ref: '#/components/schemas/ScheduledEvent'
+      title: ScheduledEventResponse
+      description: scheduled event (Response)
+    ScheduledEventStatus:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
+      title: ScheduledEventStatus
+    ScheduledEventType:
+      type: string
+      enum:
+        - Update
+      title: ScheduledEventType
+    ScheduledEventWithTokenAttributes:
       properties:
         scheduled_event_id:
           type: string
@@ -15059,14 +15754,19 @@ components:
         event_type:
           $ref: '#/components/schemas/ScheduledEventType'
         status:
-          type: integer
-          title: Status
+          $ref: '#/components/schemas/ScheduledEventStatus'
         data:
           type: object
           title: Data
         created:
           type: string
           title: Created
+        token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+          title: Token Attributes
+          description: Token attributes
       type: object
       required:
         - scheduled_event_id
@@ -15077,13 +15777,9 @@ components:
         - status
         - data
         - created
-      title: ScheduledEventResponse
-      description: scheduled event (Response)
-    ScheduledEventType:
-      type: string
-      enum:
-        - Update
-      title: ScheduledEventType
+        - token_attributes
+      title: ScheduledEventWithTokenAttributes
+      description: Scheduled event with token attributes
     SealedTxPersonalInfoInput:
       properties:
         name:
@@ -15134,48 +15830,48 @@ components:
         token_address:
           type: string
           title: Token Address
-        external_id_1_type:
+        external_id1_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1 Type
-          description: The type of external-id-1
-        external_id_1:
+          title: External Id1 Type
+          description: The type of external-id1
+        external_id1:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 1
-          description: external-id-1
-        external_id_2_type:
+          title: External Id1
+          description: external-id1
+        external_id2_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2 Type
-          description: The type of external-id-2
-        external_id_2:
+          title: External Id2 Type
+          description: The type of external-id2
+        external_id2:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 2
-          description: external-id-2
-        external_id_3_type:
+          title: External Id2
+          description: external-id2
+        external_id3_type:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3 Type
-          description: The type of external-id-3
-        external_id_3:
+          title: External Id3 Type
+          description: The type of external-id3
+        external_id3:
           anyOf:
             - type: string
               maxLength: 50
             - type: 'null'
-          title: External Id 3
-          description: external-id-3
+          title: External Id3
+          description: external-id3
       type: object
       required:
         - token_address
@@ -15274,8 +15970,7 @@ components:
           type: string
           title: Token Address
         token_status:
-          type: integer
-          title: Token Status
+          $ref: '#/components/schemas/TokenStatus'
       type: object
       required:
         - token_address
@@ -15371,6 +16066,13 @@ components:
         - operation_category
         - created
       title: TokenOperationLogResponse
+    TokenStatus:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
+      title: TokenStatus
     TokenType:
       type: string
       enum:

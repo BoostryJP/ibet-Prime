@@ -268,7 +268,9 @@ async def list_all_dvp_agent_deliveries(
             IDXDelivery.agent_address == request_query.agent_address,
         )
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXDelivery).order_by(None)
+    )
 
     if request_query.token_address is not None:
         stmt = stmt.where(IDXDelivery.token_address == request_query.token_address)
@@ -281,19 +283,21 @@ async def list_all_dvp_agent_deliveries(
     if request_query.create_blocktimestamp_from is not None:
         stmt = stmt.where(
             IDXDelivery.create_blocktimestamp
-            >= local_tz.localize(request_query.create_blocktimestamp_from).astimezone(
-                tz=UTC
-            )
+            >= local_tz.localize(request_query.create_blocktimestamp_from)
+            .astimezone(tz=UTC)
+            .replace(tzinfo=None)
         )
     if request_query.create_blocktimestamp_to is not None:
         stmt = stmt.where(
             IDXDelivery.create_blocktimestamp
-            <= local_tz.localize(request_query.create_blocktimestamp_to).astimezone(
-                tz=UTC
-            )
+            <= local_tz.localize(request_query.create_blocktimestamp_to)
+            .astimezone(tz=UTC)
+            .replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXDelivery).order_by(None)
+    )
 
     # Sort
     if request_query.sort_order == 0:  # ASC

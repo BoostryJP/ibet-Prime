@@ -44,9 +44,11 @@ from app.model.db import (
     PersonalInfoDataSource,
     PersonalInfoEventType,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
 
@@ -117,7 +119,7 @@ class Processor:
                         Account.is_deleted == False,
                     ),
                 )
-                .where(Token.token_status == 1)
+                .where(Token.token_status == TokenStatus.SUCCEEDED)
             )
         ).all()
         tmp_list = []
@@ -279,7 +281,6 @@ class Processor:
                         == to_checksum_address(account_address),
                         IDXPersonalInfo.issuer_address
                         == to_checksum_address(issuer_address),
-                        IDXPersonalInfo.data_source == PersonalInfoDataSource.ON_CHAIN,
                     )
                 )
                 .limit(1)
@@ -287,6 +288,7 @@ class Processor:
         ).first()
         if _personal_info is not None:
             _personal_info.personal_info = personal_info
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
             _personal_info.modified = timestamp
             await db_session.merge(_personal_info)
             LOG.debug(
@@ -329,6 +331,7 @@ async def main():
             LOG.exception("An exception occurred during event synchronization")
 
         await asyncio.sleep(INDEXER_SYNC_INTERVAL)
+        free_malloc()
 
 
 if __name__ == "__main__":

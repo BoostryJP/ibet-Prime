@@ -82,7 +82,7 @@ class TestUpdateBondToken:
 
     # <Normal_1_1>
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, client, db):
+    async def test_normal_1_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -102,18 +102,18 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -139,7 +139,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "m" * 10000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -152,20 +152,24 @@ class TestUpdateBondToken:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = db.scalars(
-            select(TokenAttrUpdate).where(
-                TokenAttrUpdate.token_address == _token_address
+        token_attr_update = (
+            await async_db.scalars(
+                select(TokenAttrUpdate).where(
+                    TokenAttrUpdate.token_address == _token_address
+                )
             )
         ).all()
         assert len(token_attr_update) == 1
 
-        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        update_token = (await async_db.scalars(select(UpdateToken).limit(1))).first()
         assert update_token is None
 
-        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        operation_log = (
+            await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+        ).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
-        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND
         assert operation_log.original_contents == {
             "contract_name": "IbetStraightBond",
             "token_address": _token_address,
@@ -225,7 +229,7 @@ class TestUpdateBondToken:
     # <Normal_1_2>
     # Empty str set to currency code
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, client, db):
+    async def test_normal_1_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -245,18 +249,18 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -282,7 +286,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "m" * 10000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -295,20 +299,24 @@ class TestUpdateBondToken:
         assert resp.status_code == 200, resp.json()
         assert resp.json() is None
 
-        token_attr_update = db.scalars(
-            select(TokenAttrUpdate).where(
-                TokenAttrUpdate.token_address == _token_address
+        token_attr_update = (
+            await async_db.scalars(
+                select(TokenAttrUpdate).where(
+                    TokenAttrUpdate.token_address == _token_address
+                )
             )
         ).all()
         assert len(token_attr_update) == 1
 
-        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        update_token = (await async_db.scalars(select(UpdateToken).limit(1))).first()
         assert update_token is None
 
-        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        operation_log = (
+            await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+        ).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
-        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND
         assert operation_log.original_contents == {
             "contract_name": "IbetStraightBond",
             "token_address": _token_address,
@@ -368,7 +376,7 @@ class TestUpdateBondToken:
     # <Normal_1_3>
     # Empty str set to redemption date
     @pytest.mark.asyncio
-    async def test_normal_1_3(self, client, db):
+    async def test_normal_1_3(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -388,18 +396,18 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -425,7 +433,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "m" * 10000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -438,20 +446,24 @@ class TestUpdateBondToken:
         assert resp.status_code == 200, resp.json()
         assert resp.json() is None
 
-        token_attr_update = db.scalars(
-            select(TokenAttrUpdate).where(
-                TokenAttrUpdate.token_address == _token_address
+        token_attr_update = (
+            await async_db.scalars(
+                select(TokenAttrUpdate).where(
+                    TokenAttrUpdate.token_address == _token_address
+                )
             )
         ).all()
         assert len(token_attr_update) == 1
 
-        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        update_token = (await async_db.scalars(select(UpdateToken).limit(1))).first()
         assert update_token is None
 
-        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        operation_log = (
+            await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+        ).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
-        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND
         assert operation_log.original_contents == {
             "contract_name": "IbetStraightBond",
             "token_address": _token_address,
@@ -511,7 +523,7 @@ class TestUpdateBondToken:
     # <Normal_2>
     # No request parameters
     @pytest.mark.asyncio
-    async def test_normal_2(self, client, db):
+    async def test_normal_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -531,22 +543,22 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -559,20 +571,24 @@ class TestUpdateBondToken:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = db.scalars(
-            select(TokenAttrUpdate).where(
-                TokenAttrUpdate.token_address == _token_address
+        token_attr_update = (
+            await async_db.scalars(
+                select(TokenAttrUpdate).where(
+                    TokenAttrUpdate.token_address == _token_address
+                )
             )
         ).all()
         assert len(token_attr_update) == 1
 
-        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        operation_log = (
+            await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+        ).first()
         assert operation_log is not None
 
     # <Normal_3>
     # Authorization by auth token
     @pytest.mark.asyncio
-    async def test_normal_3(self, client, db):
+    async def test_normal_3(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -593,24 +609,24 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = _issuer_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -633,7 +649,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "memo_test1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -646,20 +662,24 @@ class TestUpdateBondToken:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = db.scalars(
-            select(TokenAttrUpdate).where(
-                TokenAttrUpdate.token_address == _token_address
+        token_attr_update = (
+            await async_db.scalars(
+                select(TokenAttrUpdate).where(
+                    TokenAttrUpdate.token_address == _token_address
+                )
             )
         ).all()
         assert len(token_attr_update) == 1
 
-        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        update_token = (await async_db.scalars(select(UpdateToken).limit(1))).first()
         assert update_token is None
 
-        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        operation_log = (
+            await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+        ).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
-        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND
         assert operation_log.original_contents == {
             "contract_name": "IbetStraightBond",
             "token_address": _token_address,
@@ -719,14 +739,15 @@ class TestUpdateBondToken:
 
     # <Error_1_1>
     # RequestValidationError: interest_rate
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {
             "interest_rate": 0.00001,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -750,7 +771,8 @@ class TestUpdateBondToken:
     # <Error_1_2_1>
     # RequestValidationError: interest_payment_date
     # list length of interest_payment_date must be less than 13
-    def test_error_1_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2_1(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -771,7 +793,7 @@ class TestUpdateBondToken:
                 "0113",
             ],
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -809,14 +831,15 @@ class TestUpdateBondToken:
     # <Error_1_2_2>
     # RequestValidationError: interest_payment_date
     # string does not match regex
-    def test_error_1_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2_2(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {
             "interest_payment_date": ["01010"],
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -839,12 +862,13 @@ class TestUpdateBondToken:
 
     # <Error_1_3>
     # RequestValidationError: is_redeemed
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"is_redeemed": False}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -866,12 +890,13 @@ class TestUpdateBondToken:
 
     # <Error_1_4>
     # RequestValidationError: tradable_exchange_contract_address
-    def test_error_1_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_4(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"tradable_exchange_contract_address": "invalid_address"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -893,12 +918,13 @@ class TestUpdateBondToken:
 
     # <Error_1_5>
     # RequestValidationError: personal_info_contract_address
-    def test_error_1_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_5(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"personal_info_contract_address": "invalid_address"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -921,12 +947,13 @@ class TestUpdateBondToken:
     # <Error_1_6_1>
     # RequestValidationError: face_value_currency
     # max_length
-    def test_error_1_6_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_6_1(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"face_value_currency": "JPYY"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -949,12 +976,13 @@ class TestUpdateBondToken:
     # <Error_1_6_2>
     # RequestValidationError: face_value_currency
     # min_length
-    def test_error_1_6_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_6_2(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"face_value_currency": "JP"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -977,12 +1005,13 @@ class TestUpdateBondToken:
     # <Error_1_7_1>
     # RequestValidationError: interest_payment_currency
     # max_length
-    def test_error_1_7_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_7_1(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"interest_payment_currency": "JPYY"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -1012,12 +1041,13 @@ class TestUpdateBondToken:
     # <Error_1_7_2>
     # RequestValidationError: interest_payment_currency
     # min_length
-    def test_error_1_7_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_7_2(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"interest_payment_currency": "JP"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -1047,12 +1077,13 @@ class TestUpdateBondToken:
     # <Error_1_8_1>
     # RequestValidationError: redemption_value_currency
     # max_length
-    def test_error_1_8_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_8_1(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"redemption_value_currency": "JPYY"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -1082,12 +1113,13 @@ class TestUpdateBondToken:
     # <Error_1_8_2>
     # RequestValidationError: redemption_value_currency
     # min_length
-    def test_error_1_8_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_8_2(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"redemption_value_currency": "JP"}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -1116,12 +1148,13 @@ class TestUpdateBondToken:
 
     # <Error_1_9>
     # RequestValidationError: base_fx_rate
-    def test_error_1_9(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_9(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {"base_fx_rate": 123.4567899}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": ""},
@@ -1143,11 +1176,12 @@ class TestUpdateBondToken:
 
     # <Error_2>
     # RequestValidationError: headers and body required
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
-        resp = client.post(self.base_url.format(_token_address))
+        resp = await async_client.post(self.base_url.format(_token_address))
 
         # assertion
         assert resp.status_code == 422
@@ -1171,14 +1205,15 @@ class TestUpdateBondToken:
 
     # <Error_3>
     # RequestValidationError: issuer-address
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": "issuer-address"},
@@ -1200,7 +1235,8 @@ class TestUpdateBondToken:
 
     # <Error_4>
     # RequestValidationError: eoa-password((not decrypt))
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1223,7 +1259,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "memo_test1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": _issuer_address, "eoa-password": "password"},
@@ -1245,7 +1281,8 @@ class TestUpdateBondToken:
 
     # <Error_5>
     # RequestValidationError: min value
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1269,7 +1306,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "memo_test1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": _issuer_address, "eoa-password": "password"},
@@ -1313,7 +1350,8 @@ class TestUpdateBondToken:
 
     # <Error_6>
     # RequestValidationError: max value
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1336,7 +1374,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "memo_test1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={"issuer-address": _issuer_address, "eoa-password": "password"},
@@ -1374,27 +1412,28 @@ class TestUpdateBondToken:
     # <Error_7>
     # AuthorizationError: issuer does not exist
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_7(self, IbetStraightBondContract_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, IbetStraightBondContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -1413,7 +1452,8 @@ class TestUpdateBondToken:
     # <Error_8>
     # AuthorizationError: token not found
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_8(self, IbetStraightBondContract_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_error_8(self, IbetStraightBondContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1424,14 +1464,14 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -1450,7 +1490,8 @@ class TestUpdateBondToken:
     # <Error_9>
     # token not found
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_9(self, IbetStraightBondContract_mock, client, db):
+    @pytest.mark.asyncio
+    async def test_error_9(self, IbetStraightBondContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1461,16 +1502,16 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -1488,7 +1529,8 @@ class TestUpdateBondToken:
 
     # <Error_10>
     # Processing Token
-    def test_error_10(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_10(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1499,23 +1541,23 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -1537,7 +1579,8 @@ class TestUpdateBondToken:
         "app.model.blockchain.token.IbetStraightBondContract.update",
         MagicMock(side_effect=SendTransactionError()),
     )
-    def test_error_11(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_11(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1548,22 +1591,22 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -1573,7 +1616,7 @@ class TestUpdateBondToken:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",
@@ -1581,7 +1624,8 @@ class TestUpdateBondToken:
 
     # <Error_12_1>
     # OperationNotSupportedVersionError: v23.12
-    def test_error_12_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_12_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1592,25 +1636,25 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 1
         token.version = TokenVersion.V_22_12
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
             "base_fx_rate": 10.0,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -1642,7 +1686,8 @@ class TestUpdateBondToken:
             },
         ],
     )
-    def test_error_12_2(self, client, db, req_param):
+    @pytest.mark.asyncio
+    async def test_error_12_2(self, async_client, async_db, req_param):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1653,22 +1698,22 @@ class TestUpdateBondToken:
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
-        token.abi = ""
+        token.abi = {}
         token.token_status = 1
         token.version = TokenVersion.V_23_12
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={

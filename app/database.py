@@ -24,7 +24,7 @@ from sqlalchemy import AsyncAdaptedQueuePool, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from config import DATABASE_SCHEMA, DATABASE_URL, DB_ECHO
+from config import ASYNC_DATABASE_URL, DATABASE_SCHEMA, DATABASE_URL, DB_ECHO
 
 
 def get_engine(uri: str):
@@ -63,8 +63,8 @@ def get_batch_async_engine(uri: str):
 
 # Create Engine
 engine = get_engine(DATABASE_URL)
-async_engine = get_async_engine(DATABASE_URL)
-batch_async_engine = get_batch_async_engine(DATABASE_URL)
+async_engine = get_async_engine(ASYNC_DATABASE_URL)
+batch_async_engine = get_batch_async_engine(ASYNC_DATABASE_URL)
 
 # Create Session Maker
 SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)

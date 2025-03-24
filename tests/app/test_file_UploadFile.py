@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 from unittest import mock
 
+import pytest
 import pytz
 from sqlalchemy import select
 
@@ -42,7 +43,8 @@ class TestUploadFile:
 
     # <Normal_1>
     # text file
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -59,7 +61,7 @@ abc def"""
             "description": "description_1",
             "label": "label_1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url,
             json=req_param,
             headers={
@@ -70,7 +72,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
 
-        _upload_file = db.scalars(select(UploadFile).limit(1)).first()
+        _upload_file = (await async_db.scalars(select(UploadFile).limit(1))).first()
         assert _upload_file.file_id is not None
         assert _upload_file.issuer_address == self.issuer_address
         assert _upload_file.relation == self.token_address
@@ -95,7 +97,8 @@ abc def"""
 
     # <Normal_2>
     # binary file
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # request target api
@@ -106,7 +109,7 @@ abc def"""
             "description": "description_1",
             "label": "label_1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url,
             json=req_param,
             headers={
@@ -117,7 +120,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
 
-        _upload_file = db.scalars(select(UploadFile).limit(1)).first()
+        _upload_file = (await async_db.scalars(select(UploadFile).limit(1))).first()
         assert _upload_file.file_id is not None
         assert _upload_file.issuer_address == self.issuer_address
         assert _upload_file.relation == self.token_address
@@ -142,7 +145,8 @@ abc def"""
 
     # <Normal_3>
     # default label
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         file_content = """test_content"""
         file_content_bin = file_content.encode()
 
@@ -153,7 +157,7 @@ abc def"""
             "content": base64.b64encode(file_content_bin).decode(),
             "description": "description_1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url,
             json=req_param,
             headers={
@@ -164,7 +168,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
 
-        _upload_file = db.scalars(select(UploadFile).limit(1)).first()
+        _upload_file = (await async_db.scalars(select(UploadFile).limit(1))).first()
         assert _upload_file.file_id is not None
         assert _upload_file.issuer_address == self.issuer_address
         assert _upload_file.relation == self.token_address
@@ -195,9 +199,10 @@ abc def"""
     # Parameter Error
     # Required
     # Header, Body
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url,
         )
 
@@ -225,9 +230,10 @@ abc def"""
     # Parameter Error
     # Required
     # Body
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url,
             json={},
             headers={
@@ -260,11 +266,12 @@ abc def"""
     # Max Length
     # Body
     @mock.patch("app.model.schema.file.MAX_UPLOAD_FILE_SIZE", 6)
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url,
             json={
                 "relation": "123456789012345678901234567890123456789012345678901",
@@ -351,7 +358,8 @@ abc def"""
     # <Error_4>
     # Parameter Error
     # Not Base64
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         # request target api
         req_param = {
             "relation": self.token_address,
@@ -360,7 +368,7 @@ abc def"""
             "description": "description_1",
             "label": "label_1",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url,
             json=req_param,
             headers={

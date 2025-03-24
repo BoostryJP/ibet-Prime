@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
+import pytest
+
 from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
 from tests.account_config import config_eth_account
 
@@ -33,20 +35,21 @@ class TestListAllLedgerDetailsData:
 
     # <Normal_1_1>
     # set issuer-address
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
         _details_data_1_1.token_address = token_address
@@ -54,7 +57,7 @@ class TestListAllLedgerDetailsData:
         _details_data_1_1.data_created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_1_1)
+        async_db.add(_details_data_1_1)
 
         _details_data_2_1 = LedgerDetailsData()
         _details_data_2_1.token_address = token_address
@@ -62,7 +65,7 @@ class TestListAllLedgerDetailsData:
         _details_data_2_1.data_created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_2_1)
+        async_db.add(_details_data_2_1)
 
         _details_data_2_2 = LedgerDetailsData()
         _details_data_2_2.token_address = token_address
@@ -70,7 +73,7 @@ class TestListAllLedgerDetailsData:
         _details_data_2_2.data_created = datetime.strptime(
             "2022/01/02 00:20:30.000002", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_2_2)
+        async_db.add(_details_data_2_2)
 
         _details_data_3_1 = LedgerDetailsData()
         _details_data_3_1.token_address = token_address
@@ -78,7 +81,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_1.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000010", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_1)
+        async_db.add(_details_data_3_1)
 
         _details_data_3_2 = LedgerDetailsData()
         _details_data_3_2.token_address = token_address
@@ -86,7 +89,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_2.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000009", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_2)
+        async_db.add(_details_data_3_2)
 
         _details_data_3_3 = LedgerDetailsData()
         _details_data_3_3.token_address = token_address
@@ -94,7 +97,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_3.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000008", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_3)
+        async_db.add(_details_data_3_3)
 
         _details_data_4_1 = LedgerDetailsData()
         _details_data_4_1.token_address = token_address
@@ -102,17 +105,17 @@ class TestListAllLedgerDetailsData:
         _details_data_4_1.data_created = datetime.strptime(
             "2022/01/03 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_4_1)
+        async_db.add(_details_data_4_1)
 
         # Not Target
         _details_data_5_1 = LedgerDetailsData()
         _details_data_5_1.token_address = "test"
         _details_data_5_1.data_id = "dummy"
-        db.add(_details_data_5_1)
+        async_db.add(_details_data_5_1)
 
-        db.commit()
+        await async_db.commit()
 
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
@@ -149,20 +152,21 @@ class TestListAllLedgerDetailsData:
 
     # <Normal_1_2>
     # set issuer-address
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
         _details_data_1_1.token_address = token_address
@@ -170,7 +174,7 @@ class TestListAllLedgerDetailsData:
         _details_data_1_1.data_created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_1_1)
+        async_db.add(_details_data_1_1)
 
         _details_data_2_1 = LedgerDetailsData()
         _details_data_2_1.token_address = token_address
@@ -178,7 +182,7 @@ class TestListAllLedgerDetailsData:
         _details_data_2_1.data_created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_2_1)
+        async_db.add(_details_data_2_1)
 
         _details_data_2_2 = LedgerDetailsData()
         _details_data_2_2.token_address = token_address
@@ -186,7 +190,7 @@ class TestListAllLedgerDetailsData:
         _details_data_2_2.data_created = datetime.strptime(
             "2022/01/02 00:20:30.000002", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_2_2)
+        async_db.add(_details_data_2_2)
 
         _details_data_3_1 = LedgerDetailsData()
         _details_data_3_1.token_address = token_address
@@ -194,7 +198,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_1.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000010", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_1)
+        async_db.add(_details_data_3_1)
 
         _details_data_3_2 = LedgerDetailsData()
         _details_data_3_2.token_address = token_address
@@ -202,7 +206,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_2.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000009", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_2)
+        async_db.add(_details_data_3_2)
 
         _details_data_3_3 = LedgerDetailsData()
         _details_data_3_3.token_address = token_address
@@ -210,7 +214,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_3.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000008", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_3)
+        async_db.add(_details_data_3_3)
 
         _details_data_4_1 = LedgerDetailsData()
         _details_data_4_1.token_address = token_address
@@ -218,17 +222,17 @@ class TestListAllLedgerDetailsData:
         _details_data_4_1.data_created = datetime.strptime(
             "2022/01/03 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_4_1)
+        async_db.add(_details_data_4_1)
 
         # Not Target
         _details_data_5_1 = LedgerDetailsData()
         _details_data_5_1.token_address = "test"
         _details_data_5_1.data_id = "dummy"
-        db.add(_details_data_5_1)
+        async_db.add(_details_data_5_1)
 
-        db.commit()
+        await async_db.commit()
 
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address),
         )
 
@@ -262,20 +266,21 @@ class TestListAllLedgerDetailsData:
 
     # <Normal_2>
     # limit-offset
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
         _details_data_1_1.token_address = token_address
@@ -283,7 +288,7 @@ class TestListAllLedgerDetailsData:
         _details_data_1_1.data_created = datetime.strptime(
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_1_1)
+        async_db.add(_details_data_1_1)
 
         _details_data_2_1 = LedgerDetailsData()
         _details_data_2_1.token_address = token_address
@@ -291,7 +296,7 @@ class TestListAllLedgerDetailsData:
         _details_data_2_1.data_created = datetime.strptime(
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_2_1)
+        async_db.add(_details_data_2_1)
 
         _details_data_2_2 = LedgerDetailsData()
         _details_data_2_2.token_address = token_address
@@ -299,7 +304,7 @@ class TestListAllLedgerDetailsData:
         _details_data_2_2.data_created = datetime.strptime(
             "2022/01/02 00:20:30.000002", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
-        db.add(_details_data_2_2)
+        async_db.add(_details_data_2_2)
 
         _details_data_3_1 = LedgerDetailsData()
         _details_data_3_1.token_address = token_address
@@ -307,7 +312,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_1.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000010", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_1)
+        async_db.add(_details_data_3_1)
 
         _details_data_3_2 = LedgerDetailsData()
         _details_data_3_2.token_address = token_address
@@ -315,7 +320,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_2.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000009", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_2)
+        async_db.add(_details_data_3_2)
 
         _details_data_3_3 = LedgerDetailsData()
         _details_data_3_3.token_address = token_address
@@ -323,7 +328,7 @@ class TestListAllLedgerDetailsData:
         _details_data_3_3.data_created = datetime.strptime(
             "2022/01/02 15:20:30.000008", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_3_3)
+        async_db.add(_details_data_3_3)
 
         _details_data_4_1 = LedgerDetailsData()
         _details_data_4_1.token_address = token_address
@@ -331,17 +336,17 @@ class TestListAllLedgerDetailsData:
         _details_data_4_1.data_created = datetime.strptime(
             "2022/01/03 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/03
-        db.add(_details_data_4_1)
+        async_db.add(_details_data_4_1)
 
         # Not Target
         _details_data_5_1 = LedgerDetailsData()
         _details_data_5_1.token_address = "test"
         _details_data_5_1.data_id = "dummy"
-        db.add(_details_data_5_1)
+        async_db.add(_details_data_5_1)
 
-        db.commit()
+        await async_db.commit()
 
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address),
             params={"offset": 1, "limit": 2},
             headers={
@@ -373,11 +378,12 @@ class TestListAllLedgerDetailsData:
 
     # <Error_1>
     # Parameter Error(issuer-address)
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": "test",
@@ -401,14 +407,15 @@ class TestListAllLedgerDetailsData:
     # <Error_2_1>
     # Token Not Found
     # set issuer-address
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = (
             "0x1234567890123456789012345678901234567899"  # not target
@@ -417,12 +424,12 @@ class TestListAllLedgerDetailsData:
         _token.abi = {}
         _token.token_status = 2
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address),
             params={
                 "offset": 2,
@@ -443,11 +450,12 @@ class TestListAllLedgerDetailsData:
     # <Error_2_2>
     # Token Not Found
     # unset issuer-address
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address),
             params={
                 "offset": 2,
@@ -464,26 +472,27 @@ class TestListAllLedgerDetailsData:
 
     # <Error_3>
     # Processing Token
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address),
             params={
                 "offset": 2,

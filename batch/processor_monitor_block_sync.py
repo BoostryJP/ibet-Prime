@@ -31,6 +31,7 @@ from web3.middleware import ExtraDataToPOAMiddleware
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import Node
+from batch import free_malloc
 from batch.utils import batch_log
 from config import (
     BLOCK_GENERATION_SPEED_THRESHOLD,
@@ -261,6 +262,7 @@ async def main():
             LOG.exception(ex)
 
         await asyncio.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
+        free_malloc()
 
 
 if __name__ == "__main__":

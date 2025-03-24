@@ -23,7 +23,7 @@ from typing import Sequence
 
 import uvloop
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.types import BlockData, TxData
@@ -32,14 +32,14 @@ from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
-from config import CHAIN_ID, DATABASE_URL, INDEXER_SYNC_INTERVAL
+from config import CHAIN_ID, INDEXER_SYNC_INTERVAL
 
 process_name = "INDEXER-BLOCK_TX_DATA"
 LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = AsyncWeb3Wrapper()
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
@@ -163,6 +163,7 @@ async def main():
             LOG.exception("An exception occurred during event synchronization")
 
         await asyncio.sleep(INDEXER_SYNC_INTERVAL)
+        free_malloc()
 
 
 if __name__ == "__main__":

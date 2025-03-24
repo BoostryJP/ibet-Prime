@@ -58,12 +58,12 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
     LOG.propagate = True
-    return Processor(asyncio.Event())
+    yield Processor(asyncio.Event())
     LOG.propagate = False
     LOG.setLevel(default_log_level)
 
@@ -190,7 +190,9 @@ class TestProcessor:
     # Execute Batch Run 2nd: changed RSA
     # Execute Batch Run 3rd: modified PersonalInfo
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db, caplog: pytest.LogCaptureFixture):
+    async def test_normal_1(
+        self, processor, async_db, caplog: pytest.LogCaptureFixture
+    ):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
@@ -206,14 +208,14 @@ class TestProcessor:
         rsa_passphrase = E2EEUtils.encrypt("password")
         account.rsa_passphrase = rsa_passphrase
         account.rsa_status = AccountRsaStatus.CHANGING.value
-        db.add(account)
+        async_db.add(account)
 
         temporary = AccountRsaKeyTemporary()
         temporary.issuer_address = user_1["address"]
         temporary.rsa_private_key = user_1["rsa_private_key"]
         temporary.rsa_public_key = user_1["rsa_public_key"]
         temporary.rsa_passphrase = rsa_passphrase
-        db.add(temporary)
+        async_db.add(temporary)
 
         # token
         personal_info_contract_address_1 = deploy_personal_info_contract(user_1)
@@ -221,46 +223,46 @@ class TestProcessor:
             user_1, personal_info_contract_address_1
         )
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.tx_hash = "tx_hash"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = token_contract_address_1
-        token_1.abi = "abi"
+        token_1.abi = {}
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
         token_contract_address_2 = await deploy_share_token_contract(
             user_1, personal_info_contract_address_2
         )
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.tx_hash = "tx_hash"
         token_2.issuer_address = issuer_address_1
         token_2.token_address = token_contract_address_2
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         token_contract_address_3 = await deploy_bond_token_contract(user_1, None)
         token_3 = Token()
-        token_3.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_3.type = TokenType.IBET_STRAIGHT_BOND
         token_3.tx_hash = "tx_hash"
         token_3.issuer_address = issuer_address_1
         token_3.token_address = token_contract_address_3
-        token_3.abi = "abi"
+        token_3.abi = {}
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
         token_contract_address_4 = await deploy_share_token_contract(user_1, None)
         token_4 = Token()
-        token_4.type = TokenType.IBET_SHARE.value
+        token_4.type = TokenType.IBET_SHARE
         token_4.tx_hash = "tx_hash"
         token_4.issuer_address = issuer_address_1
         token_4.token_address = token_contract_address_4
-        token_4.abi = "abi"
+        token_4.abi = {}
         token_4.version = TokenVersion.V_24_09
-        db.add(token_4)
+        async_db.add(token_4)
 
         # PersonalInfo
         personal_user_1 = config_eth_account("user2")
@@ -273,14 +275,14 @@ class TestProcessor:
         idx_1.account_address = personal_user_1["address"]
         idx_1.personal_info = {}
         idx_1.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(idx_1)
+        async_db.add(idx_1)
 
         idx_2 = IDXPersonalInfo()
         idx_2.issuer_address = user_1["address"]
         idx_2.account_address = personal_user_2["address"]
         idx_2.personal_info = {}
         idx_2.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(idx_2)
+        async_db.add(idx_2)
 
         await set_personal_info_contract(
             personal_info_contract_address_1,
@@ -308,14 +310,14 @@ class TestProcessor:
         idx_3.account_address = personal_user_3["address"]
         idx_3.personal_info = {}
         idx_3.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(idx_3)
+        async_db.add(idx_3)
 
         idx_4 = IDXPersonalInfo()
         idx_4.issuer_address = user_1["address"]
         idx_4.account_address = personal_user_4["address"]
         idx_4.personal_info = {}
         idx_4.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(idx_4)
+        async_db.add(idx_4)
 
         await set_personal_info_contract(
             personal_info_contract_address_2,
@@ -338,14 +340,15 @@ class TestProcessor:
             ],
         )
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch(Run 1st)
         # Assume: Skip processing
         await processor.process()
+        async_db.expire_all()
 
         # assertion(Run 1st)
-        _account = db.scalars(select(Account).limit(1)).first()
+        _account = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -354,7 +357,9 @@ class TestProcessor:
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value
 
-        _temporary = db.scalars(select(AccountRsaKeyTemporary).limit(1)).first()
+        _temporary = (
+            await async_db.scalars(select(AccountRsaKeyTemporary).limit(1))
+        ).first()
         assert temporary.issuer_address == user_1["address"]
         assert temporary.rsa_private_key == user_1["rsa_private_key"]
         assert temporary.rsa_public_key == user_1["rsa_public_key"]
@@ -412,20 +417,21 @@ class TestProcessor:
         }
 
         # RSA Key Change Completed
-        account = db.scalars(select(Account).limit(1)).first()
+        account = (await async_db.scalars(select(Account).limit(1))).first()
         account.rsa_private_key = personal_user_1["rsa_private_key"]
         account.rsa_public_key = personal_user_1["rsa_public_key"]
-        db.merge(account)
+        await async_db.merge(account)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch(Run 2nd)
         # Assume: modified PersonalInfo, but DB not update
         await processor.process()
+        await async_db.rollback()
+        async_db.expire_all()
 
         # assertion(Run 2nd)
-        db.rollback()
-        _account = db.scalars(select(Account).limit(1)).first()
+        _account = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -434,7 +440,9 @@ class TestProcessor:
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value
 
-        _temporary = db.scalars(select(AccountRsaKeyTemporary).limit(1)).first()
+        _temporary = (
+            await async_db.scalars(select(AccountRsaKeyTemporary).limit(1))
+        ).first()
         assert temporary.issuer_address == user_1["address"]
         assert temporary.rsa_private_key == user_1["rsa_private_key"]
         assert temporary.rsa_public_key == user_1["rsa_public_key"]
@@ -490,6 +498,8 @@ class TestProcessor:
         # Execute batch(Run 3rd)
         # Assume: DB update
         await processor.process()
+        await async_db.rollback()
+        async_db.expire_all()
 
         # assertion(Run 3rd)
         assert "Failed to decrypt" not in caplog.text
@@ -499,8 +509,7 @@ class TestProcessor:
             f"Modify personal info process is completed: issuer={user_1['address']}",
         ) in caplog.record_tuples
 
-        db.rollback()
-        _account = db.scalars(select(Account).limit(1)).first()
+        _account = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -509,7 +518,7 @@ class TestProcessor:
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.SET.value
 
-        _temporary_count = db.scalar(
+        _temporary_count = await async_db.scalar(
             select(func.count()).select_from(select(AccountRsaKeyTemporary).subquery())
         )
         assert _temporary_count == 0

@@ -74,7 +74,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # APPROVE
     # token
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -83,16 +84,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -111,7 +112,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -127,7 +128,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -143,9 +144,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -155,7 +156,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
 
         # request target API
         with IbetSecurityTokenContract_approve_transfer as mock_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
                 headers={
@@ -179,15 +180,15 @@ class TestUpdateBondTokenTransferApprovalStatus:
             private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.scalars(
-            select(TransferApprovalHistory)
+        approval_op_list: list[TransferApprovalHistory] = (
+            await async_db.scalars(select(TransferApprovalHistory))
         ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
         assert approval_op.token_address == self.test_token_address
         assert approval_op.exchange_address == config.ZERO_ADDRESS
         assert approval_op.application_id == 100
-        assert approval_op.operation_type == TransferApprovalOperationType.APPROVE.value
+        assert approval_op.operation_type == TransferApprovalOperationType.APPROVE
         assert approval_op.from_address_personal_info == {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -213,7 +214,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # APPROVE
     # exchange
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -222,16 +224,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -251,7 +253,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -267,7 +269,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -283,7 +285,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
@@ -291,11 +293,11 @@ class TestUpdateBondTokenTransferApprovalStatus:
             return_value=("test_tx_hash", {"status": 1}),
         )
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         with IbetSecurityTokenEscrow_approve_transfer as mock_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
                 headers={
@@ -319,15 +321,15 @@ class TestUpdateBondTokenTransferApprovalStatus:
             private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.scalars(
-            select(TransferApprovalHistory)
+        approval_op_list: list[TransferApprovalHistory] = (
+            await async_db.scalars(select(TransferApprovalHistory))
         ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
         assert approval_op.token_address == self.test_token_address
         assert approval_op.exchange_address == self.test_exchange_address
         assert approval_op.application_id == 100
-        assert approval_op.operation_type == TransferApprovalOperationType.APPROVE.value
+        assert approval_op.operation_type == TransferApprovalOperationType.APPROVE
         assert approval_op.from_address_personal_info == {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -353,7 +355,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # CANCEL
     # token
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
-    def test_normal_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -362,16 +365,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -390,7 +393,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -406,7 +409,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -422,9 +425,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
@@ -434,7 +437,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
 
         # request target API
         with IbetSecurityTokenContract_cancel_transfer as mock_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 headers={
                     "issuer-address": issuer_address,
@@ -458,15 +461,15 @@ class TestUpdateBondTokenTransferApprovalStatus:
             private_key=ANY,
         )
 
-        cancel_op_list: list[TransferApprovalHistory] = db.scalars(
-            select(TransferApprovalHistory)
+        cancel_op_list: list[TransferApprovalHistory] = (
+            await async_db.scalars(select(TransferApprovalHistory))
         ).all()
         assert len(cancel_op_list) == 1
         cancel_op = cancel_op_list[0]
         assert cancel_op.token_address == self.test_token_address
         assert cancel_op.exchange_address == config.ZERO_ADDRESS
         assert cancel_op.application_id == 100
-        assert cancel_op.operation_type == TransferApprovalOperationType.CANCEL.value
+        assert cancel_op.operation_type == TransferApprovalOperationType.CANCEL
         assert cancel_op.from_address_personal_info == {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -491,7 +494,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Normal_3>
     # Authorization by auth-token
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -500,22 +504,22 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = issuer_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -534,7 +538,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -550,7 +554,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -566,9 +570,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -578,7 +582,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
 
         # request target API
         with IbetSecurityTokenContract_approve_transfer as mock_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
                 headers={
@@ -609,11 +613,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_1_1>
     # Validation Error
     # missing headers: issuer-address, body
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
         )
 
@@ -640,13 +645,14 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_1_2>
     # Validation Error
     # missing body: operation_type
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={},
             headers={
@@ -671,13 +677,14 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_1_3>
     # Validation Error
     # invalid value: body
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "test"},
             headers={
@@ -704,11 +711,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_1_4>
     # Validation Error
     # invalid value: header
-    def test_error_1_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_4(self, async_client, async_db):
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={"issuer-address": "issuer_address", "eoa-password": "password"},
@@ -737,14 +745,15 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_2_1>
     # Authorize Error
     # not account
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -763,7 +772,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_2_2>
     # Authorize Error
     # invalid password
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -772,14 +782,14 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -798,7 +808,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_3_1>
     # Not Found Error
     # token
-    def test_error_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -807,14 +818,14 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -833,7 +844,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_3_2>
     # Not Found Error
     # transfer approval
-    def test_error_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -842,23 +854,23 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -877,7 +889,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_4_1>
     # Invalid Parameter Error
     # processing Token
-    def test_error_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -886,24 +899,24 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         id = 10
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -922,7 +935,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_4_2>
     # Invalid Parameter Error
     # already approved
-    def test_error_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -931,16 +945,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -963,12 +977,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -987,7 +1001,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_4_3>
     # Invalid Parameter Error
     # canceled application
-    def test_error_4_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_3(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -996,16 +1011,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1028,12 +1043,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = True
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -1052,7 +1067,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_4_4>
     # Invalid Parameter Error
     # escrow has not been finished yet
-    def test_error_4_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_4(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1061,16 +1077,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1091,12 +1107,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = False
         _idx_transfer_approval.escrow_finished = False
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
@@ -1115,7 +1131,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_4_5>
     # Invalid Parameter Error
     # application that cannot be canceled
-    def test_error_4_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_5(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1124,16 +1141,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1154,12 +1171,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = False
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
@@ -1178,7 +1195,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_4_6>
     # Invalid Parameter Error
     # This operation is duplicated
-    def test_error_4_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_6(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1187,16 +1205,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1217,19 +1235,19 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancelled = False
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _cancel_op = TransferApprovalHistory()
         _cancel_op.token_address = self.test_token_address
         _cancel_op.exchange_address = config.ZERO_ADDRESS
         _cancel_op.application_id = 100
-        _cancel_op.operation_type = TransferApprovalOperationType.CANCEL.value
-        db.add(_cancel_op)
+        _cancel_op.operation_type = TransferApprovalOperationType.CANCEL
+        async_db.add(_cancel_op)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
@@ -1254,7 +1272,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
         "app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
-    def test_error_5_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1263,16 +1282,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1291,7 +1310,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -1307,7 +1326,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -1324,12 +1343,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -1339,7 +1358,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",
@@ -1350,7 +1369,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Send Transaction Error
     # IbetSecurityTokenInterface.approve_transfer
     # return fail with Revert
-    def test_error_5_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1359,16 +1379,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1387,7 +1407,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -1403,7 +1423,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -1419,9 +1439,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1438,7 +1458,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             IbetSecurityTokenContract_approve_transfer,
             IbetSecurityTokenContract_cancel_transfer,
         ):
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
                 headers={
@@ -1463,7 +1483,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
         "app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
-    def test_error_5_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5_3(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1472,16 +1493,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1501,7 +1522,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -1517,7 +1538,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -1533,12 +1554,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             json={"operation_type": "approve"},
             headers={
@@ -1548,7 +1569,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",
@@ -1559,7 +1580,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Send Transaction Error
     # IbetSecurityTokenEscrow.approve_transfer
     # return fail with Revert
-    def test_error_5_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5_4(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1568,16 +1590,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1597,7 +1619,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -1613,7 +1635,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -1629,9 +1651,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
@@ -1641,7 +1663,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
 
         # request target API
         with IbetSecurityTokenEscrow_approve_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
                 headers={
@@ -1666,7 +1688,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
         "app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
-    def test_error_6_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1675,16 +1698,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1703,7 +1726,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -1719,7 +1742,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -1735,12 +1758,12 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
@@ -1750,7 +1773,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
             "meta": {"code": 2, "title": "SendTransactionError"},
             "detail": "failed to send transaction",
@@ -1761,7 +1784,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Send Transaction Error
     # IbetSecurityTokenInterface.cancel_transfer
     # return fail with Revert
-    def test_error_6_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1770,16 +1794,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1798,7 +1822,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -1814,7 +1838,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
@@ -1830,9 +1854,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_to.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_to)
+        async_db.add(_personal_info_to)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
@@ -1842,7 +1866,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
 
         # request target API
         with IbetSecurityTokenContract_cancel_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 headers={
                     "issuer-address": issuer_address,
@@ -1861,7 +1885,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_7_1>
     # InvalidParameterError
     # personal information for from_address is not registered
-    def test_error_7_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7_1(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1870,16 +1895,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1898,9 +1923,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1910,7 +1935,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
 
         # request target API
         with IbetSecurityTokenContract_approve_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
                 headers={
@@ -1929,7 +1954,8 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # <Error_7_2>
     # InvalidParameterError
     # personal information for to_address is not registered
-    def test_error_7_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7_2(self, async_client, async_db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1938,16 +1964,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         id = 10
         _idx_transfer_approval = IDXTransferApproval()
@@ -1966,7 +1992,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
@@ -1982,9 +2008,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
             "tax_category": 10,
         }
         _personal_info_from.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(_personal_info_from)
+        async_db.add(_personal_info_from)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1994,7 +2020,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
 
         # request target API
         with IbetSecurityTokenContract_approve_transfer:
-            resp = client.post(
+            resp = await async_client.post(
                 self.base_url.format(self.test_token_address, id),
                 json={"operation_type": "approve"},
                 headers={

@@ -63,7 +63,7 @@ class TestIssueShareToken:
     # <Normal_1_1>
     # create only
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, client, db):
+    async def test_normal_1_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -71,11 +71,11 @@ class TestIssueShareToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
-        token_before = db.scalars(select(Token)).all()
+        token_before = (await async_db.scalars(select(Token))).all()
 
         # mock
         IbetShareContract_create = patch(
@@ -115,7 +115,7 @@ class TestIssueShareToken:
                 "cancellation_date": "20221231",
                 "principal_value": 1000,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -142,7 +142,7 @@ class TestIssueShareToken:
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
-                token_template=TokenType.IBET_SHARE.value,
+                token_template=TokenType.IBET_SHARE,
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
@@ -154,12 +154,12 @@ class TestIssueShareToken:
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 1
 
-            token_after = db.scalars(select(Token)).all()
+            token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_SHARE.value
+            assert token_1.type == TokenType.IBET_SHARE
             assert (
                 token_1.tx_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -170,7 +170,7 @@ class TestIssueShareToken:
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_24_09
 
-            position = db.scalars(select(IDXPosition).limit(1)).first()
+            position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -178,7 +178,7 @@ class TestIssueShareToken:
             assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
-            utxo = db.scalars(select(UTXO).limit(1)).first()
+            utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
             assert (
                 utxo.transaction_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -189,12 +189,16 @@ class TestIssueShareToken:
             assert utxo.block_number == 12345
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            update_token = db.scalars(select(UpdateToken).limit(1)).first()
+            update_token = (
+                await async_db.scalars(select(UpdateToken).limit(1))
+            ).first()
             assert update_token is None
 
-            operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+            operation_log = (
+                await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+            ).first()
             assert operation_log.token_address == "contract_address_test1"
-            assert operation_log.type == TokenType.IBET_SHARE.value
+            assert operation_log.type == TokenType.IBET_SHARE
             assert operation_log.original_contents is None
             assert operation_log.operation_category == "Issue"
 
@@ -202,7 +206,7 @@ class TestIssueShareToken:
     # create only
     # No input for symbol, dividends and cancellation_date.
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, client, db):
+    async def test_normal_1_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -210,11 +214,11 @@ class TestIssueShareToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
-        token_before = db.scalars(select(Token)).all()
+        token_before = (await async_db.scalars(select(Token))).all()
 
         # mock
         IbetShareContract_create = patch(
@@ -249,7 +253,7 @@ class TestIssueShareToken:
                 "total_supply": 10000,
                 "principal_value": 1000,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -266,7 +270,7 @@ class TestIssueShareToken:
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
-                token_template=TokenType.IBET_SHARE.value,
+                token_template=TokenType.IBET_SHARE,
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
@@ -278,12 +282,12 @@ class TestIssueShareToken:
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 1
 
-            token_after = db.scalars(select(Token)).all()
+            token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_SHARE.value
+            assert token_1.type == TokenType.IBET_SHARE
             assert (
                 token_1.tx_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -294,7 +298,7 @@ class TestIssueShareToken:
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_24_09
 
-            position = db.scalars(select(IDXPosition).limit(1)).first()
+            position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -302,7 +306,7 @@ class TestIssueShareToken:
             assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
-            utxo = db.scalars(select(UTXO).limit(1)).first()
+            utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
             assert (
                 utxo.transaction_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -313,19 +317,23 @@ class TestIssueShareToken:
             assert utxo.block_number == 12345
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            update_token = db.scalars(select(UpdateToken).limit(1)).first()
+            update_token = (
+                await async_db.scalars(select(UpdateToken).limit(1))
+            ).first()
             assert update_token is None
 
-            operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+            operation_log = (
+                await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+            ).first()
             assert operation_log.token_address == "contract_address_test1"
-            assert operation_log.type == TokenType.IBET_SHARE.value
+            assert operation_log.type == TokenType.IBET_SHARE
             assert operation_log.original_contents is None
             assert operation_log.operation_category == "Issue"
 
     # <Normal_2>
     # include updates
     @pytest.mark.asyncio
-    async def test_normal_2(self, client, db):
+    async def test_normal_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -333,11 +341,11 @@ class TestIssueShareToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
-        token_before = db.scalars(select(Token)).all()
+        token_before = (await async_db.scalars(select(Token))).all()
 
         # mock
         IbetShareContract_create = patch(
@@ -387,7 +395,7 @@ class TestIssueShareToken:
                 "principal_value": 1000,
                 "is_canceled": True,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -419,12 +427,12 @@ class TestIssueShareToken:
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 0
 
-            token_after = db.scalars(select(Token)).all()
+            token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_SHARE.value
+            assert token_1.type == TokenType.IBET_SHARE
             assert (
                 token_1.tx_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -435,17 +443,19 @@ class TestIssueShareToken:
             assert token_1.token_status == 0
             assert token_1.version == TokenVersion.V_24_09
 
-            position = db.scalars(select(IDXPosition).limit(1)).first()
+            position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position is None
 
-            utxo = db.scalars(select(UTXO).limit(1)).first()
+            utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
             assert utxo is None
 
-            update_token = db.scalars(select(UpdateToken).limit(1)).first()
+            update_token = (
+                await async_db.scalars(select(UpdateToken).limit(1))
+            ).first()
             assert update_token.id == 1
             assert update_token.token_address == "contract_address_test1"
             assert update_token.issuer_address == test_account["address"]
-            assert update_token.type == TokenType.IBET_SHARE.value
+            assert update_token.type == TokenType.IBET_SHARE
             assert update_token.arguments == req_param
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
@@ -453,7 +463,7 @@ class TestIssueShareToken:
     # <Normal_3>
     # Authorization by auth-token
     @pytest.mark.asyncio
-    async def test_normal_3(self, client, db):
+    async def test_normal_3(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -461,17 +471,17 @@ class TestIssueShareToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
-        db.commit()
+        await async_db.commit()
 
-        token_before = db.scalars(select(Token)).all()
+        token_before = (await async_db.scalars(select(Token))).all()
 
         # mock
         IbetShareContract_create = patch(
@@ -511,7 +521,7 @@ class TestIssueShareToken:
                 "cancellation_date": "20221231",
                 "principal_value": 1000,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -538,7 +548,7 @@ class TestIssueShareToken:
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
-                token_template=TokenType.IBET_SHARE.value,
+                token_template=TokenType.IBET_SHARE,
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
@@ -550,12 +560,12 @@ class TestIssueShareToken:
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 1
 
-            token_after = db.scalars(select(Token)).all()
+            token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_SHARE.value
+            assert token_1.type == TokenType.IBET_SHARE
             assert (
                 token_1.tx_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -566,7 +576,7 @@ class TestIssueShareToken:
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_24_09
 
-            position = db.scalars(select(IDXPosition).limit(1)).first()
+            position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -574,7 +584,7 @@ class TestIssueShareToken:
             assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
-            utxo = db.scalars(select(UTXO).limit(1)).first()
+            utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
             assert (
                 utxo.transaction_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -585,18 +595,23 @@ class TestIssueShareToken:
             assert utxo.block_number == 12345
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            update_token = db.scalars(select(UpdateToken).limit(1)).first()
+            update_token = (
+                await async_db.scalars(select(UpdateToken).limit(1))
+            ).first()
             assert update_token is None
 
-            operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+            operation_log = (
+                await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+            ).first()
             assert operation_log.token_address == "contract_address_test1"
-            assert operation_log.type == TokenType.IBET_SHARE.value
+            assert operation_log.type == TokenType.IBET_SHARE
             assert operation_log.original_contents is None
             assert operation_log.operation_category == "Issue"
 
     # <Normal_4_1>
     # YYYYMMDD parameter is not empty
-    def test_normal_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -604,9 +619,9 @@ class TestIssueShareToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_create = patch(
@@ -646,7 +661,7 @@ class TestIssueShareToken:
                 "cancellation_date": "20221231",
                 "principal_value": 1000,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -678,7 +693,8 @@ class TestIssueShareToken:
 
     # <Normal_4_2>
     # YYYYMMDD parameter is empty
-    def test_normal_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -686,9 +702,9 @@ class TestIssueShareToken:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_create = patch(
@@ -728,7 +744,7 @@ class TestIssueShareToken:
                 "cancellation_date": "",
                 "principal_value": 1000,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -765,9 +781,10 @@ class TestIssueShareToken:
     # <Error_1>
     # Validation Error
     # missing fields
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target api
-        resp = client.post(self.apiurl)
+        resp = await async_client.post(self.apiurl)
 
         # assertion
         assert resp.status_code == 422
@@ -792,7 +809,8 @@ class TestIssueShareToken:
     # <Error_2_1>
     # Validation Error
     # format error
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # request target api
@@ -809,7 +827,7 @@ class TestIssueShareToken:
             "personal_info_contract_address": "0x0",
             "principal_value": 1000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl,
             json=req_param,
             headers={"issuer-address": test_account["address"]},
@@ -847,7 +865,8 @@ class TestIssueShareToken:
     # <Error_2_2>
     # Validation Error
     # required headers
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         # request target api
         req_param = {
             "name": "name_test1",
@@ -860,7 +879,7 @@ class TestIssueShareToken:
             "cancellation_date": "20221231",
             "principal_value": 1000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
@@ -881,7 +900,8 @@ class TestIssueShareToken:
     # <Error_2_3>
     # Validation Error
     # eoa-password is not a Base64-encoded encrypted data
-    def test_error_2_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_3(self, async_client, async_db):
         test_account_1 = config_eth_account("user1")
 
         # prepare data
@@ -889,9 +909,9 @@ class TestIssueShareToken:
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         req_param = {
@@ -905,7 +925,7 @@ class TestIssueShareToken:
             "cancellation_date": "20221231",
             "principal_value": 1000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl,
             json=req_param,
             headers={
@@ -931,7 +951,8 @@ class TestIssueShareToken:
     # <Error_2_4>
     # Validation Error
     # min value
-    def test_error_2_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_4(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # request target api
@@ -955,7 +976,7 @@ class TestIssueShareToken:
             "principal_value": -1,
             "is_canceled": True,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl,
             json=req_param,
             headers={"issuer-address": test_account["address"]},
@@ -1000,7 +1021,8 @@ class TestIssueShareToken:
     # <Error_2_5>
     # Validation Error
     # max value or max length
-    def test_error_2_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_5(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # request target api
@@ -1024,7 +1046,7 @@ class TestIssueShareToken:
             "principal_value": 5_000_000_001,
             "is_canceled": True,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl,
             json=req_param,
             headers={"issuer-address": test_account["address"]},
@@ -1097,7 +1119,8 @@ class TestIssueShareToken:
     # <Error_2_6>
     # Validation Error
     # YYYYMMDD regex
-    def test_error_2_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_6(self, async_client, async_db):
         test_account = config_eth_account("user1")
 
         # request target api
@@ -1112,7 +1135,7 @@ class TestIssueShareToken:
             "cancellation_date": "202201010",
             "principal_value": 1000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl,
             json=req_param,
             headers={"issuer-address": test_account["address"]},
@@ -1179,7 +1202,8 @@ class TestIssueShareToken:
 
     # <Error_3_1>
     # Not Exists Address
-    def test_error_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, async_client, async_db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -1188,9 +1212,9 @@ class TestIssueShareToken:
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         req_param = {
@@ -1204,7 +1228,7 @@ class TestIssueShareToken:
             "cancellation_date": "20221231",
             "principal_value": 1000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl,
             json=req_param,
             headers={
@@ -1222,7 +1246,8 @@ class TestIssueShareToken:
 
     # <Error_3_2>
     # Password Mismatch
-    def test_error_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, async_client, async_db):
         test_account_1 = config_eth_account("user1")
 
         # prepare data
@@ -1230,9 +1255,9 @@ class TestIssueShareToken:
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target api
         req_param = {
@@ -1246,7 +1271,7 @@ class TestIssueShareToken:
             "cancellation_date": "20221231",
             "principal_value": 1000,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.apiurl,
             json=req_param,
             headers={
@@ -1265,7 +1290,8 @@ class TestIssueShareToken:
     # <Error_4_1>
     # Send Transaction Error
     # IbetShareContract.create
-    def test_error_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4_1(self, async_client, async_db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -1274,9 +1300,9 @@ class TestIssueShareToken:
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_2["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_create = patch(
@@ -1297,7 +1323,7 @@ class TestIssueShareToken:
                 "cancellation_date": "20221231",
                 "principal_value": 1000,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -1307,7 +1333,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            assert resp.status_code == 400
+            assert resp.status_code == 503
             assert resp.json() == {
                 "meta": {"code": 2, "title": "SendTransactionError"},
                 "detail": "failed to send transaction",
@@ -1316,7 +1342,8 @@ class TestIssueShareToken:
     # <Error_5>
     # Send Transaction Error
     # TokenListContract.register
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -1325,9 +1352,9 @@ class TestIssueShareToken:
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_2["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_create = patch(
@@ -1356,7 +1383,7 @@ class TestIssueShareToken:
                 "cancellation_date": "20221231",
                 "principal_value": 1000,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.apiurl,
                 json=req_param,
                 headers={
@@ -1366,7 +1393,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            assert resp.status_code == 400
+            assert resp.status_code == 503
             assert resp.json() == {
                 "meta": {"code": 2, "title": "SendTransactionError"},
                 "detail": "failed to register token address token list",

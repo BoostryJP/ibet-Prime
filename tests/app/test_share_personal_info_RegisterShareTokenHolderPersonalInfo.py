@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from unittest.mock import patch
 
+import pytest
 from sqlalchemy import select
 
 from app.exceptions import SendTransactionError
@@ -47,7 +48,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
 
     # <Normal_1_1>
     # data_source = on_chain
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -62,7 +64,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -71,9 +73,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -110,7 +112,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                 "is_corporate": False,
                 "tax_category": 10,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
@@ -139,7 +141,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
 
     # <Normal_1_2>
     # data_source = off_chain
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -154,7 +157,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -163,9 +166,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -203,7 +206,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                 "tax_category": 10,
                 "data_source": PersonalInfoDataSource.OFF_CHAIN,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
@@ -216,10 +219,12 @@ class TestRegisterShareTokenHolderPersonalInfo:
             assert resp.status_code == 200
             assert resp.json() is None
 
-            _off_personal_info = db.scalars(
-                select(IDXPersonalInfo)
-                .where(IDXPersonalInfo.issuer_address == _issuer_address)
-                .limit(1)
+            _off_personal_info = (
+                await async_db.scalars(
+                    select(IDXPersonalInfo)
+                    .where(IDXPersonalInfo.issuer_address == _issuer_address)
+                    .limit(1)
+                )
             ).first()
             assert _off_personal_info is not None
             assert _off_personal_info.issuer_address == _issuer_address
@@ -238,7 +243,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
 
     # <Normal_2_1>
     # Optional items
-    def test_normal_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -253,7 +259,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -262,9 +268,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -294,7 +300,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                 "account_address": _test_account_address,
                 "key_manager": "test_key_manager",
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
@@ -323,7 +329,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
 
     # <Normal_2_2>
     # Nullable items
-    def test_normal_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -338,7 +345,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -347,9 +354,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -386,7 +393,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                 "is_corporate": None,
                 "tax_category": None,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
@@ -415,7 +422,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
 
     # <Normal_3>
     # Authorization by auth-token
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -430,13 +438,13 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         auth_token = AuthToken()
         auth_token.issuer_address = _issuer_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -445,9 +453,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -484,7 +492,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                 "is_corporate": False,
                 "tax_category": 10,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
@@ -518,7 +526,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_1_1>
     # RequestValidationError
     # headers and body required
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -529,7 +538,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        resp = client.post(self.test_url.format(_token_address))
+        resp = await async_client.post(self.test_url.format(_token_address))
 
         # assertion
         assert resp.status_code == 422
@@ -554,7 +563,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_1_2>
     # RequestValidationError
     # personal_info
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -576,7 +586,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": None,
             "tax_category": None,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -602,7 +612,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_1_3>
     # RequestValidationError
     # personal_info.account_address is invalid
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -624,7 +635,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -651,7 +662,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_1_4>
     # RequestValidationError
     # issuer_address
-    def test_error_1_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_4(self, async_client, async_db):
         _test_account = config_eth_account("user2")
         _test_account_address = _test_account["address"]
 
@@ -669,7 +681,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
@@ -695,7 +707,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_1_5>
     # RequestValidationError
     # eoa-password not encrypted
-    def test_error_1_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_5(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -717,7 +730,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
@@ -743,7 +756,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_1_6>
     # RequestValidationError
     # data_source
-    def test_error_1_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_6(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -766,7 +780,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "tax_category": 10,
             "data_source": "invalid_data_source",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -793,7 +807,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_2_1>
     # AuthorizationError
     # issuer does not exist
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -815,7 +830,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
@@ -834,7 +849,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_2_2>
     # AuthorizationError
     # password mismatch
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -849,9 +865,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -865,7 +881,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
@@ -884,7 +900,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_3>
     # HTTPException 404
     # token not found
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -899,9 +916,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -915,7 +932,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
@@ -934,7 +951,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_4>
     # InvalidParameterError
     # processing token
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -949,7 +967,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -959,9 +977,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.abi = {}
         token.token_status = 0
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -975,7 +993,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
@@ -993,7 +1011,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
 
     # <Error_5>
     # SendTransactionError
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -1008,7 +1027,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -1017,9 +1036,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -1056,7 +1075,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                 "is_corporate": False,
                 "tax_category": 10,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.test_url.format(_token_address, _test_account_address),
                 json=req_param,
                 headers={
@@ -1066,7 +1085,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             )
 
             # assertion
-            assert resp.status_code == 400
+            assert resp.status_code == 503
             assert resp.json() == {
                 "meta": {"code": 2, "title": "SendTransactionError"},
                 "detail": "failed to register personal information",
@@ -1074,7 +1093,8 @@ class TestRegisterShareTokenHolderPersonalInfo:
 
     # <Error_6>
     # PersonalInfoExceedsSizeLimit
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -1089,7 +1109,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -1098,9 +1118,9 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -1137,7 +1157,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                 "is_corporate": False,
                 "tax_category": 10,
             }
-            resp = client.post(
+            resp = await async_client.post(
                 self.test_url.format(_token_address, _test_account_address),
                 json=req_param,
                 headers={

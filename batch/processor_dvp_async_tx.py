@@ -24,7 +24,7 @@ from typing import Sequence
 
 import uvloop
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import and_, asc, create_engine, select
+from sqlalchemy import and_, asc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
@@ -46,9 +46,9 @@ from app.model.db import (
 )
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
+from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
-from config import DATABASE_URL
 
 """
 [PROCESSOR-DVP-ASYNC-TX]
@@ -58,8 +58,6 @@ A processor for asynchronous transaction execution of DVP
 
 process_name = "PROCESSOR-DVP-Async-Tx"
 LOG = batch_log.get_logger(process_name=process_name)
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
@@ -396,6 +394,7 @@ async def main():
                 if is_shutdown.is_set():
                     break
                 await asyncio.sleep(1)
+            free_malloc()
     finally:
         LOG.info("Service is shutdown")
 

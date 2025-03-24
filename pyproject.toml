@@ -1,48 +1,49 @@
 [project]
 name = "ibet-prime"
-version = "24.12"
+version = "25.3"
 description = "ibet-Prime is an API service that enables the issuance and management of security tokens on the ibet network."
 authors = [
     {name = "BOOSTRY Co., Ltd.", email = "dev@boostry.co.jp"},
 ]
 license = {text = "Apache License, Version 2.0"}
 readme = "README.md"
-requires-python = "==3.12.2"
+requires-python = "==3.12.9"
 dependencies = [
     "alembic<2.0.0,>=1.14.0",
-    "boto3~=1.35.11",
-    "coincurve~=20.0.0",
-    "eth-keyfile==0.8.1",
-    "eth-utils~=5.0.0",
+    "boto3~=1.37.9",
+    "coincurve~=21.0.0",
+    "eth-keyfile==0.9.1",
+    "eth-utils~=5.2.0",
     "fastapi~=0.115.0",
     "gunicorn~=23.0.0",
     "orjson~=3.10.3",
     "psycopg[c]<4.0.0,>=3.2.0",
-    "pycryptodome~=3.20",
+    "pycryptodome~=3.21",
     "pydantic~=2.10.3",
-    "pytz~=2024.1",
+    "pytz~=2025.1",
     "shared-memory-dict~=0.7.2",
-    "web3==7.5.0",
+    "web3==7.8.0",
     "httpx<1.0.0,>=0.27.0",
     "sqlalchemy[asyncio]<3.0.0,>=2.0.33",
-    "uvicorn[standard]~=0.32.0",
+    "uvicorn[standard]~=0.34.0",
     "uvloop~=0.21.0",
     "memray<2.0.0,>=1.14.0",
     "py-spy>=0.4.0",
-    "typer==0.12.3",
+    "typer~=0.15.2",
+    "asyncpg~=0.30.0",
 ]
 
 [tool.uv]
 dev-dependencies = [
     "pytest<9.0.0,>=8.3.2",
-    "pytest-cov<6.0.0,>=5.0.0",
+    "pytest-cov<7.0.0,>=6.0.0",
     "pyyaml<7.0,>=6.0",
-    "pre-commit<4.0.0,>=3.6.0",
+    "pre-commit<5.0.0,>=4.1.0",
     "ruff<1.0.0,>=0.5.4",
     "textual-dev<2.0.0,>=1.2.1",
     "pytest-alembic<1.0.0,>=0.10.7",
     "pytest-freezer<1.0.0,>=0.4.8",
-    "pytest-asyncio==0.23.8",
+    "pytest-asyncio<0.26.0,>=0.25.0",
     "pytest-aiohttp<2.0.0,>=1.0.5",
     "ruamel-yaml<1.0.0,>=0.18.6",
     "pytest-memray<2.0.0,>=1.6.0",
@@ -88,6 +89,7 @@ exclude = ["migrations/*"]
 combine-as-imports = true
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
 addopts = "-m 'not alembic'"
 markers = [
     "alembic: tests for alembic",

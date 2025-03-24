@@ -49,6 +49,7 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
 from config import (
@@ -544,7 +545,7 @@ class Processor:
         error_transfer_id: List[int],
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = NotificationType.BULK_TRANSFER_ERROR
@@ -585,6 +586,7 @@ class Worker:
                 if self.is_shutdown.is_set():
                     break
                 await asyncio.sleep(1)
+            free_malloc()
 
 
 async def main():

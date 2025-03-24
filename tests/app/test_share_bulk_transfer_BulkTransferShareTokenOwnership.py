@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import hashlib
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import (
@@ -65,26 +66,27 @@ class TestBulkTransferShareTokenOwnership:
 
     # <Normal_1>
     # Authorization by eoa-password
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : Tokens
         for _t in self.req_tokens:
             _token = Token()
-            _token.type = TokenType.IBET_SHARE.value
+            _token.type = TokenType.IBET_SHARE
             _token.tx_hash = ""
             _token.issuer_address = self.admin_address
             _token.token_address = _t
-            _token.abi = ""
+            _token.abi = {}
             _token.version = TokenVersion.V_24_09
-            db.add(_token)
+            async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -103,7 +105,7 @@ class TestBulkTransferShareTokenOwnership:
                 },
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -115,9 +117,11 @@ class TestBulkTransferShareTokenOwnership:
         # assertion
         assert resp.status_code == 200
 
-        bulk_transfer_upload = db.scalars(
-            select(BulkTransferUpload).where(
-                BulkTransferUpload.upload_id == resp.json()["upload_id"]
+        bulk_transfer_upload = (
+            await async_db.scalars(
+                select(BulkTransferUpload).where(
+                    BulkTransferUpload.upload_id == resp.json()["upload_id"]
+                )
             )
         ).all()
         assert len(bulk_transfer_upload) == 1
@@ -125,22 +129,24 @@ class TestBulkTransferShareTokenOwnership:
         assert bulk_transfer_upload[0].token_address == self.req_tokens[0]
         assert bulk_transfer_upload[0].status == 0
 
-        bulk_transfer = db.scalars(
-            select(BulkTransfer)
-            .where(BulkTransfer.upload_id == resp.json()["upload_id"])
-            .order_by(BulkTransfer.id)
+        bulk_transfer = (
+            await async_db.scalars(
+                select(BulkTransfer)
+                .where(BulkTransfer.upload_id == resp.json()["upload_id"])
+                .order_by(BulkTransfer.id)
+            )
         ).all()
         assert len(bulk_transfer) == 2
         assert bulk_transfer[0].issuer_address == self.admin_address
         assert bulk_transfer[0].token_address == self.req_tokens[0]
-        assert bulk_transfer[0].token_type == TokenType.IBET_SHARE.value
+        assert bulk_transfer[0].token_type == TokenType.IBET_SHARE
         assert bulk_transfer[0].from_address == self.from_address
         assert bulk_transfer[0].to_address == self.to_address
         assert bulk_transfer[0].amount == 5
         assert bulk_transfer[0].status == 0
         assert bulk_transfer[1].issuer_address == self.admin_address
         assert bulk_transfer[1].token_address == self.req_tokens[0]
-        assert bulk_transfer[1].token_type == TokenType.IBET_SHARE.value
+        assert bulk_transfer[1].token_type == TokenType.IBET_SHARE
         assert bulk_transfer[1].from_address == self.from_address
         assert bulk_transfer[1].to_address == self.to_address
         assert bulk_transfer[1].amount == 10
@@ -148,33 +154,34 @@ class TestBulkTransferShareTokenOwnership:
 
     # <Normal_2>
     # Authorization by auth-token
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : AuthToken
         auth_token = AuthToken()
         auth_token.issuer_address = self.admin_address
         auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
         auth_token.valid_duration = 0
-        db.add(auth_token)
+        async_db.add(auth_token)
 
         # prepare data : Tokens
         for _t in self.req_tokens:
             _token = Token()
-            _token.type = TokenType.IBET_SHARE.value
+            _token.type = TokenType.IBET_SHARE
             _token.tx_hash = ""
             _token.issuer_address = self.admin_address
             _token.token_address = _t
-            _token.abi = ""
+            _token.abi = {}
             _token.version = TokenVersion.V_24_09
-            db.add(_token)
+            async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -193,7 +200,7 @@ class TestBulkTransferShareTokenOwnership:
                 },
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -205,9 +212,11 @@ class TestBulkTransferShareTokenOwnership:
         # assertion
         assert resp.status_code == 200
 
-        bulk_transfer_upload = db.scalars(
-            select(BulkTransferUpload).where(
-                BulkTransferUpload.upload_id == resp.json()["upload_id"]
+        bulk_transfer_upload = (
+            await async_db.scalars(
+                select(BulkTransferUpload).where(
+                    BulkTransferUpload.upload_id == resp.json()["upload_id"]
+                )
             )
         ).all()
         assert len(bulk_transfer_upload) == 1
@@ -215,22 +224,24 @@ class TestBulkTransferShareTokenOwnership:
         assert bulk_transfer_upload[0].token_address == self.req_tokens[0]
         assert bulk_transfer_upload[0].status == 0
 
-        bulk_transfer = db.scalars(
-            select(BulkTransfer)
-            .where(BulkTransfer.upload_id == resp.json()["upload_id"])
-            .order_by(BulkTransfer.id)
+        bulk_transfer = (
+            await async_db.scalars(
+                select(BulkTransfer)
+                .where(BulkTransfer.upload_id == resp.json()["upload_id"])
+                .order_by(BulkTransfer.id)
+            )
         ).all()
         assert len(bulk_transfer) == 2
         assert bulk_transfer[0].issuer_address == self.admin_address
         assert bulk_transfer[0].token_address == self.req_tokens[0]
-        assert bulk_transfer[0].token_type == TokenType.IBET_SHARE.value
+        assert bulk_transfer[0].token_type == TokenType.IBET_SHARE
         assert bulk_transfer[0].from_address == self.from_address
         assert bulk_transfer[0].to_address == self.to_address
         assert bulk_transfer[0].amount == 5
         assert bulk_transfer[0].status == 0
         assert bulk_transfer[1].issuer_address == self.admin_address
         assert bulk_transfer[1].token_address == self.req_tokens[0]
-        assert bulk_transfer[1].token_type == TokenType.IBET_SHARE.value
+        assert bulk_transfer[1].token_type == TokenType.IBET_SHARE
         assert bulk_transfer[1].from_address == self.from_address
         assert bulk_transfer[1].to_address == self.to_address
         assert bulk_transfer[1].amount == 10
@@ -243,7 +254,8 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_1_1>
     # RequestValidationError
     # invalid type
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         _token_address_int = 10  # integer
         _from_address_long = (
             "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D7811"  # long address
@@ -261,7 +273,7 @@ class TestBulkTransferShareTokenOwnership:
         }
 
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={"issuer-address": self.admin_address},
@@ -306,7 +318,8 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_1_2>
     # RequestValidationError
     # invalid type(max value)
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -318,7 +331,7 @@ class TestBulkTransferShareTokenOwnership:
                 }
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -345,9 +358,10 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_1_3>
     # RequestValidationError
     # headers and body required
-    def test_error_1_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, async_client, async_db):
         # request target API
-        resp = client.post(self.test_url)
+        resp = await async_client.post(self.test_url)
 
         # assertion
         assert resp.status_code == 422
@@ -372,7 +386,8 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_1_4>
     # RequestValidationError
     # issuer-address
-    def test_error_1_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_4(self, async_client, async_db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -384,7 +399,7 @@ class TestBulkTransferShareTokenOwnership:
                 },
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url, json=req_param, headers={"issuer-address": "admin_address"}
         )
 
@@ -405,7 +420,8 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_1_5>
     # RequestValidationError
     # eoa-password(not decrypt)
-    def test_error_1_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_5(self, async_client, async_db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -417,7 +433,7 @@ class TestBulkTransferShareTokenOwnership:
                 },
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={"issuer-address": self.admin_address, "eoa-password": "password"},
@@ -440,19 +456,20 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_2>
     # InvalidParameterError
     # list length is 0
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"transfer_list": []}
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -479,7 +496,8 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_3_1>
     # AuthorizationError
     # issuer does not exist
-    def test_error_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, async_client, async_db):
         # request target API
         req_param = {
             "transfer_list": [
@@ -497,7 +515,7 @@ class TestBulkTransferShareTokenOwnership:
                 },
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -516,15 +534,16 @@ class TestBulkTransferShareTokenOwnership:
     # <Error_3_2>
     # AuthorizationError
     # password mismatch
-    def test_error_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, async_client, async_db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -537,7 +556,7 @@ class TestBulkTransferShareTokenOwnership:
                 }
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -554,15 +573,16 @@ class TestBulkTransferShareTokenOwnership:
 
     # <Error_4>
     # TokenNotExistError
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -575,7 +595,7 @@ class TestBulkTransferShareTokenOwnership:
                 }
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -592,26 +612,27 @@ class TestBulkTransferShareTokenOwnership:
 
     # <Error_5>
     # NonTransferableTokenError
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : Tokens
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.issuer_address = self.admin_address
         _token.token_address = self.req_tokens[0]
-        _token.abi = ""
+        _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -624,7 +645,7 @@ class TestBulkTransferShareTokenOwnership:
                 }
             ]
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={
@@ -641,26 +662,27 @@ class TestBulkTransferShareTokenOwnership:
 
     # <Error_6>
     # MultipleTokenTransferNotAllowedError
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.from_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : Tokens
         for _t in self.req_tokens:
             _token = Token()
-            _token.type = TokenType.IBET_SHARE.value
+            _token.type = TokenType.IBET_SHARE
             _token.tx_hash = ""
             _token.issuer_address = self.from_address
             _token.token_address = _t
-            _token.abi = ""
+            _token.abi = {}
             _token.version = TokenVersion.V_24_09
-            db.add(_token)
+            async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
@@ -679,7 +701,7 @@ class TestBulkTransferShareTokenOwnership:
                 },
             ],
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url,
             json=req_param,
             headers={

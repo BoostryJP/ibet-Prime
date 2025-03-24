@@ -51,6 +51,7 @@ class TestCheckAuth:
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         async_db.add(_account)
+        await async_db.commit()
 
         # test function
         account, decrypted_eoa_password = await check_auth(
@@ -76,6 +77,7 @@ class TestCheckAuth:
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         async_db.add(_account)
+        await async_db.commit()
 
         # test function
         account, decrypted_eoa_password = await check_auth(
@@ -107,6 +109,8 @@ class TestCheckAuth:
         _auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         _auth_token.valid_duration = 0
         async_db.add(_auth_token)
+
+        await async_db.commit()
 
         # test function
         account, decrypted_eoa_password = await check_auth(
@@ -141,6 +145,8 @@ class TestCheckAuth:
         )  # 2022-07-15 12:34:56 - 120sec
         _auth_token.valid_duration = 120
         async_db.add(_auth_token)
+
+        await async_db.commit()
 
         # test function
         freezer.move_to("2022-07-15 12:34:56")
@@ -188,6 +194,8 @@ class TestCheckAuth:
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         async_db.add(_account)
 
+        await async_db.commit()
+
         # test function
         with pytest.raises(AuthorizationError):
             await check_auth(
@@ -210,6 +218,8 @@ class TestCheckAuth:
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         async_db.add(_account)
+
+        await async_db.commit()
 
         # test function
         with pytest.raises(AuthorizationError):
@@ -238,6 +248,8 @@ class TestCheckAuth:
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         async_db.add(_account)
 
+        await async_db.commit()
+
         # test function
         with pytest.raises(AuthorizationError):
             await check_auth(
@@ -261,6 +273,8 @@ class TestCheckAuth:
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         async_db.add(_account)
+
+        await async_db.commit()
 
         # test function
         with pytest.raises(AuthorizationError):
@@ -291,6 +305,8 @@ class TestCheckAuth:
         _auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         _auth_token.valid_duration = 0
         async_db.add(_auth_token)
+
+        await async_db.commit()
 
         # test function
         with pytest.raises(AuthorizationError):
@@ -324,6 +340,8 @@ class TestCheckAuth:
         )  # 2022-07-15 12:34:56 - 121sec
         _auth_token.valid_duration = 120
         async_db.add(_auth_token)
+
+        await async_db.commit()
 
         # test function
         freezer.move_to("2022-07-15 12:34:56")

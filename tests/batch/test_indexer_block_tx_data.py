@@ -43,7 +43,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(db, caplog: pytest.LogCaptureFixture):
+def processor(async_db, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -55,12 +55,12 @@ def processor(db, caplog: pytest.LogCaptureFixture):
 
 class TestProcessor:
     @staticmethod
-    def set_block_number(db, block_number):
+    async def set_block_number(async_db, block_number):
         indexed_block_number = IDXBlockDataBlockNumber()
         indexed_block_number.chain_id = str(CHAIN_ID)
         indexed_block_number.latest_block_number = block_number
-        db.add(indexed_block_number)
-        db.commit()
+        async_db.add(indexed_block_number)
+        await async_db.commit()
 
     ###########################################################################
     # Normal
@@ -69,25 +69,27 @@ class TestProcessor:
     # Normal_1
     # Skip process: from_block > latest_block
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db, caplog):
+    async def test_normal_1(self, processor, async_db, caplog):
         before_block_number = web3.eth.block_number
-        self.set_block_number(db, before_block_number)
+        await self.set_block_number(async_db, before_block_number)
 
         # Execute batch processing
         await processor.process()
 
         # Assertion
-        indexed_block = db.scalars(
-            select(IDXBlockDataBlockNumber)
-            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .limit(1)
+        indexed_block = (
+            await async_db.scalars(
+                select(IDXBlockDataBlockNumber)
+                .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+                .limit(1)
+            )
         ).first()
         assert indexed_block.latest_block_number == before_block_number
 
-        block_data = db.scalars(select(IDXBlockData)).all()
+        block_data = (await async_db.scalars(select(IDXBlockData))).all()
         assert len(block_data) == 0
 
-        tx_data = db.scalars(select(IDXTxData)).all()
+        tx_data = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 0
 
         assert 1 == caplog.record_tuples.count(
@@ -97,9 +99,9 @@ class TestProcessor:
     # Normal_2
     # BlockData: Empty block is generated
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, db, caplog):
+    async def test_normal_2(self, processor, async_db, caplog):
         before_block_number = web3.eth.block_number
-        self.set_block_number(db, before_block_number)
+        await self.set_block_number(async_db, before_block_number)
 
         # Generate empty block
         web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -107,20 +109,25 @@ class TestProcessor:
         # Execute batch processing
         await processor.process()
         after_block_number = web3.eth.block_number
+        async_db.expire_all()
 
         # Assertion: Data
-        indexed_block = db.scalars(
-            select(IDXBlockDataBlockNumber)
-            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .limit(1)
+        indexed_block = (
+            await async_db.scalars(
+                select(IDXBlockDataBlockNumber)
+                .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+                .limit(1)
+            )
         ).first()
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = db.scalars(select(IDXBlockData)).all()
+        block_data: list[IDXBlockData] = (
+            await async_db.scalars(select(IDXBlockData))
+        ).all()
         assert len(block_data) == 1
         assert block_data[0].number == before_block_number + 1
 
-        tx_data = db.scalars(select(IDXTxData)).all()
+        tx_data = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 0
 
         # Assertion: Log
@@ -138,7 +145,7 @@ class TestProcessor:
     # Normal_3_1
     # TxData: Contract deployment
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, processor, db, caplog):
+    async def test_normal_3_1(self, processor, async_db, caplog):
         deployer = config_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
@@ -146,7 +153,7 @@ class TestProcessor:
         )
 
         before_block_number = web3.eth.block_number
-        self.set_block_number(db, before_block_number)
+        await self.set_block_number(async_db, before_block_number)
 
         # Deploy contract
         IbetStandardTokenUtils.issue(
@@ -165,21 +172,26 @@ class TestProcessor:
         # Execute batch processing
         await processor.process()
         after_block_number = web3.eth.block_number
+        async_db.expire_all()
 
         # Assertion
-        indexed_block = db.scalars(
-            select(IDXBlockDataBlockNumber)
-            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .limit(1)
+        indexed_block = (
+            await async_db.scalars(
+                select(IDXBlockDataBlockNumber)
+                .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+                .limit(1)
+            )
         ).first()
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = db.scalars(select(IDXBlockData)).all()
+        block_data: list[IDXBlockData] = (
+            await async_db.scalars(select(IDXBlockData))
+        ).all()
         assert len(block_data) == 1
         assert block_data[0].number == before_block_number + 1
         assert len(block_data[0].transactions) == 1
 
-        tx_data: list[IDXTxData] = db.scalars(select(IDXTxData)).all()
+        tx_data: list[IDXTxData] = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 1
         assert tx_data[0].block_hash == block_data[0].hash
         assert tx_data[0].block_number == before_block_number + 1
@@ -190,7 +202,7 @@ class TestProcessor:
     # Normal_3_2
     # TxData: Transaction
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, processor, db, caplog):
+    async def test_normal_3_2(self, processor, async_db, caplog):
         deployer = config_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
@@ -199,7 +211,7 @@ class TestProcessor:
         to_address = config_eth_account("user2")["address"]
 
         before_block_number = web3.eth.block_number
-        self.set_block_number(db, before_block_number)
+        await self.set_block_number(async_db, before_block_number)
 
         # Deploy contract -> Transfer
         token_contract = IbetStandardTokenUtils.issue(
@@ -224,17 +236,20 @@ class TestProcessor:
         # Execute batch processing
         await processor.process()
         after_block_number = web3.eth.block_number
+        async_db.expire_all()
 
         # Assertion
-        indexed_block = db.scalars(
-            select(IDXBlockDataBlockNumber)
-            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .limit(1)
+        indexed_block = (
+            await async_db.scalars(
+                select(IDXBlockDataBlockNumber)
+                .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+                .limit(1)
+            )
         ).first()
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = db.scalars(
-            select(IDXBlockData).order_by(IDXBlockData.number)
+        block_data: list[IDXBlockData] = (
+            await async_db.scalars(select(IDXBlockData).order_by(IDXBlockData.number))
         ).all()
         assert len(block_data) == 2
 
@@ -244,7 +259,7 @@ class TestProcessor:
         assert block_data[1].number == before_block_number + 2
         assert len(block_data[1].transactions) == 1
 
-        tx_data: list[IDXTxData] = db.scalars(select(IDXTxData)).all()
+        tx_data: list[IDXTxData] = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 2
 
         assert tx_data[0].block_hash == block_data[0].hash
@@ -266,9 +281,9 @@ class TestProcessor:
 
     # Error_1: ServiceUnavailable
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, db):
+    async def test_error_1(self, processor, async_db):
         before_block_number = web3.eth.block_number
-        self.set_block_number(db, before_block_number)
+        await self.set_block_number(async_db, before_block_number)
 
         # Execute batch processing
         with (
@@ -279,26 +294,29 @@ class TestProcessor:
             pytest.raises(ServiceUnavailableError),
         ):
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        indexed_block = db.scalars(
-            select(IDXBlockDataBlockNumber)
-            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .limit(1)
+        indexed_block = (
+            await async_db.scalars(
+                select(IDXBlockDataBlockNumber)
+                .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+                .limit(1)
+            )
         ).first()
         assert indexed_block.latest_block_number == before_block_number
 
-        block_data = db.scalars(select(IDXBlockData)).all()
+        block_data = (await async_db.scalars(select(IDXBlockData))).all()
         assert len(block_data) == 0
 
-        tx_data = db.scalars(select(IDXTxData)).all()
+        tx_data = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 0
 
     # Error_2: SQLAlchemyError
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, db):
+    async def test_error_2(self, processor, async_db):
         before_block_number = web3.eth.block_number
-        self.set_block_number(db, before_block_number)
+        await self.set_block_number(async_db, before_block_number)
 
         # Generate empty block
         web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -309,17 +327,20 @@ class TestProcessor:
             pytest.raises(SQLAlchemyError),
         ):
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        indexed_block = db.scalars(
-            select(IDXBlockDataBlockNumber)
-            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .limit(1)
+        indexed_block = (
+            await async_db.scalars(
+                select(IDXBlockDataBlockNumber)
+                .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+                .limit(1)
+            )
         ).first()
         assert indexed_block.latest_block_number == before_block_number
 
-        block_data = db.scalars(select(IDXBlockData)).all()
+        block_data = (await async_db.scalars(select(IDXBlockData))).all()
         assert len(block_data) == 0
 
-        tx_data = db.scalars(select(IDXTxData)).all()
+        tx_data = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 0

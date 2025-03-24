@@ -114,7 +114,9 @@ async def list_block_data(
     elif get_query.to_block_number is not None:
         stmt = stmt.where(IDXBlockData.number <= get_query.to_block_number)
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXBlockData).order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:
@@ -128,8 +130,7 @@ async def list_block_data(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    res_count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
-    if res_count > BLOCK_RESPONSE_LIMIT:
+    if max(total, get_query.limit or 0) > BLOCK_RESPONSE_LIMIT:
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     block_data_tmp: Sequence[IDXBlockData] = (await db.scalars(stmt)).all()
@@ -238,7 +239,9 @@ async def list_tx_data(
         )
 
     stmt = select(IDXTxData)
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
+    )
 
     # Search Filter
     if get_query.block_number is not None:
@@ -252,7 +255,9 @@ async def list_tx_data(
             IDXTxData.to_address == to_checksum_address(get_query.to_address)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
+    )
 
     # Sort
     stmt = stmt.order_by(desc(IDXTxData.created))
@@ -263,8 +268,7 @@ async def list_tx_data(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    res_count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
-    if res_count > TX_RESPONSE_LIMIT:
+    if max(total, get_query.limit or 0) > TX_RESPONSE_LIMIT:
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     tx_data_tmp: Sequence[IDXTxData] = (await db.scalars(stmt)).all()

@@ -25,6 +25,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, select
+from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
@@ -42,9 +44,8 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.contract_utils import ContractUtils
-from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_token_holders import LOG, Processor, main
-from config import ZERO_ADDRESS
+from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.contract_utils import (
     IbetExchangeContractTestUtils,
@@ -53,7 +54,8 @@ from tests.contract_utils import (
     PersonalInfoContractTestUtils,
 )
 
-web3 = Web3Wrapper()
+web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
+web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
@@ -68,7 +70,7 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -212,7 +214,7 @@ class TestProcessor:
     # - Lock
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, processor, db, personal_info_contract, ibet_exchange_contract
+        self, processor, async_db, personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = config_eth_account("user1")
@@ -241,13 +243,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -521,8 +523,9 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.commit()
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+        token_holders_list_id = _token_holders_list.id
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.transfer(
@@ -534,26 +537,31 @@ class TestProcessor:
 
         # Then execute processor.
         await processor.collect()
+        async_db.expire_all()
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_1,
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record.hold_balance == 13000
@@ -564,9 +572,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list_id
+                            )
                         )
                     ).all()
                 )
@@ -588,7 +598,11 @@ class TestProcessor:
     # - Unlock
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -616,13 +630,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -747,8 +761,9 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.commit()
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+        token_holders_list_id = _token_holders_list.id
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(
@@ -763,26 +778,31 @@ class TestProcessor:
 
         # Then execute processor.
         await processor.collect()
+        async_db.expire_all()
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_1,
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record.hold_balance == 10000
@@ -793,9 +813,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list_id
+                            )
                         )
                     ).all()
                 )
@@ -810,7 +832,11 @@ class TestProcessor:
     # - Escrow - pending
     @pytest.mark.asyncio
     async def test_normal_3(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -838,13 +864,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -932,8 +958,9 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.commit()
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+        token_holders_list_id = _token_holders_list.id
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(
@@ -948,26 +975,31 @@ class TestProcessor:
 
         # Then execute processor.
         await processor.collect()
+        async_db.expire_all()
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_1,
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record.hold_balance == 17000
@@ -978,9 +1010,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list_id
+                            )
                         )
                     ).all()
                 )
@@ -1000,7 +1034,7 @@ class TestProcessor:
     # - Lock
     @pytest.mark.asyncio
     async def test_normal_4(
-        self, processor, db, personal_info_contract, ibet_exchange_contract
+        self, processor, async_db, personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = config_eth_account("user1")
@@ -1029,13 +1063,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -1323,8 +1357,9 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.commit()
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+        token_holders_list_id = _token_holders_list.id
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.transfer(
@@ -1336,26 +1371,31 @@ class TestProcessor:
 
         # Then execute processor.
         await processor.collect()
+        async_db.expire_all()
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_1,
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record.hold_balance == 3000
@@ -1366,9 +1406,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list_id
+                            )
                         )
                     ).all()
                 )
@@ -1390,7 +1432,11 @@ class TestProcessor:
     # - Unlock
     @pytest.mark.asyncio
     async def test_normal_5(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1418,13 +1464,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -1549,8 +1595,9 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.commit()
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+        token_holders_list_id = _token_holders_list.id
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(
@@ -1565,26 +1612,31 @@ class TestProcessor:
 
         # Then execute processor.
         await processor.collect()
+        async_db.expire_all()
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_1,
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record.hold_balance == 10000
@@ -1595,9 +1647,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list_id
+                            )
                         )
                     ).all()
                 )
@@ -1612,7 +1666,11 @@ class TestProcessor:
     # - Escrow - pending
     @pytest.mark.asyncio
     async def test_normal_6(
-        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1640,13 +1698,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -1735,8 +1793,9 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.commit()
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+        token_holders_list_id = _token_holders_list.id
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(
@@ -1751,26 +1810,31 @@ class TestProcessor:
 
         # Then execute processor.
         await processor.collect()
+        async_db.expire_all()
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_1,
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record.hold_balance == 17000
@@ -1781,9 +1845,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list_id
+                            )
                         )
                     ).all()
                 )
@@ -1798,13 +1864,15 @@ class TestProcessor:
     async def test_normal_7(
         self,
         processor: Processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
         await processor.collect()
+        async_db.expire_all()
+
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.DEBUG, "There are no pending collect batch")
         )
@@ -1835,13 +1903,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -1868,8 +1936,9 @@ class TestProcessor:
         _token_holders_list1 = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list1)
-        db.commit()
+        async_db.add(_token_holders_list1)
+        await async_db.commit()
+        token_holders_list1_id = _token_holders_list1.list_id
 
         STContractUtils.transfer(
             token_contract.address,
@@ -1896,16 +1965,17 @@ class TestProcessor:
         _token_holders_list2 = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list2)
-        db.commit()
+        async_db.add(_token_holders_list2)
+        await async_db.commit()
 
         await processor.collect()
+        async_db.expire_all()
 
         assert 1 == caplog.record_tuples.count(
             (
                 LOG.name,
                 logging.INFO,
-                f"Token holder list({_token_holders_list1.list_id}) status changes to be done.",
+                f"Token holder list({token_holders_list1_id}) status changes to be done.",
             )
         )
         assert 1 == caplog.record_tuples.count(
@@ -1919,7 +1989,7 @@ class TestProcessor:
     async def test_normal_8(
         self,
         processor: Processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
@@ -1952,13 +2022,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2010,9 +2080,12 @@ class TestProcessor:
         _token_holders_list1 = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list1)
-        db.commit()
+        async_db.add(_token_holders_list1)
+        await async_db.commit()
+        token_holders_list1_id = _token_holders_list1.id
+
         await processor.collect()
+        async_db.expire_all()
 
         STContractUtils.unlock(
             token_contract.address,
@@ -2045,29 +2118,36 @@ class TestProcessor:
         _token_holders_list2 = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list2)
-        db.commit()
-        await processor.collect()
+        async_db.add(_token_holders_list2)
+        await async_db.commit()
+        token_holders_list2_id = _token_holders_list2.id
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list2.id,
-                    TokenHolder.account_address == user_address_1,
+        await processor.collect()
+        async_db.expire_all()
+
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list2_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list2.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list2_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record.hold_balance == 30000
@@ -2078,9 +2158,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list1.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list1_id
+                            )
                         )
                     ).all()
                 )
@@ -2090,9 +2172,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list2.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list1_id
+                            )
                         )
                     ).all()
                 )
@@ -2105,7 +2189,7 @@ class TestProcessor:
     # Batch does not index former holder who has no balance at the target block number.
     @pytest.mark.asyncio
     async def test_normal_9(
-        self, processor, db, personal_info_contract, ibet_exchange_contract
+        self, processor, async_db, personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
         _user_1 = config_eth_account("user1")
@@ -2137,13 +2221,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2191,17 +2275,18 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.flush()
+        async_db.add(_token_holders_list)
+        await async_db.flush()
+        token_holders_list_id = _token_holders_list.id
 
         former_holder = TokenHolder()
         former_holder.holder_list_id = _token_holders_list.id
         former_holder.hold_balance = 0
         former_holder.locked_balance = 0
         former_holder.account_address = "former holder"
-        db.add(former_holder)
+        async_db.add(former_holder)
 
-        db.commit()
+        await async_db.commit()
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.transfer(
@@ -2219,26 +2304,31 @@ class TestProcessor:
 
         # Then execute processor.
         await processor.collect()
+        async_db.expire_all()
 
-        user1_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_1,
+        user1_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
-        user2_record: TokenHolder = db.scalars(
-            select(TokenHolder)
-            .where(
-                and_(
-                    TokenHolder.holder_list_id == _token_holders_list.id,
-                    TokenHolder.account_address == user_address_2,
+        user2_record: TokenHolder = (
+            await async_db.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == token_holders_list_id,
+                        TokenHolder.account_address == user_address_2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
 
         assert user1_record is None
@@ -2247,9 +2337,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.scalars(
-                        select(TokenHolder).where(
-                            TokenHolder.holder_list_id == _token_holders_list.id
+                    (
+                        await async_db.scalars(
+                            select(TokenHolder).where(
+                                TokenHolder.holder_list_id == token_holders_list_id
+                            )
                         )
                     ).all()
                 )
@@ -2264,7 +2356,7 @@ class TestProcessor:
     async def test_normal_10(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
@@ -2290,20 +2382,20 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Insert collection record with above token and checkpoint block number
         target_list_id = str(uuid.uuid4())
         target_holders_list = token_holders_list(
             token_contract.address, current_block_number, target_list_id
         )
-        db.add(target_holders_list)
+        async_db.add(target_holders_list)
         completed_list_id = str(uuid.uuid4())
         completed_holders_list = token_holders_list(
             token_contract.address,
@@ -2311,11 +2403,14 @@ class TestProcessor:
             completed_list_id,
             status=TokenHolderBatchStatus.DONE,
         )
-        db.add(completed_holders_list)
-        db.commit()
+        async_db.add(completed_holders_list)
+        await async_db.commit()
+        target_holders_list_id = target_holders_list.id
 
         # Setting stored index to 9,999,999
         await processor.collect()
+        async_db.expire_all()
+
         # Then processor call "__process_all" method 10 times.
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.INFO, "syncing from=10000000, to=10999999")
@@ -2348,11 +2443,12 @@ class TestProcessor:
             (LOG.name, logging.INFO, "syncing from=19000000, to=19999999")
         )
 
-        db.rollback()
-        processed_list = db.scalars(
-            select(TokenHoldersList)
-            .where(TokenHoldersList.id == target_holders_list.id)
-            .limit(1)
+        processed_list = (
+            await async_db.scalars(
+                select(TokenHoldersList)
+                .where(TokenHoldersList.id == target_holders_list_id)
+                .limit(1)
+            )
         ).first()
         assert processed_list.block_number == 19999999
         assert processed_list.batch_status == TokenHolderBatchStatus.DONE.value
@@ -2367,12 +2463,13 @@ class TestProcessor:
     async def test_error_1(
         self,
         processor: Processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         await processor.collect()
+        async_db.expire_all()
 
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.DEBUG, "There are no pending collect batch")
@@ -2385,22 +2482,25 @@ class TestProcessor:
     async def test_error_2(
         self,
         processor: Processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         # Insert collection definition with token address Zero
+        target_token_holders_list_id = str(uuid.uuid4())
         target_token_holders_list = TokenHoldersList()
         target_token_holders_list.token_address = ZERO_ADDRESS
-        target_token_holders_list.list_id = str(uuid.uuid4())
-        target_token_holders_list.batch_status = TokenHolderBatchStatus.PENDING.value
+        target_token_holders_list.list_id = target_token_holders_list_id
+        target_token_holders_list.batch_status = TokenHolderBatchStatus.PENDING
         target_token_holders_list.block_number = 1000
-        db.add(target_token_holders_list)
-        db.commit()
+        async_db.add(target_token_holders_list)
+        await async_db.commit()
 
         # Debug message should be shown that points out token contract must be listed.
         await processor.collect()
+        async_db.expire_all()
+
         assert 1 == caplog.record_tuples.count(
             (
                 LOG.name,
@@ -2412,17 +2512,19 @@ class TestProcessor:
             (
                 LOG.name,
                 logging.INFO,
-                f"Token holder list({target_token_holders_list.list_id}) status changes to be failed.",
+                f"Token holder list({target_token_holders_list_id}) status changes to be failed.",
             )
         )
 
         # Batch status of token holders list expects to be "ERROR"
         error_record_num = len(
             list(
-                db.scalars(
-                    select(TokenHoldersList).where(
-                        TokenHoldersList.batch_status
-                        == TokenHolderBatchStatus.FAILED.value
+                (
+                    await async_db.scalars(
+                        select(TokenHoldersList).where(
+                            TokenHoldersList.batch_status
+                            == TokenHolderBatchStatus.FAILED.value
+                        )
                     )
                 ).all()
             )
@@ -2435,7 +2537,7 @@ class TestProcessor:
     async def test_error_3(
         self,
         processor: Processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
@@ -2467,13 +2569,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
             personal_info_contract.address,
@@ -2513,8 +2615,9 @@ class TestProcessor:
         _token_holders_list = token_holders_list(
             token_contract.address, block_number, list_id
         )
-        db.add(_token_holders_list)
-        db.commit()
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+        token_holders_list_id = _token_holders_list.id
 
         mock_lib = MagicMock()
         with patch.object(
@@ -2523,9 +2626,13 @@ class TestProcessor:
             # Then execute processor.
             __sync_all_mock.return_value = None
             await processor.collect()
-            _records: List[TokenHolder] = db.scalars(
-                select(TokenHolder).where(
-                    TokenHolder.holder_list_id == _token_holders_list.id
+            async_db.expire_all()
+
+            _records: List[TokenHolder] = (
+                await async_db.scalars(
+                    select(TokenHolder).where(
+                        TokenHolder.holder_list_id == token_holders_list_id
+                    )
                 )
             ).all()
             assert len(_records) == 0

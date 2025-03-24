@@ -40,6 +40,7 @@ from app.model.schema import (
     RecordNewFreezeLogRequest,
     RecordNewFreezeLogResponse,
     RetrieveFreezeLogQuery,
+    RetrieveFreezeLogResponse,
     UpdateFreezeLogRequest,
 )
 from app.utils.docs_utils import get_routers_responses
@@ -339,7 +340,7 @@ async def update_log(
 @router.get(
     "/logs/{log_index}",
     operation_id="RetrieveFreezeLog",
-    response_model=None,
+    response_model=RetrieveFreezeLogResponse,
     responses=get_routers_responses(404),
 )
 async def retrieve_log(

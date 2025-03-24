@@ -51,10 +51,6 @@ class InvalidParameterError(BadRequestError):
     code = 1
 
 
-class SendTransactionError(BadRequestError):
-    code = 2
-
-
 class AuthTokenAlreadyExistsError(BadRequestError):
     code = 3
 
@@ -177,3 +173,7 @@ class AuthorizationError(AppError):
 class ServiceUnavailableError(AppError):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     code = 1
+
+
+class SendTransactionError(ServiceUnavailableError):
+    code = 2

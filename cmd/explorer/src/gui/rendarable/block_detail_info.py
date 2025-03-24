@@ -63,7 +63,7 @@ class BlockDetailInfo:
         )
         content_table.add_row(
             Text.from_markup("Gas Used:"),
-            f"{self.block_detail.gas_used} ({(self.block_detail.gas_used/self.block_detail.gas_limit)*100:.4f} %)",
+            f"{self.block_detail.gas_used} ({(self.block_detail.gas_used / self.block_detail.gas_limit) * 100:.4f} %)",
             ProgressBar(
                 completed=(self.block_detail.gas_used / self.block_detail.gas_limit)
                 * 100,
@@ -71,10 +71,10 @@ class BlockDetailInfo:
             ),
         )
         content_table.add_row(
-            Text.from_markup("Gas Limit:"), f"{self.block_detail.gas_limit}" ""
+            Text.from_markup("Gas Limit:"), f"{self.block_detail.gas_limit}"
         )
         content_table.add_row(
-            Text.from_markup("Size:"), f"{self.block_detail.size} Bytes" ""
+            Text.from_markup("Size:"), f"{self.block_detail.size} Bytes"
         )
 
         hash_table = Table(box=None, expand=False, show_header=False, show_edge=False)

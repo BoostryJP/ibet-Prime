@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import pytest
 import pytz
 
 from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
@@ -38,7 +39,8 @@ class TestListAllScheduledShareTokenUpdateEvents:
 
     # <Normal_1>
     # issuer address is specified
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -73,18 +75,18 @@ class TestListAllScheduledShareTokenUpdateEvents:
         token_event.event_id = event_id
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_SHARE.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
         token_event.data = update_data
         token_event.created = datetime_now_utc
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={
                 "issuer-address": _issuer_address,
@@ -97,9 +99,9 @@ class TestListAllScheduledShareTokenUpdateEvents:
             {
                 "scheduled_event_id": event_id,
                 "token_address": _token_address,
-                "token_type": TokenType.IBET_SHARE.value,
+                "token_type": TokenType.IBET_SHARE,
                 "scheduled_datetime": datetime_now_str,
-                "event_type": ScheduledEventType.UPDATE.value,
+                "event_type": ScheduledEventType.UPDATE,
                 "status": 0,
                 "data": update_data,
                 "created": datetime_now_str,
@@ -109,7 +111,8 @@ class TestListAllScheduledShareTokenUpdateEvents:
     # <Normal_2>
     # issuer address is not specified
     # Multiple records
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -145,18 +148,18 @@ class TestListAllScheduledShareTokenUpdateEvents:
             token_event.event_id = uuid_list[i]
             token_event.issuer_address = _issuer_address
             token_event.token_address = _token_address
-            token_event.token_type = TokenType.IBET_SHARE.value
-            token_event.event_type = ScheduledEventType.UPDATE.value
+            token_event.token_type = TokenType.IBET_SHARE
+            token_event.event_type = ScheduledEventType.UPDATE
             token_event.scheduled_datetime = _datetime
             token_event.status = 0
             token_event.data = update_data
             token_event.created = _datetime
-            db.add(token_event)
+            async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
         )
 
@@ -166,12 +169,12 @@ class TestListAllScheduledShareTokenUpdateEvents:
             {
                 "scheduled_event_id": uuid_list[0],
                 "token_address": _token_address,
-                "token_type": TokenType.IBET_SHARE.value,
+                "token_type": TokenType.IBET_SHARE,
                 "scheduled_datetime": pytz.timezone("UTC")
                 .localize(datetime_list[0])
                 .astimezone(self.local_tz)
                 .isoformat(),
-                "event_type": ScheduledEventType.UPDATE.value,
+                "event_type": ScheduledEventType.UPDATE,
                 "status": 0,
                 "data": update_data,
                 "created": pytz.timezone("UTC")
@@ -182,12 +185,12 @@ class TestListAllScheduledShareTokenUpdateEvents:
             {
                 "scheduled_event_id": uuid_list[1],
                 "token_address": _token_address,
-                "token_type": TokenType.IBET_SHARE.value,
+                "token_type": TokenType.IBET_SHARE,
                 "scheduled_datetime": pytz.timezone("UTC")
                 .localize(datetime_list[1])
                 .astimezone(self.local_tz)
                 .isoformat(),
-                "event_type": ScheduledEventType.UPDATE.value,
+                "event_type": ScheduledEventType.UPDATE,
                 "status": 0,
                 "data": update_data,
                 "created": pytz.timezone("UTC")
@@ -199,13 +202,14 @@ class TestListAllScheduledShareTokenUpdateEvents:
 
     # <Normal_3>
     # No data
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         test_account = config_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(_token_address),
             headers={
                 "issuer-address": _issuer_address,

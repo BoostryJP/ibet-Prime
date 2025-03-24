@@ -43,7 +43,7 @@ from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(db):
+def processor(async_db):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -61,7 +61,7 @@ class TestProcessor:
     # <Normal_1>
     # IbetStraightBond
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, db):
+    async def test_normal_1(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -74,15 +74,12 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : ScheduledEvents
         datetime_past_utc = datetime.now(UTC) + timedelta(days=-1)
-        datetime_past_str = datetime_past_utc.isoformat()
         datetime_now_utc = datetime.now(UTC)
-        datetime_now_str = datetime_now_utc.isoformat()
         datetime_pending_utc = datetime.now(UTC) + timedelta(days=1)
-        datetime_pending_str = datetime_pending_utc.isoformat()
         update_data = {
             "face_value": 10000,
             "interest_rate": 0.5,
@@ -109,36 +106,36 @@ class TestProcessor:
         token_event = ScheduledEvents()
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_1
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_past_str
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_past_utc.replace(tzinfo=None)
         token_event.status = 2
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
         # TokenType: STRAIGHT_BOND, status will be "1: Succeeded"
         token_event = ScheduledEvents()
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_2
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
         # TokenType: STRAIGHT_BOND, status will be "0: Pending"
         token_event = ScheduledEvents()
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_3
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_pending_str
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_pending_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetStraightBondContract_update = patch(
@@ -153,33 +150,42 @@ class TestProcessor:
         with IbetStraightBondContract_update, IbetStraightBondContract_get:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address_1)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address_1)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address_2)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address_2)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 1
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address_3)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address_3)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 0
-        _operation_log = db.scalars(
-            select(TokenUpdateOperationLog)
-            .where(TokenUpdateOperationLog.token_address == _token_address_2)
-            .limit(1)
+        _operation_log = (
+            await async_db.scalars(
+                select(TokenUpdateOperationLog)
+                .where(TokenUpdateOperationLog.token_address == _token_address_2)
+                .limit(1)
+            )
         ).first()
         assert _operation_log.issuer_address == _issuer_address
-        assert _operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert _operation_log.type == TokenType.IBET_STRAIGHT_BOND
         assert _operation_log.arguments == {
             "contact_information": "問い合わせ先test",
             "face_value": 10000,
@@ -204,7 +210,7 @@ class TestProcessor:
     # <Normal_2>
     # IbetShare
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, db):
+    async def test_normal_2(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -217,15 +223,12 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : ScheduledEvents
         datetime_past_utc = datetime.now(UTC) + timedelta(days=-1)
-        datetime_past_str = datetime_past_utc.isoformat()
         datetime_now_utc = datetime.now(UTC)
-        datetime_now_str = datetime_now_utc.isoformat()
         datetime_pending_utc = datetime.now(UTC) + timedelta(days=1)
-        datetime_pending_str = datetime_pending_utc.isoformat()
 
         update_data = {
             "cancellation_date": "20221231",
@@ -252,36 +255,36 @@ class TestProcessor:
         token_event = ScheduledEvents()
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_1
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_past_str
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_past_utc.replace(tzinfo=None)
         token_event.status = 2
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
         # TokenType: STRAIGHT_BOND, status will be "1: Succeeded"
         token_event = ScheduledEvents()
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_2
-        token_event.token_type = TokenType.IBET_SHARE.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
         # TokenType: STRAIGHT_BOND, status will be "0: Pending"
         token_event = ScheduledEvents()
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_3
-        token_event.token_type = TokenType.IBET_SHARE.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_pending_str
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_pending_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_update = patch(
@@ -296,33 +299,42 @@ class TestProcessor:
         with IbetShareContract_update, IbetShareContract_get:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address_1)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address_1)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address_2)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address_2)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 1
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address_3)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address_3)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 0
-        _operation_log = db.scalars(
-            select(TokenUpdateOperationLog)
-            .where(TokenUpdateOperationLog.token_address == _token_address_2)
-            .limit(1)
+        _operation_log = (
+            await async_db.scalars(
+                select(TokenUpdateOperationLog)
+                .where(TokenUpdateOperationLog.token_address == _token_address_2)
+                .limit(1)
+            )
         ).first()
         assert _operation_log.issuer_address == _issuer_address
-        assert _operation_log.type == TokenType.IBET_SHARE.value
+        assert _operation_log.type == TokenType.IBET_SHARE
         assert _operation_log.arguments == {
             "cancellation_date": "20221231",
             "contact_information": "問い合わせ先test",
@@ -351,14 +363,13 @@ class TestProcessor:
     # <Error_1>
     # Account does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, db):
+    async def test_error_1(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # prepare data : ScheduledEvents
         datetime_now_utc = datetime.now(UTC)
-        datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
         # TokenType: STRAIGHT_BOND, status is 2, will not change
@@ -366,26 +377,30 @@ class TestProcessor:
         token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _notification = db.scalars(select(Notification).limit(1)).first()
+
+        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -394,14 +409,14 @@ class TestProcessor:
         assert _notification.code == 0
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": _token_address,
         }
 
     # <Error_2>
     # fail to get the private key
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, db):
+    async def test_error_2(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -410,11 +425,10 @@ class TestProcessor:
         account = Account()
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : ScheduledEvents
         datetime_now_utc = datetime.now(UTC)
-        datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
         # TokenType: STRAIGHT_BOND, status is 0: Pending, will be 2: Failed
@@ -422,26 +436,29 @@ class TestProcessor:
         token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_SHARE.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # Execute batch
         await processor.process()
+        async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _notification = db.scalars(select(Notification).limit(1)).first()
+        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -450,14 +467,14 @@ class TestProcessor:
         assert _notification.code == 1
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
-            "token_type": TokenType.IBET_SHARE.value,
+            "token_type": TokenType.IBET_SHARE,
             "token_address": _token_address,
         }
 
     # <Error_3>
     # IbetStraightBond : SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_3(self, processor, db):
+    async def test_error_3(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -468,11 +485,10 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : ScheduledEvents
         datetime_now_utc = datetime.now(UTC)
-        datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
         # TokenType: STRAIGHT_BOND, status will be "2: Failed"
@@ -480,14 +496,14 @@ class TestProcessor:
         token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetStraightBondContract_update = patch(
@@ -502,15 +518,18 @@ class TestProcessor:
         with IbetStraightBondContract_update, IbetStraightBondContract_get:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _notification = db.scalars(select(Notification).limit(1)).first()
+        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -519,14 +538,14 @@ class TestProcessor:
         assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": _token_address,
         }
 
     # <Error_4>
     # IbetShare : SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_4(self, processor, db):
+    async def test_error_4(self, processor, async_db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -537,12 +556,10 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_now_jtc = datetime.now(UTC)
-        datetime_now_str = datetime_now_jtc.isoformat()
-
+        datetime_now_utc = datetime.now(UTC)
         update_data = {}
 
         # TokenType: STRAIGHT_BOND, status will be "2: Failed"
@@ -550,14 +567,14 @@ class TestProcessor:
         token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_SHARE.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetShareContract_update = patch(
@@ -573,15 +590,18 @@ class TestProcessor:
         with IbetShareContract_update, IbetShareContract_get:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _notification = db.scalars(select(Notification).limit(1)).first()
+        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -590,14 +610,14 @@ class TestProcessor:
         assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
-            "token_type": TokenType.IBET_SHARE.value,
+            "token_type": TokenType.IBET_SHARE,
             "token_address": _token_address,
         }
 
     # <Error_5>
     # IbetStraightBond : ContractRevertError
     @pytest.mark.asyncio
-    async def test_error_5(self, processor, db, caplog):
+    async def test_error_5(self, processor, async_db, caplog):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -608,11 +628,10 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : ScheduledEvents
         datetime_now_utc = datetime.now(UTC)
-        datetime_now_str = datetime_now_utc.isoformat()
         update_data = {}
 
         # TokenType: STRAIGHT_BOND, status will be "2: Failed"
@@ -620,14 +639,14 @@ class TestProcessor:
         token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
+        async_db.add(token_event)
 
-        db.commit()
+        await async_db.commit()
 
         # mock
         IbetStraightBondContract_update = patch(
@@ -643,15 +662,18 @@ class TestProcessor:
         with IbetStraightBondContract_update, IbetStraightBondContract_get:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _notification = db.scalars(select(Notification).limit(1)).first()
+        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -660,7 +682,7 @@ class TestProcessor:
         assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "token_address": _token_address,
         }
         assert (
@@ -677,7 +699,7 @@ class TestProcessor:
     # <Error_6>
     # IbetShare : ContractRevertError
     @pytest.mark.asyncio
-    async def test_error_6(self, processor, db, caplog):
+    async def test_error_6(self, processor, async_db, caplog):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -688,12 +710,10 @@ class TestProcessor:
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
-        db.add(account)
+        async_db.add(account)
 
         # prepare data : ScheduledEvents
-        datetime_now_jtc = datetime.now(UTC)
-        datetime_now_str = datetime_now_jtc.isoformat()
-
+        datetime_now_utc = datetime.now(UTC)
         update_data = {}
 
         # TokenType: STRAIGHT_BOND, status will be "2: Failed"
@@ -701,14 +721,14 @@ class TestProcessor:
         token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_SHARE.value
-        token_event.event_type = ScheduledEventType.UPDATE.value
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
         token_event.status = 0
         token_event.data = update_data
-        db.add(token_event)
-
-        db.commit()
+        async_db.add(token_event)
+        await async_db.commit()
+        token_event_id = token_event.id
 
         # mock
         IbetShareContract_update = patch(
@@ -724,15 +744,18 @@ class TestProcessor:
         with IbetShareContract_update, IbetShareContract_get:
             # Execute batch
             await processor.process()
+            async_db.expire_all()
 
         # Assertion
-        _scheduled_event = db.scalars(
-            select(ScheduledEvents)
-            .where(ScheduledEvents.token_address == _token_address)
-            .limit(1)
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address)
+                .limit(1)
+            )
         ).first()
         assert _scheduled_event.status == 2
-        _notification = db.scalars(select(Notification).limit(1)).first()
+        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -741,7 +764,7 @@ class TestProcessor:
         assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
-            "token_type": TokenType.IBET_SHARE.value,
+            "token_type": TokenType.IBET_SHARE,
             "token_address": _token_address,
         }
 
@@ -750,7 +773,7 @@ class TestProcessor:
                 (
                     LOG.name,
                     logging.WARNING,
-                    f"Transaction reverted: id=<{token_event.id}> error_code:<999999> error_msg:<>",
+                    f"Transaction reverted: id=<{token_event_id}> error_code:<999999> error_msg:<>",
                 )
             )
             == 1

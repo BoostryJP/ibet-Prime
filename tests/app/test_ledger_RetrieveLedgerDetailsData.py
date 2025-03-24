@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
+
 from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
 from tests.account_config import config_eth_account
 
@@ -31,7 +33,8 @@ class TestRetrieveLedgerDetailsData:
 
     # <Normal_1_1>
     # set issuer-address
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -39,13 +42,13 @@ class TestRetrieveLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
         _details_1_data_1.token_address = token_address
@@ -56,7 +59,7 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_1.price = 1
         _details_1_data_1.balance = 2
         _details_1_data_1.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_1)
+        async_db.add(_details_1_data_1)
 
         _details_1_data_2 = LedgerDetailsData()
         _details_1_data_2.token_address = token_address
@@ -67,7 +70,7 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_2.price = 4
         _details_1_data_2.balance = 5
         _details_1_data_2.acquisition_date = "2000/12/30"
-        db.add(_details_1_data_2)
+        async_db.add(_details_1_data_2)
 
         # Not Target Data
         _details_1_data_3 = LedgerDetailsData()
@@ -79,12 +82,12 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_3.price = 1
         _details_1_data_3.balance = 2
         _details_1_data_3.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_3)
+        async_db.add(_details_1_data_3)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,
@@ -114,7 +117,8 @@ class TestRetrieveLedgerDetailsData:
 
     # <Normal_1_2>
     # unset issuer-address
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -122,13 +126,13 @@ class TestRetrieveLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
         _details_1_data_1.token_address = token_address
@@ -139,7 +143,7 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_1.price = 1
         _details_1_data_1.balance = 2
         _details_1_data_1.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_1)
+        async_db.add(_details_1_data_1)
 
         _details_1_data_2 = LedgerDetailsData()
         _details_1_data_2.token_address = token_address
@@ -150,7 +154,7 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_2.price = 4
         _details_1_data_2.balance = 5
         _details_1_data_2.acquisition_date = "2000/12/30"
-        db.add(_details_1_data_2)
+        async_db.add(_details_1_data_2)
 
         # Not Target Data
         _details_1_data_3 = LedgerDetailsData()
@@ -162,12 +166,12 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_3.price = 1
         _details_1_data_3.balance = 2
         _details_1_data_3.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_3)
+        async_db.add(_details_1_data_3)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, data_id=data_id),
         )
 
@@ -194,7 +198,8 @@ class TestRetrieveLedgerDetailsData:
 
     # <Normal_2>
     # set issuer-address
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -202,13 +207,13 @@ class TestRetrieveLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
         _details_1_data_1.token_address = token_address
@@ -219,7 +224,7 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_1.price = 1
         _details_1_data_1.balance = 2
         _details_1_data_1.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_1)
+        async_db.add(_details_1_data_1)
 
         _details_1_data_2 = LedgerDetailsData()
         _details_1_data_2.token_address = token_address
@@ -230,7 +235,7 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_2.price = 4
         _details_1_data_2.balance = 5
         _details_1_data_2.acquisition_date = "2000/12/30"
-        db.add(_details_1_data_2)
+        async_db.add(_details_1_data_2)
 
         # Not Target Data
         _details_1_data_3 = LedgerDetailsData()
@@ -242,12 +247,12 @@ class TestRetrieveLedgerDetailsData:
         _details_1_data_3.price = 1
         _details_1_data_3.balance = 2
         _details_1_data_3.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_3)
+        async_db.add(_details_1_data_3)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,
@@ -281,12 +286,13 @@ class TestRetrieveLedgerDetailsData:
 
     # <Error_1>
     # Parameter Error(issuer-address)
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": "test",
@@ -310,7 +316,8 @@ class TestRetrieveLedgerDetailsData:
     # <Error_2_1>
     # Token Not Found
     # set issuer-address
-    def test_error_2_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -318,7 +325,7 @@ class TestRetrieveLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = (
             "0x1234567890123456789012345678901234567899"  # not target
@@ -327,12 +334,12 @@ class TestRetrieveLedgerDetailsData:
         _token.abi = {}
         _token.token_status = 2
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,
@@ -349,12 +356,13 @@ class TestRetrieveLedgerDetailsData:
     # <Error_2_2>
     # Token Not Found
     # unset issuer-address
-    def test_error_2_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_client, async_db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, data_id=data_id),
         )
 
@@ -367,7 +375,8 @@ class TestRetrieveLedgerDetailsData:
 
     # <Error_3>
     # Processing Token
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -375,19 +384,19 @@ class TestRetrieveLedgerDetailsData:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,

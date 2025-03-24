@@ -44,6 +44,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
 )
 from config import TZ
@@ -60,7 +61,12 @@ async def request_ledger_creation(db: AsyncSession, token_address: str):
     _token: Token | None = (
         await db.scalars(
             select(Token)
-            .where(and_(Token.token_address == token_address, Token.token_status == 1))
+            .where(
+                and_(
+                    Token.token_address == token_address,
+                    Token.token_status == TokenStatus.SUCCEEDED,
+                )
+            )
             .limit(1)
         )
     ).first()
@@ -268,7 +274,7 @@ async def finalize_ledger(
     # Register Notification to the DB
     # NOTE: DB commit is executed by the caller
     _notification = Notification()
-    _notification.notice_id = uuid.uuid4()
+    _notification.notice_id = str(uuid.uuid4())
     _notification.issuer_address = _token.issuer_address
     _notification.priority = 0  # Low
     _notification.type = NotificationType.CREATE_LEDGER_INFO

@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
@@ -42,7 +43,8 @@ class TestCreateIssuerRSAKey:
 
     # <Normal_1>
     # RSA Create
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
 
         _account_before = Account()
@@ -51,14 +53,16 @@ class TestCreateIssuerRSAKey:
         eoa_password = E2EEUtils.encrypt("password")
         _account_before.eoa_password = eoa_password
         _account_before.rsa_status = AccountRsaStatus.UNSET.value
-        db.add(_account_before)
+        async_db.add(_account_before)
 
-        db.commit()
+        await async_db.commit()
 
         password = self.valid_password
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(password)}
 
-        resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_1["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 200
@@ -68,7 +72,7 @@ class TestCreateIssuerRSAKey:
             "rsa_status": AccountRsaStatus.CREATING.value,
             "is_deleted": False,
         }
-        _account_after = db.scalars(select(Account).limit(1)).first()
+        _account_after = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
@@ -79,7 +83,8 @@ class TestCreateIssuerRSAKey:
 
     # <Normal_2>
     # RSA Change
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
         _user_2 = config_eth_account("user2")
 
@@ -93,16 +98,20 @@ class TestCreateIssuerRSAKey:
         rsa_passphrase = E2EEUtils.encrypt("password")
         _account_before.rsa_passphrase = rsa_passphrase
         _account_before.rsa_status = AccountRsaStatus.SET.value
-        db.add(_account_before)
+        async_db.add(_account_before)
 
-        db.commit()
+        await async_db.commit()
 
-        _temporary_before = db.scalars(select(AccountRsaKeyTemporary)).all()
+        _temporary_before = (
+            await async_db.scalars(select(AccountRsaKeyTemporary))
+        ).all()
 
         password = self.valid_password
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(password)}
 
-        resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_1["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 200
@@ -112,7 +121,9 @@ class TestCreateIssuerRSAKey:
             "rsa_status": AccountRsaStatus.CHANGING.value,
             "is_deleted": False,
         }
-        _temporary_after = db.scalars(select(AccountRsaKeyTemporary)).all()
+        _temporary_after = (
+            await async_db.scalars(select(AccountRsaKeyTemporary))
+        ).all()
         assert len(_temporary_before) == 0
         assert len(_temporary_after) == 1
         _temporary = _temporary_after[0]
@@ -120,7 +131,8 @@ class TestCreateIssuerRSAKey:
         assert _temporary.rsa_private_key == _user_1["rsa_private_key"]
         assert _temporary.rsa_public_key == _user_1["rsa_public_key"]
         assert _temporary.rsa_passphrase == rsa_passphrase
-        _account_after = db.scalars(select(Account).limit(1)).first()
+
+        _account_after = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
@@ -131,7 +143,8 @@ class TestCreateIssuerRSAKey:
 
     # <Normal_3>
     # RSA Create(default passphrase)
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
 
         _account_before = Account()
@@ -140,13 +153,15 @@ class TestCreateIssuerRSAKey:
         eoa_password = E2EEUtils.encrypt("password")
         _account_before.eoa_password = eoa_password
         _account_before.rsa_status = AccountRsaStatus.UNSET.value
-        db.add(_account_before)
+        async_db.add(_account_before)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {}
 
-        resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_1["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 200
@@ -156,7 +171,7 @@ class TestCreateIssuerRSAKey:
             "rsa_status": AccountRsaStatus.CREATING.value,
             "is_deleted": False,
         }
-        _account_after = db.scalars(select(Account).limit(1)).first()
+        _account_after = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
@@ -174,8 +189,9 @@ class TestCreateIssuerRSAKey:
 
     # <Error_1>
     # Parameter Error: no body
-    def test_error_1(self, client, db):
-        resp = client.post(self.base_url.format(ZERO_ADDRESS))
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
+        resp = await async_client.post(self.base_url.format(ZERO_ADDRESS))
 
         # assertion
         assert resp.status_code == 422
@@ -193,12 +209,15 @@ class TestCreateIssuerRSAKey:
 
     # <Error_2>
     # Parameter Error: rsa_passphrase
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
 
         req_param = {"rsa_passphrase": "test"}
 
-        resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_1["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 422
@@ -218,7 +237,8 @@ class TestCreateIssuerRSAKey:
 
     # <Error_3>
     # Not Exists Account
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
 
         _account = Account()
@@ -229,14 +249,16 @@ class TestCreateIssuerRSAKey:
         _account.rsa_public_key = _user_1["rsa_public_key"]
         _account.rsa_passphrase = E2EEUtils.encrypt("password")
         _account.rsa_status = AccountRsaStatus.SET.value
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
         _user_2 = config_eth_account("user2")
-        resp = client.post(self.base_url.format(_user_2["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_2["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 404
@@ -247,7 +269,8 @@ class TestCreateIssuerRSAKey:
 
     # <Error_4>
     # now Generating RSA(CREATING)
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
 
         _account = Account()
@@ -255,13 +278,15 @@ class TestCreateIssuerRSAKey:
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")
         _account.rsa_status = AccountRsaStatus.CREATING.value
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
-        resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_1["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 400
@@ -272,7 +297,8 @@ class TestCreateIssuerRSAKey:
 
     # <Error_5>
     # now Generating RSA(CHANGING)
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
 
         _account = Account()
@@ -283,13 +309,15 @@ class TestCreateIssuerRSAKey:
         _account.rsa_public_key = _user_1["rsa_public_key"]
         _account.rsa_passphrase = E2EEUtils.encrypt("password")
         _account.rsa_status = AccountRsaStatus.CHANGING.value
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
-        resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_1["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 400
@@ -300,7 +328,8 @@ class TestCreateIssuerRSAKey:
 
     # <Error_6>
     # Passphrase Policy Violation
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
         _user_1 = config_eth_account("user1")
 
         _account = Account()
@@ -311,13 +340,15 @@ class TestCreateIssuerRSAKey:
         _account.rsa_public_key = _user_1["rsa_public_key"]
         _account.rsa_passphrase = E2EEUtils.encrypt("password")
         _account.rsa_status = AccountRsaStatus.SET.value
-        db.add(_account)
+        async_db.add(_account)
 
-        db.commit()
+        await async_db.commit()
 
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.invalid_password)}
 
-        resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
+        resp = await async_client.post(
+            self.base_url.format(_user_1["address"]), json=req_param
+        )
 
         # assertion
         assert resp.status_code == 400

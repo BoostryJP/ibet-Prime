@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import FreezeLogAccount
@@ -31,7 +32,8 @@ class TestDeleteFreezeLogAccount:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         test_account_address = "0x1234567890123456789012345678900000000000"
 
         # Prepare data
@@ -39,12 +41,12 @@ class TestDeleteFreezeLogAccount:
         log_account.account_address = test_account_address
         log_account.keyfile = "test_keyfile_0"
         log_account.eoa_password = "test_password_0"
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
-        resp = client.delete(self.base_url + test_account_address)
+        resp = await async_client.delete(self.base_url + test_account_address)
 
         # Assertion
         assert resp.status_code == 200
@@ -53,10 +55,12 @@ class TestDeleteFreezeLogAccount:
             "is_deleted": True,
         }
 
-        log_account_af = db.scalars(
-            select(FreezeLogAccount)
-            .where(FreezeLogAccount.account_address == test_account_address)
-            .limit(1)
+        log_account_af = (
+            await async_db.scalars(
+                select(FreezeLogAccount)
+                .where(FreezeLogAccount.account_address == test_account_address)
+                .limit(1)
+            )
         ).first()
         assert log_account_af.is_deleted is True
 
@@ -65,11 +69,12 @@ class TestDeleteFreezeLogAccount:
     ###########################################################################
 
     # <Error_1>
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         test_account_address = "0x1234567890123456789012345678900000000000"
 
         # Request target api
-        resp = client.delete(self.base_url + test_account_address)
+        resp = await async_client.delete(self.base_url + test_account_address)
 
         # Assertion
         assert resp.status_code == 404

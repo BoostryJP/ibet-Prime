@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaStatus
@@ -32,7 +33,8 @@ class TestDeleteIssuer:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -43,11 +45,11 @@ class TestDeleteIssuer:
         account.keyfile = _admin_keyfile
         account.rsa_status = AccountRsaStatus.UNSET.value
         account.is_deleted = False
-        db.add(account)
-        db.commit()
+        async_db.add(account)
+        await async_db.commit()
 
         # request target API
-        resp = client.delete(self.base_url.format(_admin_address))
+        resp = await async_client.delete(self.base_url.format(_admin_address))
 
         # assertion
         assert resp.status_code == 200
@@ -57,7 +59,7 @@ class TestDeleteIssuer:
             "rsa_status": AccountRsaStatus.UNSET.value,
             "is_deleted": True,
         }
-        _account_after = db.scalars(select(Account).limit(1)).first()
+        _account_after = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account_after.issuer_address == _admin_account["address"]
         assert _account_after.is_deleted == True
 
@@ -67,9 +69,12 @@ class TestDeleteIssuer:
 
     # <Error_1>
     # No data
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target api
-        resp = client.delete(self.base_url.format("non_existent_issuer_address"))
+        resp = await async_client.delete(
+            self.base_url.format("non_existent_issuer_address")
+        )
 
         # assertion
         assert resp.status_code == 404

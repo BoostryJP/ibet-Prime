@@ -35,22 +35,23 @@ class TestRetrieveChildAccount:
 
     # <Normal_1_1>
     # Personal information is not set
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         _child_account = ChildAccount()
         _child_account.issuer_address = self.issuer_address
         _child_account.child_account_index = 1
         _child_account.child_account_address = self.child_account_address
-        db.add(_child_account)
+        async_db.add(_child_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(self.base_url.format(self.issuer_address, 1))
+        resp = await async_client.get(self.base_url.format(self.issuer_address, 1))
 
         # Assertion
         assert resp.status_code == 200
@@ -66,17 +67,18 @@ class TestRetrieveChildAccount:
     # <Normal_1_2>
     # Personal information is set
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
+        async_db.add(_account)
 
         _child_account = ChildAccount()
         _child_account.issuer_address = self.issuer_address
         _child_account.child_account_index = 1
         _child_account.child_account_address = self.child_account_address
-        db.add(_child_account)
+        async_db.add(_child_account)
 
         _off_personal_info = IDXPersonalInfo()
         _off_personal_info.issuer_address = self.issuer_address
@@ -92,12 +94,12 @@ class TestRetrieveChildAccount:
             "tax_category": 10,
         }
         _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
-        db.add(_off_personal_info)
+        async_db.add(_off_personal_info)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.get(self.base_url.format(self.issuer_address, 1))
+        resp = await async_client.get(self.base_url.format(self.issuer_address, 1))
 
         # Assertion
         assert resp.status_code == 200
@@ -125,9 +127,10 @@ class TestRetrieveChildAccount:
 
     # <Error_1>
     # 404: Issuer does not exist
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Call API
-        resp = client.get(self.base_url.format(self.issuer_address, 1))
+        resp = await async_client.get(self.base_url.format(self.issuer_address, 1))
 
         # Assertion
         assert resp.status_code == 404
@@ -138,15 +141,16 @@ class TestRetrieveChildAccount:
 
     # <Error_2>
     # 404: Issuer does not exist
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        db.add(_account)
-        db.commit()
+        async_db.add(_account)
+        await async_db.commit()
 
         # Call API
-        resp = client.get(self.base_url.format(self.issuer_address, 1))
+        resp = await async_client.get(self.base_url.format(self.issuer_address, 1))
 
         # Assertion
         assert resp.status_code == 404

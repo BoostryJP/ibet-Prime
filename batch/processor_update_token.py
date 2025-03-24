@@ -59,6 +59,7 @@ from app.model.db import (
 )
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
+from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
 from config import TOKEN_LIST_CONTRACT_ADDRESS, UPDATE_TOKEN_INTERVAL
@@ -364,7 +365,7 @@ class Processor:
         arguments: dict,
     ):
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = notice_type
@@ -399,6 +400,7 @@ async def main():
                 LOG.error(ex)
 
             await asyncio.sleep(UPDATE_TOKEN_INTERVAL)
+            free_malloc()
     finally:
         LOG.info("Service is shutdown")
 

@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, Token, TokenHolderExtraInfo, TokenType, TokenVersion
@@ -34,7 +35,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
     # <Normal_1>
     # Register token holder's extra information
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -49,7 +51,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -58,20 +60,20 @@ class TestRegisterShareTokenHolderExtraInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -84,21 +86,24 @@ class TestRegisterShareTokenHolderExtraInfo:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        extra_info = db.scalars(select(TokenHolderExtraInfo).limit(1)).first()
+        extra_info = (
+            await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
+        ).first()
         assert extra_info.json() == {
             "token_address": _token_address,
             "account_address": _test_account_address,
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
 
     # <Normal_2>
     # Optional input parameters
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -113,7 +118,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -122,13 +127,13 @@ class TestRegisterShareTokenHolderExtraInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -141,21 +146,24 @@ class TestRegisterShareTokenHolderExtraInfo:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        extra_info = db.scalars(select(TokenHolderExtraInfo).limit(1)).first()
+        extra_info = (
+            await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
+        ).first()
         assert extra_info.json() == {
             "token_address": _token_address,
             "account_address": _test_account_address,
-            "external_id_1_type": None,
-            "external_id_1": None,
-            "external_id_2_type": None,
-            "external_id_2": None,
-            "external_id_3_type": None,
-            "external_id_3": None,
+            "external_id1_type": None,
+            "external_id1": None,
+            "external_id2_type": None,
+            "external_id2": None,
+            "external_id3_type": None,
+            "external_id3": None,
         }
 
     # <Normal_3>
     # Overwrite the already registered data
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -169,20 +177,20 @@ class TestRegisterShareTokenHolderExtraInfo:
         extra_info_bf = TokenHolderExtraInfo()
         extra_info_bf.token_address = _token_address
         extra_info_bf.account_address = _test_account_address
-        extra_info_bf.external_id_1_type = "test_id_type_1_bf"
-        extra_info_bf.external_id_1 = "test_id_1_bf"
-        extra_info_bf.external_id_2_type = "test_id_type_2_bf"
-        extra_info_bf.external_id_2 = "test_id_2_bf"
-        extra_info_bf.external_id_3_type = "test_id_type_3_bf"
-        extra_info_bf.external_id_3 = "test_id_3_bf"
-        db.add(extra_info_bf)
-        db.commit()
+        extra_info_bf.external_id1_type = "test_id_type_1_bf"
+        extra_info_bf.external_id1 = "test_id_1_bf"
+        extra_info_bf.external_id2_type = "test_id_type_2_bf"
+        extra_info_bf.external_id2 = "test_id_2_bf"
+        extra_info_bf.external_id3_type = "test_id_type_3_bf"
+        extra_info_bf.external_id3 = "test_id_3_bf"
+        async_db.add(extra_info_bf)
+        await async_db.commit()
 
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -191,20 +199,20 @@ class TestRegisterShareTokenHolderExtraInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -217,16 +225,18 @@ class TestRegisterShareTokenHolderExtraInfo:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        extra_info = db.scalars(select(TokenHolderExtraInfo).limit(1)).first()
+        extra_info = (
+            await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
+        ).first()
         assert extra_info.json() == {
             "token_address": _token_address,
             "account_address": _test_account_address,
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
 
     ###########################################################################
@@ -236,7 +246,8 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_1>
     # RequestValidationError
     # - headers and body required
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -247,7 +258,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
         )
 
@@ -274,7 +285,8 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_2>
     # RequestValidationError
     # - invalid issuer_address format
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -286,14 +298,14 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -319,7 +331,8 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_3>
     # RequestValidationError
     # - eoa-password not encrypted
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -331,14 +344,14 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -364,7 +377,8 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_4>
     # RequestValidationError
     # - external_id: string_too_long
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -376,14 +390,14 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # request target API
         req_param = {
-            "external_id_1_type": "a" * 51,
-            "external_id_1": "a" * 51,
-            "external_id_2_type": "a" * 51,
-            "external_id_2": "a" * 51,
-            "external_id_3_type": "a" * 51,
-            "external_id_3": "a" * 51,
+            "external_id1_type": "a" * 51,
+            "external_id1": "a" * 51,
+            "external_id2_type": "a" * 51,
+            "external_id2": "a" * 51,
+            "external_id3_type": "a" * 51,
+            "external_id3": "a" * 51,
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -399,42 +413,42 @@ class TestRegisterShareTokenHolderExtraInfo:
             "detail": [
                 {
                     "type": "string_too_long",
-                    "loc": ["body", "external_id_1_type"],
+                    "loc": ["body", "external_id1_type"],
                     "msg": "String should have at most 50 characters",
                     "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "ctx": {"max_length": 50},
                 },
                 {
                     "type": "string_too_long",
-                    "loc": ["body", "external_id_1"],
+                    "loc": ["body", "external_id1"],
                     "msg": "String should have at most 50 characters",
                     "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "ctx": {"max_length": 50},
                 },
                 {
                     "type": "string_too_long",
-                    "loc": ["body", "external_id_2_type"],
+                    "loc": ["body", "external_id2_type"],
                     "msg": "String should have at most 50 characters",
                     "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "ctx": {"max_length": 50},
                 },
                 {
                     "type": "string_too_long",
-                    "loc": ["body", "external_id_2"],
+                    "loc": ["body", "external_id2"],
                     "msg": "String should have at most 50 characters",
                     "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "ctx": {"max_length": 50},
                 },
                 {
                     "type": "string_too_long",
-                    "loc": ["body", "external_id_3_type"],
+                    "loc": ["body", "external_id3_type"],
                     "msg": "String should have at most 50 characters",
                     "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "ctx": {"max_length": 50},
                 },
                 {
                     "type": "string_too_long",
-                    "loc": ["body", "external_id_3"],
+                    "loc": ["body", "external_id3"],
                     "msg": "String should have at most 50 characters",
                     "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "ctx": {"max_length": 50},
@@ -445,7 +459,8 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_5_1>
     # AuthorizationError
     # - issuer does not exist
-    def test_error_5_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -457,14 +472,14 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -483,7 +498,8 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_5_2>
     # AuthorizationError
     # - password mismatch
-    def test_error_5_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -498,18 +514,18 @@ class TestRegisterShareTokenHolderExtraInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -527,7 +543,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
     # <Error_6_1>
     # Token not found
-    def test_error_6_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6_1(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -542,19 +559,19 @@ class TestRegisterShareTokenHolderExtraInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-        db.commit()
+        async_db.add(account)
+        await async_db.commit()
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
@@ -572,7 +589,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
     # <Error_6_2>
     # Token is temporarily unavailable
-    def test_error_6_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6_2(self, async_client, async_db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -587,7 +605,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         token = Token()
         token.type = TokenType.IBET_SHARE
@@ -597,20 +615,20 @@ class TestRegisterShareTokenHolderExtraInfo:
         token.abi = {}
         token.version = TokenVersion.V_24_09
         token.token_status = 0
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {
-            "external_id_1_type": "test_id_type_1",
-            "external_id_1": "test_id_1",
-            "external_id_2_type": "test_id_type_2",
-            "external_id_2": "test_id_2",
-            "external_id_3_type": "test_id_type_3",
-            "external_id_3": "test_id_3",
+            "external_id1_type": "test_id_type_1",
+            "external_id1": "test_id_1",
+            "external_id2_type": "test_id_type_2",
+            "external_id2": "test_id_2",
+            "external_id3_type": "test_id_type_3",
+            "external_id3": "test_id_3",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={

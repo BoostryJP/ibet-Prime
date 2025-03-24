@@ -36,6 +36,7 @@ from app.model.db import (
     TokenHolder,
     TokenHolderBatchStatus,
     TokenHoldersList,
+    TokenStatus,
 )
 from app.model.schema import (
     CreateTokenHoldersListRequest,
@@ -95,7 +96,9 @@ async def list_all_token_holders_personal_info(
             stmt = stmt.where(
                 IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
             )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXPersonalInfo).order_by(None)
+    )
 
     # Filter
     if get_query.account_address:
@@ -106,14 +109,15 @@ async def list_all_token_holders_personal_info(
         )
         stmt = stmt.where(
             IDXPersonalInfo.created
-            >= local_tz.localize(_created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.created_to:
         _created_to = datetime.strptime(
             get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
         )
         stmt = stmt.where(
-            IDXPersonalInfo.created <= local_tz.localize(_created_to).astimezone(utc_tz)
+            IDXPersonalInfo.created
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.modified_from:
         _modified_from = datetime.strptime(
@@ -121,7 +125,7 @@ async def list_all_token_holders_personal_info(
         )
         stmt = stmt.where(
             IDXPersonalInfo.modified
-            >= local_tz.localize(_modified_from).astimezone(utc_tz)
+            >= local_tz.localize(_modified_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.modified_to:
         _modified_to = datetime.strptime(
@@ -129,10 +133,12 @@ async def list_all_token_holders_personal_info(
         )
         stmt = stmt.where(
             IDXPersonalInfo.modified
-            <= local_tz.localize(_modified_to).astimezone(utc_tz)
+            <= local_tz.localize(_modified_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXPersonalInfo).order_by(None)
+    )
 
     # Sort
     sort_attr = getattr(IDXPersonalInfo, get_query.sort_item, None)
@@ -198,7 +204,11 @@ async def list_all_token_holders_personal_info_history(
                 IDXPersonalInfoHistory.personal_info["key_manager"].as_string()
                 != "SELF"
             )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXPersonalInfoHistory)
+        .order_by(None)
+    )
 
     # Filter
     if get_query.account_address is not None:
@@ -213,7 +223,9 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.block_timestamp
-            >= local_tz.localize(_block_timestamp_from).astimezone(utc_tz)
+            >= local_tz.localize(_block_timestamp_from)
+            .astimezone(utc_tz)
+            .replace(tzinfo=None)
         )
     if get_query.block_timestamp_to:
         _block_timestamp_to = datetime.strptime(
@@ -221,7 +233,9 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.block_timestamp
-            <= local_tz.localize(_block_timestamp_to).astimezone(utc_tz)
+            <= local_tz.localize(_block_timestamp_to)
+            .astimezone(utc_tz)
+            .replace(tzinfo=None)
         )
     if get_query.created_from:
         _created_from = datetime.strptime(
@@ -229,7 +243,7 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.created
-            >= local_tz.localize(_created_from).astimezone(utc_tz)
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
         )
     if get_query.created_to:
         _created_to = datetime.strptime(
@@ -237,10 +251,14 @@ async def list_all_token_holders_personal_info_history(
         )
         stmt = stmt.where(
             IDXPersonalInfoHistory.created
-            <= local_tz.localize(_created_to).astimezone(utc_tz)
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXPersonalInfoHistory)
+        .order_by(None)
+    )
 
     # Sort
     if get_query.sort_order == 0:
@@ -307,7 +325,7 @@ async def create_token_holders_collection(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Validate block number
@@ -393,7 +411,7 @@ async def list_all_token_holders_collections(
                     and_(
                         Token.token_address == token_address,
                         Token.issuer_address == issuer_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -406,7 +424,7 @@ async def list_all_token_holders_collections(
                 .where(
                     and_(
                         Token.token_address == token_address,
-                        Token.token_status != 2,
+                        Token.token_status != TokenStatus.FAILED,
                     )
                 )
                 .limit(1)
@@ -415,14 +433,18 @@ async def list_all_token_holders_collections(
 
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Base query
     stmt = select(TokenHoldersList).where(
         TokenHoldersList.token_address == token_address
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenHoldersList)
+        .order_by(None)
+    )
 
     if status is not None:
         stmt = stmt.where(TokenHoldersList.batch_status == status.value)
@@ -434,7 +456,11 @@ async def list_all_token_holders_collections(
         stmt = stmt.order_by(desc(TokenHoldersList.created))
 
     # Count
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(TokenHoldersList)
+        .order_by(None)
+    )
 
     # Pagination
     if limit is not None:
@@ -504,7 +530,7 @@ async def retrieve_token_holders_collection(
                 and_(
                     Token.token_address == token_address,
                     Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+                    Token.token_status != TokenStatus.FAILED,
                 )
             )
             .limit(1)
@@ -512,7 +538,7 @@ async def retrieve_token_holders_collection(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
+    if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Validate list id
@@ -549,7 +575,9 @@ async def retrieve_token_holders_collection(
         )
         .where(TokenHolder.holder_list_id == _same_list_id_record.id)
     )
-    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(TokenHolder).order_by(None)
+    )
 
     if (
         get_query.hold_balance is not None
@@ -599,7 +627,9 @@ async def retrieve_token_holders_collection(
             .like("%" + get_query.key_manager + "%")
         )
 
-    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(TokenHolder).order_by(None)
+    )
 
     # Sort
     if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.tax_category:

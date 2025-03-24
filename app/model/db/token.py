@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 
 from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -36,6 +36,12 @@ class TokenVersion(StrEnum):
     V_23_12 = "23_12"
     V_24_06 = "24_06"
     V_24_09 = "24_09"
+
+
+class TokenStatus(IntEnum):
+    PENDING = 0
+    SUCCEEDED = 1
+    FAILED = 2
 
 
 class Token(Base):
@@ -57,7 +63,9 @@ class Token(Base):
     # contract ABI
     abi: Mapped[dict] = mapped_column(JSON, nullable=False)
     # token processing status (pending:0, succeeded:1, failed:2)
-    token_status: Mapped[int | None] = mapped_column(Integer, default=1)
+    token_status: Mapped[TokenStatus | None] = mapped_column(
+        Integer, default=TokenStatus.SUCCEEDED
+    )
     # initial position synced
     initial_position_synced: Mapped[bool | None] = mapped_column(Boolean, default=False)
 

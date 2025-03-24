@@ -42,9 +42,11 @@ from app.model.db import (
     IDXPersonalInfo,
     PersonalInfoDataSource,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.utils.contract_utils import AsyncContractUtils
+from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
 from config import ZERO_ADDRESS
@@ -196,7 +198,8 @@ class Processor:
                 )
                 .where(
                     and_(
-                        Token.issuer_address == issuer_address, Token.token_status == 1
+                        Token.issuer_address == issuer_address,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                     )
                 )
             )
@@ -324,6 +327,7 @@ async def main():
                 LOG.exception(ex)
 
             await asyncio.sleep(10)
+            free_malloc()
     finally:
         LOG.info("Service is shutdown")
 

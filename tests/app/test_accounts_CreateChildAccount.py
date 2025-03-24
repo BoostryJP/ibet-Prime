@@ -24,6 +24,7 @@ import pytest
 from coincurve import PublicKey
 from eth_utils import keccak, to_checksum_address
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.model.db import (
     Account,
@@ -34,6 +35,7 @@ from app.model.db import (
     PersonalInfoDataSource,
     PersonalInfoEventType,
 )
+from config import ASYNC_DATABASE_URL
 
 
 class TestCreateChildAccount:
@@ -63,7 +65,8 @@ class TestCreateChildAccount:
 
     # <Normal_0>
     # Verify the deterministic wallet
-    def test_normal_0(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_0(self, async_client, async_db):
         # Generate a child public key from two private keys.
         child_sk_1 = ((int.from_bytes(self.sk_1) + self.index) % (2**256)).to_bytes(32)
         child_pk_1 = PublicKey.from_valid_secret(child_sk_1)
@@ -76,22 +79,23 @@ class TestCreateChildAccount:
     # <Normal_1_1>
     # Successfully generated the child key
     @pytest.mark.freeze_time("2024-09-28 12:34:56")
-    def test_normal_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
-        db.add(_account)
+        async_db.add(_account)
 
         _child_index = ChildAccountIndex()
         _child_index.issuer_address = self.issuer_address
         _child_index.next_index = 1
-        db.add(_child_index)
+        async_db.add(_child_index)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address),
             json={
                 "personal_information": {
@@ -110,9 +114,11 @@ class TestCreateChildAccount:
         assert resp.status_code == 200
         assert resp.json() == {"child_account_index": 1}
 
-        _child_account = db.scalars(
-            select(ChildAccount).where(
-                ChildAccount.issuer_address == self.issuer_address
+        _child_account = (
+            await async_db.scalars(
+                select(ChildAccount).where(
+                    ChildAccount.issuer_address == self.issuer_address
+                )
             )
         ).all()
         assert len(_child_account) == 1
@@ -120,17 +126,21 @@ class TestCreateChildAccount:
         assert _child_account[0].child_account_index == 1
         assert _child_account[0].child_account_address == self.child_1_address
 
-        _child_index = db.scalars(
-            select(ChildAccountIndex)
-            .where(ChildAccountIndex.issuer_address == self.issuer_address)
-            .limit(1)
+        _child_index = (
+            await async_db.scalars(
+                select(ChildAccountIndex)
+                .where(ChildAccountIndex.issuer_address == self.issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _child_index.next_index == 2
 
-        _off_personal_info = db.scalars(
-            select(IDXPersonalInfo)
-            .where(IDXPersonalInfo.issuer_address == self.issuer_address)
-            .limit(1)
+        _off_personal_info = (
+            await async_db.scalars(
+                select(IDXPersonalInfo)
+                .where(IDXPersonalInfo.issuer_address == self.issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _off_personal_info.issuer_address == self.issuer_address
         assert (
@@ -149,10 +159,12 @@ class TestCreateChildAccount:
         }
         assert _off_personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN
 
-        _personal_info_history = db.scalars(
-            select(IDXPersonalInfoHistory)
-            .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
-            .limit(1)
+        _personal_info_history = (
+            await async_db.scalars(
+                select(IDXPersonalInfoHistory)
+                .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _personal_info_history.issuer_address == self.issuer_address
         assert (
@@ -168,22 +180,23 @@ class TestCreateChildAccount:
     # <Normal_1_2>
     # Personal information is blank
     @pytest.mark.freeze_time("2024-09-28 12:34:56")
-    def test_normal_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
-        db.add(_account)
+        async_db.add(_account)
 
         _child_index = ChildAccountIndex()
         _child_index.issuer_address = self.issuer_address
         _child_index.next_index = 1
-        db.add(_child_index)
+        async_db.add(_child_index)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address), json={"personal_information": {}}
         )
 
@@ -191,9 +204,11 @@ class TestCreateChildAccount:
         assert resp.status_code == 200
         assert resp.json() == {"child_account_index": 1}
 
-        _child_account = db.scalars(
-            select(ChildAccount).where(
-                ChildAccount.issuer_address == self.issuer_address
+        _child_account = (
+            await async_db.scalars(
+                select(ChildAccount).where(
+                    ChildAccount.issuer_address == self.issuer_address
+                )
             )
         ).all()
         assert len(_child_account) == 1
@@ -201,17 +216,21 @@ class TestCreateChildAccount:
         assert _child_account[0].child_account_index == 1
         assert _child_account[0].child_account_address == self.child_1_address
 
-        _child_index = db.scalars(
-            select(ChildAccountIndex)
-            .where(ChildAccountIndex.issuer_address == self.issuer_address)
-            .limit(1)
+        _child_index = (
+            await async_db.scalars(
+                select(ChildAccountIndex)
+                .where(ChildAccountIndex.issuer_address == self.issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _child_index.next_index == 2
 
-        _off_personal_info = db.scalars(
-            select(IDXPersonalInfo)
-            .where(IDXPersonalInfo.issuer_address == self.issuer_address)
-            .limit(1)
+        _off_personal_info = (
+            await async_db.scalars(
+                select(IDXPersonalInfo)
+                .where(IDXPersonalInfo.issuer_address == self.issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _off_personal_info.issuer_address == self.issuer_address
         assert (
@@ -230,10 +249,12 @@ class TestCreateChildAccount:
         }
         assert _off_personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN
 
-        _personal_info_history = db.scalars(
-            select(IDXPersonalInfoHistory)
-            .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
-            .limit(1)
+        _personal_info_history = (
+            await async_db.scalars(
+                select(IDXPersonalInfoHistory)
+                .where(IDXPersonalInfoHistory.issuer_address == self.issuer_address)
+                .limit(1)
+            )
         ).first()
         assert _personal_info_history.issuer_address == self.issuer_address
         assert (
@@ -253,9 +274,12 @@ class TestCreateChildAccount:
     # <Error_1>
     # RequestValidationError
     # - Missing body
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # Call API
-        resp = client.post(self.base_url.format(self.issuer_address), json={})
+        resp = await async_client.post(
+            self.base_url.format(self.issuer_address), json={}
+        )
 
         assert resp.status_code == 422
         assert resp.json() == {
@@ -272,9 +296,10 @@ class TestCreateChildAccount:
 
     # <Error_2>
     # 404: Issuer does not exist
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address),
             json={
                 "personal_information": {
@@ -298,16 +323,17 @@ class TestCreateChildAccount:
 
     # <Error_3>
     # OperationNotPermittedForOlderIssuers
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = None  # public-key is not set
-        db.add(_account)
-        db.commit()
+        async_db.add(_account)
+        await async_db.commit()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address),
             json={
                 "personal_information": {
@@ -331,30 +357,40 @@ class TestCreateChildAccount:
     # <Error_4>
     # ServiceUnavailableError
     # - Lock timeout for index table
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
-        db.add(_account)
+        async_db.add(_account)
 
         _child_index = ChildAccountIndex()
         _child_index.issuer_address = self.issuer_address
         _child_index.next_index = 2
-        db.add(_child_index)
+        async_db.add(_child_index)
 
-        db.commit()
+        await async_db.commit()
 
         # Lock child account index table
-        _child_index = db.scalars(
-            select(ChildAccountIndex)
-            .where(ChildAccountIndex.issuer_address == self.issuer_address)
-            .limit(1)
-            .with_for_update(nowait=True)
+        local_session = AsyncSession(
+            autocommit=False,
+            autoflush=True,
+            bind=create_async_engine(
+                ASYNC_DATABASE_URL, echo=False, pool_pre_ping=True
+            ),
+        )
+        _child_index = (
+            await local_session.scalars(
+                select(ChildAccountIndex)
+                .where(ChildAccountIndex.issuer_address == self.issuer_address)
+                .limit(1)
+                .with_for_update(nowait=True)
+            )
         ).first()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address),
             json={
                 "personal_information": {
@@ -368,6 +404,8 @@ class TestCreateChildAccount:
                 }
             },
         )
+        await local_session.rollback()
+        await local_session.close()
 
         # Assertion
         assert resp.status_code == 503
@@ -376,27 +414,25 @@ class TestCreateChildAccount:
             "detail": "Creation of child accounts for this issuer is temporarily unavailable",
         }
 
-        db.rollback()
-        db.close()
-
     # <Error_5>
     # PersonalInfoExceedsSizeLimit
-    def test_error_5(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_client, async_db):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
-        db.add(_account)
+        async_db.add(_account)
 
         _child_index = ChildAccountIndex()
         _child_index.issuer_address = self.issuer_address
         _child_index.next_index = 1
-        db.add(_child_index)
+        async_db.add(_child_index)
 
-        db.commit()
+        await async_db.commit()
 
         # Call API
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(self.issuer_address),
             json={
                 "personal_information": {

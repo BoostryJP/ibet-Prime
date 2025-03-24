@@ -45,11 +45,13 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
 )
 from app.utils.asyncio_utils import SemaphoreTaskGroup
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
+from batch import free_malloc
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
 
@@ -140,7 +142,7 @@ class Processor:
                         .where(
                             and_(
                                 Token.type == TokenType.IBET_SHARE,
-                                Token.token_status == 1,
+                                Token.token_status == TokenStatus.SUCCEEDED,
                             )
                         )
                     )
@@ -159,7 +161,7 @@ class Processor:
                 select(Token).where(
                     and_(
                         Token.type == TokenType.IBET_SHARE,
-                        Token.token_status == 1,
+                        Token.token_status == TokenStatus.SUCCEEDED,
                         Token.token_address.in_(load_required_address_list),
                     )
                 )
@@ -436,7 +438,7 @@ class Processor:
                             db_session=db_session,
                             issuer_address=issuer_address,
                             token_address=token.address,
-                            token_type=TokenType.IBET_SHARE.value,
+                            token_type=TokenType.IBET_SHARE,
                             account_address=account_address,
                             lock_address=lock_address,
                             value=value,
@@ -546,7 +548,7 @@ class Processor:
                             db_session=db_session,
                             issuer_address=issuer_address,
                             token_address=token.address,
-                            token_type=TokenType.IBET_SHARE.value,
+                            token_type=TokenType.IBET_SHARE,
                             account_address=account_address,
                             lock_address=lock_address,
                             recipient_address=recipient_address,
@@ -1152,7 +1154,7 @@ class Processor:
         lock.account_address = account_address
         lock.value = value
         lock.data = data
-        lock.block_timestamp = block_timestamp
+        lock.block_timestamp = block_timestamp.replace(tzinfo=None)
         db_session.add(lock)
 
     @staticmethod
@@ -1197,7 +1199,7 @@ class Processor:
         unlock.recipient_address = recipient_address
         unlock.value = value
         unlock.data = data
-        unlock.block_timestamp = block_timestamp
+        unlock.block_timestamp = block_timestamp.replace(tzinfo=None)
         db_session.add(unlock)
 
     @staticmethod
@@ -1322,7 +1324,7 @@ class Processor:
             data = {}
 
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 0  # Low
         notification.type = NotificationType.LOCK_INFO
@@ -1355,7 +1357,7 @@ class Processor:
             data = {}
 
         notification = Notification()
-        notification.notice_id = uuid.uuid4()
+        notification.notice_id = str(uuid.uuid4())
         notification.issuer_address = issuer_address
         notification.priority = 0  # Low
         notification.type = NotificationType.UNLOCK_INFO
@@ -1493,6 +1495,7 @@ async def main():
             LOG.exception("An exception occurred during event synchronization")
 
         await asyncio.sleep(INDEXER_SYNC_INTERVAL)
+        free_malloc()
 
 
 if __name__ == "__main__":

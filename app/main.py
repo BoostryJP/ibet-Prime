@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import ctypes
+from ctypes.util import find_library
 from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request
@@ -28,13 +30,14 @@ from pydantic_core import ArgsKwargs, ErrorDetails
 from starlette import status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
     BadRequestError,
     ContractRevertError,
     ServiceUnavailableError,
 )
-from app.log import output_access_log
+from app.log import LOG, output_access_log
 from app.routers.issuer import (
     account,
     bond,
@@ -45,6 +48,7 @@ from app.routers.issuer import (
     position,
     settlement_issuer,
     share,
+    token_common,
     token_holders,
 )
 from app.routers.misc import (
@@ -105,7 +109,7 @@ if FREEZE_LOG_FEATURE_ENABLED:
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="24.12",
+    version="25.3",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -125,6 +129,8 @@ async def api_call_handler(request: Request, call_next):
 
 app.openapi = custom_openapi(app)
 
+libc = ctypes.CDLL(find_library("c"))
+
 
 ###############################################################
 # ROUTER
@@ -132,7 +138,14 @@ app.openapi = custom_openapi(app)
 
 
 @app.get("/", tags=["root"])
-async def root():
+async def root(db: DBAsyncSession):
+    try:
+        # Check DB Connection
+        await db.connection()
+    except Exception as err:
+        LOG.exception("error")
+        raise ServiceUnavailableError(err)
+    libc.malloc_trim(0)
     return {"server": SERVER_NAME}
 
 
@@ -148,6 +161,7 @@ else:
     app.include_router(notification.router)
     app.include_router(position.router)
     app.include_router(share.router)
+    app.include_router(token_common.router)
     app.include_router(token_holders.router)
     app.include_router(settlement_issuer.router)
     app.include_router(sealed_tx.router)
@@ -280,7 +294,7 @@ async def method_not_allowed_error_handler(
 async def service_unavailable_error_handler(
     request: Request, exc: ServiceUnavailableError
 ):
-    meta = {"code": 1, "title": "ServiceUnavailableError"}
+    meta = {"code": exc.code, "title": exc.__class__.__name__}
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),

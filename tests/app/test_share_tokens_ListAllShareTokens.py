@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
+import pytest
 from pytz import timezone
 
 from app.model.blockchain import IbetShareContract
@@ -38,8 +39,9 @@ class TestListAllShareTokens:
 
     # <Normal_1>
     # parameter unset address, 0 Record
-    def test_normal_1(self, client, db):
-        resp = client.get(self.apiurl)
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
+        resp = await async_client.get(self.apiurl)
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -47,19 +49,20 @@ class TestListAllShareTokens:
     # <Normal_2>
     # parameter unset address, 1 Record
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_2(self, mock_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = issuer_address_1
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_24_09
-        db.add(token)
-        db.commit()
+        async_db.add(token)
+        await async_db.commit()
 
         _issue_datetime = (
             timezone("UTC")
@@ -98,7 +101,7 @@ class TestListAllShareTokens:
         mock_token.memo = "memo_test1"
         mock_get.side_effect = [mock_token]
 
-        resp = client.get(self.apiurl)
+        resp = await async_client.get(self.apiurl)
 
         assumed_response = [
             {
@@ -136,21 +139,22 @@ class TestListAllShareTokens:
     # <Normal Case 3>
     # parameter unset address, Multi Record
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_3(self, mock_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
         issuer_address_2 = user_2["address"]
         # 1st Data
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.tx_hash = "tx_hash_test1"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
-        db.commit()
+        async_db.add(token_1)
+        await async_db.commit()
 
         _issue_datetime_1 = (
             timezone("UTC")
@@ -189,15 +193,15 @@ class TestListAllShareTokens:
 
         # 2nd Data
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.tx_hash = "tx_hash_test2"
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
-        db.commit()
+        async_db.add(token_2)
+        await async_db.commit()
 
         _issue_datetime_2 = (
             timezone("UTC")
@@ -236,7 +240,7 @@ class TestListAllShareTokens:
 
         mock_get.side_effect = [mock_token_1, mock_token_2]
 
-        resp = client.get(self.apiurl)
+        resp = await async_client.get(self.apiurl)
 
         assumed_response = [
             {
@@ -300,20 +304,23 @@ class TestListAllShareTokens:
 
     # <Normal Case 4>
     # parameter set address, 0 Record
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         # No Target Data
         token = Token()
-        token.type = TokenType.IBET_SHARE.value
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
+        resp = await async_client.get(
+            self.apiurl, headers={"issuer-address": issuer_address_1}
+        )
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -321,21 +328,22 @@ class TestListAllShareTokens:
     # <Normal Case 5>
     # parameter set address, 1 Record
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_5(self, mock_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.tx_hash = "tx_hash_test1"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
-        db.commit()
+        async_db.add(token_1)
+        await async_db.commit()
         _issue_datetime = (
             timezone("UTC")
             .localize(token_1.created)
@@ -374,15 +382,17 @@ class TestListAllShareTokens:
 
         # No Target Data
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.tx_hash = "tx_hash_test1"
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test1"
         token_2.abi = "abi_test1"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
+        resp = await async_client.get(
+            self.apiurl, headers={"issuer-address": issuer_address_1}
+        )
 
         assumed_response = [
             {
@@ -420,21 +430,22 @@ class TestListAllShareTokens:
     # <Normal Case 6>
     # parameter set address, Multi Record
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    def test_normal_6(self, mock_get, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_6(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
         issuer_address_2 = user_2["address"]
         # 1st Data
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE.value
+        token_1.type = TokenType.IBET_SHARE
         token_1.tx_hash = "tx_hash_test1"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
-        db.commit()
+        async_db.add(token_1)
+        await async_db.commit()
 
         _issue_datetime_1 = (
             timezone("UTC")
@@ -473,15 +484,15 @@ class TestListAllShareTokens:
 
         # 2nd Data
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.tx_hash = "tx_hash_test2"
         token_2.issuer_address = issuer_address_1
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
-        db.commit()
+        async_db.add(token_2)
+        await async_db.commit()
 
         _issue_datetime_2 = (
             timezone("UTC")
@@ -522,15 +533,17 @@ class TestListAllShareTokens:
 
         # No Target Data
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE.value
+        token_3.type = TokenType.IBET_SHARE
         token_3.tx_hash = "tx_hash_test1"
         token_3.issuer_address = issuer_address_2
         token_3.token_address = "token_address_test1"
         token_3.abi = "abi_test1"
         token_3.version = TokenVersion.V_24_09
-        db.add(token_3)
+        async_db.add(token_3)
 
-        resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
+        resp = await async_client.get(
+            self.apiurl, headers={"issuer-address": issuer_address_1}
+        )
 
         assumed_response = [
             {
@@ -598,8 +611,11 @@ class TestListAllShareTokens:
 
     # <Error_1>
     # parameter error
-    def test_error_1(self, client, db):
-        resp = client.get(self.apiurl, headers={"issuer-address": "issuer_address"})
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
+        resp = await async_client.get(
+            self.apiurl, headers={"issuer-address": "issuer_address"}
+        )
 
         assert resp.status_code == 422
         assert resp.json() == {

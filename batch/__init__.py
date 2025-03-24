@@ -16,3 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+import ctypes
+from ctypes.util import find_library
+
+libc = ctypes.CDLL(find_library("c"))
+
+
+def free_malloc():
+    libc.malloc_trim(0)

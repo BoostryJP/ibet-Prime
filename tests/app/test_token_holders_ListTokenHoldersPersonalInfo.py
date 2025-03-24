@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import UTC, datetime
 from unittest import mock
 
 import pytest
@@ -35,12 +36,13 @@ class TestListTokenHoldersPersonalInfo:
 
     # <Normal_1>
     # 0 record
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -56,7 +58,8 @@ class TestListTokenHoldersPersonalInfo:
     # <Normal_2>
     # 1 record
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -76,12 +79,12 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -93,7 +96,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -115,7 +117,8 @@ class TestListTokenHoldersPersonalInfo:
     # Multiple records
     # No search filter
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -137,7 +140,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -153,7 +156,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -169,12 +172,12 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -186,7 +189,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -202,7 +204,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -218,7 +219,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -240,7 +240,8 @@ class TestListTokenHoldersPersonalInfo:
     # Multiple records
     # Search filter: key_manager_type = "SELF"
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
-    def test_normal_4_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1_1(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -262,7 +263,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -278,7 +279,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.OFF_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -294,12 +295,12 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -314,7 +315,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "SELF",
@@ -336,7 +336,8 @@ class TestListTokenHoldersPersonalInfo:
     # Multiple records
     # Search filter: key_manager_type = "OTHERS"
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
-    def test_normal_4_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -358,7 +359,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -374,7 +375,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.OFF_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -390,12 +391,12 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -410,7 +411,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 2, "limit": None, "offset": None, "total": 2},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -426,7 +426,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -447,7 +446,8 @@ class TestListTokenHoldersPersonalInfo:
     # <Normal_4_2>
     # Multiple records
     # Search filter: account_address
-    def test_normal_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -468,10 +468,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 09:00:00"
-        personal_info_idx.modified = "2024-05-14 09:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 9, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 9, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -486,10 +490,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 12:00:00"
-        personal_info_idx.modified = "2024-05-14 12:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 12, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 12, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -504,15 +512,19 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 15:00:00"
-        personal_info_idx.modified = "2024-05-14 15:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 15, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 15, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -527,7 +539,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -548,7 +559,8 @@ class TestListTokenHoldersPersonalInfo:
     # <Normal_4_3>
     # Multiple records
     # Search filter: created_from, created_to
-    def test_normal_4_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_3(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -569,10 +581,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 09:00:00"
-        personal_info_idx.modified = "2024-05-14 09:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 9, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 9, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -587,10 +603,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 12:00:00"
-        personal_info_idx.modified = "2024-05-14 12:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 12, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 12, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -605,15 +625,19 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 15:00:00"
-        personal_info_idx.modified = "2024-05-14 15:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 15, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 15, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -629,7 +653,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -650,7 +673,8 @@ class TestListTokenHoldersPersonalInfo:
     # <Normal_4_4>
     # Multiple records
     # Search filter: modified_from, modified_to
-    def test_normal_4_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_4(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -671,10 +695,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 09:00:00"
-        personal_info_idx.modified = "2024-05-14 09:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 9, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 9, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -689,10 +717,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 12:00:00"
-        personal_info_idx.modified = "2024-05-14 12:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 12, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 12, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -707,15 +739,19 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2024-05-13 15:00:00"
-        personal_info_idx.modified = "2024-05-14 15:00:00"
+        personal_info_idx.created = datetime(2024, 5, 13, 15, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2024, 5, 14, 15, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -731,7 +767,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 1, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -753,7 +788,8 @@ class TestListTokenHoldersPersonalInfo:
     # Sort
     # - sort_item: None(created)
     # - sort_order: DESC
-    def test_normal_5_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_1(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -774,10 +810,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:00"
-        personal_info_idx.modified = "2023-10-24 00:00:00"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(2023, 10, 24, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -792,10 +832,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:01"
-        personal_info_idx.modified = "2023-10-24 00:00:01"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(
+            2023, 10, 24, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -810,15 +854,19 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:02"
-        personal_info_idx.modified = "2023-10-24 00:00:02"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(
+            2023, 10, 24, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -831,7 +879,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -847,7 +894,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:02+09:00",
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -863,7 +909,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:01+09:00",
                 },
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -885,7 +930,8 @@ class TestListTokenHoldersPersonalInfo:
     # Sort
     # - sort_item: account_address
     # - sort_order: ASC
-    def test_normal_5_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -906,9 +952,11 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:02"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -923,9 +971,11 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:01"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -940,14 +990,16 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:00"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -960,7 +1012,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -976,7 +1027,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": mock.ANY,
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -992,7 +1042,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": mock.ANY,
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -1014,7 +1063,8 @@ class TestListTokenHoldersPersonalInfo:
     # Sort
     # - sort_item: modified
     # - sort_order: ASC
-    def test_normal_5_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_5_3(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -1035,10 +1085,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:00"
-        personal_info_idx.modified = "2023-10-24 00:00:02"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 0, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(
+            2023, 10, 24, 0, 0, 2, tzinfo=UTC
+        ).replace(tzinfo=None)
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -1053,10 +1107,14 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:01"
-        personal_info_idx.modified = "2023-10-24 00:00:01"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 1, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(
+            2023, 10, 24, 0, 0, 1, tzinfo=UTC
+        ).replace(tzinfo=None)
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -1071,15 +1129,19 @@ class TestListTokenHoldersPersonalInfo:
             "is_corporate": False,
             "tax_category": 10,
         }
-        personal_info_idx.created = "2023-10-23 00:00:02"
-        personal_info_idx.modified = "2023-10-24 00:00:00"
+        personal_info_idx.created = datetime(2023, 10, 23, 0, 0, 2, tzinfo=UTC).replace(
+            tzinfo=None
+        )
+        personal_info_idx.modified = datetime(
+            2023, 10, 24, 0, 0, 0, tzinfo=UTC
+        ).replace(tzinfo=None)
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -1092,7 +1154,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": None, "offset": None, "total": 3},
             "personal_info": [
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -1108,7 +1169,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:00+09:00",
                 },
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -1124,7 +1184,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2023-10-24T09:00:01+09:00",
                 },
                 {
-                    "id": 1,
                     "account_address": account_address1,
                     "personal_info": {
                         "key_manager": "key_manager_test1",
@@ -1145,7 +1204,8 @@ class TestListTokenHoldersPersonalInfo:
     # <Normal_6>
     # Pagination
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
-    def test_normal_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_6(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -1167,7 +1227,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -1183,7 +1243,7 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
         personal_info_idx = IDXPersonalInfo()
         personal_info_idx.issuer_address = issuer_address
@@ -1199,13 +1259,13 @@ class TestListTokenHoldersPersonalInfo:
             "tax_category": 10,
         }
         personal_info_idx.data_source = PersonalInfoDataSource.ON_CHAIN
-        db.add(personal_info_idx)
+        async_db.add(personal_info_idx)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
         req_param = {"limit": 2, "offset": 1}
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             params=req_param,
             headers={
@@ -1218,7 +1278,6 @@ class TestListTokenHoldersPersonalInfo:
             "result_set": {"count": 3, "limit": 2, "offset": 1, "total": 3},
             "personal_info": [
                 {
-                    "id": 2,
                     "account_address": account_address2,
                     "personal_info": {
                         "key_manager": "key_manager_test2",
@@ -1234,7 +1293,6 @@ class TestListTokenHoldersPersonalInfo:
                     "modified": "2024-05-13T21:34:56+09:00",
                 },
                 {
-                    "id": 3,
                     "account_address": account_address3,
                     "personal_info": {
                         "key_manager": "key_manager_test3",
@@ -1258,12 +1316,13 @@ class TestListTokenHoldersPersonalInfo:
 
     # <Error_1_1>
     # RequestValidationError: created_from, created_to, modified_from, modified_to
-    def test_error_1_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,
@@ -1313,12 +1372,13 @@ class TestListTokenHoldersPersonalInfo:
 
     # <Error_1_2>
     # RequestValidationError: sort_item, sort_order
-    def test_error_1_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.url,
             headers={
                 "issuer-address": issuer_address,

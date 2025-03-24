@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import pytest
 from sqlalchemy import select
 
 from app.model.db import FreezeLogAccount
@@ -33,7 +34,8 @@ class TestChangeFreezeLogAccountPassword:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -45,26 +47,28 @@ class TestChangeFreezeLogAccountPassword:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(old_password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt(old_password),
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # Assertion
         assert resp.status_code == 200
 
-        log_account_af = db.scalars(
-            select(FreezeLogAccount)
-            .where(FreezeLogAccount.account_address == user_address_1)
-            .limit(1)
+        log_account_af = (
+            await async_db.scalars(
+                select(FreezeLogAccount)
+                .where(FreezeLogAccount.account_address == user_address_1)
+                .limit(1)
+            )
         ).first()
         assert E2EEUtils.decrypt(log_account_af.eoa_password) == new_password
 
@@ -75,13 +79,14 @@ class TestChangeFreezeLogAccountPassword:
     # <Error_1>
     # Missing required fields
     # -> RequestValidationError
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api
         req_param = {}
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 
@@ -108,7 +113,8 @@ class TestChangeFreezeLogAccountPassword:
     # <Error_2>
     # Password is not encrypted
     # -> RequestValidationError
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -117,7 +123,7 @@ class TestChangeFreezeLogAccountPassword:
             "old_eoa_password": "raw_password",
             "eoa_password": "raw_password",
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 
@@ -146,7 +152,8 @@ class TestChangeFreezeLogAccountPassword:
     # <Error_3>
     # Log account is not exists
     # -> NotFound
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         old_password = "password"
@@ -157,7 +164,7 @@ class TestChangeFreezeLogAccountPassword:
             "old_eoa_password": E2EEUtils.encrypt(old_password),
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 
@@ -171,7 +178,8 @@ class TestChangeFreezeLogAccountPassword:
     # <Error_4>
     # New password violates password policy
     # -> InvalidParameterError
-    def test_error_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client, async_db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -183,16 +191,16 @@ class TestChangeFreezeLogAccountPassword:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(old_password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt(old_password),
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
-        resp = client.post(
+        resp = await async_client.post(
             self.base_url.format(account_address=user_address_1), json=req_param
         )
 

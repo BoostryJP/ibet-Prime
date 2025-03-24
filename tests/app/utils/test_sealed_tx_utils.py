@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 
+import pytest
 from fastapi import Request
 from fastapi.responses import PlainTextResponse
 from fastapi.testclient import TestClient
@@ -73,7 +74,8 @@ class TestVerifySealedTxSignature:
     # Normal_1
     # With query string and request body
     # POST
-    def test_normal_1(self):
+    @pytest.mark.asyncio
+    async def test_normal_1(self):
         signature = generate_sealed_tx_signature(
             "POST",
             self.apiurl,
@@ -104,7 +106,8 @@ class TestVerifySealedTxSignature:
     # Normal_2_1
     # With query string and no request body
     # POST
-    def test_normal_2_1(self, client):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_client):
         signature = generate_sealed_tx_signature(
             "POST",
             self.apiurl,
@@ -129,7 +132,8 @@ class TestVerifySealedTxSignature:
     # Normal_2_2
     # With query string and no request body
     # GET
-    def test_normal_2_2(self, client):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client):
         signature = generate_sealed_tx_signature(
             "GET",
             self.apiurl,
@@ -155,7 +159,8 @@ class TestVerifySealedTxSignature:
     # Without query string and with request body
     # Standard JSON format
     # POST
-    def test_normal_3_1(self, client):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, async_client):
         signature = generate_sealed_tx_signature(
             "POST",
             self.apiurl,
@@ -179,7 +184,8 @@ class TestVerifySealedTxSignature:
     # Without query string and with request body
     # JSON format without whitespace
     # POST
-    def test_normal_3_2(self, client):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client):
         signature = generate_sealed_tx_signature(
             "POST",
             self.apiurl,
@@ -208,7 +214,8 @@ class TestVerifySealedTxSignature:
 
     # Error_1
     # Invalid signature
-    def test_error_1(self):
+    @pytest.mark.asyncio
+    async def test_error_1(self):
         resp = self.cli.post(
             self.apiurl,
             params={
@@ -227,7 +234,8 @@ class TestVerifySealedTxSignature:
 
     # Error_2
     # Missing signature
-    def test_error_2(self):
+    @pytest.mark.asyncio
+    async def test_error_2(self):
         resp = self.cli.post(
             self.apiurl,
             params={
@@ -258,7 +266,8 @@ class TestVerifySealedTxSignature:
 
     # Error_3
     # Signature format is invalid
-    def test_error_3(self):
+    @pytest.mark.asyncio
+    async def test_error_3(self):
         resp = self.cli.post(
             self.apiurl,
             params={

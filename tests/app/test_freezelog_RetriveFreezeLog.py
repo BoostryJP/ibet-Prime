@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 from unittest import mock
 
+import pytest
+
 from app.model.db import FreezeLogAccount
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -34,7 +36,8 @@ class TestRetrieveFreezeLog:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -45,9 +48,9 @@ class TestRetrieveFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
         with mock.patch(
@@ -55,7 +58,7 @@ class TestRetrieveFreezeLog:
             freeze_log_contract.address,
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -66,7 +69,7 @@ class TestRetrieveFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Get log
-            resp = client.get(
+            resp = await async_client.get(
                 self.get_log_url.format(log_index),
                 params={"account_address": user_address_1},
             )
@@ -86,7 +89,8 @@ class TestRetrieveFreezeLog:
     # <Error_1_1>
     # Missing required fields
     # -> RequestValidationError
-    def test_error_1_1(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -97,9 +101,9 @@ class TestRetrieveFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
         with mock.patch(
@@ -107,7 +111,7 @@ class TestRetrieveFreezeLog:
             freeze_log_contract.address,
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -118,7 +122,7 @@ class TestRetrieveFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Get log
-            resp = client.get(self.get_log_url.format(log_index), params={})
+            resp = await async_client.get(self.get_log_url.format(log_index), params={})
 
         # Assertion
         assert resp.status_code == 422
@@ -137,7 +141,8 @@ class TestRetrieveFreezeLog:
     # <Error_1_2>
     # Missing required fields
     # -> RequestValidationError
-    def test_error_1_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -148,9 +153,9 @@ class TestRetrieveFreezeLog:
         log_account.account_address = user_address_1
         log_account.keyfile = user_keyfile_1
         log_account.eoa_password = E2EEUtils.encrypt(password)
-        db.add(log_account)
+        async_db.add(log_account)
 
-        db.commit()
+        await async_db.commit()
 
         # Request target api
         with mock.patch(
@@ -158,7 +163,7 @@ class TestRetrieveFreezeLog:
             freeze_log_contract.address,
         ):
             # Record new log
-            resp_new = client.post(
+            resp_new = await async_client.post(
                 self.new_log_url,
                 json={
                     "account_address": user_address_1,
@@ -169,7 +174,7 @@ class TestRetrieveFreezeLog:
             )
             log_index = resp_new.json()["log_index"]
             # Get log
-            resp = client.get(
+            resp = await async_client.get(
                 self.get_log_url.format(log_index),
                 params={
                     "account_address": "invalid_address"
@@ -194,7 +199,8 @@ class TestRetrieveFreezeLog:
     # <Error_2>
     # Log account is not exists
     # -> NotFound
-    def test_error_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client, async_db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -204,7 +210,7 @@ class TestRetrieveFreezeLog:
             freeze_log_contract.address,
         ):
             # Get log
-            resp = client.get(
+            resp = await async_client.get(
                 self.get_log_url.format(0), params={"account_address": user_address_1}
             )
 

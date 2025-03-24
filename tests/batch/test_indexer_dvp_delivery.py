@@ -27,7 +27,6 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
@@ -72,7 +71,7 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(db, caplog: pytest.LogCaptureFixture):
+def processor(async_db, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -164,7 +163,7 @@ class TestProcessor:
     async def test_normal_1_1(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -179,31 +178,31 @@ class TestProcessor:
         account.rsa_public_key = user_1["rsa_public_key"]
         account.rsa_passphrase = E2EEUtils.encrypt("password")
         account.rsa_status = 3
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token(processing token)
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = "test1"
         token_1.issuer_address = issuer_address
-        token_1.abi = "abi"
+        token_1.abi = {}
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
-        await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 0
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert _idx_delivery_block_number is None
 
@@ -212,7 +211,11 @@ class TestProcessor:
     #   - Issued tokens but no exchange address is set.
     @pytest.mark.asyncio
     async def test_normal_1_2(
-        self, processor, db, personal_info_contract, caplog: pytest.LogCaptureFixture
+        self,
+        processor,
+        async_db,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -227,7 +230,7 @@ class TestProcessor:
         account.rsa_public_key = user_1["rsa_public_key"]
         account.rsa_passphrase = E2EEUtils.encrypt("password")
         account.rsa_status = 3
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -238,37 +241,37 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
-        await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 0
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert _idx_delivery_block_number is None
 
@@ -279,7 +282,7 @@ class TestProcessor:
     async def test_normal_1_3(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
         caplog: pytest.LogCaptureFixture,
@@ -297,7 +300,7 @@ class TestProcessor:
         account.rsa_public_key = user_1["rsa_public_key"]
         account.rsa_passphrase = E2EEUtils.encrypt("password")
         account.rsa_status = 3
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -308,37 +311,38 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 0
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert _idx_delivery_block_number.latest_block_number == block_number
         assert (
@@ -365,7 +369,7 @@ class TestProcessor:
     async def test_normal_2_1_1(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -391,7 +395,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -402,24 +406,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -427,9 +431,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -460,9 +464,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -491,8 +496,8 @@ class TestProcessor:
         assert _delivery.valid is True
         assert _delivery.status == DeliveryStatus.DELIVERY_CREATED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -527,7 +532,7 @@ class TestProcessor:
     async def test_normal_2_1_2(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -553,7 +558,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -564,24 +569,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -589,9 +594,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -626,9 +631,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -657,8 +663,8 @@ class TestProcessor:
         assert _delivery.valid is True
         assert _delivery.status == DeliveryStatus.DELIVERY_CREATED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -693,7 +699,7 @@ class TestProcessor:
     async def test_normal_2_1_3(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -719,14 +725,14 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : DVPAgentAccount
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = agent_address
         dvp_agent_account.keyfile = "test_keyfile_0"
         dvp_agent_account.eoa_password = "test_password_0"
-        db.add(dvp_agent_account)
+        async_db.add(dvp_agent_account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -737,24 +743,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -762,9 +768,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -810,9 +816,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -841,8 +848,8 @@ class TestProcessor:
         assert _delivery.valid is True
         assert _delivery.status == DeliveryStatus.DELIVERY_CREATED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -868,7 +875,7 @@ class TestProcessor:
     async def test_normal_2_2_1(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -890,7 +897,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -901,24 +908,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -926,9 +933,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -972,9 +979,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -1006,8 +1014,8 @@ class TestProcessor:
         assert _delivery.valid is False
         assert _delivery.status == DeliveryStatus.DELIVERY_CANCELED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -1015,7 +1023,7 @@ class TestProcessor:
         )
         assert _idx_delivery_block_number.latest_block_number == block_number
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list) == 1
         _async_process: DVPAsyncProcess = _async_process_list[0]
         assert _async_process.id == 1
@@ -1057,7 +1065,7 @@ class TestProcessor:
     async def test_normal_2_2_2(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -1080,7 +1088,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1091,24 +1099,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -1116,9 +1124,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -1162,9 +1170,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -1196,8 +1205,8 @@ class TestProcessor:
         assert _delivery.valid is False
         assert _delivery.status == DeliveryStatus.DELIVERY_CANCELED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -1205,7 +1214,7 @@ class TestProcessor:
         )
         assert _idx_delivery_block_number.latest_block_number == block_number
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list)
         _async_process: DVPAsyncProcess = _async_process_list[0]
         assert _async_process.id == 1
@@ -1248,7 +1257,7 @@ class TestProcessor:
     async def test_normal_2_3(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -1271,7 +1280,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1282,24 +1291,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -1307,9 +1316,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -1353,9 +1362,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -1387,8 +1397,8 @@ class TestProcessor:
         assert _delivery.valid is True
         assert _delivery.status == DeliveryStatus.DELIVERY_CONFIRMED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -1396,8 +1406,8 @@ class TestProcessor:
         )
         assert _idx_delivery_block_number.latest_block_number == block_number
 
-        _notifications = db.scalars(
-            select(Notification).order_by(Notification.created)
+        _notifications = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
         ).all()
         assert len(_notifications) == 1
         assert _notifications[0].issuer_address == issuer_address
@@ -1408,7 +1418,7 @@ class TestProcessor:
             "exchange_address": ibet_security_token_dvp_contract.address,
             "delivery_id": 1,
             "token_address": token_address_1,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "seller_address": issuer_address,
             "buyer_address": user_address_1,
             "agent_address": agent_address,
@@ -1435,7 +1445,7 @@ class TestProcessor:
     async def test_normal_2_4_1(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -1461,7 +1471,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1472,24 +1482,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -1497,9 +1507,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -1556,9 +1566,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -1593,8 +1604,8 @@ class TestProcessor:
         assert _delivery.valid is False
         assert _delivery.status == DeliveryStatus.DELIVERY_FINISHED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -1602,8 +1613,8 @@ class TestProcessor:
         )
         assert _idx_delivery_block_number.latest_block_number == block_number
 
-        _notifications = db.scalars(
-            select(Notification).order_by(Notification.created)
+        _notifications = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
         ).all()
         assert len(_notifications) == 2
         assert _notifications[0].issuer_address == issuer_address
@@ -1614,7 +1625,7 @@ class TestProcessor:
             "exchange_address": ibet_security_token_dvp_contract.address,
             "delivery_id": 1,
             "token_address": token_address_1,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "seller_address": issuer_address,
             "buyer_address": user_address_1,
             "agent_address": agent_address,
@@ -1628,14 +1639,14 @@ class TestProcessor:
             "exchange_address": ibet_security_token_dvp_contract.address,
             "delivery_id": 1,
             "token_address": token_address_1,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "seller_address": issuer_address,
             "buyer_address": user_address_1,
             "agent_address": agent_address,
             "amount": 30,
         }
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list) == 0
 
         assert (
@@ -1658,7 +1669,7 @@ class TestProcessor:
     async def test_normal_2_4_2(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -1684,13 +1695,13 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         account = Account()
         account.issuer_address = user_address_1
         account.keyfile = user_2["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1701,24 +1712,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -1726,9 +1737,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -1785,9 +1796,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -1822,8 +1834,8 @@ class TestProcessor:
         assert _delivery.valid is False
         assert _delivery.status == DeliveryStatus.DELIVERY_FINISHED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -1831,8 +1843,8 @@ class TestProcessor:
         )
         assert _idx_delivery_block_number.latest_block_number == block_number
 
-        _notifications = db.scalars(
-            select(Notification).order_by(Notification.created)
+        _notifications = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
         ).all()
         assert len(_notifications) == 2
         assert _notifications[0].issuer_address == issuer_address
@@ -1843,7 +1855,7 @@ class TestProcessor:
             "exchange_address": ibet_security_token_dvp_contract.address,
             "delivery_id": 1,
             "token_address": token_address_1,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "seller_address": issuer_address,
             "buyer_address": user_address_1,
             "agent_address": agent_address,
@@ -1857,14 +1869,14 @@ class TestProcessor:
             "exchange_address": ibet_security_token_dvp_contract.address,
             "delivery_id": 1,
             "token_address": token_address_1,
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "seller_address": issuer_address,
             "buyer_address": user_address_1,
             "agent_address": agent_address,
             "amount": 30,
         }
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list) == 1
         _async_process: DVPAsyncProcess = _async_process_list[0]
         assert _async_process.id == 1
@@ -1906,7 +1918,7 @@ class TestProcessor:
     async def test_normal_2_5(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -1932,7 +1944,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1943,24 +1955,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -1968,9 +1980,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
@@ -2027,9 +2039,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -2064,8 +2077,8 @@ class TestProcessor:
         assert _delivery.valid is False
         assert _delivery.status == DeliveryStatus.DELIVERY_ABORTED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).limit(1)
+        _idx_delivery_block_number = (
+            await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
         assert (
             _idx_delivery_block_number.exchange_address
@@ -2073,7 +2086,7 @@ class TestProcessor:
         )
         assert _idx_delivery_block_number.latest_block_number == block_number
 
-        _async_process_list = db.scalars(select(DVPAsyncProcess)).all()
+        _async_process_list = (await async_db.scalars(select(DVPAsyncProcess))).all()
         assert len(_async_process_list) == 1
         _async_process: DVPAsyncProcess = _async_process_list[0]
         assert _async_process.id == 1
@@ -2114,7 +2127,7 @@ class TestProcessor:
     async def test_normal_3(
         self,
         processor,
-        db,
+        async_db,
         personal_info_contract,
         ibet_security_token_escrow_contract,
         ibet_security_token_dvp_contract,
@@ -2141,7 +2154,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -2152,13 +2165,13 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token
         token_contract_2 = await deploy_bond_token_contract(
@@ -2169,13 +2182,13 @@ class TestProcessor:
         )
         token_address_2 = token_contract_2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract_2.abi
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -2183,9 +2196,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         # Transfer
         tx = token_contract_2.functions.transferFrom(
@@ -2242,9 +2255,10 @@ class TestProcessor:
         # Run target process
         block_number = await web3.eth.block_number
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
-        _delivery_list = db.scalars(select(IDXDelivery)).all()
+        _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
         _delivery = _delivery_list[0]
         assert _delivery.id == 1
@@ -2279,17 +2293,22 @@ class TestProcessor:
         assert _delivery.valid is False
         assert _delivery.status == DeliveryStatus.DELIVERY_ABORTED
 
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).where(
-                IDXDeliveryBlockNumber.exchange_address
-                == ibet_security_token_escrow_contract.address
+        _idx_delivery_block_number = (
+            await async_db.scalars(
+                select(IDXDeliveryBlockNumber).where(
+                    IDXDeliveryBlockNumber.exchange_address
+                    == ibet_security_token_escrow_contract.address
+                )
             )
         ).first()
         assert _idx_delivery_block_number.latest_block_number == block_number
-        _idx_delivery_block_number = db.scalars(
-            select(IDXDeliveryBlockNumber).where(
-                IDXDeliveryBlockNumber.exchange_address
-                == ibet_security_token_dvp_contract.address
+
+        _idx_delivery_block_number = (
+            await async_db.scalars(
+                select(IDXDeliveryBlockNumber).where(
+                    IDXDeliveryBlockNumber.exchange_address
+                    == ibet_security_token_dvp_contract.address
+                )
             )
         ).first()
         assert _idx_delivery_block_number.latest_block_number == block_number
@@ -2324,7 +2343,7 @@ class TestProcessor:
     async def test_normal_4(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -2340,7 +2359,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -2351,24 +2370,24 @@ class TestProcessor:
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
         # Prepare data : BlockNumber
         _idx_delivery_block_number = IDXDeliveryBlockNumber()
@@ -2376,9 +2395,9 @@ class TestProcessor:
         _idx_delivery_block_number.exchange_address = (
             ibet_security_token_dvp_contract.address
         )
-        db.add(_idx_delivery_block_number)
+        async_db.add(_idx_delivery_block_number)
 
-        db.commit()
+        await async_db.commit()
 
         await processor.sync_new_logs()
         assert (
@@ -2391,7 +2410,7 @@ class TestProcessor:
     async def test_normal_6(
         self,
         processor: Processor,
-        db: Session,
+        async_db,
         personal_info_contract,
         ibet_security_token_dvp_contract,
         ibet_security_token_escrow_contract,
@@ -2407,7 +2426,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Issuer issues bond token.
         token_contract1 = await deploy_bond_token_contract(
@@ -2418,18 +2437,19 @@ class TestProcessor:
         )
         token_address_1 = token_contract1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_24_09
-        db.add(token_1)
+        async_db.add(token_1)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
         assert len(processor.token_list) == 1
@@ -2445,18 +2465,19 @@ class TestProcessor:
         )
         token_address_2 = token_contract2.address
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE.value
+        token_2.type = TokenType.IBET_SHARE
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_24_09
-        db.add(token_2)
+        async_db.add(token_2)
 
-        db.commit()
+        await async_db.commit()
 
         # Run target process
         await processor.sync_new_logs()
+        async_db.expire_all()
 
         # Assertion
         # newly issued token is loaded properly
@@ -2473,7 +2494,7 @@ class TestProcessor:
     async def test_error_1(
         self,
         main_func,
-        db: Session,
+        async_db,
         personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2488,7 +2509,7 @@ class TestProcessor:
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
+        async_db.add(account)
 
         # Prepare data : Token
         token_contract = await deploy_bond_token_contract(
@@ -2496,15 +2517,15 @@ class TestProcessor:
         )
         token_address = token_contract.address
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.token_address = token_address
         token.issuer_address = issuer_address
         token.abi = token_contract.abi
         token.tx_hash = "tx_hash"
         token.version = TokenVersion.V_24_09
-        db.add(token)
+        async_db.add(token)
 
-        db.commit()
+        await async_db.commit()
 
         # Run mainloop once and fail with web3 utils error
         with (

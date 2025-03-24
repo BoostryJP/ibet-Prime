@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
+import pytest
 from pytz import timezone
 
 import config
@@ -91,27 +92,28 @@ class TestListAllShareTokenTransferApprovalHistory:
 
     # <Normal_1>
     # no data
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client, async_db):
         # prepare data: Token(failed)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
         _token.token_status = 2
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(bond)
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval(failed token)
         _idx_transfer_approval = IDXTransferApproval()
@@ -132,7 +134,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(share token)
         _idx_transfer_approval = IDXTransferApproval()
@@ -153,7 +155,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(no token)
         _idx_transfer_approval = IDXTransferApproval()
@@ -174,12 +176,12 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -193,16 +195,17 @@ class TestListAllShareTokenTransferApprovalHistory:
 
     # <Normal_2>
     # single data
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval(ApplyFor(unapproved))
         _idx_transfer_approval = IDXTransferApproval()
@@ -222,7 +225,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(EscrowFinish(escrow_finished))
         _idx_transfer_approval = IDXTransferApproval()
@@ -242,7 +245,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(Approve(operation completed, event synchronizing))
         _idx_transfer_approval = IDXTransferApproval()
@@ -264,16 +267,16 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None  # event not synchronized
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _transfer_approval_history = TransferApprovalHistory()
         _transfer_approval_history.token_address = self.test_token_address_1
         _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
         _transfer_approval_history.application_id = 21
         _transfer_approval_history.operation_type = (
-            TransferApprovalOperationType.APPROVE.value
+            TransferApprovalOperationType.APPROVE
         )
-        db.add(_transfer_approval_history)
+        async_db.add(_transfer_approval_history)
 
         # prepare data: IDXTransferApproval(Approve(transferred))
         _idx_transfer_approval = IDXTransferApproval()
@@ -295,7 +298,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = True  # transferred
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(Cancel(operation completed, event synchronizing))
         _idx_transfer_approval = IDXTransferApproval()
@@ -317,16 +320,14 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None  # event not synchronized
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _transfer_approval_history = TransferApprovalHistory()
         _transfer_approval_history.token_address = self.test_token_address_1
         _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
         _transfer_approval_history.application_id = 41
-        _transfer_approval_history.operation_type = (
-            TransferApprovalOperationType.CANCEL.value
-        )
-        db.add(_transfer_approval_history)
+        _transfer_approval_history.operation_type = TransferApprovalOperationType.CANCEL
+        async_db.add(_transfer_approval_history)
 
         # prepare data: IDXTransferApproval(Cancel(canceled))
         _idx_transfer_approval = IDXTransferApproval()
@@ -348,12 +349,12 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = True  # cancelled
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -378,36 +379,37 @@ class TestListAllShareTokenTransferApprovalHistory:
     # <Normal_3_1>
     # multi data
     # issuer address is specified
-    def test_normal_3_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, async_client, async_db):
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(issuer-2)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_2
         _token.token_address = self.test_token_address_3
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
         _idx_transfer_approval = IDXTransferApproval()
@@ -427,7 +429,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
@@ -446,7 +448,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
@@ -463,7 +465,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = True  # transferred
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
@@ -484,7 +486,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = True  # cancelled
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
@@ -504,7 +506,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-2)
         _idx_transfer_approval = IDXTransferApproval()
@@ -524,12 +526,12 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url, headers={"issuer-address": self.test_issuer_address_1}
         )
 
@@ -563,36 +565,37 @@ class TestListAllShareTokenTransferApprovalHistory:
     # <Normal_3_2>
     # multi data
     # issuer address is not specified
-    def test_normal_3_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, async_client, async_db):
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(issuer-2)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_2
         _token.token_address = self.test_token_address_3
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
         _idx_transfer_approval = IDXTransferApproval()
@@ -612,7 +615,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
@@ -630,7 +633,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
@@ -647,7 +650,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = True  # transferred
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
@@ -668,7 +671,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = True  # cancelled
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
@@ -688,7 +691,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-2)
         _idx_transfer_approval = IDXTransferApproval()
@@ -708,12 +711,12 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
         )
 
@@ -755,46 +758,47 @@ class TestListAllShareTokenTransferApprovalHistory:
 
     # <Normal_4>
     # offset - limit
-    def test_normal_4(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_3
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: Token(issuer-1)
         _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
+        _token.type = TokenType.IBET_SHARE
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_4
         _token.abi = {}
         _token.version = TokenVersion.V_24_09
-        db.add(_token)
+        async_db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
         _idx_transfer_approval = IDXTransferApproval()
@@ -814,7 +818,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
@@ -834,7 +838,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
@@ -854,7 +858,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
@@ -874,12 +878,12 @@ class TestListAllShareTokenTransferApprovalHistory:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
+        async_db.add(_idx_transfer_approval)
 
-        db.commit()
+        await async_db.commit()
 
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={
                 "limit": 2,
@@ -921,9 +925,10 @@ class TestListAllShareTokenTransferApprovalHistory:
     # <Error_1>
     # validation error
     # type_error
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client, async_db):
         # request target API
-        resp = client.get(
+        resp = await async_client.get(
             self.base_url,
             params={
                 "offset": "c",

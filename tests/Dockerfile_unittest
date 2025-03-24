@@ -1,7 +1,7 @@
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:24.04 AS builder
 
-ENV PYTHON_VERSION=3.12.2
-ENV UV_VERSION=0.5.5
+ENV PYTHON_VERSION=3.12.9
+ENV UV_VERSION=0.6.5
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_INSTALL_DIR="/usr/local/bin"
@@ -11,7 +11,8 @@ ENV UV_PROJECT_ENVIRONMENT="/home/apl/.venv"
 RUN mkdir -p /app
 
 # add apl user/group
-RUN groupadd -g 1000 apl \
+RUN userdel -r ubuntu \
+ && groupadd -g 1000 apl \
  && useradd -g apl -s /bin/bash -u 1000 -p apl apl \
  && echo 'apl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
  && chown -R apl:apl /app \
@@ -79,13 +80,14 @@ RUN cd /app/ibet-Prime \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/uv.lock
 
-FROM ubuntu:22.04 AS runner
+FROM ubuntu:24.04 AS runner
 
 # make application directory
 RUN mkdir -p /app/ibet-Prime/
 
 # add apl user/group
-RUN groupadd -g 1000 apl \
+RUN userdel -r ubuntu \
+ && groupadd -g 1000 apl \
  && useradd -g apl -s /bin/bash -u 1000 -p apl apl \
  && echo 'apl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
  && chown -R apl:apl /app \
