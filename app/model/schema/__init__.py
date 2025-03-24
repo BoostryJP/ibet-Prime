@@ -128,6 +128,7 @@ from .position import (
     PositionResponse,
 )
 from .scheduled_events import (
+    DeleteScheduledEventQuery,
     IbetShareScheduledUpdate,
     IbetStraightBondScheduledUpdate,
     ListAllScheduledEventsQuery,

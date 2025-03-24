@@ -51,6 +51,7 @@ class ScheduledEvent(BaseModel):
     status: ScheduledEventStatus
     data: Dict[str, Any]
     created: str
+    is_soft_deleted: bool
 
 
 class ScheduledEventWithTokenAttributes(ScheduledEvent):
@@ -101,6 +102,12 @@ class ListAllScheduledEventsQuery(BasePaginationQuery):
     sort_order: Optional[SortOrder] = Field(
         SortOrder.DESC, description=SortOrder.__doc__
     )
+
+
+class DeleteScheduledEventQuery(BaseModel):
+    """DeleteScheduledBondTokenUpdateEvent query parameters"""
+
+    soft_delete: Optional[bool] = Field(False, description="Soft delete flag")
 
 
 ############################

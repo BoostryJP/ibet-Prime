@@ -17,7 +17,7 @@
 from datetime import datetime
 from enum import IntEnum, StrEnum
 
-from sqlalchemy import JSON, DateTime, Integer, String
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -58,3 +58,7 @@ class ScheduledEvents(Base):
     )
     # transaction data
     data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    # soft deleted
+    is_soft_deleted: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )

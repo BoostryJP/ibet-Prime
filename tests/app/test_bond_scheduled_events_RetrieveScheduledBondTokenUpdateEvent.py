@@ -104,6 +104,7 @@ class TestRetrieveScheduledBondTokenUpdateEvent:
             "status": 0,
             "data": update_data,
             "created": datetime_now_str,
+            "is_soft_deleted": False,
         }
 
     # <Normal_2>
@@ -170,6 +171,7 @@ class TestRetrieveScheduledBondTokenUpdateEvent:
             "status": 0,
             "data": update_data,
             "created": datetime_now_str,
+            "is_soft_deleted": False,
         }
 
     #########################################################################
