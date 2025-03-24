@@ -356,6 +356,84 @@ class TestProcessor:
             == TokenUpdateOperationCategory.UPDATE.value
         )
 
+    # <Normal_3>
+    # soft_deleted events
+    @pytest.mark.asyncio
+    async def test_normal_3(self, processor, async_db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address_1 = "token_address_test1"
+        _token_address_2 = "token_address_test2"
+        _token_address_3 = "token_address_test3"
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _keyfile
+        async_db.add(account)
+
+        # prepare data : ScheduledEvents
+        datetime_pending_utc = datetime.now(UTC) + timedelta(days=1)
+        update_data = {
+            "face_value": 10000,
+            "interest_rate": 0.5,
+            "interest_payment_date": ["0101", "0701"],
+            "redemption_value": 11000,
+            "transferable": False,
+            "image_url": [
+                "http://sampleurl.com/some_image1.png",
+                "http://sampleurl.com/some_image2.png",
+                "http://sampleurl.com/some_image3.png",
+            ],
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "require_personal_info_registered": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "is_canceled": False,
+        }
+
+        token_event = ScheduledEvents()
+        token_event.issuer_address = _issuer_address
+        token_event.token_address = _token_address_1
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_pending_utc.replace(tzinfo=None)
+        token_event.status = 0
+        token_event.data = update_data
+        token_event.is_soft_deleted = True
+        async_db.add(token_event)
+
+        await async_db.commit()
+
+        # Execute batch
+        await processor.process()
+        async_db.expire_all()
+
+        # Assertion
+        _scheduled_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.token_address == _token_address_1)
+                .limit(1)
+            )
+        ).first()
+        assert _scheduled_event.status == 0
+
+        _operation_log = (
+            await async_db.scalars(
+                select(TokenUpdateOperationLog)
+                .where(TokenUpdateOperationLog.token_address == _token_address_1)
+                .limit(1)
+            )
+        ).first()
+        assert _operation_log is None
+
     ###########################################################################
     # Error Case
     ###########################################################################

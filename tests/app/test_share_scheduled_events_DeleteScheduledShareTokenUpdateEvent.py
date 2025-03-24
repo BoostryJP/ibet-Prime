@@ -30,7 +30,7 @@ from config import TZ
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
+class TestDeleteScheduledShareTokenUpdateEvent:
     # target API endpoint
     base_url = "/share/tokens/{}/scheduled_events/{}"
     local_tz = pytz.timezone(TZ)
@@ -40,6 +40,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
     ###########################################################################
 
     # <Normal_1>
+    # soft_delete = False (default)
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -112,6 +113,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
             "status": 0,
             "data": data,
             "created": datetime_now_str,
+            "is_soft_deleted": False,
         }
         token_event = (
             await async_db.scalars(
@@ -121,6 +123,93 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
             )
         ).first()
         assert token_event is None
+
+    # <Normal_2>
+    # soft_delete = True
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client, async_db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
+        datetime_now_str = (
+            pytz.timezone("UTC")
+            .localize(datetime_now_utc)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
+        data = {
+            "cancellation_date": "20221231",
+            "dividends": 345.67,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "is_canceled": False,
+            "memo": "memo_test1",
+        }
+        event_id = str(uuid.uuid4())
+
+        token_event = ScheduledEvents()
+        token_event.event_id = event_id
+        token_event.issuer_address = _issuer_address
+        token_event.token_address = _token_address
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc
+        token_event.status = 0
+        token_event.data = data
+        token_event.created = datetime_now_utc
+        async_db.add(token_event)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.delete(
+            self.base_url.format(_token_address, event_id),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+            params={"soft_delete": True},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "scheduled_event_id": event_id,
+            "token_address": _token_address,
+            "token_type": TokenType.IBET_SHARE,
+            "scheduled_datetime": datetime_now_str,
+            "event_type": ScheduledEventType.UPDATE,
+            "status": 0,
+            "data": data,
+            "created": datetime_now_str,
+            "is_soft_deleted": True,
+        }
+        token_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.event_id == event_id)
+                .limit(1)
+            )
+        ).first()
+        assert token_event is not None
+        assert token_event.is_soft_deleted is True
 
     #########################################################################
     # Error Case

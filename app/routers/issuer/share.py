@@ -121,6 +121,7 @@ from app.model.schema import (
     BulkTransferUploadIdResponse,
     BulkTransferUploadRecordResponse,
     BulkTransferUploadResponse,
+    DeleteScheduledEventQuery,
     GetBatchIssueRedeemResponse,
     GetBatchRegisterPersonalInfoResponse,
     HolderCountResponse,
@@ -1552,6 +1553,7 @@ async def list_all_scheduled_share_token_update_events(
                 "status": _token_event.status,
                 "data": _token_event.data,
                 "created": created_utc.astimezone(local_tz).isoformat(),
+                "is_soft_deleted": _token_event.is_soft_deleted,
             }
         )
     return json_response(token_events)
@@ -1796,6 +1798,7 @@ async def retrieve_scheduled_share_token_update_event(
             "status": _token_event.status,
             "data": _token_event.data,
             "created": created_utc.astimezone(local_tz).isoformat(),
+            "is_soft_deleted": _token_event.is_soft_deleted,
         }
     )
 
@@ -1810,6 +1813,7 @@ async def retrieve_scheduled_share_token_update_event(
 async def delete_scheduled_share_token_update_event(
     db: DBAsyncSession,
     request: Request,
+    delete_param: Annotated[DeleteScheduledEventQuery, Query()],
     token_address: Annotated[str, Path()],
     scheduled_event_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
@@ -1864,9 +1868,15 @@ async def delete_scheduled_share_token_update_event(
         "status": _token_event.status,
         "data": _token_event.data,
         "created": created_utc.astimezone(local_tz).isoformat(),
+        "is_soft_deleted": delete_param.soft_delete,
     }
 
-    await db.delete(_token_event)
+    if delete_param.soft_delete is True:
+        _token_event.is_soft_deleted = True
+        await db.merge(_token_event)
+    else:
+        await db.delete(_token_event)
+
     await db.commit()
 
     return json_response(rtn)

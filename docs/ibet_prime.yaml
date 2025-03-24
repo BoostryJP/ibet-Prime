@@ -2051,6 +2051,17 @@ paths:
           schema:
             type: string
             title: Scheduled Event Id
+        - name: soft_delete
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Soft delete flag
+            default: false
+            title: Soft Delete
+          description: Soft delete flag
         - name: issuer-address
           in: header
           required: true
@@ -6577,6 +6588,17 @@ paths:
           schema:
             type: string
             title: Scheduled Event Id
+        - name: soft_delete
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Soft delete flag
+            default: false
+            title: Soft Delete
+          description: Soft delete flag
         - name: issuer-address
           in: header
           required: true
@@ -15687,6 +15709,9 @@ components:
         created:
           type: string
           title: Created
+        is_soft_deleted:
+          type: boolean
+          title: Is Soft Deleted
       type: object
       required:
         - scheduled_event_id
@@ -15697,6 +15722,7 @@ components:
         - status
         - data
         - created
+        - is_soft_deleted
       title: ScheduledEvent
       description: Scheduled event
     ScheduledEventIdListResponse:
@@ -15761,6 +15787,9 @@ components:
         created:
           type: string
           title: Created
+        is_soft_deleted:
+          type: boolean
+          title: Is Soft Deleted
         token_attributes:
           anyOf:
             - $ref: '#/components/schemas/IbetStraightBond'
@@ -15777,6 +15806,7 @@ components:
         - status
         - data
         - created
+        - is_soft_deleted
         - token_attributes
       title: ScheduledEventWithTokenAttributes
       description: Scheduled event with token attributes

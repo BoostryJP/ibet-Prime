@@ -105,6 +105,7 @@ class TestListAllScheduledBondTokenUpdateEvents:
                 "status": 0,
                 "data": update_data,
                 "created": datetime_now_str,
+                "is_soft_deleted": False,
             }
         ]
 
@@ -181,6 +182,7 @@ class TestListAllScheduledBondTokenUpdateEvents:
                 .localize(datetime_list[0])
                 .astimezone(self.local_tz)
                 .isoformat(),
+                "is_soft_deleted": False,
             },
             {
                 "scheduled_event_id": uuid_list[1],
@@ -197,6 +199,7 @@ class TestListAllScheduledBondTokenUpdateEvents:
                 .localize(datetime_list[1])
                 .astimezone(self.local_tz)
                 .isoformat(),
+                "is_soft_deleted": False,
             },
         ]
 
