@@ -109,7 +109,7 @@ if FREEZE_LOG_FEATURE_ENABLED:
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="25.3",
+    version="25.6",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
