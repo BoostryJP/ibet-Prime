@@ -54,6 +54,7 @@ REVERT_CODE_MAP = {
     111301: "The length of the target address, the lock address and the amount don't match.",
     111401: "The length of the target address, the lock address and the amount don't match.",
     111501: "The From, To and Value lengths don't match.",
+    111601: "Lock amount is greater than message sender balance.",
     # IbetStraightBond (12XXXX)
     120001: "Lock address is invalid.",  # < v22.12
     120002: "Lock amount is greater than message sender balance.",
@@ -82,6 +83,7 @@ REVERT_CODE_MAP = {
     121301: "The length of the target address, the lock address and the amount don't match.",
     121401: "The length of the target address, the lock address and the amount don't match.",
     121501: "The From, To and Value lengths don't match.",
+    121601: "Lock amount is greater than message sender balance.",
     # IbetCoupon (13XXXX)
     130001: "Destination address isn't tradable exchange.",
     130101: "Message sender balance is insufficient.",

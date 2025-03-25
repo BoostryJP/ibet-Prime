@@ -31,6 +31,7 @@ from .ibet_security_token import (
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
     ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
+    ForceLockParams as IbetSecurityTokenForceLockParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
     RedeemParams as IbetSecurityTokenRedeemParams,
@@ -115,6 +116,10 @@ class CancelTransferParams(IbetSecurityTokenCancelTransferParams):
 
 
 class LockParams(IbetSecurityTokenLockParams):
+    pass
+
+
+class ForceLockParams(IbetSecurityTokenForceLockParams):
     pass
 
 

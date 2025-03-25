@@ -75,7 +75,7 @@ class TestRetrieveBatchShareRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -164,7 +164,7 @@ class TestRetrieveBatchShareRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -253,7 +253,7 @@ class TestRetrieveBatchShareRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -368,7 +368,7 @@ class TestRetrieveBatchShareRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()

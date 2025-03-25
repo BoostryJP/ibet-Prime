@@ -5138,6 +5138,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /positions/{account_address}/force_lock:
+    post:
+      tags:
+        - token_common
+      summary: Force Lock
+      description: |-
+        Force unlock the locked position
+
+        - This feature is not available for tokens issued prior to v25.6.
+      operationId: ForceLock
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForceLockRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '401':
+          description: Authorization Error
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
+                title: Response 401 Forcelock
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                title: Response 400 Forcelock
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /positions/{account_address}/force_unlock:
     post:
       tags:
@@ -11181,6 +11261,7 @@ components:
         - 111301
         - 111401
         - 111501
+        - 111601
         - 120001
         - 120002
         - 120101
@@ -11208,6 +11289,7 @@ components:
         - 121301
         - 121401
         - 121501
+        - 121601
         - 130001
         - 130101
         - 130102
@@ -12183,6 +12265,27 @@ components:
         - eoa_password
       title: FinishDVPDeliveryRequest
       description: DVP delivery finish schema (REQUEST)
+    ForceLockRequest:
+      properties:
+        token_address:
+          type: string
+          title: Token Address
+          description: Token address
+        lock_address:
+          type: string
+          title: Lock Address
+          description: Lock address
+        value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Value
+          description: Lock amount
+      type: object
+      required:
+        - token_address
+        - lock_address
+        - value
+      title: ForceLockRequest
     ForceUnlockRequest:
       properties:
         token_address:
@@ -12548,6 +12651,7 @@ components:
         - '22_12'
         - '24_06'
         - '24_09'
+        - '25_06'
       title: IbetShareContractVersion
     IbetShareCreate:
       properties:
@@ -13088,6 +13192,7 @@ components:
         - '23_12'
         - '24_06'
         - '24_09'
+        - '25_06'
       title: IbetStraightBondContractVersion
     IbetStraightBondCreate:
       properties:
@@ -14354,6 +14459,12 @@ components:
         category:
           $ref: '#/components/schemas/LockEventCategory'
           description: Event category
+        is_force_lock:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Force Lock
+          description: Set to `True` for force lock events
         transaction_hash:
           type: string
           title: Transaction Hash
@@ -14408,6 +14519,7 @@ components:
       type: object
       required:
         - category
+        - is_force_lock
         - transaction_hash
         - issuer_address
         - token_address

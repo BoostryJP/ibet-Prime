@@ -168,7 +168,7 @@ class TestIssueBondToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_24_09
+            assert token_1.version == TokenVersion.V_25_06
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
@@ -312,7 +312,7 @@ class TestIssueBondToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
-            assert token_1.version == TokenVersion.V_24_09
+            assert token_1.version == TokenVersion.V_25_06
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position is None
@@ -446,7 +446,7 @@ class TestIssueBondToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_24_09
+            assert token_1.version == TokenVersion.V_25_06
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"

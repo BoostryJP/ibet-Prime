@@ -48,7 +48,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -94,7 +94,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -108,6 +108,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
+        _lock.is_force_lock = True
         async_db.add(_lock)
 
         _unlock = IDXUnlock()
@@ -142,6 +143,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
+                    "is_force_lock": None,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -157,6 +159,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
+                    "is_force_lock": True,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -195,7 +198,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -243,6 +246,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
+                    "is_force_lock": None,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -258,6 +262,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -299,7 +304,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -373,7 +378,7 @@ class TestListAccountLockUnlockEvents:
         _token.tx_hash = ""
         _token.abi = {}
         _token.token_status = 2
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -447,7 +452,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -456,7 +461,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -530,6 +535,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
+                    "is_force_lock": None,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -545,6 +551,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -585,7 +592,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -634,6 +641,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
+                    "is_force_lock": None,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -675,7 +683,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -684,7 +692,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -733,6 +741,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -774,7 +783,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -783,7 +792,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_SHARE  # share
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -832,6 +841,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -872,7 +882,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -922,6 +932,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
+                    "is_force_lock": None,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -962,7 +973,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -1010,6 +1021,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1051,7 +1063,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND  # bond
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -1101,6 +1113,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
+                    "is_force_lock": None,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -1141,7 +1154,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -1213,6 +1226,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_3",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1228,6 +1242,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1243,6 +1258,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_4",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1258,6 +1274,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1297,7 +1314,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -1357,6 +1374,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
+                    "is_force_lock": False,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,

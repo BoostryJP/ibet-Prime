@@ -65,7 +65,7 @@ class TestRetrieveShareTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # prepare data: Personal Info
@@ -145,7 +145,7 @@ class TestRetrieveShareTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # prepare data: Position
@@ -236,7 +236,7 @@ class TestRetrieveShareTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # prepare data: Position
@@ -346,7 +346,7 @@ class TestRetrieveShareTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -417,7 +417,7 @@ class TestRetrieveShareTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -504,7 +504,7 @@ class TestRetrieveShareTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -669,7 +669,7 @@ class TestRetrieveShareTokenHolder:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()

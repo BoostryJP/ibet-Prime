@@ -126,7 +126,7 @@ class TestUpdateDVPDelivery:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -239,7 +239,7 @@ class TestUpdateDVPDelivery:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -398,7 +398,7 @@ class TestUpdateDVPDelivery:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -479,7 +479,7 @@ class TestUpdateDVPDelivery:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()

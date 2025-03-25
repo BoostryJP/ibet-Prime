@@ -72,6 +72,9 @@ class LockEventCategory(StrEnum):
 
 class LockEvent(BaseModel):
     category: LockEventCategory = Field(description="Event category")
+    is_force_lock: Optional[bool] = Field(
+        description="Set to `True` for force lock events"
+    )
     transaction_hash: str = Field(description="Transaction hash")
     msg_sender: Optional[str] = Field(default=None, description="Message sender")
     issuer_address: str = Field(description="Issuer address")
@@ -131,6 +134,12 @@ class ListAllLockEventsQuery(BasePaginationQuery):
     sort_order: Optional[SortOrder] = Field(
         SortOrder.DESC, description=SortOrder.__doc__
     )
+
+
+class ForceLockRequest(BaseModel):
+    token_address: EthereumAddress = Field(..., description="Token address")
+    lock_address: EthereumAddress = Field(..., description="Lock address")
+    value: PositiveInt = Field(..., description="Lock amount")
 
 
 class ForceUnlockRequest(BaseModel):

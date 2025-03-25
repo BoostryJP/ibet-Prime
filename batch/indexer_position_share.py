@@ -220,6 +220,7 @@ class Processor:
         await self.__sync_issue(db_session, block_from, block_to)
         await self.__sync_transfer(db_session, block_from, block_to)
         await self.__sync_lock(db_session, block_from, block_to)
+        await self.__sync_force_lock(db_session, block_from, block_to)
         await self.__sync_unlock(db_session, block_from, block_to)
         await self.__sync_redeem(db_session, block_from, block_to)
         await self.__sync_apply_for_transfer(db_session, block_from, block_to)
@@ -385,6 +386,114 @@ class Processor:
                             value=value,
                             data_str=data,
                             block_timestamp=event_created,
+                        )
+
+                        if lock_address not in lock_map:
+                            lock_map[lock_address] = {}
+                        lock_map[lock_address][account_address] = True
+
+                    for lock_address in lock_map:
+                        for account_address in lock_map[lock_address]:
+                            value = await self.__get_account_locked_token(
+                                token_contract=token,
+                                lock_address=lock_address,
+                                account_address=account_address,
+                            )
+                            await self.__sink_on_locked_position(
+                                db_session=db_session,
+                                token_address=to_checksum_address(token.address),
+                                lock_address=lock_address,
+                                account_address=account_address,
+                                value=value,
+                            )
+                except Exception:
+                    pass
+
+                # Update positions
+                for event in events:
+                    args = event["args"]
+                    account = args.get("accountAddress", ZERO_ADDRESS)
+                    balance, pending_transfer = await self.__get_account_balance_token(
+                        token, account
+                    )
+                    await self.__sink_on_position(
+                        db_session=db_session,
+                        token_address=to_checksum_address(token.address),
+                        account_address=account,
+                        balance=balance,
+                        pending_transfer=pending_transfer,
+                    )
+
+                # Insert Notification
+                if len(events) > 0:
+                    share_token = IbetShareContract(token.address)
+                    await share_token.get()
+                    issuer_address = share_token.issuer_address
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        await self.__sink_on_lock_info_notification(
+                            db_session=db_session,
+                            issuer_address=issuer_address,
+                            token_address=token.address,
+                            token_type=TokenType.IBET_SHARE,
+                            account_address=account_address,
+                            lock_address=lock_address,
+                            value=value,
+                            data_str=data,
+                        )
+
+            except Exception as e:
+                raise e
+
+    async def __sync_force_lock(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
+        """Synchronize ForceLock events
+
+        :param db_session: database session
+        :param block_from: from block number
+        :param block_to: to block number
+        :return: None
+        """
+        for token in self.token_list.values():
+            try:
+                events = await AsyncContractUtils.get_event_logs(
+                    contract=token,
+                    event="ForceLock",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+
+                # Update locked positions
+                try:
+                    lock_map: dict[str, dict[str, True]] = {}
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        event_created = await self.__gen_block_timestamp(event=event)
+                        tx = await web3.eth.get_transaction(event["transactionHash"])
+                        msg_sender = tx["from"]
+
+                        # Index Lock event
+                        await self.__insert_lock_idx(
+                            db_session=db_session,
+                            transaction_hash=event["transactionHash"].to_0x_hex(),
+                            msg_sender=msg_sender,
+                            block_number=event["blockNumber"],
+                            token_address=token.address,
+                            lock_address=lock_address,
+                            account_address=account_address,
+                            value=value,
+                            data_str=data,
+                            block_timestamp=event_created,
+                            force_lock=True,
                         )
 
                         if lock_address not in lock_map:
@@ -1127,6 +1236,7 @@ class Processor:
         value: int,
         data_str: str,
         block_timestamp: datetime,
+        force_lock: bool = False,
     ):
         """Registry Lock event data in DB
 
@@ -1138,6 +1248,7 @@ class Processor:
         :param value: amount
         :param data_str: data string
         :param block_timestamp: block timestamp
+        :param force_lock: force lock flag
         :return: None
         """
         try:
@@ -1155,6 +1266,7 @@ class Processor:
         lock.value = value
         lock.data = data
         lock.block_timestamp = block_timestamp.replace(tzinfo=None)
+        lock.is_force_lock = force_lock
         db_session.add(lock)
 
     @staticmethod

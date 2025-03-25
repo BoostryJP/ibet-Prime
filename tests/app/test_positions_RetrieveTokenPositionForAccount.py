@@ -53,7 +53,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position
@@ -183,7 +183,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position
@@ -294,7 +294,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position
@@ -398,7 +398,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Locked Position
@@ -502,7 +502,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position
@@ -617,7 +617,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position
@@ -721,7 +721,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position
@@ -891,7 +891,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position
@@ -937,7 +937,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Position

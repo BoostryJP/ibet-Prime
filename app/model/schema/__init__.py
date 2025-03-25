@@ -116,6 +116,7 @@ from .personal_info import (
     RegisterPersonalInfoRequest,
 )
 from .position import (
+    ForceLockRequest,
     ForceUnlockRequest,
     ListAllLockedPositionResponse,
     ListAllLockedPositionsQuery,

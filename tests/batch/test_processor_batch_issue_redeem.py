@@ -103,7 +103,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
@@ -232,7 +232,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
@@ -361,7 +361,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
@@ -490,7 +490,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
@@ -609,7 +609,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
@@ -714,7 +714,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
@@ -819,7 +819,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_id = str(uuid.uuid4())
@@ -932,7 +932,7 @@ class TestProcessor:
         _token.issuer_address = issuer_address
         _token.abi = {}
         _token.tx_hash = ""
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         upload_1_id = str(uuid.uuid4())
