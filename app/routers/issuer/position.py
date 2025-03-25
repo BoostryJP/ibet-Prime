@@ -33,6 +33,7 @@ from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
     InvalidParameterError,
+    OperationNotSupportedVersionError,
     SendTransactionError,
 )
 from app.model.blockchain import (
@@ -40,7 +41,10 @@ from app.model.blockchain import (
     IbetShareContract,
     IbetStraightBondContract,
 )
-from app.model.blockchain.tx_params.ibet_security_token import ForceUnlockParams
+from app.model.blockchain.tx_params.ibet_security_token import (
+    ForceLockParams,
+    ForceUnlockParams,
+)
 from app.model.db import (
     IDXLock,
     IDXLockedPosition,
@@ -49,8 +53,10 @@ from app.model.db import (
     Token,
     TokenStatus,
     TokenType,
+    TokenVersion,
 )
 from app.model.schema import (
+    ForceLockRequest,
     ForceUnlockRequest,
     ListAllLockedPositionResponse,
     ListAllLockedPositionsQuery,
@@ -317,6 +323,7 @@ async def list_account_lock_unlock_events(
     stmt_lock = (
         select(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
+            IDXLock.is_force_lock.label("is_force_lock"),
             IDXLock.transaction_hash.label("transaction_hash"),
             IDXLock.msg_sender.label("msg_sender"),
             IDXLock.token_address.label("token_address"),
@@ -344,6 +351,7 @@ async def list_account_lock_unlock_events(
             literal(value=LockEventCategory.Unlock.value, type_=String).label(
                 "category"
             ),
+            null().label("is_force_lock"),
             IDXUnlock.transaction_hash.label("transaction_hash"),
             IDXUnlock.msg_sender.label("msg_sender"),
             IDXUnlock.token_address.label("token_address"),
@@ -438,6 +446,7 @@ async def list_account_lock_unlock_events(
 
     entries = [
         all_lock_event_alias.c.category,
+        all_lock_event_alias.c.is_force_lock,
         all_lock_event_alias.c.transaction_hash,
         all_lock_event_alias.c.msg_sender,
         all_lock_event_alias.c.token_address,
@@ -464,10 +473,11 @@ async def list_account_lock_unlock_events(
             _contract = await IbetShareContract(token.token_address).get()
             token_name = _contract.name
 
-        block_timestamp_utc = timezone("UTC").localize(lock_event[9])
+        block_timestamp_utc = timezone("UTC").localize(lock_event.block_timestamp)
         resp_data.append(
             {
                 "category": lock_event.category,
+                "is_force_lock": lock_event.is_force_lock,
                 "transaction_hash": lock_event.transaction_hash,
                 "msg_sender": lock_event.msg_sender,
                 "issuer_address": token.issuer_address,
@@ -493,6 +503,104 @@ async def list_account_lock_unlock_events(
         "events": resp_data,
     }
     return json_response(data)
+
+
+@router.post(
+    "/{account_address}/force_lock",
+    operation_id="ForceLock",
+    response_model=None,
+    responses=get_routers_responses(
+        401,
+        422,
+        AuthorizationError,
+        InvalidParameterError,
+        SendTransactionError,
+        ContractRevertError,
+        OperationNotSupportedVersionError,
+    ),
+)
+async def force_lock(
+    db: DBAsyncSession,
+    request: Request,
+    data: ForceLockRequest,
+    account_address: Annotated[str, Path()],
+    issuer_address: Annotated[str, Header()],
+    eoa_password: Annotated[Optional[str], Header()] = None,
+    auth_token: Annotated[Optional[str], Header()] = None,
+):
+    """Force unlock the locked position
+
+    - This feature is not available for tokens issued prior to v25.6.
+    """
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    _account, decrypt_password = await check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    if not Web3.is_address(account_address):
+        raise InvalidParameterError("account_address is not a valid address")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+    )
+
+    # Verify that the token is issued by the issuer_address
+    _token = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == data.token_address,
+                    Token.token_status != TokenStatus.FAILED,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+    if _token.token_status == TokenStatus.PENDING:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # This feature is not available for tokens issued prior to v25.6.
+    if _token.version < TokenVersion.V_25_06:
+        raise OperationNotSupportedVersionError(
+            f"the operation is not supported in {_token.version}"
+        )
+
+    # Force lock
+    lock_data = {
+        "lock_address": data.lock_address,
+        "account_address": account_address,
+        "value": data.value,
+        "data": json.dumps({"message": "force_lock"}),
+    }
+    try:
+        await IbetSecurityTokenInterface(data.token_address).force_lock(
+            data=ForceLockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=private_key,
+        )
+    except ContractRevertError:
+        raise
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+    return
 
 
 @router.post(

@@ -273,7 +273,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -329,7 +329,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -423,7 +423,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -515,7 +515,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -597,7 +597,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -708,7 +708,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -810,7 +810,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -908,7 +908,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -1007,7 +1007,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -1090,7 +1090,7 @@ class TestListBondOperationLogHistory:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()

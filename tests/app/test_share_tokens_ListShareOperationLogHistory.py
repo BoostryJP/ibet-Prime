@@ -232,7 +232,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -288,7 +288,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -394,7 +394,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -498,7 +498,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -586,7 +586,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -696,7 +696,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -801,7 +801,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -911,7 +911,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -1022,7 +1022,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -1113,7 +1113,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()

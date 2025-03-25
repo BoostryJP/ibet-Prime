@@ -348,7 +348,7 @@ async def issue_bond_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_24_09
+    _token.version = TokenVersion.V_25_06
     db.add(_token)
 
     # Register operation log
@@ -2977,6 +2977,7 @@ async def list_bond_token_lock_unlock_events(
     stmt_lock = (
         select(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
+            IDXLock.is_force_lock.label("is_force_lock"),
             IDXLock.transaction_hash.label("transaction_hash"),
             IDXLock.msg_sender.label("msg_sender"),
             IDXLock.token_address.label("token_address"),
@@ -3005,6 +3006,7 @@ async def list_bond_token_lock_unlock_events(
             literal(value=LockEventCategory.Unlock.value, type_=String).label(
                 "category"
             ),
+            null().label("is_force_lock"),
             IDXUnlock.transaction_hash.label("transaction_hash"),
             IDXUnlock.msg_sender.label("msg_sender"),
             IDXUnlock.token_address.label("token_address"),
@@ -3096,6 +3098,7 @@ async def list_bond_token_lock_unlock_events(
 
     entries = [
         all_lock_event_alias.c.category,
+        all_lock_event_alias.c.is_force_lock,
         all_lock_event_alias.c.transaction_hash,
         all_lock_event_alias.c.msg_sender,
         all_lock_event_alias.c.token_address,
@@ -3119,6 +3122,7 @@ async def list_bond_token_lock_unlock_events(
         resp_data.append(
             {
                 "category": lock_event.category,
+                "is_force_lock": lock_event.is_force_lock,
                 "transaction_hash": lock_event.transaction_hash,
                 "msg_sender": lock_event.msg_sender,
                 "issuer_address": token.issuer_address,

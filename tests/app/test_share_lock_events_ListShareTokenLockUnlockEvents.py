@@ -55,7 +55,7 @@ class TestListShareTokenLockUnlockEvents:
         _token.tx_hash = ""
         _token.abi = {}
         _token.token_status = token_status
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Token
@@ -66,7 +66,7 @@ class TestListShareTokenLockUnlockEvents:
         _token.tx_hash = ""
         _token.abi = {}
         _token.token_status = token_status
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -133,6 +133,7 @@ class TestListShareTokenLockUnlockEvents:
 
     expected_lock_1 = {
         "category": "Lock",
+        "is_force_lock": False,
         "transaction_hash": "tx_hash_1",
         "msg_sender": account_address_1,
         "issuer_address": issuer_address,
@@ -148,6 +149,7 @@ class TestListShareTokenLockUnlockEvents:
     }
     expected_lock_2 = {
         "category": "Lock",
+        "is_force_lock": False,
         "transaction_hash": "tx_hash_2",
         "msg_sender": account_address_2,
         "issuer_address": issuer_address,
@@ -163,6 +165,7 @@ class TestListShareTokenLockUnlockEvents:
     }
     expected_unlock_1 = {
         "category": "Unlock",
+        "is_force_lock": None,
         "transaction_hash": "tx_hash_3",
         "msg_sender": lock_address_1,
         "issuer_address": issuer_address,
@@ -178,6 +181,7 @@ class TestListShareTokenLockUnlockEvents:
     }
     expected_unlock_2 = {
         "category": "Unlock",
+        "is_force_lock": None,
         "transaction_hash": "tx_hash_4",
         "msg_sender": lock_address_2,
         "issuer_address": issuer_address,
@@ -207,7 +211,7 @@ class TestListShareTokenLockUnlockEvents:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()

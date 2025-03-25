@@ -59,6 +59,13 @@ class LockParams(BaseModel):
     data: str
 
 
+class ForceLockParams(BaseModel):
+    lock_address: EthereumAddress
+    account_address: EthereumAddress
+    value: PositiveInt
+    data: str
+
+
 class ForceUnlockParams(BaseModel):
     lock_address: EthereumAddress
     account_address: EthereumAddress

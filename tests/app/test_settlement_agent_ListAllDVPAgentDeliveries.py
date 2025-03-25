@@ -82,7 +82,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -91,7 +91,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -475,7 +475,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -484,7 +484,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -871,7 +871,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -880,7 +880,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -1267,7 +1267,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -1276,7 +1276,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -1570,7 +1570,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -1579,7 +1579,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -1846,7 +1846,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -1855,7 +1855,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -2122,7 +2122,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -2131,7 +2131,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -2426,7 +2426,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -2435,7 +2435,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -2701,7 +2701,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -2710,7 +2710,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)
@@ -3124,7 +3124,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -3133,7 +3133,7 @@ class TestListAllDVPDeliveries:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_2
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         # prepare data: IDXDelivery(Created)

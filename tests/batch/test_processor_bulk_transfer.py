@@ -267,7 +267,7 @@ class TestProcessor:
             token.issuer_address = _account["address"]
             token.abi = {}
             token.tx_hash = ""
-            token.version = TokenVersion.V_24_09
+            token.version = TokenVersion.V_25_06
             async_db.add(token)
 
         # Prepare data : BulkTransferUpload
@@ -370,7 +370,7 @@ class TestProcessor:
             token.issuer_address = _account["address"]
             token.abi = {}
             token.tx_hash = ""
-            token.version = TokenVersion.V_24_09
+            token.version = TokenVersion.V_25_06
             async_db.add(token)
 
         # Prepare data : BulkTransferUpload
@@ -1043,7 +1043,7 @@ class TestProcessor:
         token.issuer_address = _account["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # Prepare data : BulkTransferUpload
@@ -1119,7 +1119,7 @@ class TestProcessor:
         token.issuer_address = _account["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # Prepare data : BulkTransferUpload

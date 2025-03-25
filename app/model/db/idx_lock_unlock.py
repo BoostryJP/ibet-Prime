@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, DateTime, String
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -54,6 +54,8 @@ class IDXLock(Base):
     data: Mapped[dict] = mapped_column(JSON, nullable=False)
     # Lock Datetime
     block_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Force Lock Flag
+    is_force_lock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class IDXUnlock(Base):

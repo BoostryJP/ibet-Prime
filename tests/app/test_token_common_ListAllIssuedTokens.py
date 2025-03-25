@@ -75,7 +75,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
         await async_db.commit()
 
@@ -146,7 +146,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": "2025-01-31T21:34:56+09:00",
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": token_attr,
                 }
             ],
@@ -165,7 +165,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
         await async_db.commit()
 
@@ -217,7 +217,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_SHARE,
                     "created": "2025-01-31T21:34:56+09:00",
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": token_attr,
                 }
             ],
@@ -242,7 +242,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -251,7 +251,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -351,7 +351,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_SHARE,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": share_token_attr,
                 },
                 {
@@ -360,7 +360,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_token_attr,
                 },
             ],
@@ -380,7 +380,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -389,7 +389,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -464,7 +464,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_1_attr,
                 }
             ],
@@ -484,7 +484,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -493,7 +493,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -567,7 +567,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_2_attr,
                 }
             ],
@@ -585,7 +585,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -594,7 +594,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -647,7 +647,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_SHARE,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": share_token_attr,
                 },
             ],
@@ -667,7 +667,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -676,7 +676,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -797,7 +797,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_1_attr,
                 },
                 {
@@ -806,7 +806,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_2_attr,
                 },
             ],
@@ -826,7 +826,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -835,7 +835,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -956,7 +956,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_1_attr,
                 },
                 {
@@ -965,7 +965,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_2_attr,
                 },
             ],
@@ -985,7 +985,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -994,7 +994,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _token = Token()
@@ -1003,7 +1003,7 @@ class TestListAllIssuedTokens:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -1076,7 +1076,7 @@ class TestListAllIssuedTokens:
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": mock.ANY,
                     "token_status": 1,
-                    "contract_version": "24_09",
+                    "contract_version": TokenVersion.V_25_06,
                     "token_attributes": bond_2_attr,
                 }
             ],

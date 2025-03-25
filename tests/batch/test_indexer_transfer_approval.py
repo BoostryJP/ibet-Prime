@@ -173,7 +173,7 @@ class TestProcessor:
         token_1.abi = {}
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         await async_db.commit()
@@ -223,7 +223,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -234,7 +234,7 @@ class TestProcessor:
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_09
+        token_2.version = TokenVersion.V_25_06
         async_db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -302,7 +302,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -313,7 +313,7 @@ class TestProcessor:
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_09
+        token_2.version = TokenVersion.V_25_06
         async_db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -438,7 +438,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -579,7 +579,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -719,7 +719,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -870,7 +870,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -1024,7 +1024,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -1035,7 +1035,7 @@ class TestProcessor:
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_09
+        token_2.version = TokenVersion.V_25_06
         async_db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -1200,7 +1200,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -1361,7 +1361,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -1550,7 +1550,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         await async_db.commit()
@@ -1578,7 +1578,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_24_09
+        token_2.version = TokenVersion.V_25_06
         async_db.add(token_2)
 
         await async_db.commit()
@@ -1630,7 +1630,7 @@ class TestProcessor:
         token.issuer_address = issuer_address
         token.abi = token_contract.abi
         token.tx_hash = "tx_hash"
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()

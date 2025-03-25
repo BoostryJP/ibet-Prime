@@ -43,6 +43,7 @@ from app.model.blockchain.tx_params.ibet_security_token import (
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransfer,
     ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
+    ForceLockParams as IbetSecurityTokenForceLockParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
     RedeemParams as IbetSecurityTokenRedeemParams,
@@ -557,6 +558,38 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             )
             tx = await contract.functions.lock(
                 data.lock_address, data.value, data.data
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def force_lock(
+        self, data: IbetSecurityTokenForceLockParams, tx_from: str, private_key: bytes
+    ):
+        """Force Lock"""
+        try:
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+            tx = await contract.functions.forceLock(
+                data.lock_address,
+                data.account_address,
+                data.value,
+                data.data,
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
