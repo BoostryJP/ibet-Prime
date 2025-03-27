@@ -72,9 +72,7 @@ class LockEventCategory(StrEnum):
 
 class LockEvent(BaseModel):
     category: LockEventCategory = Field(description="Event category")
-    is_force_lock: Optional[bool] = Field(
-        description="Set to `True` for force lock events"
-    )
+    is_forced: bool = Field(description="Set to `True` for force lock/unlock events")
     transaction_hash: str = Field(description="Transaction hash")
     msg_sender: Optional[str] = Field(default=None, description="Message sender")
     issuer_address: str = Field(description="Issuer address")
