@@ -595,6 +595,7 @@ class TestProcessor:
     #   - FinishEscrow
     #   - ApproveTransfer
     # - Lock
+    # - ForceLock
     # - Unlock
     @pytest.mark.asyncio
     async def test_normal_2(
@@ -745,7 +746,13 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 3000, ""],
+            [issuer_address, 1500, ""],
+        )
+        STContractUtils.force_lock(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, 1500, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
@@ -1429,6 +1436,7 @@ class TestProcessor:
     #   - FinishEscrow
     #   - ApproveTransfer
     # - Lock
+    # - ForceLock
     # - Unlock
     @pytest.mark.asyncio
     async def test_normal_5(
@@ -1579,7 +1587,13 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 3000, ""],
+            [issuer_address, 1500, ""],
+        )
+        STContractUtils.force_lock(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, 1500, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
