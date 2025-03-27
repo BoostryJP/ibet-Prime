@@ -133,7 +133,7 @@ class TestListBondTokenLockUnlockEvents:
 
     expected_lock_1 = {
         "category": "Lock",
-        "is_force_lock": False,
+        "is_forced": False,
         "transaction_hash": "tx_hash_1",
         "msg_sender": account_address_1,
         "issuer_address": issuer_address,
@@ -149,7 +149,7 @@ class TestListBondTokenLockUnlockEvents:
     }
     expected_lock_2 = {
         "category": "Lock",
-        "is_force_lock": False,
+        "is_forced": False,
         "transaction_hash": "tx_hash_2",
         "msg_sender": account_address_2,
         "issuer_address": issuer_address,
@@ -165,7 +165,7 @@ class TestListBondTokenLockUnlockEvents:
     }
     expected_unlock_1 = {
         "category": "Unlock",
-        "is_force_lock": None,
+        "is_forced": False,
         "transaction_hash": "tx_hash_3",
         "msg_sender": lock_address_1,
         "issuer_address": issuer_address,
@@ -181,7 +181,7 @@ class TestListBondTokenLockUnlockEvents:
     }
     expected_unlock_2 = {
         "category": "Unlock",
-        "is_force_lock": None,
+        "is_forced": False,
         "transaction_hash": "tx_hash_4",
         "msg_sender": lock_address_2,
         "issuer_address": issuer_address,

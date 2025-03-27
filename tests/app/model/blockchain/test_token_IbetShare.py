@@ -4797,7 +4797,7 @@ class TestForceUnlock:
 
         logs = await AsyncContractUtils.get_event_logs(
             contract=share_token,
-            event="Unlock",
+            event="ForceUnlock",
             block_from=block_from,
             block_to=block_to,
         )

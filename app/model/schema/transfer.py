@@ -40,6 +40,7 @@ from .personal_info import PersonalInfo
 class TransferSourceEventType(StrEnum):
     Transfer = "Transfer"
     Unlock = "Unlock"
+    ForceUnlock = "ForceUnlock"
 
 
 class TransferApprovalStatus(IntEnum):

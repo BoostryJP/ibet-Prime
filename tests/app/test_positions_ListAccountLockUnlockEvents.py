@@ -108,7 +108,7 @@ class TestListAccountLockUnlockEvents:
         _lock.value = 1
         _lock.data = {"message": "locked_1"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
-        _lock.is_force_lock = True
+        _lock.is_forced = True
         async_db.add(_lock)
 
         _unlock = IDXUnlock()
@@ -122,6 +122,7 @@ class TestListAccountLockUnlockEvents:
         _unlock.value = 1
         _unlock.data = {"message": "unlocked_1"}
         _unlock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
+        _unlock.is_forced = True
         async_db.add(_unlock)
 
         await async_db.commit()
@@ -143,7 +144,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
-                    "is_force_lock": None,
+                    "is_forced": True,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -159,7 +160,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
-                    "is_force_lock": True,
+                    "is_forced": True,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -246,7 +247,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
-                    "is_force_lock": None,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -262,7 +263,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -535,7 +536,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
-                    "is_force_lock": None,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -551,7 +552,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -641,7 +642,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
-                    "is_force_lock": None,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -741,7 +742,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -841,7 +842,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -932,7 +933,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
-                    "is_force_lock": None,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -1021,7 +1022,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1113,7 +1114,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Unlock",
-                    "is_force_lock": None,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
@@ -1226,7 +1227,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_3",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1242,7 +1243,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_1",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1258,7 +1259,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_4",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1274,7 +1275,7 @@ class TestListAccountLockUnlockEvents:
                 },
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,
@@ -1374,7 +1375,7 @@ class TestListAccountLockUnlockEvents:
             "events": [
                 {
                     "category": "Lock",
-                    "is_force_lock": False,
+                    "is_forced": False,
                     "transaction_hash": "tx_hash_2",
                     "msg_sender": account_address,
                     "issuer_address": issuer_address,

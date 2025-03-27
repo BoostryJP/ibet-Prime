@@ -54,8 +54,8 @@ class IDXLock(Base):
     data: Mapped[dict] = mapped_column(JSON, nullable=False)
     # Lock Datetime
     block_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    # Force Lock Flag
-    is_force_lock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Whether the lock is forced or not
+    is_forced: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class IDXUnlock(Base):
@@ -91,3 +91,5 @@ class IDXUnlock(Base):
     data: Mapped[dict] = mapped_column(JSON, nullable=False)
     # Unlock Datetime
     block_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Whether the unlock is forced or not
+    is_forced: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

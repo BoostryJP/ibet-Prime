@@ -323,7 +323,7 @@ async def list_account_lock_unlock_events(
     stmt_lock = (
         select(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
-            IDXLock.is_force_lock.label("is_force_lock"),
+            IDXLock.is_forced.label("is_forced"),
             IDXLock.transaction_hash.label("transaction_hash"),
             IDXLock.msg_sender.label("msg_sender"),
             IDXLock.token_address.label("token_address"),
@@ -351,7 +351,7 @@ async def list_account_lock_unlock_events(
             literal(value=LockEventCategory.Unlock.value, type_=String).label(
                 "category"
             ),
-            null().label("is_force_lock"),
+            IDXUnlock.is_forced.label("is_forced"),
             IDXUnlock.transaction_hash.label("transaction_hash"),
             IDXUnlock.msg_sender.label("msg_sender"),
             IDXUnlock.token_address.label("token_address"),
@@ -446,7 +446,7 @@ async def list_account_lock_unlock_events(
 
     entries = [
         all_lock_event_alias.c.category,
-        all_lock_event_alias.c.is_force_lock,
+        all_lock_event_alias.c.is_forced,
         all_lock_event_alias.c.transaction_hash,
         all_lock_event_alias.c.msg_sender,
         all_lock_event_alias.c.token_address,
@@ -477,7 +477,7 @@ async def list_account_lock_unlock_events(
         resp_data.append(
             {
                 "category": lock_event.category,
-                "is_force_lock": lock_event.is_force_lock,
+                "is_forced": lock_event.is_forced,
                 "transaction_hash": lock_event.transaction_hash,
                 "msg_sender": lock_event.msg_sender,
                 "issuer_address": token.issuer_address,

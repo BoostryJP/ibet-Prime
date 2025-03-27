@@ -33,6 +33,7 @@ class IDXTransferSourceEventType(StrEnum):
 
     TRANSFER = "Transfer"
     UNLOCK = "Unlock"
+    FORCE_UNLOCK = "ForceUnlock"
 
 
 class DataMessage(BaseModel):

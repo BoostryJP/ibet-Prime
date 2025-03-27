@@ -257,6 +257,7 @@ class TestProcessor:
     # Single event logs
     # - Transfer
     # - Unlock
+    # - ForceUnlock
     @pytest.mark.asyncio
     async def test_normal_2_1(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
@@ -338,8 +339,22 @@ class TestProcessor:
         )
         _, _ = ContractUtils.send_transaction(tx_2_1, issuer_private_key)
 
-        tx_2_2 = token_contract_1.functions.unlock(
-            issuer_address, user_address_1, 10, json.dumps({"message": "force_unlock"})
+        tx_2_2 = token_contract_1.functions.lock(
+            lock_account["address"],
+            10,
+            json.dumps({"message": "garnishment"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        _, _ = ContractUtils.send_transaction(tx_2_2, issuer_private_key)
+
+        tx_2_3 = token_contract_1.functions.unlock(
+            issuer_address, user_address_1, 10, json.dumps({"message": "garnishment"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -348,8 +363,25 @@ class TestProcessor:
                 "gasPrice": 0,
             }
         )
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(
-            tx_2_2, lock_account_pk
+        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(
+            tx_2_3, lock_account_pk
+        )
+        tx_2_4 = token_contract_1.functions.forceUnlock(
+            lock_account["address"],
+            issuer_address,
+            user_address_1,
+            10,
+            json.dumps({"message": "force_unlock"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(
+            tx_2_4, issuer_private_key
         )
 
         # Run target process
@@ -359,7 +391,7 @@ class TestProcessor:
 
         # Assertion
         _transfer_list = (await async_db.scalars(select(IDXTransfer))).all()
-        assert len(_transfer_list) == 2
+        assert len(_transfer_list) == 3
 
         _transfer = _transfer_list[0]
         assert _transfer.id == 1
@@ -377,15 +409,30 @@ class TestProcessor:
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
-        assert _transfer.transaction_hash == tx_hash_2
+        assert _transfer.transaction_hash == tx_hash_3
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
+        assert _transfer.data == {"message": "garnishment"}
+        assert _transfer.message == "garnishment"
+        block = web3.eth.get_block(tx_receipt_3["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+
+        _transfer = _transfer_list[2]
+        assert _transfer.id == 3
+        assert _transfer.transaction_hash == tx_hash_4
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
         assert _transfer.data == {"message": "force_unlock"}
         assert _transfer.message == "force_unlock"
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        block = web3.eth.get_block(tx_receipt_4["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
         ).replace(tzinfo=None)
@@ -400,6 +447,7 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Unlock: Transfer record is not registered because "from" and "to" are the same
+    # - ForceUnlock: Transfer record is not registered because "from" and "to" are the same
     @pytest.mark.asyncio
     async def test_normal_2_2(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
@@ -461,8 +509,20 @@ class TestProcessor:
         )
         _, _ = ContractUtils.send_transaction(tx_1_1, issuer_private_key)
 
-        tx_1_2 = token_contract_1.functions.unlock(
-            issuer_address, issuer_address, 10, json.dumps({"message": "force_unlock"})
+        tx_1_2 = token_contract_1.functions.lock(
+            lock_account["address"], 10, json.dumps({"message": "garnishment"})
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        _, _ = ContractUtils.send_transaction(tx_1_2, issuer_private_key)
+
+        tx_1_3 = token_contract_1.functions.unlock(
+            issuer_address, issuer_address, 10, json.dumps({"message": "unlock"})
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -471,7 +531,23 @@ class TestProcessor:
                 "gasPrice": 0,
             }
         )
-        _, _ = ContractUtils.send_transaction(tx_1_2, lock_account_pk)
+        _, _ = ContractUtils.send_transaction(tx_1_3, lock_account_pk)
+
+        tx_1_4 = token_contract_1.functions.forceUnlock(
+            lock_account["address"],
+            issuer_address,
+            issuer_address,
+            10,
+            json.dumps({"message": "force_unlock"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        _, _ = ContractUtils.send_transaction(tx_1_4, issuer_private_key)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -492,6 +568,7 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Unlock: Transfer record is registered but the data attribute is set null because of invalid data schema
+    # - ForceUnlock: Transfer record is registered but the data attribute is set null because of invalid data schema
     @pytest.mark.asyncio
     async def test_normal_2_3(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
@@ -573,7 +650,21 @@ class TestProcessor:
         )
         _, _ = ContractUtils.send_transaction(tx_2_1, issuer_private_key)
 
-        tx_2_2 = token_contract_1.functions.unlock(
+        tx_2_2 = token_contract_1.functions.lock(
+            lock_account["address"],
+            10,
+            json.dumps({"message": "garnishment"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        _, _ = ContractUtils.send_transaction(tx_2_2, issuer_private_key)
+
+        tx_2_3 = token_contract_1.functions.unlock(
             issuer_address,
             user_address_1,
             10,
@@ -586,8 +677,26 @@ class TestProcessor:
                 "gasPrice": 0,
             }
         )
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(
-            tx_2_2, lock_account_pk
+        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(
+            tx_2_3, lock_account_pk
+        )
+
+        tx_2_4 = token_contract_1.functions.forceUnlock(
+            lock_account["address"],
+            issuer_address,
+            user_address_1,
+            10,
+            json.dumps({"invalid_message": "invalid_value"}),  # invalid data schema
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(
+            tx_2_4, issuer_private_key
         )
 
         # Run target process
@@ -597,7 +706,7 @@ class TestProcessor:
 
         # Assertion
         _transfer_list = (await async_db.scalars(select(IDXTransfer))).all()
-        assert len(_transfer_list) == 2
+        assert len(_transfer_list) == 3
 
         _transfer = _transfer_list[0]
         assert _transfer.id == 1
@@ -615,7 +724,7 @@ class TestProcessor:
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
-        assert _transfer.transaction_hash == tx_hash_2
+        assert _transfer.transaction_hash == tx_hash_3
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
@@ -623,7 +732,22 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {}
         assert _transfer.message is None
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        block = web3.eth.get_block(tx_receipt_3["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+
+        _transfer = _transfer_list[2]
+        assert _transfer.id == 3
+        assert _transfer.transaction_hash == tx_hash_4
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
+        assert _transfer.data == {}
+        assert _transfer.message is None
+        block = web3.eth.get_block(tx_receipt_4["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
         ).replace(tzinfo=None)
@@ -639,6 +763,7 @@ class TestProcessor:
     # Multi event logs
     # - Transfer(twice)
     # - Unlock(twice)
+    # - ForceUnlock(twice)
     @pytest.mark.asyncio
     async def test_normal_3_1(self, processor, async_db, personal_info_contract):
         user_1 = config_eth_account("user1")
@@ -709,7 +834,7 @@ class TestProcessor:
         )
 
         tx_2 = token_contract_1.functions.transferFrom(
-            issuer_address, user_address_2, 30
+            issuer_address, user_address_2, 20
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -775,6 +900,67 @@ class TestProcessor:
             tx_4_2, lock_account_pk
         )
 
+        # ForceUnlock (lock -> forceUnlock)
+        tx_5_1 = token_contract_1.functions.lock(
+            lock_account["address"], 10, json.dumps({"message": "garnishment"})
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        _, _ = ContractUtils.send_transaction(tx_5_1, issuer_private_key)
+
+        tx_5_2 = token_contract_1.functions.forceUnlock(
+            lock_account["address"],
+            issuer_address,
+            user_address_1,
+            10,
+            json.dumps({"message": "force_unlock"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_5, tx_receipt_5 = ContractUtils.send_transaction(
+            tx_5_2, issuer_private_key
+        )
+
+        tx_6_1 = token_contract_1.functions.lock(
+            lock_account["address"], 10, json.dumps({"message": "garnishment"})
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        _, _ = ContractUtils.send_transaction(tx_6_1, issuer_private_key)
+
+        tx_6_2 = token_contract_1.functions.forceUnlock(
+            lock_account["address"],
+            issuer_address,
+            user_address_1,
+            10,
+            json.dumps({"message": "force_unlock"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_6, tx_receipt_6 = ContractUtils.send_transaction(
+            tx_6_2, issuer_private_key
+        )
+
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
@@ -782,7 +968,7 @@ class TestProcessor:
 
         # Assertion
         _transfer_list = (await async_db.scalars(select(IDXTransfer))).all()
-        assert len(_transfer_list) == 4
+        assert len(_transfer_list) == 6
 
         _transfer = _transfer_list[0]
         assert _transfer.id == 1
@@ -804,7 +990,7 @@ class TestProcessor:
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_2
-        assert _transfer.amount == 30
+        assert _transfer.amount == 20
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
@@ -838,6 +1024,36 @@ class TestProcessor:
         assert _transfer.data == {"message": "inheritance"}
         assert _transfer.message == "inheritance"
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+
+        _transfer = _transfer_list[4]
+        assert _transfer.id == 5
+        assert _transfer.transaction_hash == tx_hash_5
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
+        assert _transfer.data == {"message": "force_unlock"}
+        assert _transfer.message == "force_unlock"
+        block = web3.eth.get_block(tx_receipt_5["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+
+        _transfer = _transfer_list[5]
+        assert _transfer.id == 6
+        assert _transfer.transaction_hash == tx_hash_6
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
+        assert _transfer.data == {"message": "force_unlock"}
+        assert _transfer.message == "force_unlock"
+        block = web3.eth.get_block(tx_receipt_6["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
         ).replace(tzinfo=None)

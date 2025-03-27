@@ -14459,12 +14459,10 @@ components:
         category:
           $ref: '#/components/schemas/LockEventCategory'
           description: Event category
-        is_force_lock:
-          anyOf:
-            - type: boolean
-            - type: 'null'
-          title: Is Force Lock
-          description: Set to `True` for force lock events
+        is_forced:
+          type: boolean
+          title: Is Forced
+          description: Set to `True` for force lock/unlock events
         transaction_hash:
           type: string
           title: Transaction Hash
@@ -14519,7 +14517,7 @@ components:
       type: object
       required:
         - category
-        - is_force_lock
+        - is_forced
         - transaction_hash
         - issuer_address
         - token_address
