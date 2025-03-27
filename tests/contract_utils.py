@@ -161,6 +161,17 @@ class IbetSecurityTokenContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
+    def force_unlock(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address,
+        )
+        tx = security_token_contract.functions.forceUnlock(*args).build_transaction(
+            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+        )
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
     def issue_from(contract_address: str, tx_from: str, private_key: str, args: list):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
