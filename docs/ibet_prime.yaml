@@ -16607,6 +16607,7 @@ components:
       enum:
         - Transfer
         - Unlock
+        - ForceUnlock
       title: TransferSourceEventType
     TxData:
       properties:
@@ -16829,7 +16830,9 @@ components:
           title: Block Timestamp
         source_event:
           type: string
-          const: Unlock
+          enum:
+            - Unlock
+            - ForceUnlock
           title: Source Event
           description: Source Event
         data:

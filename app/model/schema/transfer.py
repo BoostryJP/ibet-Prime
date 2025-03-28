@@ -79,9 +79,9 @@ class DataMessage(BaseModel):
 
 
 class UnlockTransfer(TransferBase):
-    source_event: Literal[TransferSourceEventType.Unlock] = Field(
-        description="Source Event"
-    )
+    source_event: Literal[
+        TransferSourceEventType.Unlock, TransferSourceEventType.ForceUnlock
+    ] = Field(description="Source Event")
     data: DataMessage | dict = Field(description="Event data")
 
 
