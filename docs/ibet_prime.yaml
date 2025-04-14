@@ -11857,19 +11857,6 @@ components:
         - notice_type
         - metainfo
       title: DVPDeliveryInfoNotification
-    DataMessage:
-      properties:
-        message:
-          type: string
-          enum:
-            - garnishment
-            - inheritance
-            - force_unlock
-          title: Message
-      type: object
-      required:
-        - message
-      title: DataMessage
     DeliveryStatus:
       type: integer
       enum:
@@ -12275,6 +12262,12 @@ components:
           type: string
           title: Lock Address
           description: Lock address
+        message:
+          anyOf:
+            - $ref: '#/components/schemas/LockMessage'
+            - type: 'null'
+          description: Lock message
+          default: force_lock
         value:
           type: integer
           exclusiveMinimum: 0.0
@@ -12300,6 +12293,12 @@ components:
           type: string
           title: Recipient Address
           description: Recipient address
+        message:
+          anyOf:
+            - $ref: '#/components/schemas/UnlockMessage'
+            - type: 'null'
+          description: Unlock message
+          default: force_unlock
         value:
           type: integer
           exclusiveMinimum: 0.0
@@ -14454,6 +14453,14 @@ components:
         - to_address_name
         - amount
       title: ListTransferHistorySortItem
+    LockDataMessage:
+      properties:
+        message:
+          $ref: '#/components/schemas/LockMessage'
+      type: object
+      required:
+        - message
+      title: LockDataMessage
     LockEvent:
       properties:
         category:
@@ -14507,7 +14514,10 @@ components:
           title: Value
           description: Lock/Unlock amount
         data:
-          type: object
+          anyOf:
+            - $ref: '#/components/schemas/LockDataMessage'
+            - $ref: '#/components/schemas/UnlockDataMessage'
+            - type: object
           title: Data
           description: Message at lock/unlock
         block_timestamp:
@@ -14529,6 +14539,7 @@ components:
         - data
         - block_timestamp
       title: LockEvent
+      description: Lock/Unlock event
     LockEventCategory:
       type: string
       enum:
@@ -14599,6 +14610,13 @@ components:
         - notice_type
         - metainfo
       title: LockInfoNotification
+    LockMessage:
+      type: string
+      enum:
+        - garnishment
+        - inheritance
+        - force_lock
+      title: LockMessage
     LockedPosition:
       properties:
         issuer_address:
@@ -16732,6 +16750,14 @@ components:
     TxDataResponse:
       $ref: '#/components/schemas/TxDataDetail'
       title: TxDataResponse
+    UnlockDataMessage:
+      properties:
+        message:
+          $ref: '#/components/schemas/UnlockMessage'
+      type: object
+      required:
+        - message
+      title: UnlockDataMessage
     UnlockInfoMetaInfo:
       properties:
         token_address:
@@ -16800,6 +16826,13 @@ components:
         - notice_type
         - metainfo
       title: UnlockInfoNotification
+    UnlockMessage:
+      type: string
+      enum:
+        - garnishment
+        - inheritance
+        - force_unlock
+      title: UnlockMessage
     UnlockTransfer:
       properties:
         transaction_hash:
@@ -16837,7 +16870,7 @@ components:
           description: Source Event
         data:
           anyOf:
-            - $ref: '#/components/schemas/DataMessage'
+            - $ref: '#/components/schemas/UnlockTransferDataMessage'
             - type: object
           title: Data
           description: Event data
@@ -16854,6 +16887,19 @@ components:
         - source_event
         - data
       title: UnlockTransfer
+    UnlockTransferDataMessage:
+      properties:
+        message:
+          type: string
+          enum:
+            - garnishment
+            - inheritance
+            - force_unlock
+          title: Message
+      type: object
+      required:
+        - message
+      title: UnlockTransferDataMessage
     UpdateFreezeLogRequest:
       properties:
         account_address:

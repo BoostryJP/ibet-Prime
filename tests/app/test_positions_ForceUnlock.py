@@ -39,11 +39,12 @@ class TestForceUnlock:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Authorization by eoa-password
+    # message is not set
     @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
-    async def test_normal_1(
+    async def test_normal_1_1(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
     ):
         account_address = "0x1234567890123456789012345678900000000000"
@@ -102,7 +103,86 @@ class TestForceUnlock:
                     "account_address": account_address,
                     "recipient_address": _recipient_address,
                     "value": 10,
-                    "data": json.dumps({"message": "force_unlock"}),
+                    "data": json.dumps(
+                        {"message": "force_unlock"}, separators=(",", ":")
+                    ),
+                }
+            ),
+            tx_from=_admin_address,
+            private_key=ANY,
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+    # <Normal_1_2>
+    # Authorization by eoa-password
+    # -message is set
+    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
+    @pytest.mark.asyncio
+    async def test_normal_1_2(
+        self, IbetSecurityTokenInterface_mock, async_client, async_db
+    ):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = config_eth_account("user2")["address"]
+        _recipient_address = config_eth_account("user3")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_06
+        async_db.add(token)
+
+        await async_db.commit()
+
+        # mock
+        IbetSecurityTokenInterface_mock.side_effect = [None]
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
+            "recipient_address": _recipient_address,
+            "message": "garnishment",
+            "value": 10,
+        }
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        IbetSecurityTokenInterface_mock.assert_any_call(
+            data=ForceUnlockParams(
+                **{
+                    "lock_address": _lock_address,
+                    "account_address": account_address,
+                    "recipient_address": _recipient_address,
+                    "value": 10,
+                    "data": json.dumps(
+                        {"message": "garnishment"}, separators=(",", ":")
+                    ),
                 }
             ),
             tx_from=_admin_address,
@@ -178,7 +258,9 @@ class TestForceUnlock:
                     "account_address": account_address,
                     "recipient_address": _recipient_address,
                     "value": 10,
-                    "data": json.dumps({"message": "force_unlock"}),
+                    "data": json.dumps(
+                        {"message": "force_unlock"}, separators=(",", ":")
+                    ),
                 }
             ),
             tx_from=_admin_address,
@@ -302,7 +384,7 @@ class TestForceUnlock:
             ],
         }
 
-    # <Error_3>
+    # <Error_1_3>
     # RequestValidationError
     # Header and body are required
     @pytest.mark.asyncio
@@ -333,7 +415,7 @@ class TestForceUnlock:
             ],
         }
 
-    # <Error_4>
+    # <Error_1_4>
     # RequestValidationError
     # issuer-address is not a valid address
     @pytest.mark.asyncio
@@ -420,6 +502,64 @@ class TestForceUnlock:
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
+                }
+            ],
+        }
+
+    # <Error_1_6>
+    # RequestValidationError
+    # Invalid message
+    @pytest.mark.asyncio
+    async def test_error_1_6(self, async_client, async_db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = config_eth_account("user2")["address"]
+        _recipient_address = config_eth_account("user3")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+        await async_db.commit()
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
+            "recipient_address": _recipient_address,
+            "message": "invalid_message",
+            "value": 10,
+        }
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "enum",
+                    "loc": ["body", "message"],
+                    "msg": "Input should be 'garnishment', 'inheritance' or 'force_unlock'",
+                    "input": "invalid_message",
+                    "ctx": {
+                        "expected": "'garnishment', 'inheritance' or 'force_unlock'"
+                    },
                 }
             ],
         }

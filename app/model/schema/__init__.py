@@ -125,8 +125,10 @@ from .position import (
     ListAllLockEventsSortItem,
     ListAllPositionResponse,
     ListAllPositionsQuery,
+    LockDataMessage,
     LockEventCategory,
     PositionResponse,
+    UnlockDataMessage,
 )
 from .scheduled_events import (
     DeleteScheduledEventQuery,

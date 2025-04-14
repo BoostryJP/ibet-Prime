@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import json
 from typing import Annotated, Optional, Sequence
 
 from eth_keyfile import decode_keyfile_json
@@ -65,8 +64,10 @@ from app.model.schema import (
     ListAllLockEventsSortItem,
     ListAllPositionResponse,
     ListAllPositionsQuery,
+    LockDataMessage,
     LockEventCategory,
     PositionResponse,
+    UnlockDataMessage,
 )
 from app.utils.check_utils import (
     address_is_valid_address,
@@ -583,11 +584,14 @@ async def force_lock(
         )
 
     # Force lock
+    lock_message_data = LockDataMessage(message=data.message).model_dump_json(
+        exclude_none=True
+    )
     lock_data = {
         "lock_address": data.lock_address,
         "account_address": account_address,
         "value": data.value,
-        "data": json.dumps({"message": "force_lock"}),
+        "data": lock_message_data,
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_lock(
@@ -671,12 +675,15 @@ async def force_unlock(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Force unlock
+    unlock_message_data = UnlockDataMessage(message=data.message).model_dump_json(
+        exclude_none=True
+    )
     unlock_data = {
         "lock_address": data.lock_address,
         "account_address": account_address,
         "recipient_address": data.recipient_address,
         "value": data.value,
-        "data": json.dumps({"message": "force_unlock"}),
+        "data": unlock_message_data,
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_unlock(
