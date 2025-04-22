@@ -119,7 +119,13 @@ class Processor:
     ):
         self.node_info[endpoint_uri] = {"priority": priority}
 
-        web3 = AsyncWeb3(AsyncHTTPProvider(endpoint_uri))
+        web3 = AsyncWeb3(
+            AsyncHTTPProvider(
+                endpoint_uri,
+                # Disabled retry logic explicitly
+                exception_retry_configuration=None,
+            )
+        )
         web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         self.node_info[endpoint_uri]["web3"] = web3
 
