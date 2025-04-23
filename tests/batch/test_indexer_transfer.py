@@ -668,7 +668,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             10,
-            json.dumps({"invalid_message": "invalid_value"}),  # invalid data schema
+            "null",  # invalid data schema
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
