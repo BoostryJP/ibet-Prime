@@ -344,6 +344,9 @@ class Processor:
             except json.JSONDecodeError:
                 data = {}
                 message = None
+            except:
+                data = {}
+                message = None
         else:
             data = None
             message = None
