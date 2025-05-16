@@ -1,13 +1,14 @@
 !.gitkeep
 
+.env
+
+# Python
 __pycache__/
 .cache/
 .venv/
 .pytest_cache/
 .project
 *.egg-info/
-
-# pyenv
 .python-version
 
 # Node

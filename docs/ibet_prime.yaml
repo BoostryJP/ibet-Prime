@@ -11674,6 +11674,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -11683,6 +11684,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -11702,6 +11704,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -11714,6 +11717,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -12055,7 +12059,8 @@ components:
         message:
           anyOf:
             - type: string
-            - type: object
+            - additionalProperties: true
+              type: object
             - items: {}
               type: array
           title: Message
@@ -13763,6 +13768,7 @@ components:
         token_type:
           $ref: '#/components/schemas/TokenType'
         arguments:
+          additionalProperties: true
           type: object
           title: Arguments
       type: object
@@ -13973,6 +13979,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -13982,6 +13989,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -14024,6 +14032,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -14036,6 +14045,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -14517,7 +14527,8 @@ components:
           anyOf:
             - $ref: '#/components/schemas/LockDataMessage'
             - $ref: '#/components/schemas/UnlockDataMessage'
-            - type: object
+            - additionalProperties: true
+              type: object
           title: Data
           description: Message at lock/unlock
         block_timestamp:
@@ -14563,6 +14574,7 @@ components:
           type: integer
           title: Value
         data:
+          additionalProperties: true
           type: object
           title: Data
       type: object
@@ -15236,7 +15248,6 @@ components:
           title: Key Manager
         data_source:
           $ref: '#/components/schemas/PersonalInfoDataSource'
-          description: Personal information data source
           default: on-chain
       type: object
       required:
@@ -15638,6 +15649,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15650,6 +15662,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15678,6 +15691,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15690,6 +15704,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15832,6 +15847,7 @@ components:
         status:
           $ref: '#/components/schemas/ScheduledEventStatus'
         data:
+          additionalProperties: true
           type: object
           title: Data
         created:
@@ -15910,6 +15926,7 @@ components:
         status:
           $ref: '#/components/schemas/ScheduledEventStatus'
         data:
+          additionalProperties: true
           type: object
           title: Data
         created:
@@ -16204,11 +16221,13 @@ components:
       properties:
         original_contents:
           anyOf:
-            - type: object
+            - additionalProperties: true
+              type: object
             - type: 'null'
           title: Original Contents
           description: original attributes before update
         modified_contents:
+          additionalProperties: true
           type: object
           title: Modified Contents
           description: update attributes
@@ -16698,7 +16717,8 @@ components:
           title: Contract Function
         contract_parameters:
           anyOf:
-            - type: object
+            - additionalProperties: true
+              type: object
             - type: 'null'
           title: Contract Parameters
         gas:
@@ -16778,6 +16798,7 @@ components:
           type: integer
           title: Value
         data:
+          additionalProperties: true
           type: object
           title: Data
       type: object
@@ -16871,7 +16892,8 @@ components:
         data:
           anyOf:
             - $ref: '#/components/schemas/UnlockTransferDataMessage'
-            - type: object
+            - additionalProperties: true
+              type: object
           title: Data
           description: Event data
       type: object
