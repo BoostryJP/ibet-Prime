@@ -2155,6 +2155,26 @@ paths:
             type: boolean
             default: false
             title: Include Former Holder
+        - name: key_manager_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/KeyManagerType'
+              - type: 'null'
+            description: Key manager type (**this affects total number**)
+            title: Key Manager Type
+          description: Key manager type (**this affects total number**)
+        - name: key_manager
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: key manager(partial match)
+            title: Key Manager
+          description: key manager(partial match)
         - name: balance
           in: query
           required: false
@@ -2267,16 +2287,6 @@ paths:
             description: holder name(partial match)
             title: Holder Name
           description: holder name(partial match)
-        - name: key_manager
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: key manager(partial match)
-            title: Key Manager
-          description: key manager(partial match)
         - name: sort_item
           in: query
           required: false
@@ -6772,6 +6782,26 @@ paths:
             type: boolean
             default: false
             title: Include Former Holder
+        - name: key_manager_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/KeyManagerType'
+              - type: 'null'
+            description: Key manager type (**this affects total number**)
+            title: Key Manager Type
+          description: Key manager type (**this affects total number**)
+        - name: key_manager
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: key manager(partial match)
+            title: Key Manager
+          description: key manager(partial match)
         - name: balance
           in: query
           required: false
@@ -6884,16 +6914,6 @@ paths:
             description: holder name(partial match)
             title: Holder Name
           description: holder name(partial match)
-        - name: key_manager
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: key manager(partial match)
-            title: Key Manager
-          description: key manager(partial match)
         - name: sort_item
           in: query
           required: false

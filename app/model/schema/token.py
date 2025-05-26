@@ -36,6 +36,7 @@ from .base import (
     IbetShareContractVersion,
     IbetStraightBond,
     IbetStraightBondContractVersion,
+    KeyManagerType,
     MMDD_constr,
     ResultSet,
     SortOrder,
@@ -385,6 +386,10 @@ class ListAllHoldersSortItem(StrEnum):
 
 class ListAllHoldersQuery(BasePaginationQuery):
     include_former_holder: bool = Field(default=False)
+    key_manager_type: Optional[KeyManagerType] = Field(
+        None, description="Key manager type (**this affects total number**)"
+    )
+    key_manager: Optional[str] = Field(None, description="key manager(partial match)")
     balance: Optional[int] = Field(None, description="Token balance")
     balance_operator: Optional[ValueOperator] = Field(
         ValueOperator.EQUAL,
@@ -412,7 +417,6 @@ class ListAllHoldersQuery(BasePaginationQuery):
         None, description="account address(partial match)"
     )
     holder_name: Optional[str] = Field(None, description="holder name(partial match)")
-    key_manager: Optional[str] = Field(None, description="key manager(partial match)")
 
     sort_item: Annotated[ListAllHoldersSortItem, Query(description="Sort Item")] = (
         ListAllHoldersSortItem.created

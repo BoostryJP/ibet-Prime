@@ -171,7 +171,7 @@ from app.model.schema import (
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
 )
-from app.model.schema.base import ValueOperator
+from app.model.schema.base import KeyManagerType, ValueOperator
 from app.utils.check_utils import (
     address_is_valid_address,
     check_auth,
@@ -1899,7 +1899,7 @@ async def list_all_share_token_holders(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get Account
+    # Check issuer existence
     _account = (
         await db.scalars(
             select(Account).where(Account.issuer_address == issuer_address).limit(1)
@@ -1908,7 +1908,7 @@ async def list_all_share_token_holders(
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
 
-    # Get Token
+    # Check token existence
     _token: Token | None = (
         await db.scalars(
             select(Token)
@@ -1928,7 +1928,7 @@ async def list_all_share_token_holders(
     if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    # Get Holders
+    # Base query
     locked_value = func.sum(IDXLockedPosition.value)
     stmt = (
         select(
@@ -1971,13 +1971,23 @@ async def list_all_share_token_holders(
             IDXLockedPosition.account_address,
         )
     )
+    match get_query.key_manager_type:
+        case KeyManagerType.SELF:
+            stmt = stmt.where(
+                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"
+            )
+        case KeyManagerType.OTHERS:
+            stmt = stmt.where(
+                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
+            )
 
     total = await db.scalar(
-        select(func.count())
-        .select_from(IDXPosition)
-        .where(IDXPosition.token_address == token_address)
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
+    # Apply filters
     if not get_query.include_former_holder:
         stmt = stmt.where(
             or_(
@@ -2066,7 +2076,9 @@ async def list_all_share_token_holders(
         )
 
     count = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
     # Sort
