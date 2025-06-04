@@ -58,6 +58,11 @@ RESPONSE_VALIDATION_MODE = (
     True if os.environ.get("RESPONSE_VALIDATION_MODE") == "1" else False
 )
 
+# Run mode
+RUN_MODE = os.environ.get("RUN_MODE")
+
+# Profiling mode
+PROFILING_MODE = True if os.environ.get("PROFILING_MODE") == "1" else False
 
 ####################################################
 # Server settings
@@ -392,6 +397,11 @@ DVP_AGENT_FEATURE_ENABLED = (
 # - "aes-256-cbc"
 DVP_DATA_ENCRYPTION_MODE = os.environ.get("DVP_DATA_ENCRYPTION_MODE") or None
 DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
+
+######################################################
+# O11y Settings
+######################################################
+PYROSCOPE_SERVER_URL = os.environ.get("PYROSCOPE_SERVER_URL")
 
 ####################################################
 # Other settings
