@@ -66,7 +66,7 @@ class TestListAllNotifications:
         }
         _notification_1.created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/02
+        )  # JST 2022/01/02 00:20:30
         async_db.add(_notification_1)
 
         _notification_2 = Notification()
@@ -82,7 +82,7 @@ class TestListAllNotifications:
         }
         _notification_2.created = datetime.strptime(
             "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/02
+        )  # JST 2022/01/02 09:20:30
         async_db.add(_notification_2)
 
         _notification_3 = Notification()
@@ -98,7 +98,7 @@ class TestListAllNotifications:
         }
         _notification_3.created = datetime.strptime(
             "2022/01/02 15:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/03 00:20:30
         async_db.add(_notification_3)
 
         _notification_4 = Notification()
@@ -114,7 +114,7 @@ class TestListAllNotifications:
         }
         _notification_4.created = datetime.strptime(
             "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/03 09:20:30
         async_db.add(_notification_4)
 
         _notification_5 = Notification()
@@ -130,7 +130,7 @@ class TestListAllNotifications:
         }
         _notification_5.created = datetime.strptime(
             "2022/01/05 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/05 09:20:30
         async_db.add(_notification_5)
 
         _notification_6 = Notification()
@@ -146,7 +146,7 @@ class TestListAllNotifications:
         }
         _notification_6.created = datetime.strptime(
             "2022/01/06 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/06 09:20:30
         async_db.add(_notification_6)
 
         _notification_7 = Notification()
@@ -164,7 +164,7 @@ class TestListAllNotifications:
         }
         _notification_7.created = datetime.strptime(
             "2022/01/07 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/07 09:20:30
         async_db.add(_notification_7)
 
         _notification_8 = Notification()
@@ -183,7 +183,7 @@ class TestListAllNotifications:
         }
         _notification_8.created = datetime.strptime(
             "2022/01/08 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/08 09:20:30
         async_db.add(_notification_8)
 
         _notification_9 = Notification()
@@ -203,7 +203,7 @@ class TestListAllNotifications:
         }
         _notification_9.created = datetime.strptime(
             "2022/01/09 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/09 09:20:30
         async_db.add(_notification_9)
 
         _notification_10 = Notification()
@@ -223,8 +223,8 @@ class TestListAllNotifications:
             "amount": 30,
         }
         _notification_10.created = datetime.strptime(
-            "2022/01/09 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+            "2022/01/09 00:20:29", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/09 09:20:29 (notification_10 is started to be created before notification_9)
         async_db.add(_notification_10)
 
         await async_db.commit()
@@ -382,7 +382,7 @@ class TestListAllNotifications:
                         "agent_address": "0x0000000000000000000000000000000000000000",
                         "amount": 30,
                     },
-                    "created": "2022-01-09T09:20:30+09:00",
+                    "created": "2022-01-09T09:20:29+09:00",
                 },
             ],
         }
