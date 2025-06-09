@@ -22,6 +22,7 @@ import json
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
+from enum import StrEnum
 from itertools import groupby
 from typing import Optional, Sequence
 
@@ -63,6 +64,11 @@ UTC = timezone(timedelta(hours=0), "UTC")
 web3 = AsyncWeb3Wrapper()
 
 
+class NotificationEventType(StrEnum):
+    LOCK = "Lock"
+    UNLOCK = "Unlock"
+
+
 class Processor:
     def __init__(self):
         # List of tokens to be synchronized
@@ -71,6 +77,8 @@ class Processor:
         self.init_position_synced: dict[str, bool | None] = {}
         # Exchange addresses
         self.exchange_address_list: list[str] = []
+        # Notification events
+        self.notification_events: list[dict] = []
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -112,15 +120,22 @@ class Processor:
                     block_to=latest_block,
                 )
 
+            # Update the latest block number in IDXPositionShareBlockNumber
             await self.__set_idx_position_block_number(
                 db_session=db_session, block_number=latest_block
             )
+
+            # Insert notification events
+            await self.__insert_notification_events(db_session)
+
             await db_session.commit()
         except Exception as e:
             await db_session.rollback()
             raise e
         finally:
             await db_session.close()
+            self.notification_events = []
+
         LOG.info("Sync job has been completed")
 
     async def __get_contract_list(self, db_session: AsyncSession):
@@ -431,22 +446,14 @@ class Processor:
                     await share_token.get()
                     issuer_address = share_token.issuer_address
                     for event in events:
-                        args = event["args"]
-                        account_address = args.get("accountAddress", "")
-                        lock_address = args.get("lockAddress", "")
-                        value = args.get("value", 0)
-                        data = args.get("data", "")
-                        await self.__sink_on_lock_info_notification(
-                            db_session=db_session,
-                            issuer_address=issuer_address,
-                            token_address=token.address,
-                            token_type=TokenType.IBET_SHARE,
-                            account_address=account_address,
-                            lock_address=lock_address,
-                            value=value,
-                            data_str=data,
+                        self.notification_events.append(
+                            {
+                                "event_type": NotificationEventType.LOCK,
+                                "issuer_address": issuer_address,
+                                "token_address": token.address,
+                                "event_args": event["args"],
+                            }
                         )
-
             except Exception as e:
                 raise e
 
@@ -539,22 +546,14 @@ class Processor:
                     await share_token.get()
                     issuer_address = share_token.issuer_address
                     for event in events:
-                        args = event["args"]
-                        account_address = args.get("accountAddress", "")
-                        lock_address = args.get("lockAddress", "")
-                        value = args.get("value", 0)
-                        data = args.get("data", "")
-                        await self.__sink_on_lock_info_notification(
-                            db_session=db_session,
-                            issuer_address=issuer_address,
-                            token_address=token.address,
-                            token_type=TokenType.IBET_SHARE,
-                            account_address=account_address,
-                            lock_address=lock_address,
-                            value=value,
-                            data_str=data,
+                        self.notification_events.append(
+                            {
+                                "event_type": NotificationEventType.LOCK,
+                                "issuer_address": issuer_address,
+                                "token_address": token.address,
+                                "event_args": event["args"],
+                            }
                         )
-
             except Exception as e:
                 raise e
 
@@ -648,24 +647,14 @@ class Processor:
                     await share_token.get()
                     issuer_address = share_token.issuer_address
                     for event in events:
-                        args = event["args"]
-                        account_address = args.get("accountAddress", "")
-                        lock_address = args.get("lockAddress", "")
-                        recipient_address = args.get("recipientAddress", "")
-                        value = args.get("value", 0)
-                        data = args.get("data", "")
-                        await self.__sink_on_unlock_info_notification(
-                            db_session=db_session,
-                            issuer_address=issuer_address,
-                            token_address=token.address,
-                            token_type=TokenType.IBET_SHARE,
-                            account_address=account_address,
-                            lock_address=lock_address,
-                            recipient_address=recipient_address,
-                            value=value,
-                            data_str=data,
+                        self.notification_events.append(
+                            {
+                                "event_type": NotificationEventType.UNLOCK,
+                                "issuer_address": issuer_address,
+                                "token_address": token.address,
+                                "event_args": event["args"],
+                            }
                         )
-
             except Exception as e:
                 raise e
 
@@ -760,24 +749,14 @@ class Processor:
                     await share_token.get()
                     issuer_address = share_token.issuer_address
                     for event in events:
-                        args = event["args"]
-                        account_address = args.get("accountAddress", "")
-                        lock_address = args.get("lockAddress", "")
-                        recipient_address = args.get("recipientAddress", "")
-                        value = args.get("value", 0)
-                        data = args.get("data", "")
-                        await self.__sink_on_unlock_info_notification(
-                            db_session=db_session,
-                            issuer_address=issuer_address,
-                            token_address=token.address,
-                            token_type=TokenType.IBET_SHARE,
-                            account_address=account_address,
-                            lock_address=lock_address,
-                            recipient_address=recipient_address,
-                            value=value,
-                            data_str=data,
+                        self.notification_events.append(
+                            {
+                                "event_type": NotificationEventType.UNLOCK,
+                                "issuer_address": issuer_address,
+                                "token_address": token.address,
+                                "event_args": event["args"],
+                            }
                         )
-
             except Exception as e:
                 raise e
 
@@ -1536,72 +1515,6 @@ class Processor:
             db_session.add(locked)
 
     @staticmethod
-    async def __sink_on_lock_info_notification(
-        db_session: AsyncSession,
-        issuer_address: str,
-        token_address: str,
-        token_type: str,
-        account_address: str,
-        lock_address: str,
-        value: int,
-        data_str: str,
-    ):
-        try:
-            data = json.loads(data_str)
-        except Exception:
-            data = {}
-
-        notification = Notification()
-        notification.notice_id = str(uuid.uuid4())
-        notification.issuer_address = issuer_address
-        notification.priority = 0  # Low
-        notification.type = NotificationType.LOCK_INFO
-        notification.code = 0
-        notification.metainfo = {
-            "token_address": token_address,
-            "token_type": token_type,
-            "account_address": account_address,
-            "lock_address": lock_address,
-            "value": value,
-            "data": data,
-        }
-        db_session.add(notification)
-
-    @staticmethod
-    async def __sink_on_unlock_info_notification(
-        db_session: AsyncSession,
-        issuer_address: str,
-        token_address: str,
-        token_type: str,
-        account_address: str,
-        lock_address: str,
-        recipient_address: str,
-        value: int,
-        data_str: str,
-    ):
-        try:
-            data = json.loads(data_str)
-        except Exception:
-            data = {}
-
-        notification = Notification()
-        notification.notice_id = str(uuid.uuid4())
-        notification.issuer_address = issuer_address
-        notification.priority = 0  # Low
-        notification.type = NotificationType.UNLOCK_INFO
-        notification.code = 0
-        notification.metainfo = {
-            "token_address": token_address,
-            "token_type": token_type,
-            "account_address": account_address,
-            "lock_address": lock_address,
-            "recipient_address": recipient_address,
-            "value": value,
-            "data": data,
-        }
-        db_session.add(notification)
-
-    @staticmethod
     async def __get_account_balance_all(token_contract, account_address: str):
         """Get balance"""
 
@@ -1706,6 +1619,113 @@ class Processor:
         return datetime.fromtimestamp(
             (await web3.eth.get_block(event["blockNumber"]))["timestamp"], UTC
         )
+
+    async def __insert_notification_events(self, db_session: AsyncSession):
+        """
+        Insert notification events into the database.
+        """
+        for event in self.notification_events:
+            args = event["event_args"]
+            issuer_address = event["issuer_address"]
+            token_address = event["token_address"]
+            if event["event_type"] == NotificationEventType.LOCK:
+                account_address = args.get("accountAddress", "")
+                lock_address = args.get("lockAddress", "")
+                value = args.get("value", 0)
+                data = args.get("data", "")
+                await self.__sink_on_lock_info_notification(
+                    db_session=db_session,
+                    issuer_address=issuer_address,
+                    token_address=token_address,
+                    token_type=TokenType.IBET_SHARE,
+                    account_address=account_address,
+                    lock_address=lock_address,
+                    value=value,
+                    data_str=data,
+                )
+            else:
+                account_address = args.get("accountAddress", "")
+                lock_address = args.get("lockAddress", "")
+                recipient_address = args.get("recipientAddress", "")
+                value = args.get("value", 0)
+                data = args.get("data", "")
+                await self.__sink_on_unlock_info_notification(
+                    db_session=db_session,
+                    issuer_address=issuer_address,
+                    token_address=token_address,
+                    token_type=TokenType.IBET_SHARE,
+                    account_address=account_address,
+                    lock_address=lock_address,
+                    recipient_address=recipient_address,
+                    value=value,
+                    data_str=data,
+                )
+
+    @staticmethod
+    async def __sink_on_lock_info_notification(
+        db_session: AsyncSession,
+        issuer_address: str,
+        token_address: str,
+        token_type: str,
+        account_address: str,
+        lock_address: str,
+        value: int,
+        data_str: str,
+    ):
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        notification = Notification()
+        notification.notice_id = str(uuid.uuid4())
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.LOCK_INFO
+        notification.code = 0
+        notification.metainfo = {
+            "token_address": token_address,
+            "token_type": token_type,
+            "account_address": account_address,
+            "lock_address": lock_address,
+            "value": value,
+            "data": data,
+        }
+        db_session.add(notification)
+
+    @staticmethod
+    async def __sink_on_unlock_info_notification(
+        db_session: AsyncSession,
+        issuer_address: str,
+        token_address: str,
+        token_type: str,
+        account_address: str,
+        lock_address: str,
+        recipient_address: str,
+        value: int,
+        data_str: str,
+    ):
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        notification = Notification()
+        notification.notice_id = str(uuid.uuid4())
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.UNLOCK_INFO
+        notification.code = 0
+        notification.metainfo = {
+            "token_address": token_address,
+            "token_type": token_type,
+            "account_address": account_address,
+            "lock_address": lock_address,
+            "recipient_address": recipient_address,
+            "value": value,
+            "data": data,
+        }
+        db_session.add(notification)
 
 
 async def main():
