@@ -76,6 +76,7 @@ class Processor:
         self.token_list: dict[str, AsyncContractEventsView] = {}
         self.exchange_list: list[AsyncContract] = []
         self.token_type_map: dict[str, TokenType] = {}
+        self.notification_events: list[dict] = []
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -117,12 +118,19 @@ class Processor:
                     block_to=latest_block,
                 )
 
+            # Set the latest block number to IDXTransferApprovalBlockNumber
             await self.__set_idx_transfer_approval_block_number(
                 db_session=db_session, block_number=latest_block
             )
+
+            # Register notifications
+            await self.__insert_notification_events(db_session)
+
             await db_session.commit()
         finally:
             await db_session.close()
+            self.notification_events = []
+
         LOG.info("Sync job has been completed")
 
     async def __get_contract_list(self, db_session: AsyncSession):
@@ -279,13 +287,14 @@ class Processor:
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp,
                         )
-                        await self.__register_notification(
-                            db_session=db_session,
-                            transaction_hash=event["transactionHash"],
-                            token_address=token.address,
-                            exchange_address=ZERO_ADDRESS,
-                            application_id=args.get("index"),
-                            notice_code=0,
+                        self.notification_events.append(
+                            {
+                                "transaction_hash": event["transactionHash"],
+                                "token_address": token.address,
+                                "exchange_address": ZERO_ADDRESS,
+                                "application_id": args.get("index"),
+                                "notice_code": 0,
+                            }
                         )
             except Exception:
                 raise
@@ -321,13 +330,14 @@ class Processor:
                         to_address=args.get("to", ZERO_ADDRESS),
                         block_timestamp=block_timestamp,
                     )
-                    await self.__register_notification(
-                        db_session=db_session,
-                        transaction_hash=event["transactionHash"],
-                        token_address=token.address,
-                        exchange_address=ZERO_ADDRESS,
-                        application_id=args.get("index"),
-                        notice_code=1,
+                    self.notification_events.append(
+                        {
+                            "transaction_hash": event["transactionHash"],
+                            "token_address": token.address,
+                            "exchange_address": ZERO_ADDRESS,
+                            "application_id": args.get("index"),
+                            "notice_code": 1,
+                        }
                     )
             except Exception:
                 raise
@@ -364,13 +374,14 @@ class Processor:
                         optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp,
                     )
-                    await self.__register_notification(
-                        db_session=db_session,
-                        transaction_hash=event["transactionHash"],
-                        token_address=token.address,
-                        exchange_address=ZERO_ADDRESS,
-                        application_id=args.get("index"),
-                        notice_code=2,
+                    self.notification_events.append(
+                        {
+                            "transaction_hash": event["transactionHash"],
+                            "token_address": token.address,
+                            "exchange_address": ZERO_ADDRESS,
+                            "application_id": args.get("index"),
+                            "notice_code": 2,
+                        }
                     )
             except Exception:
                 raise
@@ -412,13 +423,14 @@ class Processor:
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp,
                         )
-                        await self.__register_notification(
-                            db_session=db_session,
-                            transaction_hash=event["transactionHash"],
-                            token_address=args.get("token", ZERO_ADDRESS),
-                            exchange_address=exchange.address,
-                            application_id=args.get("escrowId"),
-                            notice_code=0,
+                        self.notification_events.append(
+                            {
+                                "transaction_hash": event["transactionHash"],
+                                "token_address": args.get("token", ZERO_ADDRESS),
+                                "exchange_address": exchange.address,
+                                "application_id": args.get("escrowId"),
+                                "notice_code": 0,
+                            }
                         )
             except Exception:
                 raise
@@ -454,13 +466,14 @@ class Processor:
                         to_address=args.get("to", ZERO_ADDRESS),
                         block_timestamp=block_timestamp,
                     )
-                    await self.__register_notification(
-                        db_session=db_session,
-                        transaction_hash=event["transactionHash"],
-                        token_address=args.get("token", ZERO_ADDRESS),
-                        exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
-                        notice_code=1,
+                    self.notification_events.append(
+                        {
+                            "transaction_hash": event["transactionHash"],
+                            "token_address": args.get("token", ZERO_ADDRESS),
+                            "exchange_address": exchange.address,
+                            "application_id": args.get("escrowId"),
+                            "notice_code": 1,
+                        }
                     )
             except Exception:
                 raise
@@ -495,13 +508,14 @@ class Processor:
                         from_address=args.get("sender", ZERO_ADDRESS),
                         to_address=args.get("recipient", ZERO_ADDRESS),
                     )
-                    await self.__register_notification(
-                        db_session=db_session,
-                        transaction_hash=event["transactionHash"],
-                        token_address=args.get("token", ZERO_ADDRESS),
-                        exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
-                        notice_code=3,
+                    self.notification_events.append(
+                        {
+                            "transaction_hash": event["transactionHash"],
+                            "token_address": args.get("token", ZERO_ADDRESS),
+                            "exchange_address": exchange.address,
+                            "application_id": args.get("escrowId"),
+                            "notice_code": 3,
+                        }
                     )
             except Exception:
                 raise
@@ -536,80 +550,17 @@ class Processor:
                         optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp,
                     )
-                    await self.__register_notification(
-                        db_session=db_session,
-                        transaction_hash=event["transactionHash"],
-                        token_address=args.get("token", ZERO_ADDRESS),
-                        exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
-                        notice_code=2,
+                    self.notification_events.append(
+                        {
+                            "transaction_hash": event["transactionHash"],
+                            "token_address": args.get("token", ZERO_ADDRESS),
+                            "exchange_address": exchange.address,
+                            "application_id": args.get("escrowId"),
+                            "notice_code": 2,
+                        }
                     )
             except Exception:
                 raise
-
-    async def __register_notification(
-        self,
-        db_session: AsyncSession,
-        transaction_hash,
-        token_address,
-        exchange_address,
-        application_id,
-        notice_code,
-    ):
-        # Get IDXTransferApproval's Sequence Id
-        transfer_approval: IDXTransferApproval | None = (
-            await db_session.scalars(
-                select(IDXTransferApproval)
-                .where(
-                    and_(
-                        IDXTransferApproval.token_address == token_address,
-                        IDXTransferApproval.exchange_address == exchange_address,
-                        IDXTransferApproval.application_id == application_id,
-                    )
-                )
-                .limit(1)
-            )
-        ).first()
-        if transfer_approval is not None:
-            # Get issuer address
-            token: Token | None = (
-                await db_session.scalars(
-                    select(Token).where(Token.token_address == token_address).limit(1)
-                )
-            ).first()
-            sender = (await web3.eth.get_transaction(transaction_hash))["from"]
-            if token is not None:
-                if token.issuer_address != sender:  # Operate from other than issuer
-                    if notice_code == 0:  # ApplyForTransfer
-                        await self.__sink_on_info_notification(
-                            db_session=db_session,
-                            issuer_address=token.issuer_address,
-                            code=notice_code,
-                            token_address=token_address,
-                            token_type=token.type,
-                            id=transfer_approval.id,
-                        )
-                    elif (
-                        notice_code == 1 or notice_code == 3
-                    ):  # CancelTransfer or EscrowFinished
-                        await self.__sink_on_info_notification(
-                            db_session=db_session,
-                            issuer_address=token.issuer_address,
-                            code=notice_code,
-                            token_address=token_address,
-                            token_type=token.type,
-                            id=transfer_approval.id,
-                        )
-                else:  # Operate from issuer
-                    if notice_code == 2:  # ApproveTransfer
-                        await self.__sink_on_info_notification(
-                            db_session=db_session,
-                            issuer_address=token.issuer_address,
-                            code=notice_code,
-                            token_address=token_address,
-                            token_type=token.type,
-                            id=transfer_approval.id,
-                        )
 
     @staticmethod
     async def __get_block_timestamp(event) -> int:
@@ -720,6 +671,85 @@ class Processor:
             "id": id,
         }
         db_session.add(notification)
+
+    async def __insert_notification_events(self, db_session: AsyncSession):
+        """
+        Insert notification events into the database.
+        """
+        for event in self.notification_events:
+            await self.__register_notification(
+                db_session=db_session,
+                transaction_hash=event["transaction_hash"],
+                token_address=event["token_address"],
+                exchange_address=event["exchange_address"],
+                application_id=event["application_id"],
+                notice_code=event["notice_code"],
+            )
+
+    async def __register_notification(
+        self,
+        db_session: AsyncSession,
+        transaction_hash,
+        token_address,
+        exchange_address,
+        application_id,
+        notice_code,
+    ):
+        transfer_approval: IDXTransferApproval | None = (
+            await db_session.scalars(
+                select(IDXTransferApproval)
+                .where(
+                    and_(
+                        IDXTransferApproval.token_address == token_address,
+                        IDXTransferApproval.exchange_address == exchange_address,
+                        IDXTransferApproval.application_id == application_id,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+        if transfer_approval is not None:
+            # Retrieve issuer address
+            token: Token | None = (
+                await db_session.scalars(
+                    select(Token).where(Token.token_address == token_address).limit(1)
+                )
+            ).first()
+            sender = (await web3.eth.get_transaction(transaction_hash))["from"]
+            if token is not None:
+                if (
+                    token.issuer_address != sender
+                ):  # Operated by someone other than the issuer
+                    if notice_code == 0:  # ApplyForTransfer
+                        await self.__sink_on_info_notification(
+                            db_session=db_session,
+                            issuer_address=token.issuer_address,
+                            code=notice_code,
+                            token_address=token_address,
+                            token_type=token.type,
+                            id=transfer_approval.id,
+                        )
+                    elif (
+                        notice_code == 1 or notice_code == 3
+                    ):  # CancelTransfer or EscrowFinished
+                        await self.__sink_on_info_notification(
+                            db_session=db_session,
+                            issuer_address=token.issuer_address,
+                            code=notice_code,
+                            token_address=token_address,
+                            token_type=token.type,
+                            id=transfer_approval.id,
+                        )
+                else:  # Operated by the issuer
+                    if notice_code == 2:  # ApproveTransfer
+                        await self.__sink_on_info_notification(
+                            db_session=db_session,
+                            issuer_address=token.issuer_address,
+                            code=notice_code,
+                            token_address=token_address,
+                            token_type=token.type,
+                            id=transfer_approval.id,
+                        )
 
 
 async def main():

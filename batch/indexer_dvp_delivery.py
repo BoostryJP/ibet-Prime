@@ -87,6 +87,7 @@ class Processor:
     def __init__(self):
         self.token_list: list[str] = []
         self.exchange_list: list[AsyncContract] = []
+        self.notification_events: list[dict] = []
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -132,14 +133,21 @@ class Processor:
                         exchange=contract,
                     )
 
+                # Set the latest block number to IDXDeliveryBlockNumber
                 await self.__set_idx_delivery_block_number(
                     db_session=db_session,
                     exchange_address=contract.address,
                     block_number=latest_block,
                 )
+
+                # Insert notification events
+                await self.__insert_notification_events(db_session)
+
                 await db_session.commit()
         finally:
             await db_session.close()
+            self.notification_events = []
+
         LOG.info("Sync job has been completed")
 
     async def __get_contract_list(self, db_session: AsyncSession):
@@ -262,21 +270,11 @@ class Processor:
         LOG.info(
             f"Syncing from={block_from}, to={block_to}, exchange={exchange.address}"
         )
-        await self.__sync_delivery_created(
-            db_session, block_from, block_to, exchange=exchange
-        )
-        await self.__sync_delivery_canceled(
-            db_session, block_from, block_to, exchange=exchange
-        )
-        await self.__sync_delivery_confirmed(
-            db_session, block_from, block_to, exchange=exchange
-        )
-        await self.__sync_delivery_finished(
-            db_session, block_from, block_to, exchange=exchange
-        )
-        await self.__sync_delivery_aborted(
-            db_session, block_from, block_to, exchange=exchange
-        )
+        await self.__sync_delivery_created(db_session, block_from, block_to, exchange)
+        await self.__sync_delivery_canceled(db_session, block_from, block_to, exchange)
+        await self.__sync_delivery_confirmed(db_session, block_from, block_to, exchange)
+        await self.__sync_delivery_finished(db_session, block_from, block_to, exchange)
+        await self.__sync_delivery_aborted(db_session, block_from, block_to, exchange)
 
     async def __sync_delivery_created(
         self,
@@ -457,18 +455,19 @@ class Processor:
                 issuer_address, token_type = await self.__get_issuer_address_token_type(
                     db_session=db_session, token_address=args.get("token", ZERO_ADDRESS)
                 )
-                await self.__sink_on_delivery_info_notification(
-                    db_session=db_session,
-                    exchange_address=exchange.address,
-                    delivery_id=args.get("deliveryId"),
-                    issuer_address=issuer_address,
-                    token_address=args.get("token", ZERO_ADDRESS),
-                    token_type=token_type,
-                    buyer_address=args.get("buyer", ZERO_ADDRESS),
-                    seller_address=args.get("seller", ZERO_ADDRESS),
-                    amount=amount,
-                    agent_address=args.get("agent", ZERO_ADDRESS),
-                    code=0,  # deliveryConfirmed
+                self.notification_events.append(
+                    {
+                        "exchange_address": exchange.address,
+                        "delivery_id": args.get("deliveryId"),
+                        "issuer_address": issuer_address,
+                        "token_address": args.get("token", ZERO_ADDRESS),
+                        "token_type": token_type,
+                        "buyer_address": args.get("buyer", ZERO_ADDRESS),
+                        "seller_address": args.get("seller", ZERO_ADDRESS),
+                        "amount": amount,
+                        "agent_address": args.get("agent", ZERO_ADDRESS),
+                        "code": 0,  # deliveryConfirmed
+                    }
                 )
         except Exception:
             raise
@@ -517,18 +516,19 @@ class Processor:
                 issuer_address, token_type = await self.__get_issuer_address_token_type(
                     db_session=db_session, token_address=args.get("token", ZERO_ADDRESS)
                 )
-                await self.__sink_on_delivery_info_notification(
-                    db_session=db_session,
-                    exchange_address=exchange.address,
-                    delivery_id=args.get("deliveryId"),
-                    issuer_address=issuer_address,
-                    token_address=args.get("token", ZERO_ADDRESS),
-                    token_type=token_type,
-                    buyer_address=args.get("buyer", ZERO_ADDRESS),
-                    seller_address=args.get("seller", ZERO_ADDRESS),
-                    amount=amount,
-                    agent_address=args.get("agent", ZERO_ADDRESS),
-                    code=1,  # deliveryFinished
+                self.notification_events.append(
+                    {
+                        "exchange_address": exchange.address,
+                        "delivery_id": args.get("deliveryId"),
+                        "issuer_address": issuer_address,
+                        "token_address": args.get("token", ZERO_ADDRESS),
+                        "token_type": token_type,
+                        "buyer_address": args.get("buyer", ZERO_ADDRESS),
+                        "seller_address": args.get("seller", ZERO_ADDRESS),
+                        "amount": amount,
+                        "agent_address": args.get("agent", ZERO_ADDRESS),
+                        "code": 1,  # deliveryFinished
+                    }
                 )
         except Exception:
             raise
@@ -783,6 +783,25 @@ class Processor:
             .first()
         )
         return issuer_address, token_type
+
+    async def __insert_notification_events(self, db_session: AsyncSession):
+        """
+        Insert notification events into the database.
+        """
+        for event in self.notification_events:
+            await self.__sink_on_delivery_info_notification(
+                db_session=db_session,
+                exchange_address=event["exchange_address"],
+                delivery_id=event["delivery_id"],
+                issuer_address=event["issuer_address"],
+                token_address=event["token_address"],
+                token_type=event["token_type"],
+                buyer_address=event["buyer_address"],
+                seller_address=event["seller_address"],
+                amount=event["amount"],
+                agent_address=event["agent_address"],
+                code=event["code"],
+            )
 
     @staticmethod
     async def __sink_on_delivery_info_notification(
