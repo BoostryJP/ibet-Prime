@@ -295,6 +295,30 @@ class Processor:
                     }
                 )
 
+        # Get "ForceChangeLockedAccount" events from token contract
+        token_force_change_locked_account_events = (
+            await AsyncContractUtils.get_event_logs(
+                contract=token_contract,
+                event="ForceChangeLockedAccount",
+                block_from=block_from,
+                block_to=block_to,
+            )
+        )
+        for _event in token_force_change_locked_account_events:
+            if (
+                _event["args"]["beforeAccountAddress"]
+                != _event["args"]["afterAccountAddress"]
+            ):
+                tmp_events.append(
+                    {
+                        "event": _event["event"],
+                        "args": dict(_event["args"]),
+                        "transaction_hash": _event["transactionHash"].to_0x_hex(),
+                        "block_number": _event["blockNumber"],
+                        "log_index": _event["logIndex"],
+                    }
+                )
+
         # Marge & Sort: block_number > log_index
         events = sorted(tmp_events, key=lambda x: (x["block_number"], x["log_index"]))
 
@@ -305,6 +329,10 @@ class Processor:
             if event["event"] in ["Unlock", "ForceUnlock"]:
                 from_account = args.get("accountAddress", ZERO_ADDRESS)
                 to_account = args.get("recipientAddress", ZERO_ADDRESS)
+                amount = args.get("value")
+            elif event["event"] == "ForceChangeLockedAccount":
+                from_account = args.get("beforeAccountAddress", ZERO_ADDRESS)
+                to_account = args.get("afterAccountAddress", ZERO_ADDRESS)
                 amount = args.get("value")
             else:
                 from_account = args.get("from", ZERO_ADDRESS)

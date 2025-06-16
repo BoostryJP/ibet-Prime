@@ -72,3 +72,11 @@ class ForceUnlockParams(BaseModel):
     recipient_address: EthereumAddress
     value: PositiveInt
     data: str
+
+
+class ForceChangeLockedAccountParams(BaseModel):
+    lock_address: EthereumAddress
+    before_account_address: EthereumAddress
+    after_account_address: EthereumAddress
+    value: PositiveInt
+    data: str

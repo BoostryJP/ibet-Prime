@@ -31,6 +31,7 @@ from web3.middleware import ExtraDataToPOAMiddleware
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
     AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    ForceChangeLockedAccountParams as IbetShareForceChangeLockedAccountParams,
     ForcedTransferParams as IbetShareTransferParams,
     ForceUnlockPrams as IbetShareForceUnlockParams,
     LockParams as IbetShareLockParams,
@@ -39,6 +40,7 @@ from app.model.blockchain.tx_params.ibet_share import (
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    ForceChangeLockedAccountParams as IbetStraightBondForceChangeLockedAccountParams,
     ForcedTransferParams as IbetStraightBondTransferParams,
     LockParams as IbetStraightBondLockParams,
     RedeemParams as IbetStraightBondRedeemParams,
@@ -339,30 +341,29 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         _transfer = IbetStraightBondTransferParams(
             from_address=user_address_1, to_address=user_address_2, amount=10
         )
         await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         await IbetStraightBondContract(token_address_1).forced_transfer(
             _transfer, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Execute batch
         await processor.process()
@@ -845,7 +846,6 @@ class TestProcessor:
         await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Bond
         _additional_issue_2 = IbetStraightBondAdditionalIssueParams(
@@ -854,7 +854,6 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
@@ -935,14 +934,13 @@ class TestProcessor:
         await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         _additional_issue_2 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=20
         )
         await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Bond
         _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
@@ -951,14 +949,13 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_3, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=40
         )
         await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_4, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Before execute
         await processor.process()
@@ -993,7 +990,6 @@ class TestProcessor:
         await IbetShareContract(token_address_1).redeem(
             _redeem_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Bond
         _redeem_2 = IbetStraightBondRedeemParams(
@@ -1002,7 +998,6 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).redeem(
             _redeem_2, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
@@ -1097,14 +1092,13 @@ class TestProcessor:
         await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         _additional_issue_2 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=20
         )
         await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Bond
         _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
@@ -1113,14 +1107,13 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_3, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=40
         )
         await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_4, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Before execute
         await processor.process()
@@ -1157,7 +1150,6 @@ class TestProcessor:
         await IbetShareContract(token_address_1).lock(
             _lock_1, user_address_1, user_pk_1
         )
-        time.sleep(1)
 
         _unlock_1 = IbetShareForceUnlockParams(
             lock_address=lock_address,
@@ -1169,7 +1161,6 @@ class TestProcessor:
         await IbetShareContract(token_address_1).force_unlock(
             _unlock_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Bond
         _lock_2 = IbetStraightBondLockParams(
@@ -1178,7 +1169,6 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).lock(
             _lock_2, user_address_2, user_pk_2
         )
-        time.sleep(1)
 
         _unlock_2 = IbetShareForceUnlockParams(
             lock_address=lock_address,
@@ -1190,7 +1180,6 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).force_unlock(
             _unlock_2, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
@@ -1293,14 +1282,13 @@ class TestProcessor:
         await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         _additional_issue_2 = IbetShareAdditionalIssueParams(
             account_address=user_address_1, amount=20
         )
         await IbetShareContract(token_address_1).additional_issue(
             _additional_issue_2, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Bond
         _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
@@ -1309,14 +1297,13 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_3, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
         _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2, amount=40
         )
         await IbetStraightBondContract(token_address_2).additional_issue(
             _additional_issue_4, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Before execute
         await processor.process()
@@ -1353,7 +1340,6 @@ class TestProcessor:
         await IbetShareContract(token_address_1).lock(
             _lock_1, user_address_1, user_pk_1
         )
-        time.sleep(1)
 
         _unlock_1 = IbetShareForceUnlockParams(
             lock_address=lock_address,
@@ -1365,7 +1351,6 @@ class TestProcessor:
         await IbetShareContract(token_address_1).force_unlock(
             _unlock_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Bond
         _lock_2 = IbetStraightBondLockParams(
@@ -1374,7 +1359,6 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).lock(
             _lock_2, user_address_2, user_pk_2
         )
-        time.sleep(1)
 
         _unlock_2 = IbetShareForceUnlockParams(
             lock_address=lock_address,
@@ -1386,7 +1370,6 @@ class TestProcessor:
         await IbetStraightBondContract(token_address_2).force_unlock(
             _unlock_2, issuer_address, issuer_private_key
         )
-        time.sleep(1)
 
         # Execute batch
         latest_block = web3.eth.block_number
@@ -1559,6 +1542,374 @@ class TestProcessor:
         assert _utxo.transaction_hash is not None
         assert _utxo.token_address == token_address_1
         assert _utxo.amount == 0
+
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
+        assert _utxo_block_number.latest_block_number == latest_block
+
+    # <Normal_10_1>
+    # ForceChangeLockedAccount(beforeAccountAddress!=afterAccountAddress)
+    async def test_normal_10_1(self, processor, async_db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_4 = config_eth_account("user4")
+        lock_address = user_4["address"]
+
+        # prepare data
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_25_06
+        async_db.add(_token_1)
+
+        token_address_2 = await deploy_share_token_contract(
+            issuer_address, issuer_private_key
+        )
+        _token_2 = Token()
+        _token_2.type = TokenType.IBET_SHARE
+        _token_2.tx_hash = ""
+        _token_2.issuer_address = issuer_address
+        _token_2.token_address = token_address_2
+        _token_2.abi = {}
+        _token_2.version = TokenVersion.V_25_06
+        async_db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # Emit Issue Event (Share)
+        # - Additional Issue to user1: 10, 20
+        _additional_issue_1 = IbetShareAdditionalIssueParams(
+            account_address=user_address_1, amount=10
+        )
+        await IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_1, issuer_address, issuer_private_key
+        )
+        _additional_issue_2 = IbetShareAdditionalIssueParams(
+            account_address=user_address_1, amount=20
+        )
+        await IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_2, issuer_address, issuer_private_key
+        )
+
+        # Emit Issue Event (Bond)
+        # - Additional Issue to user2: 30, 40
+        _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
+            account_address=user_address_2, amount=30
+        )
+        await IbetStraightBondContract(token_address_2).additional_issue(
+            _additional_issue_3, issuer_address, issuer_private_key
+        )
+        _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
+            account_address=user_address_2, amount=40
+        )
+        await IbetStraightBondContract(token_address_2).additional_issue(
+            _additional_issue_4, issuer_address, issuer_private_key
+        )
+
+        # Before execute
+        await processor.process()
+        async_db.expire_all()
+
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 30
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 40
+
+        # Emit ForceChangeLockedAccount Event (Share)
+        # - Lock user1's 5 shares and change locked account to user2
+        _lock_1 = IbetShareLockParams(
+            lock_address=lock_address, value=5, data=json.dumps({})
+        )
+        await IbetShareContract(token_address_1).lock(
+            _lock_1, user_address_1, user_pk_1
+        )
+        _force_change_1 = IbetShareForceChangeLockedAccountParams(
+            lock_address=lock_address,
+            before_account_address=user_address_1,
+            after_account_address=user_address_2,
+            value=5,
+            data=json.dumps({}),
+        )
+        await IbetShareContract(token_address_1).force_change_locked_account(
+            _force_change_1, issuer_address, issuer_private_key
+        )
+
+        # Emit ForceChangeLockedAccount Event (Bond)
+        # - Lock user2's 10 bonds and change locked account to user1
+        _lock_2 = IbetStraightBondLockParams(
+            lock_address=lock_address, value=10, data=json.dumps({})
+        )
+        await IbetStraightBondContract(token_address_2).lock(
+            _lock_2, user_address_2, user_pk_2
+        )
+        _force_change_2 = IbetStraightBondForceChangeLockedAccountParams(
+            lock_address=lock_address,
+            before_account_address=user_address_2,
+            after_account_address=user_address_1,
+            value=10,
+            data=json.dumps({}),
+        )
+        await IbetStraightBondContract(token_address_2).force_change_locked_account(
+            _force_change_2, issuer_address, issuer_private_key
+        )
+
+        # Execute batch
+        latest_block = web3.eth.block_number
+        await processor.process()
+        async_db.expire_all()
+
+        # assertion
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
+        assert len(_utxo_list) == 6
+        _utxo = _utxo_list[0]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 5
+        _utxo = _utxo_list[1]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        _utxo = _utxo_list[2]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 20
+        _utxo = _utxo_list[3]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 40
+        _utxo = _utxo_list[4]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 5
+        _utxo = _utxo_list[5]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 10
+
+        _utxo_block_number = (
+            await async_db.scalars(select(UTXOBlockNumber).limit(1))
+        ).first()
+        assert _utxo_block_number.latest_block_number == latest_block
+
+    # <Normal_10_2>
+    # ForceChangeLockedAccount(beforeAccountAddress==afterAccountAddress)
+    async def test_normal_10_2(self, processor, async_db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_4 = config_eth_account("user4")
+        lock_address = user_4["address"]
+
+        # prepare data
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_25_06
+        async_db.add(_token_1)
+
+        token_address_2 = await deploy_share_token_contract(
+            issuer_address, issuer_private_key
+        )
+        _token_2 = Token()
+        _token_2.type = TokenType.IBET_SHARE
+        _token_2.tx_hash = ""
+        _token_2.issuer_address = issuer_address
+        _token_2.token_address = token_address_2
+        _token_2.abi = {}
+        _token_2.version = TokenVersion.V_25_06
+        async_db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # Emit Issue Event (Share)
+        # - Additional Issue to user1: 10, 20
+        _additional_issue_1 = IbetShareAdditionalIssueParams(
+            account_address=user_address_1, amount=10
+        )
+        await IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_1, issuer_address, issuer_private_key
+        )
+        _additional_issue_2 = IbetShareAdditionalIssueParams(
+            account_address=user_address_1, amount=20
+        )
+        await IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_2, issuer_address, issuer_private_key
+        )
+
+        # Emit Issue Event (Bond)
+        # - Additional Issue to user2: 30, 40
+        _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
+            account_address=user_address_2, amount=30
+        )
+        await IbetStraightBondContract(token_address_2).additional_issue(
+            _additional_issue_3, issuer_address, issuer_private_key
+        )
+        _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
+            account_address=user_address_2, amount=40
+        )
+        await IbetStraightBondContract(token_address_2).additional_issue(
+            _additional_issue_4, issuer_address, issuer_private_key
+        )
+
+        # Before execute
+        await processor.process()
+        async_db.expire_all()
+
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 30
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 40
+
+        # Emit ForceChangeLockedAccount Event (Share)
+        # - Lock user1's 5 shares and change locked account to user1
+        _lock_1 = IbetShareLockParams(
+            lock_address=lock_address, value=5, data=json.dumps({})
+        )
+        await IbetShareContract(token_address_1).lock(
+            _lock_1, user_address_1, user_pk_1
+        )
+
+        _force_change_1 = IbetShareForceChangeLockedAccountParams(
+            lock_address=lock_address,
+            before_account_address=user_address_1,
+            after_account_address=user_address_1,
+            value=5,
+            data=json.dumps({}),
+        )
+        await IbetShareContract(token_address_1).force_change_locked_account(
+            _force_change_1, issuer_address, issuer_private_key
+        )
+
+        # Emit ForceChangeLockedAccount Event (Bond)
+        # - Lock user2's 10 bonds and change locked account to user2
+        _lock_2 = IbetStraightBondLockParams(
+            lock_address=lock_address, value=10, data=json.dumps({})
+        )
+        await IbetStraightBondContract(token_address_2).lock(
+            _lock_2, user_address_2, user_pk_2
+        )
+
+        _force_change_2 = IbetStraightBondForceChangeLockedAccountParams(
+            lock_address=lock_address,
+            before_account_address=user_address_2,
+            after_account_address=user_address_2,
+            value=10,
+            data=json.dumps({}),
+        )
+        await IbetStraightBondContract(token_address_2).force_change_locked_account(
+            _force_change_2, issuer_address, issuer_private_key
+        )
+
+        # Execute batch
+        latest_block = web3.eth.block_number
+        await processor.process()
+        async_db.expire_all()
+
+        # assertion
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        _utxo = _utxo_list[1]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        _utxo = _utxo_list[2]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 30
+        _utxo = _utxo_list[3]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 40
 
         _utxo_block_number = (
             await async_db.scalars(select(UTXOBlockNumber).limit(1))

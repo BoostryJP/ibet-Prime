@@ -28,6 +28,7 @@ from typing import Optional, Sequence
 
 import uvloop
 from eth_utils import to_checksum_address
+from pydantic import BaseModel
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,6 +70,21 @@ class NotificationEventType(StrEnum):
     UNLOCK = "Unlock"
 
 
+class NotificationEventArgs(BaseModel):
+    account_address: str
+    lock_address: str
+    recipient_address: Optional[str] = None
+    value: int
+    data: str
+
+
+class NotificationEvent(BaseModel):
+    event_type: NotificationEventType
+    issuer_address: str
+    token_address: str
+    event_args: NotificationEventArgs
+
+
 class Processor:
     def __init__(self):
         # List of tokens to be synchronized
@@ -78,7 +94,7 @@ class Processor:
         # Exchange addresses
         self.exchange_address_list: list[str] = []
         # Notification events
-        self.notification_events: list[dict] = []
+        self.notification_events: list[NotificationEvent] = []
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -238,6 +254,7 @@ class Processor:
         await self.__sync_force_lock(db_session, block_from, block_to)
         await self.__sync_unlock(db_session, block_from, block_to)
         await self.__sync_force_unlock(db_session, block_from, block_to)
+        await self.__sync_force_change_locked_account(db_session, block_from, block_to)
         await self.__sync_redeem(db_session, block_from, block_to)
         await self.__sync_apply_for_transfer(db_session, block_from, block_to)
         await self.__sync_cancel_transfer(db_session, block_from, block_to)
@@ -446,13 +463,19 @@ class Processor:
                     await bond_token.get()
                     issuer_address = bond_token.issuer_address
                     for event in events:
+                        args = event["args"]
                         self.notification_events.append(
-                            {
-                                "event_type": NotificationEventType.LOCK,
-                                "issuer_address": issuer_address,
-                                "token_address": token.address,
-                                "event_args": event["args"],
-                            }
+                            NotificationEvent(
+                                event_type=NotificationEventType.LOCK,
+                                issuer_address=issuer_address,
+                                token_address=token.address,
+                                event_args=NotificationEventArgs(
+                                    account_address=args.get("accountAddress", ""),
+                                    lock_address=args.get("lockAddress", ""),
+                                    value=args.get("value", 0),
+                                    data=args.get("data", ""),
+                                ),
+                            )
                         )
             except Exception as e:
                 raise e
@@ -546,13 +569,19 @@ class Processor:
                     await bond_token.get()
                     issuer_address = bond_token.issuer_address
                     for event in events:
+                        args = event["args"]
                         self.notification_events.append(
-                            {
-                                "event_type": NotificationEventType.LOCK,
-                                "issuer_address": issuer_address,
-                                "token_address": token.address,
-                                "event_args": event["args"],
-                            }
+                            NotificationEvent(
+                                event_type=NotificationEventType.LOCK,
+                                issuer_address=issuer_address,
+                                token_address=token.address,
+                                event_args=NotificationEventArgs(
+                                    account_address=args.get("accountAddress", ""),
+                                    lock_address=args.get("lockAddress", ""),
+                                    value=args.get("value", 0),
+                                    data=args.get("data", ""),
+                                ),
+                            )
                         )
             except Exception as e:
                 raise e
@@ -647,13 +676,20 @@ class Processor:
                     await bond_token.get()
                     issuer_address = bond_token.issuer_address
                     for event in events:
+                        args = event["args"]
                         self.notification_events.append(
-                            {
-                                "event_type": NotificationEventType.UNLOCK,
-                                "issuer_address": issuer_address,
-                                "token_address": token.address,
-                                "event_args": event["args"],
-                            }
+                            NotificationEvent(
+                                event_type=NotificationEventType.UNLOCK,
+                                issuer_address=issuer_address,
+                                token_address=token.address,
+                                event_args=NotificationEventArgs(
+                                    account_address=args.get("accountAddress", ""),
+                                    lock_address=args.get("lockAddress", ""),
+                                    recipient_address=args.get("recipientAddress", ""),
+                                    value=args.get("value", 0),
+                                    data=args.get("data", ""),
+                                ),
+                            )
                         )
             except Exception as e:
                 raise e
@@ -749,13 +785,148 @@ class Processor:
                     await bond_token.get()
                     issuer_address = bond_token.issuer_address
                     for event in events:
+                        args = event["args"]
                         self.notification_events.append(
-                            {
-                                "event_type": NotificationEventType.UNLOCK,
-                                "issuer_address": issuer_address,
-                                "token_address": token.address,
-                                "event_args": event["args"],
-                            }
+                            NotificationEvent(
+                                event_type=NotificationEventType.UNLOCK,
+                                issuer_address=issuer_address,
+                                token_address=token.address,
+                                event_args=NotificationEventArgs(
+                                    account_address=args.get("accountAddress", ""),
+                                    lock_address=args.get("lockAddress", ""),
+                                    recipient_address=args.get("recipientAddress", ""),
+                                    value=args.get("value", 0),
+                                    data=args.get("data", ""),
+                                ),
+                            )
+                        )
+            except Exception as e:
+                raise e
+
+    async def __sync_force_change_locked_account(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
+        """Synchronize ForceChangeLockedAccount events
+
+        :param db_session: database session
+        :param block_from: from block number
+        :param block_to: to block number
+        :return: None
+        """
+        for token in self.token_list.values():
+            try:
+                events = await AsyncContractUtils.get_event_logs(
+                    contract=token,
+                    event="ForceChangeLockedAccount",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+                try:
+                    lock_map: dict[str, dict[str, True]] = {}
+                    # Insert Lock and Unlock indexes
+                    for event in events:
+                        args = event["args"]
+                        lock_address = args.get("lockAddress", "")
+                        before_account = args.get("beforeAccountAddress", "")
+                        after_account = args.get("afterAccountAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        event_created = await self.__gen_block_timestamp(event=event)
+                        tx = await web3.eth.get_transaction(event["transactionHash"])
+                        msg_sender = tx["from"]
+
+                        # Index Unlock event
+                        # - Set after_account as recipient
+                        await self.__insert_unlock_idx(
+                            db_session=db_session,
+                            transaction_hash=event["transactionHash"].to_0x_hex(),
+                            msg_sender=msg_sender,
+                            block_number=event["blockNumber"],
+                            token_address=token.address,
+                            lock_address=lock_address,
+                            account_address=before_account,
+                            recipient_address=after_account,
+                            value=value,
+                            data_str=data,
+                            block_timestamp=event_created,
+                            is_forced=True,
+                        )
+
+                        # Index Lock event
+                        await self.__insert_lock_idx(
+                            db_session=db_session,
+                            transaction_hash=event["transactionHash"].to_0x_hex(),
+                            msg_sender=msg_sender,
+                            block_number=event["blockNumber"],
+                            token_address=token.address,
+                            lock_address=lock_address,
+                            account_address=after_account,
+                            value=value,
+                            data_str=data,
+                            block_timestamp=event_created,
+                            is_forced=True,
+                        )
+
+                        if lock_address not in lock_map:
+                            lock_map[lock_address] = {}
+                        lock_map[lock_address][before_account] = True
+                        lock_map[lock_address][after_account] = True
+
+                    # Update locked positions
+                    for lock_address in lock_map:
+                        for account_address in lock_map[lock_address]:
+                            value = await self.__get_account_locked_token(
+                                token_contract=token,
+                                lock_address=lock_address,
+                                account_address=account_address,
+                            )
+                            await self.__sink_on_locked_position(
+                                db_session=db_session,
+                                token_address=to_checksum_address(token.address),
+                                lock_address=lock_address,
+                                account_address=account_address,
+                                value=value,
+                            )
+                except Exception:
+                    pass
+
+                # Insert Notification
+                if len(events) > 0:
+                    bond_token = IbetStraightBondContract(token.address)
+                    await bond_token.get()
+                    issuer_address = bond_token.issuer_address
+                    for event in events:
+                        args = event["args"]
+                        self.notification_events.append(
+                            NotificationEvent(
+                                event_type=NotificationEventType.UNLOCK,
+                                issuer_address=issuer_address,
+                                token_address=token.address,
+                                event_args=NotificationEventArgs(
+                                    account_address=args.get(
+                                        "beforeAccountAddress", ""
+                                    ),
+                                    lock_address=args.get("lockAddress", ""),
+                                    recipient_address=args.get(
+                                        "afterAccountAddress", ""
+                                    ),
+                                    value=args.get("value", 0),
+                                    data=args.get("data", ""),
+                                ),
+                            )
+                        )
+                        self.notification_events.append(
+                            NotificationEvent(
+                                event_type=NotificationEventType.LOCK,
+                                issuer_address=issuer_address,
+                                token_address=token.address,
+                                event_args=NotificationEventArgs(
+                                    account_address=args.get("afterAccountAddress", ""),
+                                    lock_address=args.get("lockAddress", ""),
+                                    value=args.get("value", 0),
+                                    data=args.get("data", ""),
+                                ),
+                            )
                         )
             except Exception as e:
                 raise e
@@ -1485,7 +1656,7 @@ class Processor:
 
         :param db_session: ORM session
         :param token_address: token address
-        :param lock_address: account address
+        :param lock_address: lock address
         :param account_address: account address
         :param value: updated locked amount
         :return: None
@@ -1625,40 +1796,28 @@ class Processor:
         Insert notification events into the database.
         """
         for event in self.notification_events:
-            args = event["event_args"]
-            issuer_address = event["issuer_address"]
-            token_address = event["token_address"]
-            if event["event_type"] == NotificationEventType.LOCK:
-                account_address = args.get("accountAddress", "")
-                lock_address = args.get("lockAddress", "")
-                value = args.get("value", 0)
-                data = args.get("data", "")
+            if event.event_type == NotificationEventType.LOCK:
                 await self.__sink_on_lock_info_notification(
                     db_session=db_session,
-                    issuer_address=issuer_address,
-                    token_address=token_address,
+                    issuer_address=event.issuer_address,
+                    token_address=event.token_address,
                     token_type=TokenType.IBET_STRAIGHT_BOND,
-                    account_address=account_address,
-                    lock_address=lock_address,
-                    value=value,
-                    data_str=data,
+                    account_address=event.event_args.account_address,
+                    lock_address=event.event_args.lock_address,
+                    value=event.event_args.value,
+                    data_str=event.event_args.data,
                 )
             else:
-                account_address = args.get("accountAddress", "")
-                lock_address = args.get("lockAddress", "")
-                recipient_address = args.get("recipientAddress", "")
-                value = args.get("value", 0)
-                data = args.get("data", "")
                 await self.__sink_on_unlock_info_notification(
                     db_session=db_session,
-                    issuer_address=issuer_address,
-                    token_address=token_address,
+                    issuer_address=event.issuer_address,
+                    token_address=event.token_address,
                     token_type=TokenType.IBET_STRAIGHT_BOND,
-                    account_address=account_address,
-                    lock_address=lock_address,
-                    recipient_address=recipient_address,
-                    value=value,
-                    data_str=data,
+                    account_address=event.event_args.account_address,
+                    lock_address=event.event_args.lock_address,
+                    recipient_address=event.event_args.recipient_address,
+                    value=event.event_args.value,
+                    data_str=event.event_args.data,
                 )
 
     @staticmethod

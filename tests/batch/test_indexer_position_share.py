@@ -4242,6 +4242,236 @@ class TestProcessor:
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
+    # <Normal_2_12>
+    # Single Token
+    # Single event logs
+    # - ForceChangeLockedAccount
+    @pytest.mark.asyncio
+    async def test_normal_2_12(
+        self, processor: Processor, async_db, personal_info_contract
+    ):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        after_locked_account = config_eth_account("user3")
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        # Prepare data : Token
+        token_contract_1 = await deploy_share_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
+        token_address_1 = token_contract_1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_SHARE
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract_1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_25_06
+        async_db.add(token_1)
+
+        await async_db.commit()
+
+        # Lock
+        # - lock issuer's balance to lock_account
+        # - Tx is executed by token holder
+        tx = token_contract_1.functions.lock(
+            lock_account["address"], 40, '{"message": "lock"}'
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # ForceChangeLockedAccount
+        # - change locked account to after_locked_account
+        # - Tx is executed by token issuer
+        tx = token_contract_1.functions.forceChangeLockedAccount(
+            lock_account["address"],
+            issuer_address,
+            after_locked_account["address"],
+            30,
+            '{"message": "force_changed"}',
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # Run target process
+        block_number = web3.eth.block_number
+        await processor.sync_new_logs()
+        async_db.expire_all()
+
+        # Assertion
+        position_before_account = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == issuer_address)
+                .limit(1)
+            )
+        ).first()
+        assert position_before_account.token_address == token_address_1
+        assert position_before_account.account_address == issuer_address
+        assert position_before_account.balance == 100 - 40
+        assert position_before_account.exchange_balance == 0
+        assert position_before_account.exchange_commitment == 0
+        assert position_before_account.pending_transfer == 0
+
+        locked_position_before_account = (
+            await async_db.scalars(
+                select(IDXLockedPosition)
+                .where(
+                    and_(
+                        IDXLockedPosition.token_address == token_address_1,
+                        IDXLockedPosition.account_address == issuer_address,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+        assert locked_position_before_account.token_address == token_address_1
+        assert locked_position_before_account.lock_address == lock_account["address"]
+        assert locked_position_before_account.account_address == issuer_address
+        assert locked_position_before_account.value == 40 - 30
+
+        position_before_account = (
+            await async_db.scalars(
+                select(IDXPosition)
+                .where(IDXPosition.account_address == after_locked_account["address"])
+                .limit(1)
+            )
+        ).first()
+        assert position_before_account is None  # No position for after_locked_account
+
+        locked_position_after_account = (
+            await async_db.scalars(
+                select(IDXLockedPosition)
+                .where(
+                    and_(
+                        IDXLockedPosition.token_address == token_address_1,
+                        IDXLockedPosition.account_address
+                        == after_locked_account["address"],
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+        assert locked_position_after_account.token_address == token_address_1
+        assert locked_position_after_account.lock_address == lock_account["address"]
+        assert (
+            locked_position_after_account.account_address
+            == after_locked_account["address"]
+        )
+        assert locked_position_after_account.value == 30
+
+        lock_idx_list = (
+            await async_db.scalars(select(IDXLock).order_by(IDXLock.id))
+        ).all()
+        assert len(lock_idx_list) == 2
+
+        assert lock_idx_list[0].id == 1
+        assert lock_idx_list[0].token_address == token_address_1
+        assert lock_idx_list[0].msg_sender == issuer_address
+        assert lock_idx_list[0].lock_address == lock_account["address"]
+        assert lock_idx_list[0].account_address == issuer_address
+        assert lock_idx_list[0].value == 40
+        assert lock_idx_list[0].data == {"message": "lock"}
+        assert lock_idx_list[0].is_forced is False
+
+        assert lock_idx_list[1].id == 2
+        assert lock_idx_list[1].token_address == token_address_1
+        assert lock_idx_list[1].msg_sender == issuer_address
+        assert lock_idx_list[1].lock_address == lock_account["address"]
+        assert lock_idx_list[1].account_address == after_locked_account["address"]
+        assert lock_idx_list[1].value == 30
+        assert lock_idx_list[1].data == {"message": "force_changed"}
+        assert lock_idx_list[1].is_forced is True
+
+        unlock_idx_list = (
+            await async_db.scalars(select(IDXUnlock).order_by(IDXUnlock.id))
+        ).all()
+        assert len(unlock_idx_list) == 1
+
+        assert unlock_idx_list[0].id == 1
+        assert unlock_idx_list[0].token_address == token_address_1
+        assert unlock_idx_list[0].msg_sender == issuer_address
+        assert unlock_idx_list[0].lock_address == lock_account["address"]
+        assert unlock_idx_list[0].account_address == issuer_address
+        assert unlock_idx_list[0].recipient_address == after_locked_account["address"]
+        assert unlock_idx_list[0].value == 30
+        assert unlock_idx_list[0].data == {"message": "force_changed"}
+        assert unlock_idx_list[0].is_forced is True
+
+        notification_list = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
+        ).all()
+        assert len(notification_list) == 3
+
+        assert notification_list[0].id == 1
+        assert notification_list[0].issuer_address == issuer_address
+        assert notification_list[0].priority == 0
+        assert notification_list[0].type == NotificationType.LOCK_INFO
+        assert notification_list[0].metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": issuer_address,
+            "lock_address": lock_account["address"],
+            "value": 40,
+            "data": {"message": "lock"},
+        }
+
+        assert notification_list[1].id == 2
+        assert notification_list[1].issuer_address == issuer_address
+        assert notification_list[1].priority == 0
+        assert notification_list[1].type == NotificationType.UNLOCK_INFO
+        assert notification_list[1].metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": issuer_address,
+            "lock_address": lock_account["address"],
+            "recipient_address": after_locked_account["address"],
+            "value": 30,
+            "data": {"message": "force_changed"},
+        }
+
+        assert notification_list[2].id == 3
+        assert notification_list[2].issuer_address == issuer_address
+        assert notification_list[2].priority == 0
+        assert notification_list[2].type == NotificationType.LOCK_INFO
+        assert notification_list[2].metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": after_locked_account["address"],
+            "lock_address": lock_account["address"],
+            "value": 30,
+            "data": {"message": "force_changed"},
+        }
+
+        idx_position_share_block_number = (
+            await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
+        ).first()
+        assert idx_position_share_block_number.id == 1
+        assert idx_position_share_block_number.latest_block_number == block_number
+
     # <Normal_3_1>
     # Single Token
     # Multi event logs

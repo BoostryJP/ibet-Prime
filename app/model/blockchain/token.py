@@ -42,6 +42,7 @@ from app.model.blockchain.tx_params.ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransfer,
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransfer,
+    ForceChangeLockedAccountParams as IbetSecurityTokenForceChangeLockedAccountParams,
     ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
     ForceLockParams as IbetSecurityTokenForceLockParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
@@ -621,6 +622,42 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                 data.lock_address,
                 data.account_address,
                 data.recipient_address,
+                data.value,
+                data.data,
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def force_change_locked_account(
+        self,
+        data: IbetSecurityTokenForceChangeLockedAccountParams,
+        tx_from: str,
+        private_key: bytes,
+    ):
+        """Force Change Locked Account"""
+        try:
+            contract = AsyncContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+            tx = await contract.functions.forceChangeLockedAccount(
+                data.lock_address,
+                data.before_account_address,
+                data.after_account_address,
                 data.value,
                 data.data,
             ).build_transaction(

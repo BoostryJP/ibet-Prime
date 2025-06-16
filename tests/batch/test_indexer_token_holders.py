@@ -598,6 +598,7 @@ class TestProcessor:
     # - ForceLock
     # - Unlock
     # - ForceUnlock
+    # - ForceChangeLockedAccount
     @pytest.mark.asyncio
     async def test_normal_2(
         self,
@@ -747,13 +748,13 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 1500, ""],
+            [issuer_address, 2000, ""],
         )
         STContractUtils.force_lock(
             token_contract.address,
             issuer_address,
             issuer_private_key,
-            [issuer_address, user_address_1, 1500, ""],
+            [issuer_address, user_address_1, 2000, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
@@ -767,7 +768,14 @@ class TestProcessor:
             issuer_private_key,
             [issuer_address, user_address_1, user_address_2, 1500, ""],
         )
-        # user1: 10000 user2: 20000
+        STContractUtils.force_change_locked_account(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, user_address_2, 500, ""],
+        )
+        # user1: 9000 user2: 20000
+        # user1(locked): 500, user2(locked): 500
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -819,10 +827,10 @@ class TestProcessor:
             )
         ).first()
 
-        assert user1_record.hold_balance == 10000
-        assert user1_record.locked_balance == 0
+        assert user1_record.hold_balance == 9000
+        assert user1_record.locked_balance == 500
         assert user2_record.hold_balance == 20000
-        assert user2_record.locked_balance == 0
+        assert user2_record.locked_balance == 500
 
         assert (
             len(
@@ -1446,6 +1454,7 @@ class TestProcessor:
     # - ForceLock
     # - Unlock
     # - ForceUnlock
+    # - ForceChangeLockedAccount
     @pytest.mark.asyncio
     async def test_normal_5(
         self,
@@ -1595,13 +1604,13 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 1500, ""],
+            [issuer_address, 2000, ""],
         )
         STContractUtils.force_lock(
             token_contract.address,
             issuer_address,
             issuer_private_key,
-            [issuer_address, user_address_1, 1500, ""],
+            [issuer_address, user_address_1, 2000, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
@@ -1615,7 +1624,14 @@ class TestProcessor:
             issuer_private_key,
             [issuer_address, user_address_1, user_address_2, 1500, ""],
         )
-        # user1: 10000 user2: 20000
+        STContractUtils.force_change_locked_account(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, user_address_2, 500, ""],
+        )
+        # user1: 9000, user2: 20000
+        # user1(locked): 500, user2(locked): 500
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -1667,10 +1683,10 @@ class TestProcessor:
             )
         ).first()
 
-        assert user1_record.hold_balance == 10000
-        assert user1_record.locked_balance == 0
+        assert user1_record.hold_balance == 9000
+        assert user1_record.locked_balance == 500
         assert user2_record.hold_balance == 20000
-        assert user2_record.locked_balance == 0
+        assert user2_record.locked_balance == 500
 
         assert (
             len(

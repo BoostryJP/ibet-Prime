@@ -188,6 +188,43 @@
         {
           "indexed": true,
           "internalType": "address",
+          "name": "lockAddress",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "beforeAccountAddress",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "afterAccountAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "data",
+          "type": "string"
+        }
+      ],
+      "name": "ForceChangeLockedAccount",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
           "name": "accountAddress",
           "type": "address"
         },
@@ -724,6 +761,39 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_lockAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_beforeAccountAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_afterAccountAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_value",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_data",
+          "type": "string"
+        }
+      ],
+      "name": "forceChangeLockedAccount",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
