@@ -240,6 +240,7 @@ class TestListAllNotifications:
             "result_set": {"count": 10, "offset": None, "limit": None, "total": 10},
             "notifications": [
                 {
+                    "id": 1,
                     "notice_id": "notice_id_1",
                     "issuer_address": issuer_address_1,
                     "priority": 0,
@@ -254,6 +255,7 @@ class TestListAllNotifications:
                     "created": "2022-01-02T00:20:30+09:00",
                 },
                 {
+                    "id": 2,
                     "notice_id": "notice_id_2",
                     "issuer_address": issuer_address_1,
                     "priority": 1,
@@ -267,6 +269,7 @@ class TestListAllNotifications:
                     "created": "2022-01-02T09:20:30+09:00",
                 },
                 {
+                    "id": 3,
                     "notice_id": "notice_id_3",
                     "issuer_address": issuer_address_2,
                     "priority": 2,
@@ -280,6 +283,7 @@ class TestListAllNotifications:
                     "created": "2022-01-03T00:20:30+09:00",
                 },
                 {
+                    "id": 4,
                     "notice_id": "notice_id_4",
                     "issuer_address": issuer_address_2,
                     "priority": 0,
@@ -293,6 +297,7 @@ class TestListAllNotifications:
                     "created": "2022-01-03T09:20:30+09:00",
                 },
                 {
+                    "id": 5,
                     "notice_id": "notice_id_5",
                     "issuer_address": issuer_address_2,
                     "priority": 0,
@@ -306,6 +311,7 @@ class TestListAllNotifications:
                     "created": "2022-01-05T09:20:30+09:00",
                 },
                 {
+                    "id": 6,
                     "notice_id": "notice_id_6",
                     "issuer_address": issuer_address_2,
                     "priority": 0,
@@ -319,6 +325,7 @@ class TestListAllNotifications:
                     "created": "2022-01-06T09:20:30+09:00",
                 },
                 {
+                    "id": 7,
                     "notice_id": "notice_id_7",
                     "issuer_address": issuer_address_2,
                     "priority": 0,
@@ -334,6 +341,7 @@ class TestListAllNotifications:
                     "created": "2022-01-07T09:20:30+09:00",
                 },
                 {
+                    "id": 8,
                     "notice_id": "notice_id_8",
                     "issuer_address": issuer_address_2,
                     "priority": 0,
@@ -350,6 +358,7 @@ class TestListAllNotifications:
                     "created": "2022-01-08T09:20:30+09:00",
                 },
                 {
+                    "id": 9,
                     "notice_id": "notice_id_9",
                     "issuer_address": issuer_address_2,
                     "priority": 0,
@@ -367,6 +376,7 @@ class TestListAllNotifications:
                     "created": "2022-01-09T09:20:30+09:00",
                 },
                 {
+                    "id": 10,
                     "notice_id": "notice_id_10",
                     "issuer_address": issuer_address_2,
                     "priority": 0,
@@ -482,6 +492,7 @@ class TestListAllNotifications:
             "result_set": {"count": 1, "offset": None, "limit": None, "total": 4},
             "notifications": [
                 {
+                    "id": 2,
                     "notice_id": "notice_id_2",
                     "issuer_address": issuer_address_1,
                     "priority": 1,
@@ -583,6 +594,7 @@ class TestListAllNotifications:
             "result_set": {"count": 4, "offset": 1, "limit": 2, "total": 4},
             "notifications": [
                 {
+                    "id": 2,
                     "notice_id": "notice_id_2",
                     "issuer_address": issuer_address_1,
                     "priority": 1,
@@ -596,6 +608,7 @@ class TestListAllNotifications:
                     "created": "2022-01-02T09:20:30+09:00",
                 },
                 {
+                    "id": 3,
                     "notice_id": "notice_id_3",
                     "issuer_address": issuer_address_2,
                     "priority": 2,
