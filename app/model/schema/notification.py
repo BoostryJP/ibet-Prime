@@ -102,6 +102,7 @@ class DVPDeliveryInfoMetaInfo(BaseModel):
 
 
 class Notification(BaseModel):
+    id: int
     notice_id: str
     issuer_address: str
     priority: int
