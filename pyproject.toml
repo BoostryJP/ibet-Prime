@@ -1,6 +1,6 @@
 [project]
 name = "ibet-prime"
-version = "25.6"
+version = "25.9"
 description = "ibet-Prime is an API service that enables the issuance and management of security tokens on the ibet network."
 authors = [
     {name = "BOOSTRY Co., Ltd.", email = "dev@boostry.co.jp"},
