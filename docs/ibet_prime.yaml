@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: ibet Prime
   description: Security token management system for ibet network
-  version: '25.3'
+  version: '25.6'
 paths:
   /:
     get:
@@ -2051,6 +2051,17 @@ paths:
           schema:
             type: string
             title: Scheduled Event Id
+        - name: soft_delete
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Soft delete flag
+            default: false
+            title: Soft Delete
+          description: Soft delete flag
         - name: issuer-address
           in: header
           required: true
@@ -2144,6 +2155,26 @@ paths:
             type: boolean
             default: false
             title: Include Former Holder
+        - name: key_manager_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/KeyManagerType'
+              - type: 'null'
+            description: Key manager type (**this affects total number**)
+            title: Key Manager Type
+          description: Key manager type (**this affects total number**)
+        - name: key_manager
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: key manager(partial match)
+            title: Key Manager
+          description: key manager(partial match)
         - name: balance
           in: query
           required: false
@@ -2256,16 +2287,6 @@ paths:
             description: holder name(partial match)
             title: Holder Name
           description: holder name(partial match)
-        - name: key_manager
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: key manager(partial match)
-            title: Key Manager
-          description: key manager(partial match)
         - name: sort_item
           in: query
           required: false
@@ -5127,6 +5148,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /positions/{account_address}/force_lock:
+    post:
+      tags:
+        - token_common
+      summary: Force Lock
+      description: |-
+        Force unlock the locked position
+
+        - This feature is not available for tokens issued prior to v25.6.
+      operationId: ForceLock
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Account Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForceLockRequest'
+      responses:
+        '200':
+          description: Successful Response
+        '401':
+          description: Authorization Error
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/AuthorizationErrorResponse'
+                  - $ref: '#/components/schemas/Error401Model'
+                title: Response 401 Forcelock
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / Contract
+            Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
+                title: Response 400 Forcelock
+        '503':
+          description: Service Unavailable Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTransactionErrorResponse'
   /positions/{account_address}/force_unlock:
     post:
       tags:
@@ -6577,6 +6678,17 @@ paths:
           schema:
             type: string
             title: Scheduled Event Id
+        - name: soft_delete
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Soft delete flag
+            default: false
+            title: Soft Delete
+          description: Soft delete flag
         - name: issuer-address
           in: header
           required: true
@@ -6670,6 +6782,26 @@ paths:
             type: boolean
             default: false
             title: Include Former Holder
+        - name: key_manager_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/KeyManagerType'
+              - type: 'null'
+            description: Key manager type (**this affects total number**)
+            title: Key Manager Type
+          description: Key manager type (**this affects total number**)
+        - name: key_manager
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: key manager(partial match)
+            title: Key Manager
+          description: key manager(partial match)
         - name: balance
           in: query
           required: false
@@ -6782,16 +6914,6 @@ paths:
             description: holder name(partial match)
             title: Holder Name
           description: holder name(partial match)
-        - name: key_manager
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            description: key manager(partial match)
-            title: Key Manager
-          description: key manager(partial match)
         - name: sort_item
           in: query
           required: false
@@ -11159,6 +11281,7 @@ components:
         - 111301
         - 111401
         - 111501
+        - 111601
         - 120001
         - 120002
         - 120101
@@ -11186,6 +11309,7 @@ components:
         - 121301
         - 121401
         - 121501
+        - 121601
         - 130001
         - 130101
         - 130102
@@ -11570,6 +11694,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -11579,6 +11704,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -11598,6 +11724,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -11610,6 +11737,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -11753,19 +11881,6 @@ components:
         - notice_type
         - metainfo
       title: DVPDeliveryInfoNotification
-    DataMessage:
-      properties:
-        message:
-          type: string
-          enum:
-            - garnishment
-            - inheritance
-            - force_unlock
-          title: Message
-      type: object
-      required:
-        - message
-      title: DataMessage
     DeliveryStatus:
       type: integer
       enum:
@@ -11964,7 +12079,8 @@ components:
         message:
           anyOf:
             - type: string
-            - type: object
+            - additionalProperties: true
+              type: object
             - items: {}
               type: array
           title: Message
@@ -12161,6 +12277,33 @@ components:
         - eoa_password
       title: FinishDVPDeliveryRequest
       description: DVP delivery finish schema (REQUEST)
+    ForceLockRequest:
+      properties:
+        token_address:
+          type: string
+          title: Token Address
+          description: Token address
+        lock_address:
+          type: string
+          title: Lock Address
+          description: Lock address
+        message:
+          anyOf:
+            - $ref: '#/components/schemas/LockMessage'
+            - type: 'null'
+          description: Lock message
+          default: force_lock
+        value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Value
+          description: Lock amount
+      type: object
+      required:
+        - token_address
+        - lock_address
+        - value
+      title: ForceLockRequest
     ForceUnlockRequest:
       properties:
         token_address:
@@ -12175,6 +12318,12 @@ components:
           type: string
           title: Recipient Address
           description: Recipient address
+        message:
+          anyOf:
+            - $ref: '#/components/schemas/UnlockMessage'
+            - type: 'null'
+          description: Unlock message
+          default: force_unlock
         value:
           type: integer
           exclusiveMinimum: 0.0
@@ -12526,6 +12675,7 @@ components:
         - '22_12'
         - '24_06'
         - '24_09'
+        - '25_06'
       title: IbetShareContractVersion
     IbetShareCreate:
       properties:
@@ -13066,6 +13216,7 @@ components:
         - '23_12'
         - '24_06'
         - '24_09'
+        - '25_06'
       title: IbetStraightBondContractVersion
     IbetStraightBondCreate:
       properties:
@@ -13637,6 +13788,7 @@ components:
         token_type:
           $ref: '#/components/schemas/TokenType'
         arguments:
+          additionalProperties: true
           type: object
           title: Arguments
       type: object
@@ -13847,6 +13999,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -13856,6 +14009,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -13898,6 +14052,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -13910,6 +14065,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -14327,11 +14483,23 @@ components:
         - to_address_name
         - amount
       title: ListTransferHistorySortItem
+    LockDataMessage:
+      properties:
+        message:
+          $ref: '#/components/schemas/LockMessage'
+      type: object
+      required:
+        - message
+      title: LockDataMessage
     LockEvent:
       properties:
         category:
           $ref: '#/components/schemas/LockEventCategory'
           description: Event category
+        is_forced:
+          type: boolean
+          title: Is Forced
+          description: Set to `True` for force lock/unlock events
         transaction_hash:
           type: string
           title: Transaction Hash
@@ -14376,7 +14544,11 @@ components:
           title: Value
           description: Lock/Unlock amount
         data:
-          type: object
+          anyOf:
+            - $ref: '#/components/schemas/LockDataMessage'
+            - $ref: '#/components/schemas/UnlockDataMessage'
+            - additionalProperties: true
+              type: object
           title: Data
           description: Message at lock/unlock
         block_timestamp:
@@ -14386,6 +14558,7 @@ components:
       type: object
       required:
         - category
+        - is_forced
         - transaction_hash
         - issuer_address
         - token_address
@@ -14397,6 +14570,7 @@ components:
         - data
         - block_timestamp
       title: LockEvent
+      description: Lock/Unlock event
     LockEventCategory:
       type: string
       enum:
@@ -14420,6 +14594,7 @@ components:
           type: integer
           title: Value
         data:
+          additionalProperties: true
           type: object
           title: Data
       type: object
@@ -14467,6 +14642,13 @@ components:
         - notice_type
         - metainfo
       title: LockInfoNotification
+    LockMessage:
+      type: string
+      enum:
+        - garnishment
+        - inheritance
+        - force_lock
+      title: LockMessage
     LockedPosition:
       properties:
         issuer_address:
@@ -15086,7 +15268,6 @@ components:
           title: Key Manager
         data_source:
           $ref: '#/components/schemas/PersonalInfoDataSource'
-          description: Personal information data source
           default: on-chain
       type: object
       required:
@@ -15488,6 +15669,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15500,6 +15682,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15528,6 +15711,7 @@ components:
         headers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15540,6 +15724,7 @@ components:
         footers:
           anyOf:
             - items:
+                additionalProperties: true
                 type: object
               type: array
             - type: 'null'
@@ -15682,11 +15867,15 @@ components:
         status:
           $ref: '#/components/schemas/ScheduledEventStatus'
         data:
+          additionalProperties: true
           type: object
           title: Data
         created:
           type: string
           title: Created
+        is_soft_deleted:
+          type: boolean
+          title: Is Soft Deleted
       type: object
       required:
         - scheduled_event_id
@@ -15697,6 +15886,7 @@ components:
         - status
         - data
         - created
+        - is_soft_deleted
       title: ScheduledEvent
       description: Scheduled event
     ScheduledEventIdListResponse:
@@ -15756,11 +15946,15 @@ components:
         status:
           $ref: '#/components/schemas/ScheduledEventStatus'
         data:
+          additionalProperties: true
           type: object
           title: Data
         created:
           type: string
           title: Created
+        is_soft_deleted:
+          type: boolean
+          title: Is Soft Deleted
         token_attributes:
           anyOf:
             - $ref: '#/components/schemas/IbetStraightBond'
@@ -15777,6 +15971,7 @@ components:
         - status
         - data
         - created
+        - is_soft_deleted
         - token_attributes
       title: ScheduledEventWithTokenAttributes
       description: Scheduled event with token attributes
@@ -16046,11 +16241,13 @@ components:
       properties:
         original_contents:
           anyOf:
-            - type: object
+            - additionalProperties: true
+              type: object
             - type: 'null'
           title: Original Contents
           description: original attributes before update
         modified_contents:
+          additionalProperties: true
           type: object
           title: Modified Contents
           description: update attributes
@@ -16467,6 +16664,7 @@ components:
       enum:
         - Transfer
         - Unlock
+        - ForceUnlock
       title: TransferSourceEventType
     TxData:
       properties:
@@ -16539,7 +16737,8 @@ components:
           title: Contract Function
         contract_parameters:
           anyOf:
-            - type: object
+            - additionalProperties: true
+              type: object
             - type: 'null'
           title: Contract Parameters
         gas:
@@ -16591,6 +16790,14 @@ components:
     TxDataResponse:
       $ref: '#/components/schemas/TxDataDetail'
       title: TxDataResponse
+    UnlockDataMessage:
+      properties:
+        message:
+          $ref: '#/components/schemas/UnlockMessage'
+      type: object
+      required:
+        - message
+      title: UnlockDataMessage
     UnlockInfoMetaInfo:
       properties:
         token_address:
@@ -16611,6 +16818,7 @@ components:
           type: integer
           title: Value
         data:
+          additionalProperties: true
           type: object
           title: Data
       type: object
@@ -16659,6 +16867,13 @@ components:
         - notice_type
         - metainfo
       title: UnlockInfoNotification
+    UnlockMessage:
+      type: string
+      enum:
+        - garnishment
+        - inheritance
+        - force_unlock
+      title: UnlockMessage
     UnlockTransfer:
       properties:
         transaction_hash:
@@ -16689,13 +16904,16 @@ components:
           title: Block Timestamp
         source_event:
           type: string
-          const: Unlock
+          enum:
+            - Unlock
+            - ForceUnlock
           title: Source Event
           description: Source Event
         data:
           anyOf:
-            - $ref: '#/components/schemas/DataMessage'
-            - type: object
+            - $ref: '#/components/schemas/UnlockTransferDataMessage'
+            - additionalProperties: true
+              type: object
           title: Data
           description: Event data
       type: object
@@ -16711,6 +16929,19 @@ components:
         - source_event
         - data
       title: UnlockTransfer
+    UnlockTransferDataMessage:
+      properties:
+        message:
+          type: string
+          enum:
+            - garnishment
+            - inheritance
+            - force_unlock
+          title: Message
+      type: object
+      required:
+        - message
+      title: UnlockTransferDataMessage
     UpdateFreezeLogRequest:
       properties:
         account_address:

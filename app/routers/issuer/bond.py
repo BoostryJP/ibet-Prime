@@ -120,6 +120,7 @@ from app.model.schema import (
     BulkTransferUploadIdResponse,
     BulkTransferUploadRecordResponse,
     BulkTransferUploadResponse,
+    DeleteScheduledEventQuery,
     GetBatchIssueRedeemResponse,
     GetBatchRegisterPersonalInfoResponse,
     HolderCountResponse,
@@ -169,7 +170,7 @@ from app.model.schema import (
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
 )
-from app.model.schema.base import ValueOperator
+from app.model.schema.base import KeyManagerType, ValueOperator
 from app.utils.check_utils import (
     address_is_valid_address,
     check_auth,
@@ -347,7 +348,7 @@ async def issue_bond_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_24_09
+    _token.version = TokenVersion.V_25_06
     db.add(_token)
 
     # Register operation log
@@ -1585,6 +1586,7 @@ async def list_all_scheduled_bond_token_update_events(
                 "status": _token_event.status,
                 "data": _token_event.data,
                 "created": created_utc.astimezone(local_tz).isoformat(),
+                "is_soft_deleted": _token_event.is_soft_deleted,
             }
         )
     return json_response(token_events)
@@ -1868,6 +1870,7 @@ async def retrieve_scheduled_bond_token_update_event(
             "status": _token_event.status,
             "data": _token_event.data,
             "created": created_utc.astimezone(local_tz).isoformat(),
+            "is_soft_deleted": _token_event.is_soft_deleted,
         }
     )
 
@@ -1882,6 +1885,7 @@ async def retrieve_scheduled_bond_token_update_event(
 async def delete_scheduled_bond_token_update_event(
     db: DBAsyncSession,
     request: Request,
+    delete_param: Annotated[DeleteScheduledEventQuery, Query()],
     token_address: Annotated[str, Path()],
     scheduled_event_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
@@ -1936,9 +1940,15 @@ async def delete_scheduled_bond_token_update_event(
         "status": _token_event.status,
         "data": _token_event.data,
         "created": created_utc.astimezone(local_tz).isoformat(),
+        "is_soft_deleted": delete_param.soft_delete,
     }
 
-    await db.delete(_token_event)
+    if delete_param.soft_delete is True:
+        _token_event.is_soft_deleted = True
+        await db.merge(_token_event)
+    else:
+        await db.delete(_token_event)
+
     await db.commit()
 
     return json_response(rtn)
@@ -1961,7 +1971,7 @@ async def list_all_bond_token_holders(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get Account
+    # Check issuer existence
     _account = (
         await db.scalars(
             select(Account).where(Account.issuer_address == issuer_address).limit(1)
@@ -1970,7 +1980,7 @@ async def list_all_bond_token_holders(
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
 
-    # Get Token
+    # Check token existence
     _token: Token | None = (
         await db.scalars(
             select(Token)
@@ -1990,7 +2000,7 @@ async def list_all_bond_token_holders(
     if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    # Get Holders
+    # Base query
     locked_value = func.sum(IDXLockedPosition.value)
     stmt = (
         select(
@@ -2033,13 +2043,23 @@ async def list_all_bond_token_holders(
             IDXLockedPosition.account_address,
         )
     )
+    match get_query.key_manager_type:
+        case KeyManagerType.SELF:
+            stmt = stmt.where(
+                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"
+            )
+        case KeyManagerType.OTHERS:
+            stmt = stmt.where(
+                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
+            )
 
     total = await db.scalar(
-        select(func.count())
-        .select_from(IDXPosition)
-        .where(IDXPosition.token_address == token_address)
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
+    # Apply filters
     if not get_query.include_former_holder:
         stmt = stmt.where(
             or_(
@@ -2128,7 +2148,9 @@ async def list_all_bond_token_holders(
         )
 
     count = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
     # Sort
@@ -2967,6 +2989,7 @@ async def list_bond_token_lock_unlock_events(
     stmt_lock = (
         select(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
+            IDXLock.is_forced.label("is_forced"),
             IDXLock.transaction_hash.label("transaction_hash"),
             IDXLock.msg_sender.label("msg_sender"),
             IDXLock.token_address.label("token_address"),
@@ -2995,6 +3018,7 @@ async def list_bond_token_lock_unlock_events(
             literal(value=LockEventCategory.Unlock.value, type_=String).label(
                 "category"
             ),
+            IDXUnlock.is_forced.label("is_forced"),
             IDXUnlock.transaction_hash.label("transaction_hash"),
             IDXUnlock.msg_sender.label("msg_sender"),
             IDXUnlock.token_address.label("token_address"),
@@ -3086,6 +3110,7 @@ async def list_bond_token_lock_unlock_events(
 
     entries = [
         all_lock_event_alias.c.category,
+        all_lock_event_alias.c.is_forced,
         all_lock_event_alias.c.transaction_hash,
         all_lock_event_alias.c.msg_sender,
         all_lock_event_alias.c.token_address,
@@ -3109,6 +3134,7 @@ async def list_bond_token_lock_unlock_events(
         resp_data.append(
             {
                 "category": lock_event.category,
+                "is_forced": lock_event.is_forced,
                 "transaction_hash": lock_event.transaction_hash,
                 "msg_sender": lock_event.msg_sender,
                 "issuer_address": token.issuer_address,

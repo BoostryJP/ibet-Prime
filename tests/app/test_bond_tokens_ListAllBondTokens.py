@@ -61,7 +61,7 @@ class TestListAllBondTokens:
         token.issuer_address = issuer_address_1
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
         await async_db.commit()
         _issue_datetime = (
@@ -167,7 +167,7 @@ class TestListAllBondTokens:
                 "token_status": 1,
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
-                "contract_version": TokenVersion.V_24_09,
+                "contract_version": TokenVersion.V_25_06,
             }
         ]
 
@@ -191,7 +191,7 @@ class TestListAllBondTokens:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
         await async_db.commit()
         _issue_datetime_1 = (
@@ -256,7 +256,7 @@ class TestListAllBondTokens:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_09
+        token_2.version = TokenVersion.V_25_06
         async_db.add(token_2)
         await async_db.commit()
         _issue_datetime_2 = (
@@ -365,7 +365,7 @@ class TestListAllBondTokens:
                 "token_status": 1,
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
-                "contract_version": TokenVersion.V_24_09,
+                "contract_version": TokenVersion.V_25_06,
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -411,7 +411,7 @@ class TestListAllBondTokens:
                 "token_status": 0,
                 "transfer_approval_required": False,
                 "memo": "memo_test2",
-                "contract_version": TokenVersion.V_24_09,
+                "contract_version": TokenVersion.V_25_06,
             },
         ]
 
@@ -434,7 +434,7 @@ class TestListAllBondTokens:
         token.issuer_address = issuer_address_1
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         resp = await async_client.get(
@@ -460,7 +460,7 @@ class TestListAllBondTokens:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
         await async_db.commit()
         _issue_datetime = (
@@ -526,7 +526,7 @@ class TestListAllBondTokens:
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test1"
         token_2.abi = "abi_test1"
-        token_2.version = TokenVersion.V_24_09
+        token_2.version = TokenVersion.V_25_06
         async_db.add(token_2)
 
         resp = await async_client.get(
@@ -578,7 +578,7 @@ class TestListAllBondTokens:
                 "token_status": 1,
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
-                "contract_version": TokenVersion.V_24_09,
+                "contract_version": TokenVersion.V_25_06,
             }
         ]
 
@@ -602,7 +602,7 @@ class TestListAllBondTokens:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
         await async_db.commit()
         _issue_datetime_1 = (
@@ -667,7 +667,7 @@ class TestListAllBondTokens:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_24_09
+        token_2.version = TokenVersion.V_25_06
         async_db.add(token_2)
         await async_db.commit()
         _issue_datetime_2 = (
@@ -736,7 +736,7 @@ class TestListAllBondTokens:
         token_3.issuer_address = issuer_address_2
         token_3.token_address = "token_address_test1"
         token_3.abi = "abi_test1"
-        token_3.version = TokenVersion.V_24_09
+        token_3.version = TokenVersion.V_25_06
         async_db.add(token_3)
 
         resp = await async_client.get(
@@ -788,7 +788,7 @@ class TestListAllBondTokens:
                 "token_status": 1,
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
-                "contract_version": TokenVersion.V_24_09,
+                "contract_version": TokenVersion.V_25_06,
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -834,7 +834,7 @@ class TestListAllBondTokens:
                 "token_status": 0,
                 "transfer_approval_required": False,
                 "memo": "memo_test2",
-                "contract_version": TokenVersion.V_24_09,
+                "contract_version": TokenVersion.V_25_06,
             },
         ]
 

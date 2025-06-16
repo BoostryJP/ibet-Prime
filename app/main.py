@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import ctypes
+from contextlib import asynccontextmanager
 from ctypes.util import find_library
 from datetime import UTC, datetime
 
@@ -58,12 +59,14 @@ from app.routers.misc import (
     sealed_tx,
     settlement_agent,
 )
+from app.utils import o11y_utils
 from app.utils.docs_utils import custom_openapi
 from config import (
     BC_EXPLORER_ENABLED,
     DEDICATED_SEALED_TX_MODE,
     DVP_AGENT_FEATURE_ENABLED,
     FREEZE_LOG_FEATURE_ENABLED,
+    PROFILING_MODE,
     SERVER_NAME,
 )
 
@@ -106,16 +109,33 @@ if FREEZE_LOG_FEATURE_ENABLED:
     )
 
 
+def on_startup():
+    if PROFILING_MODE is True:
+        o11y_utils.setup_pyroscope()
+
+
+async def on_shutdown():
+    pass
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    on_startup()
+    yield
+    await on_shutdown()
+
+
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="25.3",
+    version="25.6",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
         "url": "http://www.apache.org/licenses/LICENSE-2.0.html",
     },
     openapi_tags=tags_metadata,
+    lifespan=lifespan,
 )
 
 
@@ -174,6 +194,9 @@ else:
 
     if FREEZE_LOG_FEATURE_ENABLED:
         app.include_router(freeze_log.router)
+
+if PROFILING_MODE is True:
+    o11y_utils.setup_otel(app=app)
 
 ###############################################################
 # EXCEPTION

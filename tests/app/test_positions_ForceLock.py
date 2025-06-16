@@ -25,15 +25,15 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token import ForceUnlockParams
+from app.model.blockchain.tx_params.ibet_security_token import ForceLockParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
-class TestForceUnlock:
+class TestForceLock:
     # target API endpoint
-    test_url = "/positions/{account_address}/force_unlock"
+    test_url = "/positions/{account_address}/force_lock"
 
     ###########################################################################
     # Normal Case
@@ -41,8 +41,8 @@ class TestForceUnlock:
 
     # <Normal_1_1>
     # Authorization by eoa-password
-    # message is not set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
+    # - message is not set
+    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_1(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
@@ -54,7 +54,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -83,7 +82,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -97,14 +95,13 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            data=ForceLockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
-                    "recipient_address": _recipient_address,
                     "value": 10,
                     "data": json.dumps(
-                        {"message": "force_unlock"}, separators=(",", ":")
+                        {"message": "force_lock"}, separators=(",", ":")
                     ),
                 }
             ),
@@ -117,8 +114,8 @@ class TestForceUnlock:
 
     # <Normal_1_2>
     # Authorization by eoa-password
-    # -message is set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
+    # - message is set
+    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
@@ -130,7 +127,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -159,7 +155,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "message": "garnishment",
             "value": 10,
         }
@@ -174,11 +169,10 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            data=ForceLockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
-                    "recipient_address": _recipient_address,
                     "value": 10,
                     "data": json.dumps(
                         {"message": "garnishment"}, separators=(",", ":")
@@ -194,7 +188,7 @@ class TestForceUnlock:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
+    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
@@ -206,7 +200,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -241,7 +234,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -252,14 +244,13 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            data=ForceLockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
-                    "recipient_address": _recipient_address,
                     "value": 10,
                     "data": json.dumps(
-                        {"message": "force_unlock"}, separators=(",", ":")
+                        {"message": "force_lock"}, separators=(",", ":")
                     ),
                 }
             ),
@@ -308,12 +299,6 @@ class TestForceUnlock:
                 },
                 {
                     "input": {},
-                    "loc": ["body", "recipient_address"],
-                    "msg": "Field required",
-                    "type": "missing",
-                },
-                {
-                    "input": {},
                     "loc": ["body", "value"],
                     "msg": "Field required",
                     "type": "missing",
@@ -331,15 +316,11 @@ class TestForceUnlock:
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _lock_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
-        _recipient_address = (
-            "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
-        )
 
         # request target API
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 0,
         }
         resp = await async_client.post(
@@ -364,13 +345,6 @@ class TestForceUnlock:
                     "ctx": {"error": {}},
                     "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "lock_address"],
-                    "msg": "Value error, invalid ethereum address",
-                    "type": "value_error",
-                },
-                {
-                    "ctx": {"error": {}},
-                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
-                    "loc": ["body", "recipient_address"],
                     "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 },
@@ -427,7 +401,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -436,7 +409,6 @@ class TestForceUnlock:
             "token_address": _token_address,
             "lock_address": _lock_address,
             "account_address": _admin_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -471,7 +443,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -480,7 +451,6 @@ class TestForceUnlock:
             "token_address": _token_address,
             "lock_address": _lock_address,
             "account_address": _admin_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -518,7 +488,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -534,7 +503,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "message": "invalid_message",
             "value": 10,
         }
@@ -555,11 +523,9 @@ class TestForceUnlock:
                 {
                     "type": "enum",
                     "loc": ["body", "message"],
-                    "msg": "Input should be 'garnishment', 'inheritance' or 'force_unlock'",
+                    "msg": "Input should be 'garnishment', 'inheritance' or 'force_lock'",
                     "input": "invalid_message",
-                    "ctx": {
-                        "expected": "'garnishment', 'inheritance' or 'force_unlock'"
-                    },
+                    "ctx": {"expected": "'garnishment', 'inheritance' or 'force_lock'"},
                 }
             ],
         }
@@ -576,7 +542,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -585,7 +550,6 @@ class TestForceUnlock:
             "token_address": _token_address,
             "lock_address": _lock_address,
             "account_address": _admin_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -616,7 +580,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -633,7 +596,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -664,7 +626,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -690,7 +651,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -721,7 +681,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -738,7 +697,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -769,7 +727,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -796,7 +753,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -816,11 +772,7 @@ class TestForceUnlock:
         }
 
     # <Error_4>
-    # ContractRevertError
-    @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
-        MagicMock(side_effect=ContractRevertError(code_msg="111201")),
-    )
+    # OperationNotSupportedVersionError
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
@@ -830,7 +782,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -847,7 +798,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_24_09
         async_db.add(token)
 
         await async_db.commit()
@@ -856,7 +807,6 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = await async_client.post(
@@ -871,15 +821,15 @@ class TestForceUnlock:
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 111201, "title": "ContractRevertError"},
-            "detail": "Unlock amount is greater than locked amount.",
+            "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
+            "detail": "the operation is not supported in 24_09",
         }
 
     # <Error_5>
-    # SendTransactionError
+    # ContractRevertError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
-        MagicMock(side_effect=SendTransactionError()),
+        "app.model.blockchain.token.IbetSecurityTokenInterface.force_lock",
+        MagicMock(side_effect=ContractRevertError(code_msg="121601")),
     )
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
@@ -890,7 +840,6 @@ class TestForceUnlock:
         _admin_keyfile = _admin_account["keyfile_json"]
 
         _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -916,7 +865,64 @@ class TestForceUnlock:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "recipient_address": _recipient_address,
+            "value": 10,
+        }
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 121601, "title": "ContractRevertError"},
+            "detail": "Lock amount is greater than message sender balance.",
+        }
+
+    # <Error_6>
+    # SendTransactionError
+    @mock.patch(
+        "app.model.blockchain.token.IbetSecurityTokenInterface.force_lock",
+        MagicMock(side_effect=SendTransactionError()),
+    )
+    @pytest.mark.asyncio
+    async def test_error_6(self, async_client, async_db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = config_eth_account("user2")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_06
+        async_db.add(token)
+
+        await async_db.commit()
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
             "value": 10,
         }
         resp = await async_client.post(

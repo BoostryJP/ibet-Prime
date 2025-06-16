@@ -170,7 +170,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         await async_db.commit()
@@ -217,7 +217,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -325,7 +325,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -486,7 +486,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -629,7 +629,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -746,7 +746,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -879,7 +879,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -1027,7 +1027,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

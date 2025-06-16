@@ -48,7 +48,7 @@ class TestRetrieveBondToken:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -157,7 +157,7 @@ class TestRetrieveBondToken:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_24_09,
+            "contract_version": TokenVersion.V_25_06,
         }
 
         assert resp.status_code == 200
@@ -175,7 +175,7 @@ class TestRetrieveBondToken:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -284,7 +284,7 @@ class TestRetrieveBondToken:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_24_09,
+            "contract_version": TokenVersion.V_25_06,
         }
 
         assert resp.status_code == 200
@@ -318,7 +318,7 @@ class TestRetrieveBondToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()

@@ -57,7 +57,7 @@ async def list_all_notifications(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    stmt = select(Notification).order_by(Notification.created)
+    stmt = select(Notification).order_by(Notification.id)
 
     total = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(Notification).order_by(None)

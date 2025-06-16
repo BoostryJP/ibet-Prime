@@ -46,6 +46,7 @@ from app.model.blockchain.tx_params.ibet_share import (
     BulkTransferParams,
     CancelTransferParams,
     ForcedTransferParams,
+    ForceLockParams,
     ForceUnlockPrams,
     LockParams,
     RedeemParams,
@@ -4313,6 +4314,416 @@ class TestLock:
         )
 
 
+class TestForceLock:
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+    # <Normal_1>
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        token_address, _, _ = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # force lock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "value": 10,
+            "data": "",
+        }
+        tx_hash, tx_receipt = await share_contract.force_lock(
+            data=ForceLockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # assertion
+        assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
+        assert tx_receipt["status"] == 1
+
+        share_token = ContractUtils.get_contract(
+            contract_name="IbetShare", contract_address=token_address
+        )
+        lock_amount = share_token.functions.lockedOf(
+            lock_address, issuer_address
+        ).call()
+        assert lock_amount == 10
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+    # <Error_1_1>
+    # ValidationError: Field required
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_db):
+        lock_data = {}
+        with pytest.raises(ValidationError) as ex_info:
+            ForceLockParams(**lock_data)
+
+        assert ex_info.value.errors() == [
+            {
+                "input": {},
+                "loc": ("lock_address",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
+            {
+                "input": {},
+                "loc": ("account_address",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
+            {
+                "input": {},
+                "loc": ("value",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
+            {
+                "input": {},
+                "loc": ("data",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
+        ]
+
+    # <Error_1_2>
+    # ValidationError: Value error
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_db):
+        lock_data = {
+            "lock_address": "test_lock_address",
+            "account_address": "test_account_address",
+            "value": 0,
+            "data": "",
+        }
+        with pytest.raises(ValidationError) as ex_info:
+            ForceLockParams(**lock_data)
+
+        assert ex_info.value.errors() == [
+            {
+                "ctx": {"error": ANY},
+                "input": "test_lock_address",
+                "loc": ("lock_address",),
+                "msg": "Value error, invalid ethereum address",
+                "type": "value_error",
+                "url": ANY,
+            },
+            {
+                "ctx": {"error": ANY},
+                "input": "test_account_address",
+                "loc": ("account_address",),
+                "msg": "Value error, invalid ethereum address",
+                "type": "value_error",
+                "url": ANY,
+            },
+            {
+                "ctx": {"gt": 0},
+                "input": 0,
+                "loc": ("value",),
+                "msg": "Input should be greater than 0",
+                "type": "greater_than",
+                "url": ANY,
+            },
+        ]
+
+    # <Error_2_1>
+    # SendTransactionError: Invalid tx_from
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        token_address, _, _ = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # force lock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "value": 10,
+            "data": "",
+        }
+        with pytest.raises(SendTransactionError) as exc_info:
+            await share_contract.force_lock(
+                data=ForceLockParams(**lock_data),
+                tx_from="invalid_tx_from",  # invalid tx_from
+                private_key=issuer_pk,
+            )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
+
+    # <Error_2_2>
+    # SendTransactionError: Invalid pk
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        token_address, _, _ = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # force lock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "value": 10,
+            "data": "",
+        }
+        with pytest.raises(SendTransactionError) as exc_info:
+            await share_contract.force_lock(
+                data=ForceLockParams(**lock_data),
+                tx_from=issuer_address,
+                private_key="invalid_pk",  # invalid pk
+            )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], Error)
+        assert exc_info.match("Non-hexadecimal digit found")
+
+    # <Error_2_3>
+    # SendTransactionError: TimeExhausted
+    @pytest.mark.asyncio
+    async def test_error_2_3(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        token_address, _, _ = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted,
+        )
+
+        # force lock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "value": 10,
+            "data": "",
+        }
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                await share_contract.force_lock(
+                    data=ForceLockParams(**lock_data),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk,
+                )
+
+        # assertion
+        assert exc_info.type(SendTransactionError(TimeExhausted))
+
+    # <Error_2_4>
+    # SendTransactionError: TransactionNotFound
+    @pytest.mark.asyncio
+    async def test_error_2_4(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        token_address, _, _ = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TransactionNotFound(message=""),
+        )
+
+        # force lock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "value": 10,
+            "data": "",
+        }
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                await share_contract.force_lock(
+                    data=ForceLockParams(**lock_data),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk,
+                )
+
+        # assertion
+        assert exc_info.type(SendTransactionError(TransactionNotFound))
+
+    # <Error_2_5>
+    # SendTransactionError: ContractRevertError
+    @pytest.mark.asyncio
+    async def test_error_2_5(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        token_address, _, _ = await share_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # mock
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
+        InspectionMock = mock.patch(
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 111601")),
+        )
+
+        # force lock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "value": 20001,
+            "data": "",
+        }
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            await share_contract.force_lock(
+                data=ForceLockParams(**lock_data),
+                tx_from=issuer_address,
+                private_key=issuer_pk,
+            )
+
+        # assertion
+        assert exc_info.value.code == 111601
+        assert (
+            exc_info.value.message
+            == "Lock amount is greater than message sender balance."
+        )
+
+
 class TestForceUnlock:
     ###########################################################################
     # Normal Case
@@ -4386,7 +4797,7 @@ class TestForceUnlock:
 
         logs = await AsyncContractUtils.get_event_logs(
             contract=share_token,
-            event="Unlock",
+            event="ForceUnlock",
             block_from=block_from,
             block_to=block_to,
         )

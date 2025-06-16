@@ -64,7 +64,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -98,7 +98,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -156,7 +156,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -210,7 +210,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -264,7 +264,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -327,7 +327,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -371,7 +371,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address_2
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

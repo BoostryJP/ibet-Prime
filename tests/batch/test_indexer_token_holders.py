@@ -248,7 +248,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -595,7 +595,9 @@ class TestProcessor:
     #   - FinishEscrow
     #   - ApproveTransfer
     # - Lock
+    # - ForceLock
     # - Unlock
+    # - ForceUnlock
     @pytest.mark.asyncio
     async def test_normal_2(
         self,
@@ -635,7 +637,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -745,13 +747,25 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 3000, ""],
+            [issuer_address, 1500, ""],
+        )
+        STContractUtils.force_lock(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, 1500, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
             issuer_address,
             issuer_private_key,
-            [user_address_1, user_address_2, 3000, ""],
+            [user_address_1, user_address_2, 1500, ""],
+        )
+        STContractUtils.force_unlock(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, user_address_2, 1500, ""],
         )
         # user1: 10000 user2: 20000
 
@@ -869,7 +883,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1068,7 +1082,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1429,7 +1443,9 @@ class TestProcessor:
     #   - FinishEscrow
     #   - ApproveTransfer
     # - Lock
+    # - ForceLock
     # - Unlock
+    # - ForceUnlock
     @pytest.mark.asyncio
     async def test_normal_5(
         self,
@@ -1469,7 +1485,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1579,13 +1595,25 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 3000, ""],
+            [issuer_address, 1500, ""],
+        )
+        STContractUtils.force_lock(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, 1500, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
             issuer_address,
             issuer_private_key,
-            [user_address_1, user_address_2, 3000, ""],
+            [user_address_1, user_address_2, 1500, ""],
+        )
+        STContractUtils.force_unlock(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, user_address_2, 1500, ""],
         )
         # user1: 10000 user2: 20000
 
@@ -1703,7 +1731,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1908,7 +1936,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -2027,7 +2055,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -2226,7 +2254,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -2387,7 +2415,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         # Insert collection record with above token and checkpoint block number
@@ -2574,7 +2602,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_24_09
+        token_1.version = TokenVersion.V_25_06
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(

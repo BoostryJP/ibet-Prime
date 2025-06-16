@@ -116,6 +116,7 @@ from .personal_info import (
     RegisterPersonalInfoRequest,
 )
 from .position import (
+    ForceLockRequest,
     ForceUnlockRequest,
     ListAllLockedPositionResponse,
     ListAllLockedPositionsQuery,
@@ -124,10 +125,13 @@ from .position import (
     ListAllLockEventsSortItem,
     ListAllPositionResponse,
     ListAllPositionsQuery,
+    LockDataMessage,
     LockEventCategory,
     PositionResponse,
+    UnlockDataMessage,
 )
 from .scheduled_events import (
+    DeleteScheduledEventQuery,
     IbetShareScheduledUpdate,
     IbetStraightBondScheduledUpdate,
     ListAllScheduledEventsQuery,

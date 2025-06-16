@@ -266,7 +266,9 @@ class Processor:
         await self.__process_issue(block_from, block_to)
         await self.__process_redeem(block_from, block_to)
         await self.__process_lock(block_from, block_to)
+        await self.__process_force_lock(block_from, block_to)
         await self.__process_unlock(block_from, block_to)
+        await self.__process_force_unlock(block_from, block_to)
 
         await self.__save_holders(
             db_session,
@@ -452,6 +454,35 @@ class Processor:
         except Exception:
             raise
 
+    async def __process_force_lock(self, block_from: int, block_to: int):
+        """Process Force Lock Event
+
+        - The process of updating Hold-Balance data by capturing the following events
+        - `ForceLock` event on Token contracts
+
+        :param block_from: From block
+        :param block_to: To block
+        :return: None
+        """
+        try:
+            # Get "Lock" events from token contract
+            events = await AsyncContractUtils.get_event_logs(
+                contract=self.token_contract,
+                event="ForceLock",
+                block_from=block_from,
+                block_to=block_to,
+            )
+            for event in events:
+                args = event["args"]
+                account_address = args.get("accountAddress", ZERO_ADDRESS)
+                amount = args.get("value")
+                if amount is not None and amount <= sys.maxsize:
+                    self.balance_book.store(
+                        account_address=account_address, amount=-amount, locked=+amount
+                    )
+        except Exception:
+            raise
+
     async def __process_unlock(self, block_from: int, block_to: int):
         """Process Unlock Event
 
@@ -467,6 +498,39 @@ class Processor:
             events = await AsyncContractUtils.get_event_logs(
                 contract=self.token_contract,
                 event="Unlock",
+                block_from=block_from,
+                block_to=block_to,
+            )
+            for event in events:
+                args = event["args"]
+                account_address = args.get("accountAddress", ZERO_ADDRESS)
+                recipient_address = args.get("recipientAddress", ZERO_ADDRESS)
+                amount = args.get("value")
+                if amount is not None and amount <= sys.maxsize:
+                    self.balance_book.store(
+                        account_address=account_address, locked=-amount
+                    )
+                    self.balance_book.store(
+                        account_address=recipient_address, amount=+amount
+                    )
+        except Exception:
+            raise
+
+    async def __process_force_unlock(self, block_from: int, block_to: int):
+        """Process ForceUnlock Event
+
+        - The process of updating Hold-Balance data by capturing the following events
+        - `ForceUnlock` event on Token contracts
+
+        :param block_from: From block
+        :param block_to: To block
+        :return: None
+        """
+        try:
+            # Get "ForceUnlock" events from token contract
+            events = await AsyncContractUtils.get_event_logs(
+                contract=self.token_contract,
+                event="ForceUnlock",
                 block_from=block_from,
                 block_to=block_to,
             )

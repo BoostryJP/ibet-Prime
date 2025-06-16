@@ -247,6 +247,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_2_attr,
                 },
                 {
@@ -268,6 +269,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
             ],
@@ -414,6 +416,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_2_attr,
                 },
                 {
@@ -435,6 +438,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
             ],
@@ -568,6 +572,7 @@ class TestListAllScheduledEvents:
                     "status": 0,
                     "data": update_data,
                     "created": mock.ANY,
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
             ],
@@ -714,6 +719,7 @@ class TestListAllScheduledEvents:
                     "status": 0,
                     "data": update_data_1,
                     "created": mock.ANY,
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
             ],
@@ -860,6 +866,7 @@ class TestListAllScheduledEvents:
                     "status": 0,
                     "data": update_data_1,
                     "created": mock.ANY,
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
             ],
@@ -990,6 +997,7 @@ class TestListAllScheduledEvents:
                     "status": 0,
                     "data": update_data,
                     "created": mock.ANY,
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
             ],
@@ -1178,6 +1186,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
                 {
@@ -1199,6 +1208,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_2_attr,
                 },
             ],
@@ -1387,6 +1397,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
                 {
@@ -1408,6 +1419,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_2_attr,
                 },
             ],
@@ -1596,6 +1608,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_1_attr,
                 },
                 {
@@ -1617,6 +1630,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_2_attr,
                 },
             ],
@@ -1772,6 +1786,7 @@ class TestListAllScheduledEvents:
                         .astimezone(self.local_tz)
                         .isoformat()
                     ),
+                    "is_soft_deleted": False,
                     "token_attributes": token_2_attr,
                 },
             ],

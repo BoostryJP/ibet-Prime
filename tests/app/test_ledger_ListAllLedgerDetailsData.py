@@ -48,7 +48,7 @@ class TestListAllLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
@@ -165,7 +165,7 @@ class TestListAllLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
@@ -279,7 +279,7 @@ class TestListAllLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
@@ -423,7 +423,7 @@ class TestListAllLedgerDetailsData:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()
@@ -486,7 +486,7 @@ class TestListAllLedgerDetailsData:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_24_09
+        _token.version = TokenVersion.V_25_06
         async_db.add(_token)
 
         await async_db.commit()

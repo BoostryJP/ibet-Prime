@@ -40,6 +40,7 @@ from .personal_info import PersonalInfo
 class TransferSourceEventType(StrEnum):
     Transfer = "Transfer"
     Unlock = "Unlock"
+    ForceUnlock = "ForceUnlock"
 
 
 class TransferApprovalStatus(IntEnum):
@@ -69,7 +70,7 @@ class Transfer(TransferBase):
     data: None = Field(description="Event data")
 
 
-class DataMessage(BaseModel):
+class UnlockTransferDataMessage(BaseModel):
     message: Literal[
         "garnishment",
         "inheritance",
@@ -78,10 +79,10 @@ class DataMessage(BaseModel):
 
 
 class UnlockTransfer(TransferBase):
-    source_event: Literal[TransferSourceEventType.Unlock] = Field(
-        description="Source Event"
-    )
-    data: DataMessage | dict = Field(description="Event data")
+    source_event: Literal[
+        TransferSourceEventType.Unlock, TransferSourceEventType.ForceUnlock
+    ] = Field(description="Source Event")
+    data: UnlockTransferDataMessage | dict = Field(description="Event data")
 
 
 ############################

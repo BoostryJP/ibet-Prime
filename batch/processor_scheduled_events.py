@@ -113,6 +113,7 @@ class Processor:
                             ScheduledEvents.status == 0,
                             ScheduledEvents.scheduled_datetime <= filter_time,
                             ScheduledEvents.issuer_address.notin_(processing_issuers),
+                            ScheduledEvents.is_soft_deleted != True,
                         )
                     )
                     .order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id)
@@ -132,6 +133,7 @@ class Processor:
                         ScheduledEvents.status == 0,
                         ScheduledEvents.scheduled_datetime <= filter_time,
                         ScheduledEvents.issuer_address == issuer_address,
+                        ScheduledEvents.is_soft_deleted != True,
                     )
                 )
                 .order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id)

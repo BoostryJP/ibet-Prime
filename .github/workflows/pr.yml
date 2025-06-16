@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/ruff-action@v1
+      - uses: astral-sh/ruff-action@v3
   unit-test-postgres:
     name: 'Unit tests (PostgreSQL)'
     runs-on: ubuntu-latest
@@ -87,7 +87,7 @@ jobs:
         run: jrm cov/pytest.xml "cov/pytest-*.xml"
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1
+        uses: MishaKav/pytest-coverage-comment@13d3c18e21895566c746187c9ea74736372e5e91  # v1.1.54
         with:
           report-only-changed-files: true
           pytest-xml-coverage-path: cov/coverage.xml

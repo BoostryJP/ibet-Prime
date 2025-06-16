@@ -237,6 +237,7 @@ async def list_all_scheduled_events(
                 "status": _event.status,
                 "data": _event.data,
                 "created": _created,
+                "is_soft_deleted": _event.is_soft_deleted,
                 "token_attributes": token_attr.__dict__,
             }
         )

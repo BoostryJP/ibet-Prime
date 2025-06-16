@@ -25,11 +25,14 @@ def get_logger(process_name: str = None):
     LOG = logging.getLogger("background")
     LOG.propagate = False
 
+    logging.getLogger("pyroscope").setLevel(logging.ERROR)
+    logging.getLogger("py_spy").setLevel(logging.ERROR)
+    logging.getLogger("opentelemetry").setLevel(logging.ERROR)
+
     LOG_FORMAT = (
         f"[%(asctime)s] [{process_name}] [%(process)d] [%(levelname)s] %(message)s"
     )
     TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %z"
-
     stream_handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(LOG_FORMAT, TIMESTAMP_FORMAT)
     stream_handler.setFormatter(formatter)

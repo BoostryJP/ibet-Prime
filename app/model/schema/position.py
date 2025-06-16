@@ -70,8 +70,31 @@ class LockEventCategory(StrEnum):
     Unlock = "Unlock"
 
 
+class LockMessage(StrEnum):
+    garnishment = "garnishment"
+    inheritance = "inheritance"
+    force_lock = "force_lock"
+
+
+class LockDataMessage(BaseModel):
+    message: LockMessage
+
+
+class UnlockMessage(StrEnum):
+    garnishment = "garnishment"
+    inheritance = "inheritance"
+    force_unlock = "force_unlock"
+
+
+class UnlockDataMessage(BaseModel):
+    message: UnlockMessage
+
+
 class LockEvent(BaseModel):
+    """Lock/Unlock event"""
+
     category: LockEventCategory = Field(description="Event category")
+    is_forced: bool = Field(description="Set to `True` for force lock/unlock events")
     transaction_hash: str = Field(description="Transaction hash")
     msg_sender: Optional[str] = Field(default=None, description="Message sender")
     issuer_address: str = Field(description="Issuer address")
@@ -84,7 +107,9 @@ class LockEvent(BaseModel):
         default=None, description="Recipient address"
     )
     value: int = Field(description="Lock/Unlock amount")
-    data: dict = Field(description="Message at lock/unlock")
+    data: LockDataMessage | UnlockDataMessage | dict = Field(
+        description="Message at lock/unlock"
+    )
     block_timestamp: str = Field(
         description="block_timestamp when Lock log was emitted"
     )
@@ -133,10 +158,22 @@ class ListAllLockEventsQuery(BasePaginationQuery):
     )
 
 
+class ForceLockRequest(BaseModel):
+    token_address: EthereumAddress = Field(..., description="Token address")
+    lock_address: EthereumAddress = Field(..., description="Lock address")
+    message: Optional[LockMessage] = Field(
+        LockMessage.force_lock, description="Lock message"
+    )
+    value: PositiveInt = Field(..., description="Lock amount")
+
+
 class ForceUnlockRequest(BaseModel):
     token_address: EthereumAddress = Field(..., description="Token address")
     lock_address: EthereumAddress = Field(..., description="Lock address")
     recipient_address: EthereumAddress = Field(..., description="Recipient address")
+    message: Optional[UnlockMessage] = Field(
+        UnlockMessage.force_unlock, description="Unlock message"
+    )
     value: PositiveInt = Field(..., description="Unlock amount")
 
 
