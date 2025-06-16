@@ -88,6 +88,7 @@ async def list_all_notifications(
         )
         notifications.append(
             {
+                "id": _notification.id,
                 "notice_id": _notification.notice_id,
                 "issuer_address": _notification.issuer_address,
                 "priority": _notification.priority,

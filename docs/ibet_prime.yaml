@@ -10556,6 +10556,9 @@ components:
       title: BatchIssueRedeemProcessedMetaInfo
     BatchIssueRedeemProcessedNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -10586,6 +10589,7 @@ components:
           $ref: '#/components/schemas/BatchIssueRedeemProcessedMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -10704,6 +10708,9 @@ components:
       title: BatchRegisterPersonalInfoErrorMetaInfo
     BatchRegisterPersonalInfoErrorNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -10732,6 +10739,7 @@ components:
           $ref: '#/components/schemas/BatchRegisterPersonalInfoErrorMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -11006,6 +11014,9 @@ components:
       title: BulkTransferErrorMetaInfo
     BulkTransferErrorNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -11035,6 +11046,7 @@ components:
           $ref: '#/components/schemas/BulkTransferErrorMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -11545,6 +11557,9 @@ components:
       title: CreateLedgerInfoMetaInfo
     CreateLedgerInfoNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -11571,6 +11586,7 @@ components:
           $ref: '#/components/schemas/CreateLedgerInfoMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -11844,6 +11860,9 @@ components:
       title: DVPDeliveryInfoMetaInfo
     DVPDeliveryInfoNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -11873,6 +11892,7 @@ components:
           $ref: '#/components/schemas/DVPDeliveryInfoMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -13799,6 +13819,9 @@ components:
       title: IssueErrorMetaInfo
     IssueErrorNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -13828,6 +13851,7 @@ components:
           $ref: '#/components/schemas/IssueErrorMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -14608,6 +14632,9 @@ components:
       title: LockInfoMetaInfo
     LockInfoNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -14634,6 +14661,7 @@ components:
           $ref: '#/components/schemas/LockInfoMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -15811,6 +15839,9 @@ components:
       title: ScheduleEventErrorMetaInfo
     ScheduleEventErrorNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -15840,6 +15871,7 @@ components:
           $ref: '#/components/schemas/ScheduleEventErrorMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -16367,6 +16399,9 @@ components:
       title: TransferApprovalInfoMetaInfo
     TransferApprovalInfoNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -16397,6 +16432,7 @@ components:
           $ref: '#/components/schemas/TransferApprovalInfoMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
@@ -16833,6 +16869,9 @@ components:
       title: UnlockInfoMetaInfo
     UnlockInfoNotification:
       properties:
+        id:
+          type: integer
+          title: Id
         notice_id:
           type: string
           title: Notice Id
@@ -16859,6 +16898,7 @@ components:
           $ref: '#/components/schemas/UnlockInfoMetaInfo'
       type: object
       required:
+        - id
         - notice_id
         - issuer_address
         - priority
