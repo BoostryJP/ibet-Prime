@@ -45,6 +45,7 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     ApproveTransferParams,
     BulkTransferParams,
     CancelTransferParams,
+    ForceChangeLockedAccountParams,
     ForcedTransferParams,
     ForceLockParams,
     ForceUnlockPrams,
@@ -5555,3 +5556,515 @@ class TestForceUnlock:
         # assertion
         assert exc_info.value.code == 121201
         assert exc_info.value.message == "Unlock amount is greater than locked amount."
+
+
+class TestForceChangeLockedAmount:
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        other_account = config_eth_account("user3")
+        other_address = other_account.get("address")
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "JPY",
+            "20211231",
+            30000,
+            "JPY",
+            "20211231",
+            "リターン内容",
+            "発行目的",
+        ]
+        bond_contract = IbetStraightBondContract()
+        token_address, _, _ = await bond_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # lock
+        await bond_contract.lock(
+            data=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # forceChangeLockedAmount
+        block_from = web3.eth.block_number
+        tx_hash, tx_receipt = await bond_contract.force_change_locked_account(
+            data=ForceChangeLockedAccountParams(
+                lock_address=lock_address,
+                before_account_address=issuer_address,
+                after_account_address=other_address,
+                value=5,
+                data=json.dumps({"message": "force_change_locked_account"}),
+            ),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+        block_to = web3.eth.block_number
+
+        # assertion
+        assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
+        assert tx_receipt["status"] == 1
+
+        bond_token = AsyncContractUtils.get_contract(
+            contract_name="IbetStraightBond", contract_address=token_address
+        )
+        assert (
+            await bond_token.functions.lockedOf(lock_address, issuer_address).call()
+        ) == 5
+        assert (
+            await bond_token.functions.lockedOf(lock_address, other_address).call()
+        ) == 5
+
+        logs = await AsyncContractUtils.get_event_logs(
+            contract=bond_token,
+            event="ForceChangeLockedAccount",
+            block_from=block_from,
+            block_to=block_to,
+        )
+        assert json.loads(logs[0].args["data"]) == {
+            "message": "force_change_locked_account"
+        }
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1_1>
+    # ValidationError
+    # field required
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, async_db):
+        with pytest.raises(ValidationError) as ex_info:
+            ForceChangeLockedAccountParams(**{})
+
+        assert ex_info.value.errors() == [
+            {
+                "type": "missing",
+                "loc": ("lock_address",),
+                "msg": "Field required",
+                "input": {},
+                "url": ANY,
+            },
+            {
+                "type": "missing",
+                "loc": ("before_account_address",),
+                "msg": "Field required",
+                "input": {},
+                "url": ANY,
+            },
+            {
+                "type": "missing",
+                "loc": ("after_account_address",),
+                "msg": "Field required",
+                "input": {},
+                "url": ANY,
+            },
+            {
+                "type": "missing",
+                "loc": ("value",),
+                "msg": "Field required",
+                "input": {},
+                "url": ANY,
+            },
+            {
+                "type": "missing",
+                "loc": ("data",),
+                "msg": "Field required",
+                "input": {},
+                "url": ANY,
+            },
+        ]
+
+    # <Error_1_2>
+    # ValidationError
+    # - address is not a valid address
+    # - value is not greater than 0
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, async_db):
+        with pytest.raises(ValidationError) as ex_info:
+            ForceChangeLockedAccountParams(
+                lock_address="test_address",
+                before_account_address="test_address",
+                after_account_address="test_address",
+                value=0,
+                data="",
+            )
+
+        assert ex_info.value.errors() == [
+            {
+                "ctx": {"error": ANY},
+                "input": "test_address",
+                "loc": ("lock_address",),
+                "msg": "Value error, invalid ethereum address",
+                "type": "value_error",
+                "url": ANY,
+            },
+            {
+                "ctx": {"error": ANY},
+                "input": "test_address",
+                "loc": ("before_account_address",),
+                "msg": "Value error, invalid ethereum address",
+                "type": "value_error",
+                "url": ANY,
+            },
+            {
+                "ctx": {"error": ANY},
+                "input": "test_address",
+                "loc": ("after_account_address",),
+                "msg": "Value error, invalid ethereum address",
+                "type": "value_error",
+                "url": ANY,
+            },
+            {
+                "ctx": {"gt": 0},
+                "input": 0,
+                "loc": ("value",),
+                "msg": "Input should be greater than 0",
+                "type": "greater_than",
+                "url": ANY,
+            },
+        ]
+
+    # <Error_2_1>
+    # SendTransactionError
+    # Invalid tx_from
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        other_account = config_eth_account("user3")
+        other_address = other_account.get("address")
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "JPY",
+            "20211231",
+            30000,
+            "JPY",
+            "20211231",
+            "リターン内容",
+            "発行目的",
+        ]
+        bond_contract = IbetStraightBondContract()
+        await bond_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # lock
+        await bond_contract.lock(
+            data=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # forceChangeLockedAmount
+        with pytest.raises(SendTransactionError) as exc_info:
+            await bond_contract.force_change_locked_account(
+                data=ForceChangeLockedAccountParams(
+                    lock_address=lock_address,
+                    before_account_address=issuer_address,
+                    after_account_address=other_address,
+                    value=5,
+                    data=json.dumps({"message": "force_change_locked_account"}),
+                ),
+                tx_from="invalid_tx_from",  # invalid tx from
+                private_key=issuer_pk,
+            )
+
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
+
+    # <Error_2_2>
+    # SendTransactionError
+    # Invalid pk
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        other_account = config_eth_account("user3")
+        other_address = other_account.get("address")
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "JPY",
+            "20211231",
+            30000,
+            "JPY",
+            "20211231",
+            "リターン内容",
+            "発行目的",
+        ]
+        bond_contract = IbetStraightBondContract()
+        await bond_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # lock
+        await bond_contract.lock(
+            data=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # forceChangeLockedAmount
+        with pytest.raises(SendTransactionError) as exc_info:
+            await bond_contract.force_change_locked_account(
+                data=ForceChangeLockedAccountParams(
+                    lock_address=lock_address,
+                    before_account_address=issuer_address,
+                    after_account_address=other_address,
+                    value=5,
+                    data=json.dumps({"message": "force_change_locked_account"}),
+                ),
+                tx_from=issuer_address,
+                private_key="invalid_pk",  # invalid pk
+            )
+
+        assert isinstance(exc_info.value.args[0], Error)
+        assert exc_info.match("Non-hexadecimal digit found")
+
+    # <Error_3>
+    # SendTransactionError
+    # TimeExhausted
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        other_account = config_eth_account("user3")
+        other_address = other_account.get("address")
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "JPY",
+            "20211231",
+            30000,
+            "JPY",
+            "20211231",
+            "リターン内容",
+            "発行目的",
+        ]
+        bond_contract = IbetStraightBondContract()
+        await bond_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # lock
+        await bond_contract.lock(
+            data=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted,
+        )
+
+        # forceChangeLockedAccount
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                await bond_contract.force_change_locked_account(
+                    data=ForceChangeLockedAccountParams(
+                        lock_address=lock_address,
+                        before_account_address=issuer_address,
+                        after_account_address=other_address,
+                        value=5,
+                        data=json.dumps({"message": "force_change_locked_account"}),
+                    ),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk,
+                )
+
+        assert exc_info.type(SendTransactionError(TimeExhausted))
+
+    # <Error_4>
+    # SendTransactionError
+    # TransactionNotFound
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        other_account = config_eth_account("user3")
+        other_address = other_account.get("address")
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "JPY",
+            "20211231",
+            30000,
+            "JPY",
+            "20211231",
+            "リターン内容",
+            "発行目的",
+        ]
+        bond_contract = IbetStraightBondContract()
+        await bond_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # lock
+        await bond_contract.lock(
+            data=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
+            side_effect=TransactionNotFound(message=""),
+        )
+
+        # forceChangeLockedAccount
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                await bond_contract.force_change_locked_account(
+                    data=ForceChangeLockedAccountParams(
+                        lock_address=lock_address,
+                        before_account_address=issuer_address,
+                        after_account_address=other_address,
+                        value=5,
+                        data=json.dumps({"message": "force_change_locked_account"}),
+                    ),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk,
+                )
+
+        assert exc_info.type(SendTransactionError(TransactionNotFound))
+
+    # <Error_5>
+    # ContractRevertError
+    @pytest.mark.asyncio
+    async def test_error_5(self, async_db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8"),
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        other_account = config_eth_account("user3")
+        other_address = other_account.get("address")
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "JPY",
+            "20211231",
+            30000,
+            "JPY",
+            "20211231",
+            "リターン内容",
+            "発行目的",
+        ]
+        bond_contract = IbetStraightBondContract()
+        await bond_contract.create(
+            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        )
+
+        # lock
+        await bond_contract.lock(
+            data=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # mock
+        #   hardhatがrevertする際にweb3.pyからraiseされるExceptionはGethと異なるためモック化する。
+        #   geth: ContractLogicError("execution reverted: ")
+        InspectionMock = mock.patch(
+            "web3.eth.async_eth.AsyncEth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 121701")),
+        )
+
+        # forceChangeLockedAccount
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            await bond_contract.force_change_locked_account(
+                data=ForceChangeLockedAccountParams(
+                    lock_address=lock_address,
+                    before_account_address=issuer_address,
+                    after_account_address=other_address,
+                    value=11,
+                    data=json.dumps({"message": "force_change_locked_account"}),
+                ),
+                tx_from=issuer_address,
+                private_key=issuer_pk,
+            )
+
+        # assertion
+        assert exc_info.value.code == 121701
+        assert exc_info.value.message == "Locked balance is not sufficient."

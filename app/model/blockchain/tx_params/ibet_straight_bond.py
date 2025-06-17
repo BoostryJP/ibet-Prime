@@ -30,6 +30,7 @@ from .ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
+    ForceChangeLockedAccountParams as IbetSecurityTokenForceChangeLockedAccountParams,
     ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
     ForceLockParams as IbetSecurityTokenForceLockParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
@@ -124,4 +125,8 @@ class ForceLockParams(IbetSecurityTokenForceLockParams):
 
 
 class ForceUnlockPrams(IbetSecurityTokenForceUnlockParams):
+    pass
+
+
+class ForceChangeLockedAccountParams(IbetSecurityTokenForceChangeLockedAccountParams):
     pass

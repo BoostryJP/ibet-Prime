@@ -269,6 +269,7 @@ class Processor:
         await self.__process_force_lock(block_from, block_to)
         await self.__process_unlock(block_from, block_to)
         await self.__process_force_unlock(block_from, block_to)
+        await self.__process_force_change_locked_account(block_from, block_to)
 
         await self.__save_holders(
             db_session,
@@ -545,6 +546,41 @@ class Processor:
                     )
                     self.balance_book.store(
                         account_address=recipient_address, amount=+amount
+                    )
+        except Exception:
+            raise
+
+    async def __process_force_change_locked_account(
+        self, block_from: int, block_to: int
+    ):
+        """Process ForceChangeLockedAccount Event
+
+        - The process of updating Hold-Balance data by capturing the following events
+        - `ForceChangeLockedAccount` event on Token contracts
+
+        :param block_from: From block
+        :param block_to: To block
+        :return: None
+        """
+        try:
+            # Get "ForceChangeLockedAccount" events from token contract
+            events = await AsyncContractUtils.get_event_logs(
+                contract=self.token_contract,
+                event="ForceChangeLockedAccount",
+                block_from=block_from,
+                block_to=block_to,
+            )
+            for event in events:
+                args = event["args"]
+                before_account_address = args.get("beforeAccountAddress", ZERO_ADDRESS)
+                after_account_address = args.get("afterAccountAddress", ZERO_ADDRESS)
+                amount = args.get("value")
+                if amount is not None and amount <= sys.maxsize:
+                    self.balance_book.store(
+                        account_address=before_account_address, locked=-amount
+                    )
+                    self.balance_book.store(
+                        account_address=after_account_address, locked=+amount
                     )
         except Exception:
             raise
