@@ -563,7 +563,7 @@ class Processor:
         :return: None
         """
         try:
-            # Get "ForceUnlock" events from token contract
+            # Get "ForceChangeLockedAccount" events from token contract
             events = await AsyncContractUtils.get_event_logs(
                 contract=self.token_contract,
                 event="ForceChangeLockedAccount",
