@@ -24,8 +24,8 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_straight_bond import AdditionalIssueParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_straight_bond import AdditionalIssueParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -40,7 +40,7 @@ class TestIssueAdditionalBond:
 
     # <Normal_1>
     # Authorization by eoa-password
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.additional_issue")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_1(
         self, IbetStraightBondContract_mock, async_client, async_db
@@ -94,7 +94,7 @@ class TestIssueAdditionalBond:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.additional_issue")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, IbetStraightBondContract_mock, async_client, async_db
@@ -558,7 +558,7 @@ class TestIssueAdditionalBond:
     # <Error_11>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+        "app.model.ibet.token.IbetStraightBondContract.additional_issue",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio

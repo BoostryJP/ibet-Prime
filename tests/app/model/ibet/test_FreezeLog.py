@@ -26,10 +26,10 @@ from web3.exceptions import TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain import FreezeLogContract
 from app.model.db import FreezeLogAccount
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import FreezeLogContract
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from config import WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
@@ -44,7 +44,7 @@ class TestRecordLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, freeze_log_contract):
+    async def test_normal_1(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -57,16 +57,16 @@ class TestRecordLog:
 
         # Run Test
         tx_hash, log_index = await FreezeLogContract(
-            log_account=log_account, contract_address=freeze_log_contract.address
+            log_account=log_account, contract_address=ibet_freeze_log_contract.address
         ).record_log(log_message=log_message, freezing_grace_block_count=100)
 
         # Assertion
-        last_index = freeze_log_contract.functions.lastLogIndex(
+        last_index = ibet_freeze_log_contract.functions.lastLogIndex(
             log_account.account_address
         ).call()
         assert log_index == last_index - 1
 
-        last_message = freeze_log_contract.functions.getLog(
+        last_message = ibet_freeze_log_contract.functions.getLog(
             log_account.account_address, last_index - 1
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
@@ -81,7 +81,7 @@ class TestRecordLog:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, freeze_log_contract):
+    async def test_error_1(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -95,12 +95,12 @@ class TestRecordLog:
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 AsyncMock(side_effect=Exception("tx error")),
             ):
                 await FreezeLogContract(
                     log_account=log_account,
-                    contract_address=freeze_log_contract.address,
+                    contract_address=ibet_freeze_log_contract.address,
                 ).record_log(log_message=log_message, freezing_grace_block_count=100)
 
         # Assertion
@@ -111,7 +111,7 @@ class TestRecordLog:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, freeze_log_contract):
+    async def test_error_2(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -125,12 +125,12 @@ class TestRecordLog:
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 AsyncMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 await FreezeLogContract(
                     log_account=log_account,
-                    contract_address=freeze_log_contract.address,
+                    contract_address=ibet_freeze_log_contract.address,
                 ).record_log(log_message=log_message, freezing_grace_block_count=100)
 
         # Assertion
@@ -146,7 +146,7 @@ class TestUpdateLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, freeze_log_contract):
+    async def test_normal_1(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -158,7 +158,7 @@ class TestUpdateLog:
 
         # Run Test
         log_contract = FreezeLogContract(
-            log_account=log_account, contract_address=freeze_log_contract.address
+            log_account=log_account, contract_address=ibet_freeze_log_contract.address
         )
         tx_hash, log_index = await log_contract.record_log(
             log_message="before message", freezing_grace_block_count=100
@@ -168,7 +168,7 @@ class TestUpdateLog:
         )
 
         # Assertion
-        last_message = freeze_log_contract.functions.getLog(
+        last_message = ibet_freeze_log_contract.functions.getLog(
             log_account.account_address, log_index
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
@@ -183,7 +183,7 @@ class TestUpdateLog:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, freeze_log_contract):
+    async def test_error_1(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -197,12 +197,12 @@ class TestUpdateLog:
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 AsyncMock(side_effect=Exception("tx error")),
             ):
                 await FreezeLogContract(
                     log_account=log_account,
-                    contract_address=freeze_log_contract.address,
+                    contract_address=ibet_freeze_log_contract.address,
                 ).update_log(log_index=1, log_message=log_message)
 
         # Assertion
@@ -213,7 +213,7 @@ class TestUpdateLog:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, freeze_log_contract):
+    async def test_error_2(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -227,12 +227,12 @@ class TestUpdateLog:
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 AsyncMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 await FreezeLogContract(
                     log_account=log_account,
-                    contract_address=freeze_log_contract.address,
+                    contract_address=ibet_freeze_log_contract.address,
                 ).update_log(log_index=1, log_message=log_message)
 
         # Assertion
@@ -248,7 +248,7 @@ class TestGetLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, freeze_log_contract):
+    async def test_normal_1(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -260,7 +260,7 @@ class TestGetLog:
 
         # Run Test
         log_contract = FreezeLogContract(
-            log_account=log_account, contract_address=freeze_log_contract.address
+            log_account=log_account, contract_address=ibet_freeze_log_contract.address
         )
         tx_hash, log_index = await log_contract.record_log(
             log_message="test message", freezing_grace_block_count=100
@@ -278,7 +278,7 @@ class TestGetLog:
     # <Normal_2>
     # Default value
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_db, freeze_log_contract):
+    async def test_normal_2(self, async_db, ibet_freeze_log_contract):
         user = config_eth_account("user1")
         user_address = user["address"]
 
@@ -290,7 +290,7 @@ class TestGetLog:
 
         # Run Test
         log_contract = FreezeLogContract(
-            log_account=log_account, contract_address=freeze_log_contract.address
+            log_account=log_account, contract_address=ibet_freeze_log_contract.address
         )
         _block_number, _grace_block_count, _log_message = await log_contract.get_log(
             9999999

@@ -21,8 +21,8 @@ import eth_keyfile
 import pytest
 from sqlalchemy import select
 
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Account, AccountRsaStatus
+from app.model.ibet import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
 from config import EOA_PASSWORD_PATTERN_MSG
 from tests.account_config import config_eth_account

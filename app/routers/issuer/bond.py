@@ -63,23 +63,6 @@ from app.exceptions import (
     SendTransactionError,
     TokenNotExistError,
 )
-from app.model.blockchain import (
-    IbetSecurityTokenEscrow,
-    IbetStraightBondContract,
-    PersonalInfoContract,
-    TokenListContract,
-)
-from app.model.blockchain.tx_params.ibet_security_token_escrow import (
-    ApproveTransferParams as EscrowApproveTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    AdditionalIssueParams,
-    ApproveTransferParams,
-    CancelTransferParams,
-    ForcedTransferParams,
-    RedeemParams,
-    UpdateParams,
-)
 from app.model.db import (
     UTXO,
     Account,
@@ -113,6 +96,23 @@ from app.model.db import (
     TransferApprovalHistory,
     TransferApprovalOperationType,
     UpdateToken,
+)
+from app.model.ibet import (
+    IbetSecurityTokenEscrow,
+    IbetStraightBondContract,
+    PersonalInfoContract,
+    TokenListContract,
+)
+from app.model.ibet.tx_params.ibet_security_token_escrow import (
+    ApproveTransferParams as EscrowApproveTransferParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams,
+    ApproveTransferParams,
+    CancelTransferParams,
+    ForcedTransferParams,
+    RedeemParams,
+    UpdateParams,
 )
 from app.model.schema import (
     BatchIssueRedeemUploadIdResponse,
@@ -177,9 +177,9 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     validate_headers,
 )
-from app.utils.contract_utils import AsyncContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
+from app.utils.ibet_contract_utils import AsyncContractUtils
 
 router = APIRouter(
     prefix="/bond",

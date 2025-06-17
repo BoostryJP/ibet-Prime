@@ -28,24 +28,6 @@ from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    ForceChangeLockedAccountParams as IbetShareForceChangeLockedAccountParams,
-    ForcedTransferParams as IbetShareTransferParams,
-    ForceUnlockPrams as IbetShareForceUnlockParams,
-    LockParams as IbetShareLockParams,
-    RedeemParams as IbetShareRedeemParams,
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    ForceChangeLockedAccountParams as IbetStraightBondForceChangeLockedAccountParams,
-    ForcedTransferParams as IbetStraightBondTransferParams,
-    LockParams as IbetStraightBondLockParams,
-    RedeemParams as IbetStraightBondRedeemParams,
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     UTXO,
     Account,
@@ -59,8 +41,26 @@ from app.model.db import (
     TokenVersion,
     UTXOBlockNumber,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    ForceChangeLockedAccountParams as IbetShareForceChangeLockedAccountParams,
+    ForcedTransferParams as IbetShareTransferParams,
+    ForceUnlockPrams as IbetShareForceUnlockParams,
+    LockParams as IbetShareLockParams,
+    RedeemParams as IbetShareRedeemParams,
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    ForceChangeLockedAccountParams as IbetStraightBondForceChangeLockedAccountParams,
+    ForcedTransferParams as IbetStraightBondTransferParams,
+    LockParams as IbetStraightBondLockParams,
+    RedeemParams as IbetStraightBondRedeemParams,
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
@@ -598,7 +598,7 @@ class TestProcessor:
         mock_func,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_exchange_contract,
     ):
         user_1 = config_eth_account("user1")
@@ -621,7 +621,7 @@ class TestProcessor:
         token_address_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address,
+            personal_info_contract_address=ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_exchange_contract.address,
         )
         _token_1 = Token()
@@ -634,19 +634,19 @@ class TestProcessor:
         async_db.add(_token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -700,7 +700,7 @@ class TestProcessor:
         other_token_address = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address,
+            personal_info_contract_address=ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_exchange_contract.address,
         )
         STContractUtils.transfer(

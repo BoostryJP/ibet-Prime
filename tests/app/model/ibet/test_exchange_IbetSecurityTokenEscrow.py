@@ -27,11 +27,11 @@ from web3.exceptions import ContractLogicError, TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain import IbetSecurityTokenEscrow, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_security_token_escrow import (
+from app.model.ibet import IbetSecurityTokenEscrow, IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_security_token_escrow import (
     ApproveTransferParams,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
@@ -424,7 +424,7 @@ class TestApproveTransfer:
         # test IbetSecurityTokenEscrow.approve_transfer
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 security_token_escrow = IbetSecurityTokenEscrow(

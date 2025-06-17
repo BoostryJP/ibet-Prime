@@ -29,10 +29,10 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.token_list import TokenListContract
 from app.model.db import TokenType
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.model.ibet.token_list import TokenListContract
+from app.utils.ibet_contract_utils import ContractUtils
 from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
@@ -235,7 +235,7 @@ class TestRegisterTokenList:
 
         # mock
         ContractUtils_send_transaction = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.send_transaction",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
             side_effect=SendTransactionError(),
         )
 

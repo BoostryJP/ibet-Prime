@@ -30,11 +30,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-    PersonalInfoContract,
-)
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
@@ -45,7 +40,12 @@ from app.model.db import (
     TokenStatus,
     TokenType,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
+    PersonalInfoContract,
+)
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler

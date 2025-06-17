@@ -32,10 +32,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
-from app.model.blockchain import IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     Account,
     IDXPersonalInfo,
@@ -47,8 +43,12 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import AsyncContractUtils, ContractUtils
+from app.model.ibet import IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
 from batch.indexer_personal_info import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
@@ -134,7 +134,7 @@ class TestProcessor:
     # No event logs
     # not issue token
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, async_db, personal_info_contract):
+    async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
 
@@ -185,7 +185,7 @@ class TestProcessor:
     # No event logs
     # issued token
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, async_db, personal_info_contract):
+    async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -206,7 +206,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -261,7 +261,7 @@ class TestProcessor:
     # Single event logs
     # - Register
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, async_db, personal_info_contract):
+    async def test_normal_2_1(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -287,7 +287,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -326,7 +326,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.register(
+        tx = ibet_personal_info_contract.functions.register(
             issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -374,7 +374,7 @@ class TestProcessor:
     # Single event logs
     # - Modify
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, processor, async_db, personal_info_contract):
+    async def test_normal_2_2(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -400,7 +400,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -439,7 +439,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.register(
+        tx = ibet_personal_info_contract.functions.register(
             issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -477,7 +477,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.modify(
+        tx = ibet_personal_info_contract.functions.modify(
             user_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -535,7 +535,7 @@ class TestProcessor:
     # Multi event logs
     # - Modify(twice)
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db, personal_info_contract):
+    async def test_normal_3(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -561,7 +561,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -600,7 +600,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.register(
+        tx = ibet_personal_info_contract.functions.register(
             issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -638,7 +638,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.modify(
+        tx = ibet_personal_info_contract.functions.modify(
             user_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -703,7 +703,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_3, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.modify(
+        tx = ibet_personal_info_contract.functions.modify(
             user_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -969,7 +969,7 @@ class TestProcessor:
     # <Normal_6>
     # After off-chain registration
     @pytest.mark.asyncio
-    async def test_normal_6(self, processor, async_db, personal_info_contract):
+    async def test_normal_6(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -995,7 +995,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -1041,7 +1041,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.register(
+        tx = ibet_personal_info_contract.functions.register(
             issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
@@ -1095,7 +1095,7 @@ class TestProcessor:
         self,
         main_func,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = config_eth_account("user1")
@@ -1123,7 +1123,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -1151,7 +1151,7 @@ class TestProcessor:
         ciphertext = encrypt_personal_info(
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        tx = personal_info_contract.functions.register(
+        tx = ibet_personal_info_contract.functions.register(
             issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {

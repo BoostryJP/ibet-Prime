@@ -26,10 +26,6 @@ from sqlalchemy import and_, delete, func, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import log
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-)
 from app.model.db import (
     UTXO,
     IDXPersonalInfo,
@@ -46,6 +42,10 @@ from app.model.db import (
     Token,
     TokenStatus,
     TokenType,
+)
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
 )
 from config import TZ
 

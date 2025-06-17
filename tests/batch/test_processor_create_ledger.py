@@ -26,11 +26,11 @@ from unittest.mock import AsyncMock
 import pytest
 from sqlalchemy import select
 
-from app.model.blockchain import (
+from app.model.db import LedgerCreationRequest, LedgerCreationStatus, TokenType
+from app.model.ibet import (
     IbetShareContract,
     IbetStraightBondContract,
 )
-from app.model.db import LedgerCreationRequest, LedgerCreationStatus, TokenType
 from batch.processor_create_ledger import LOG, Processor
 
 
@@ -66,7 +66,7 @@ class TestProcessor:
     # <Normal_2>
     # The personal information has not been fully registered yet.
     # -> Not be finalized
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @mock.patch(
         "batch.processor_create_ledger.sync_request_with_registered_personal_info",
         AsyncMock(return_value=(1, 0)),
@@ -105,7 +105,7 @@ class TestProcessor:
     # <Normal_3_1>
     # Finalize ledger
     # - IbetShareContract
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @mock.patch(
         "batch.processor_create_ledger.sync_request_with_registered_personal_info",
         AsyncMock(return_value=(1, 1)),
@@ -153,7 +153,7 @@ class TestProcessor:
     # <Normal_3_2>
     # Finalize ledger
     # - IbetStraightBondContract
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @mock.patch(
         "batch.processor_create_ledger.sync_request_with_registered_personal_info",
         AsyncMock(return_value=(1, 1)),
@@ -203,7 +203,7 @@ class TestProcessor:
     # Finalize ledger (time limit exceeded)
     # - IbetShareContract
     @pytest.mark.freeze_time("2024-11-09 00:00:01")
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @mock.patch(
         "batch.processor_create_ledger.sync_request_with_registered_personal_info",
         AsyncMock(return_value=(1, 0)),
@@ -253,7 +253,7 @@ class TestProcessor:
     # Finalize ledger (time limit exceeded)
     # - IbetStraightBondContract
     @pytest.mark.freeze_time("2024-11-09 00:00:01")
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @mock.patch(
         "batch.processor_create_ledger.sync_request_with_registered_personal_info",
         AsyncMock(return_value=(1, 0)),

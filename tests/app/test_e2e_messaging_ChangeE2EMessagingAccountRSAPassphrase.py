@@ -106,7 +106,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, e2e_messaging_contract):
+    async def test_normal_1(self, async_client, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -316,7 +316,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # no data
     # rsa key
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db, e2e_messaging_contract):
+    async def test_normal_2_2(
+        self, async_client, async_db, ibet_e2e_messaging_contract
+    ):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -351,7 +353,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_3>
     # old password mismatch
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db, e2e_messaging_contract):
+    async def test_normal_3(self, async_client, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -393,7 +395,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_4>
     # Passphrase Policy Violation
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db, e2e_messaging_contract):
+    async def test_normal_4(self, async_client, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]

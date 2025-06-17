@@ -39,8 +39,9 @@ from web3.exceptions import (
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain import IbetShareContract
-from app.model.blockchain.tx_params.ibet_share import (
+from app.model.db import TokenAttrUpdate, TokenCache
+from app.model.ibet import IbetShareContract
+from app.model.ibet.tx_params.ibet_share import (
     AdditionalIssueParams,
     ApproveTransferParams,
     BulkTransferParams,
@@ -53,8 +54,7 @@ from app.model.blockchain.tx_params.ibet_share import (
     RedeemParams,
     UpdateParams,
 )
-from app.model.db import TokenAttrUpdate, TokenCache
-from app.utils.contract_utils import AsyncContractUtils, ContractUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
 from config import TOKEN_CACHE_TTL, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.contract_utils import (
@@ -284,7 +284,7 @@ class TestGet:
     # <Normal_1>
     # TOKEN_CACHE is False
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", False)
+    @mock.patch("app.model.ibet.token.TOKEN_CACHE", False)
     async def test_normal_1(self, async_db):
         # prepare account
         test_account = config_eth_account("user1")
@@ -341,7 +341,7 @@ class TestGet:
     # <Normal_2>
     # TOKEN_CACHE is True
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
+    @mock.patch("app.model.ibet.token.TOKEN_CACHE", True)
     async def test_normal_2(self, async_db):
         # prepare account
         test_account = config_eth_account("user1")
@@ -439,7 +439,7 @@ class TestGet:
     # <Normal_3>
     # TOKEN_CACHE is True, updated token attribute
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
+    @mock.patch("app.model.ibet.token.TOKEN_CACHE", True)
     async def test_normal_3(self, async_db):
         # prepare account
         test_account = config_eth_account("user1")

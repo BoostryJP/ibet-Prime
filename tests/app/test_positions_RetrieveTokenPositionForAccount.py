@@ -21,8 +21,8 @@ from unittest import mock
 
 import pytest
 
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType, TokenVersion
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 
 
 class TestAppRoutersPositionsAccountAddressTokenAddressGET:
@@ -36,7 +36,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Normal_1_1>
     # specify header
     # bond token
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_1_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -168,7 +168,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Normal_1_2>
     # specify header
     # share token
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_1_2(self, mock_IbetShareContract_get, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
@@ -278,7 +278,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
     # <Normal_2>
     # not specify header
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -382,7 +382,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Normal_3_1>
     # position is None, locked position is not None
     # - Data sets that do not normally occur -> locked amount = 0
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -486,7 +486,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
     # <Normal_3_2>
     # position is not None (but zero), locked position is not None
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -601,7 +601,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     # <Normal_3_3>
     # position is not None, locked position is None
     # -> locked amount = 0
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_3(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -705,7 +705,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
     # <Normal_3_4>
     # position is not None, locked position is not None (but zero)
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_4(
         self, mock_IbetStraightBondContract_get, async_client, async_db

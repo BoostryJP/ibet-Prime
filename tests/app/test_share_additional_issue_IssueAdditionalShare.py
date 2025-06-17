@@ -24,8 +24,8 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_share import AdditionalIssueParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_share import AdditionalIssueParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -40,7 +40,7 @@ class TestIssueAdditionalShare:
 
     # <Normal_1>
     # Authorization by eoa-password
-    @mock.patch("app.model.blockchain.token.IbetShareContract.additional_issue")
+    @mock.patch("app.model.ibet.token.IbetShareContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_1(self, IbetShareContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -92,7 +92,7 @@ class TestIssueAdditionalShare:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetShareContract.additional_issue")
+    @mock.patch("app.model.ibet.token.IbetShareContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_2(self, IbetShareContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -483,7 +483,7 @@ class TestIssueAdditionalShare:
     # <Error_10>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetShareContract.additional_issue",
+        "app.model.ibet.token.IbetShareContract.additional_issue",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio

@@ -32,7 +32,6 @@ from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     Account,
     Token,
@@ -41,9 +40,10 @@ from app.model.db import (
     TokenUpdateOperationLog,
     TokenVersion,
 )
+from app.model.ibet import IbetStraightBondContract
 from app.model.schema import IbetStraightBondCreate
-from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -255,7 +255,7 @@ class TestListBondOperationLogHistory:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, personal_info_contract):
+    async def test_normal_1(self, async_client, async_db, ibet_personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -298,7 +298,7 @@ class TestListBondOperationLogHistory:
     # <Normal_2>
     # Multiple record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, personal_info_contract):
+    async def test_normal_2(self, async_client, async_db, ibet_personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -312,7 +312,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -392,7 +392,9 @@ class TestListBondOperationLogHistory:
     # <Normal_3_1>
     # Search filter: trigger
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db, personal_info_contract):
+    async def test_normal_3_1(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -406,7 +408,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -484,7 +486,9 @@ class TestListBondOperationLogHistory:
     # <Normal_3_2>
     # Search filter: modified_contents
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db, personal_info_contract):
+    async def test_normal_3_2(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -498,7 +502,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -564,7 +568,7 @@ class TestListBondOperationLogHistory:
     # Search filter: created_from
     @pytest.mark.asyncio
     async def test_normal_3_3(
-        self, async_client, async_db, personal_info_contract, monkeypatch
+        self, async_client, async_db, ibet_personal_info_contract, monkeypatch
     ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -579,7 +583,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             created=datetime(2023, 5, 1, tzinfo=timezone("UTC")).replace(tzinfo=None),
         )
         _token_address = token_contract.address
@@ -675,7 +679,7 @@ class TestListBondOperationLogHistory:
     # Search filter: created_to
     @pytest.mark.asyncio
     async def test_normal_3_4(
-        self, async_client, async_db, personal_info_contract, monkeypatch
+        self, async_client, async_db, ibet_personal_info_contract, monkeypatch
     ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -690,7 +694,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             created=datetime(2023, 5, 1, tzinfo=timezone("UTC")).replace(tzinfo=None),
         )
         _token_address = token_contract.address
@@ -779,7 +783,9 @@ class TestListBondOperationLogHistory:
     # <Normal_4_1>
     # Sort Order
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db, personal_info_contract):
+    async def test_normal_4_1(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -793,7 +799,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -877,7 +883,9 @@ class TestListBondOperationLogHistory:
     # <Normal_4_2>
     # Sort Item
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db, personal_info_contract):
+    async def test_normal_4_2(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -891,7 +899,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -976,7 +984,9 @@ class TestListBondOperationLogHistory:
     # <Normal_5_1>
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_5_1(self, async_client, async_db, personal_info_contract):
+    async def test_normal_5_1(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -990,7 +1000,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -1059,7 +1069,9 @@ class TestListBondOperationLogHistory:
     # <Normal_5_2>
     # Pagination (over offset)
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, async_client, async_db, personal_info_contract):
+    async def test_normal_5_2(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1073,7 +1085,7 @@ class TestListBondOperationLogHistory:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 

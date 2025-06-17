@@ -28,7 +28,7 @@ from Crypto.Util.Padding import pad
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.utils.contract_utils import AsyncContractUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,

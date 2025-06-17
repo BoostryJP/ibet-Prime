@@ -31,15 +31,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    RedeemParams as IbetShareRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    RedeemParams as IbetStraightBondRedeemParams,
-)
 from app.model.db import (
     Account,
     BatchIssueRedeem,
@@ -50,6 +41,15 @@ from app.model.db import (
     Token,
     TokenType,
     TokenVersion,
+)
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch import free_malloc

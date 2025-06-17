@@ -31,7 +31,7 @@ from web3.types import BlockData, TxData
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch import free_malloc
 from batch.utils import batch_log
 from config import CHAIN_ID, INDEXER_SYNC_INTERVAL

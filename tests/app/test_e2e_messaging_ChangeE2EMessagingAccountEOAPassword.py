@@ -21,8 +21,8 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import E2EMessagingAccount
+from app.model.ibet import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
 from config import EOA_PASSWORD_PATTERN_MSG
 from tests.account_config import config_eth_account
@@ -38,7 +38,7 @@ class TestChangeE2EMessagingAccountEOAPassword:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, e2e_messaging_contract):
+    async def test_normal_1(self, async_client, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -223,7 +223,7 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_3>
     # old password mismatch
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, e2e_messaging_contract):
+    async def test_error_3(self, async_client, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -257,7 +257,7 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_4>
     # Passphrase Policy Violation
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db, e2e_messaging_contract):
+    async def test_error_4(self, async_client, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]

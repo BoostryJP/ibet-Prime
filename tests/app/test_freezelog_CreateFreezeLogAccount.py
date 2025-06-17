@@ -42,11 +42,11 @@ class TestCreateFreezeLogAccount:
     # <Normal_1>
     # Use Linux RNG
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, freeze_log_contract):
+    async def test_normal_1(self, async_client, async_db, ibet_freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
             resp = await async_client.post(self.test_url, json=req_param)
@@ -75,7 +75,7 @@ class TestCreateFreezeLogAccount:
     # <Normal_2>
     # Use AWS RNG
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, freeze_log_contract):
+    async def test_normal_2(self, async_client, async_db, ibet_freeze_log_contract):
         # Mock setting
         class KMSClientMock:
             def generate_random(self, NumberOfBytes):
@@ -93,7 +93,7 @@ class TestCreateFreezeLogAccount:
             ),
             mock.patch(
                 "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-                freeze_log_contract.address,
+                ibet_freeze_log_contract.address,
             ),
             mock_boto3_client,
         ):
@@ -130,11 +130,11 @@ class TestCreateFreezeLogAccount:
     # Missing required field
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db, freeze_log_contract):
+    async def test_error_1(self, async_client, async_db, ibet_freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             req_param = {}
             resp = await async_client.post(self.test_url, json=req_param)
@@ -158,11 +158,11 @@ class TestCreateFreezeLogAccount:
     # Not encrypted password
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db, freeze_log_contract):
+    async def test_error_2(self, async_client, async_db, ibet_freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             req_param = {
                 "eoa_password": base64.encodebytes(
@@ -190,11 +190,11 @@ class TestCreateFreezeLogAccount:
     # Password policy violation
     # -> InvalidParameterError
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, freeze_log_contract):
+    async def test_error_3(self, async_client, async_db, ibet_freeze_log_contract):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}
             resp = await async_client.post(self.test_url, json=req_param)

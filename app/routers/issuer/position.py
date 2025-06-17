@@ -35,15 +35,6 @@ from app.exceptions import (
     OperationNotSupportedVersionError,
     SendTransactionError,
 )
-from app.model.blockchain import (
-    IbetSecurityTokenInterface,
-    IbetShareContract,
-    IbetStraightBondContract,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
-    ForceLockParams,
-    ForceUnlockParams,
-)
 from app.model.db import (
     IDXLock,
     IDXLockedPosition,
@@ -53,6 +44,15 @@ from app.model.db import (
     TokenStatus,
     TokenType,
     TokenVersion,
+)
+from app.model.ibet import (
+    IbetSecurityTokenInterface,
+    IbetShareContract,
+    IbetStraightBondContract,
+)
+from app.model.ibet.tx_params.ibet_security_token import (
+    ForceLockParams,
+    ForceUnlockParams,
 )
 from app.model.schema import (
     ForceLockRequest,

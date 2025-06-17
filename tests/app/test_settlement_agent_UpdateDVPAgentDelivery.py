@@ -20,13 +20,13 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 from eth_keyfile import decode_keyfile_json
 
-from app.model.blockchain import IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_straight_bond import (
+from app.model.db import Account, DVPAgentAccount, Token, TokenType, TokenVersion
+from app.model.ibet import IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import Account, DVPAgentAccount, Token, TokenType, TokenVersion
-from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
 
@@ -81,7 +81,7 @@ class TestUpdateDVPDelivery:
     async def test_normal_1(
         self,
         ibet_security_token_dvp_contract,
-        personal_info_contract,
+        ibet_personal_info_contract,
         async_client,
         async_db,
     ):
@@ -117,7 +117,7 @@ class TestUpdateDVPDelivery:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
@@ -194,7 +194,7 @@ class TestUpdateDVPDelivery:
     async def test_normal_2(
         self,
         ibet_security_token_dvp_contract,
-        personal_info_contract,
+        ibet_personal_info_contract,
         async_client,
         async_db,
     ):
@@ -230,7 +230,7 @@ class TestUpdateDVPDelivery:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
@@ -361,7 +361,7 @@ class TestUpdateDVPDelivery:
         async_client,
         async_db,
         ibet_security_token_dvp_contract,
-        personal_info_contract,
+        ibet_personal_info_contract,
     ):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -389,7 +389,7 @@ class TestUpdateDVPDelivery:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
@@ -436,7 +436,7 @@ class TestUpdateDVPDelivery:
         async_client,
         async_db,
         ibet_security_token_dvp_contract,
-        personal_info_contract,
+        ibet_personal_info_contract,
     ):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -470,7 +470,7 @@ class TestUpdateDVPDelivery:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()

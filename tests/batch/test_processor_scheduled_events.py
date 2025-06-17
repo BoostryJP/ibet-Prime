@@ -139,11 +139,11 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_update = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            target="app.model.ibet.token.IbetStraightBondContract.update",
             return_value=None,
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=AttributeDict({}),
         )
 
@@ -288,11 +288,11 @@ class TestProcessor:
 
         # mock
         IbetShareContract_update = patch(
-            target="app.model.blockchain.token.IbetShareContract.update",
+            target="app.model.ibet.token.IbetShareContract.update",
             return_value=None,
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=AttributeDict({}),
         )
 
@@ -585,11 +585,11 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_update = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            target="app.model.ibet.token.IbetStraightBondContract.update",
             side_effect=SendTransactionError(),
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=AttributeDict({}),
         )
 
@@ -656,12 +656,12 @@ class TestProcessor:
 
         # mock
         IbetShareContract_update = patch(
-            target="app.model.blockchain.token.IbetShareContract.update",
+            target="app.model.ibet.token.IbetShareContract.update",
             side_effect=SendTransactionError(),
         )
 
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=AttributeDict({}),
         )
 
@@ -728,12 +728,12 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_update = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            target="app.model.ibet.token.IbetStraightBondContract.update",
             side_effect=ContractRevertError("999999"),
         )
 
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=AttributeDict({}),
         )
 
@@ -810,12 +810,12 @@ class TestProcessor:
 
         # mock
         IbetShareContract_update = patch(
-            target="app.model.blockchain.token.IbetShareContract.update",
+            target="app.model.ibet.token.IbetShareContract.update",
             side_effect=ContractRevertError("999999"),
         )
 
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=AttributeDict({}),
         )
 

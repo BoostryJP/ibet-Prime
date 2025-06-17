@@ -39,7 +39,7 @@ from web3.types import TxReceipt
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
-from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from config import ASYNC_DATABASE_URL, CHAIN_ID, DATABASE_URL, TX_GAS_LIMIT
 
 web3 = Web3Wrapper()
@@ -56,7 +56,7 @@ class ContractUtils:
         :param contract_name: contract name
         :return: ABI, bytecode, deployedBytecode
         """
-        contract_json = json.load(open(f"contracts/{contract_name}.json", "r"))
+        contract_json = json.load(open(f"contracts/ibet/{contract_name}.json", "r"))
 
         if "bytecode" not in contract_json.keys():
             contract_json["bytecode"] = None
@@ -80,7 +80,7 @@ class ContractUtils:
         :param private_key: private key
         :return: contract address, ABI, transaction hash
         """
-        contract_file = f"contracts/{contract_name}.json"
+        contract_file = f"contracts/ibet/{contract_name}.json"
         try:
             contract_json = json.load(open(contract_file, "r"))
         except FileNotFoundError as file_not_found_err:
@@ -132,7 +132,7 @@ class ContractUtils:
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
-        contract_file = f"contracts/{contract_name}.json"
+        contract_file = f"contracts/ibet/{contract_name}.json"
         contract_json = json.load(open(contract_file, "r"))
         contract_factory = web3.eth.contract(abi=contract_json["abi"])
         cls.factory_map[contract_name] = contract_factory
@@ -315,7 +315,7 @@ class AsyncContractUtils:
         :param contract_name: contract name
         :return: ABI, bytecode, deployedBytecode
         """
-        contract_json = json.load(open(f"contracts/{contract_name}.json", "r"))
+        contract_json = json.load(open(f"contracts/ibet/{contract_name}.json", "r"))
 
         if "bytecode" not in contract_json.keys():
             contract_json["bytecode"] = None
@@ -339,7 +339,7 @@ class AsyncContractUtils:
         :param private_key: private key
         :return: contract address, ABI, transaction hash
         """
-        contract_file = f"contracts/{contract_name}.json"
+        contract_file = f"contracts/ibet/{contract_name}.json"
         try:
             contract_json = json.load(open(contract_file, "r"))
         except FileNotFoundError as file_not_found_err:
@@ -391,7 +391,7 @@ class AsyncContractUtils:
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
-        contract_file = f"contracts/{contract_name}.json"
+        contract_file = f"contracts/ibet/{contract_name}.json"
         contract_json = json.load(open(contract_file, "r"))
         contract_factory = async_web3.eth.contract(abi=contract_json["abi"])
         cls.factory_map[contract_name] = contract_factory

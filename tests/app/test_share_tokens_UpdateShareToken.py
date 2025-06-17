@@ -29,7 +29,6 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.blockchain import IbetShareContract
 from app.model.db import (
     Account,
     AuthToken,
@@ -39,8 +38,9 @@ from app.model.db import (
     TokenUpdateOperationLog,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetShareContract
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -68,7 +68,7 @@ async def deploy_share_token_contract(
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
-@mock.patch("app.model.blockchain.token.TX_GAS_LIMIT", 8000000)
+@mock.patch("app.model.ibet.token.TX_GAS_LIMIT", 8000000)
 class TestAppRoutersShareTokensTokenAddressPOST:
     # target API endpoint
     base_url = "/share/tokens/{}"
@@ -1052,7 +1052,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
     # <Error_12>
     # AuthorizationError: issuer does not exist
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
+    @mock.patch("app.model.ibet.token.IbetShareContract.update")
     @pytest.mark.asyncio
     async def test_error_12(self, IbetShareContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -1094,7 +1094,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
     # <Error_13>
     # AuthorizationError: password mismatch
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
+    @mock.patch("app.model.ibet.token.IbetShareContract.update")
     @pytest.mark.asyncio
     async def test_error_13(self, IbetShareContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -1134,7 +1134,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
     # <Error_14>
     # token not found
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
+    @mock.patch("app.model.ibet.token.IbetShareContract.update")
     @pytest.mark.asyncio
     async def test_error_14(self, IbetShareContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -1221,7 +1221,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # <Error_16>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetShareContract.update",
+        "app.model.ibet.token.IbetShareContract.update",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio

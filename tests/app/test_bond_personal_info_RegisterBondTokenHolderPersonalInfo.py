@@ -24,7 +24,6 @@ import pytest
 from sqlalchemy import select
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain import IbetStraightBondContract, PersonalInfoContract
 from app.model.db import (
     Account,
     AuthToken,
@@ -33,6 +32,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
+from app.model.ibet import IbetStraightBondContract, PersonalInfoContract
 from app.model.schema import PersonalInfoDataSource
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -83,15 +83,15 @@ class TestRegisterBondTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=ibet_bond_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -176,15 +176,15 @@ class TestRegisterBondTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=ibet_bond_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -278,15 +278,15 @@ class TestRegisterBondTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=ibet_bond_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -364,15 +364,15 @@ class TestRegisterBondTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=ibet_bond_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -463,15 +463,15 @@ class TestRegisterBondTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=ibet_bond_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -1046,15 +1046,15 @@ class TestRegisterBondTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=ibet_bond_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             side_effect=SendTransactionError(),
         )
 
@@ -1128,15 +1128,15 @@ class TestRegisterBondTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetStraightBondContract_get = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            target="app.model.ibet.token.IbetStraightBondContract.get",
             return_value=ibet_bond_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             side_effect=SendTransactionError(),
         )
 

@@ -22,7 +22,7 @@ from typing import Literal
 from fastapi import status
 from pydantic import BaseModel
 
-from app.utils.contract_error_code import REVERT_CODE_MAP, error_code_msg
+from app.utils.ibet_contract_error import REVERT_CODE_MAP, error_code_msg
 
 
 class AppError(Exception):

@@ -29,7 +29,6 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     Account,
     AuthToken,
@@ -40,8 +39,9 @@ from app.model.db import (
     TokenVersion,
     UpdateToken,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -71,7 +71,7 @@ async def deploy_bond_token_contract(
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-@mock.patch("app.model.blockchain.token.TX_GAS_LIMIT", 8000000)
+@mock.patch("app.model.ibet.token.TX_GAS_LIMIT", 8000000)
 class TestUpdateBondToken:
     # target API endpoint
     base_url = "/bond/tokens/{}"
@@ -1411,7 +1411,7 @@ class TestUpdateBondToken:
 
     # <Error_7>
     # AuthorizationError: issuer does not exist
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.update")
     @pytest.mark.asyncio
     async def test_error_7(self, IbetStraightBondContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -1451,7 +1451,7 @@ class TestUpdateBondToken:
 
     # <Error_8>
     # AuthorizationError: token not found
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.update")
     @pytest.mark.asyncio
     async def test_error_8(self, IbetStraightBondContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -1489,7 +1489,7 @@ class TestUpdateBondToken:
 
     # <Error_9>
     # token not found
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.update")
     @pytest.mark.asyncio
     async def test_error_9(self, IbetStraightBondContract_mock, async_client, async_db):
         test_account = config_eth_account("user1")
@@ -1576,7 +1576,7 @@ class TestUpdateBondToken:
     # <Error_11>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetStraightBondContract.update",
+        "app.model.ibet.token.IbetStraightBondContract.update",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio

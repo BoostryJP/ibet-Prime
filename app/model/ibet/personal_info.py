@@ -31,9 +31,9 @@ from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import Account
-from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import Web3Wrapper
 from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 
 web3 = Web3Wrapper()

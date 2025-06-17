@@ -32,10 +32,10 @@ from web3.exceptions import ContractLogicError, TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain import PersonalInfoContract
 from app.model.db import Account
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import PersonalInfoContract
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 

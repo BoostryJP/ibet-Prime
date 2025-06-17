@@ -22,8 +22,8 @@ from unittest import mock
 import pytest
 from pytz import timezone
 
-from app.model.blockchain import IbetShareContract
 from app.model.db import Token, TokenType, TokenVersion
+from app.model.ibet import IbetShareContract
 from config import TZ
 from tests.account_config import config_eth_account
 
@@ -48,7 +48,7 @@ class TestListAllShareTokens:
 
     # <Normal_2>
     # parameter unset address, 1 Record
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
@@ -138,7 +138,7 @@ class TestListAllShareTokens:
 
     # <Normal Case 3>
     # parameter unset address, Multi Record
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_3(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
@@ -327,7 +327,7 @@ class TestListAllShareTokens:
 
     # <Normal Case 5>
     # parameter set address, 1 Record
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_5(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
@@ -429,7 +429,7 @@ class TestListAllShareTokens:
 
     # <Normal Case 6>
     # parameter set address, Multi Record
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_6(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")

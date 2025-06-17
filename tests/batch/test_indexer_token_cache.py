@@ -31,16 +31,16 @@ from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
+from app.model.db import Account, Token, TokenCache, TokenType, TokenVersion
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
 )
-from app.model.blockchain.tx_params.ibet_straight_bond import (
+from app.model.ibet.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import Account, Token, TokenCache, TokenType, TokenVersion
-from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_token_cache import LOG, Processor, main
 from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
@@ -150,7 +150,7 @@ class TestProcessor:
     # Single Token
     # not issue token
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, async_db, personal_info_contract):
+    async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
 
@@ -187,7 +187,7 @@ class TestProcessor:
     # Multi Token
     # issued token
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, async_db, personal_info_contract):
+    async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -203,7 +203,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -217,7 +217,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_2 = await deploy_share_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_2 = token_contract_2.address
         token_2 = Token()
@@ -274,7 +274,7 @@ class TestProcessor:
             "contact_information": "",
             "privacy_policy": "",
             "status": True,
-            "personal_info_contract_address": personal_info_contract.address,
+            "personal_info_contract_address": ibet_personal_info_contract.address,
             "require_personal_info_registered": True,
             "transferable": True,
             "is_offering": False,
@@ -311,7 +311,7 @@ class TestProcessor:
             "issuer_address": issuer_address,
             "memo": "",
             "name": "token.name",
-            "personal_info_contract_address": personal_info_contract.address,
+            "personal_info_contract_address": ibet_personal_info_contract.address,
             "require_personal_info_registered": True,
             "principal_value": 30,
             "privacy_policy": "",
@@ -335,7 +335,7 @@ class TestProcessor:
         self,
         main_func,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = config_eth_account("user1")
@@ -353,7 +353,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -376,7 +376,7 @@ class TestProcessor:
             patch("batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None),
             patch("asyncio.sleep", sleep_mock),
             patch(
-                target="app.utils.contract_utils.AsyncContractUtils.call_function",
+                target="app.utils.ibet_contract_utils.AsyncContractUtils.call_function",
                 side_effect=ServiceUnavailableError(),
             ),
             pytest.raises(TypeError),

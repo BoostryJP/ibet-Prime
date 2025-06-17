@@ -29,7 +29,7 @@ from app.model.schema import BlockNumberResponse, E2EEResponse
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from config import E2EE_REQUEST_ENABLED
 
 web3 = AsyncWeb3Wrapper()

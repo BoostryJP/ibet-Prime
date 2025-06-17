@@ -7,12 +7,18 @@ services:
       - POSTGRES_USER=apluser
       - POSTGRES_PASSWORD=apluserpass
       - POSTGRES_DB=apldb
-  hardhat-network:
+  ibet-hardhat-network:
     build:
       context: ./
-      dockerfile: tests/Dockerfile_hardhat
+      dockerfile: tests/Dockerfile_ibet
     ports:
       - "8545:8545"
+  eth-hardhat-network:
+    build:
+      context: ./
+      dockerfile: tests/Dockerfile_eth
+    ports:
+      - "8546:8545"
   ibet-prime-postgres:
     build:
       context: ./
@@ -26,9 +32,11 @@ services:
       - DVP_AGENT_FEATURE_ENABLED=1
     links:
       - postgres:postgres
-      - hardhat-network:quorum
+      - ibet-hardhat-network:quorum
+      - eth-hardhat-network:geth
     depends_on:
       - postgres
-      - hardhat-network
+      - ibet-hardhat-network
+      - eth-hardhat-network
     volumes:
       - ./cov:/app/ibet-Prime/cov

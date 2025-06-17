@@ -22,8 +22,8 @@ from unittest import mock
 import pytest
 import pytz
 
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Token, TokenType, TokenVersion
+from app.model.ibet import IbetStraightBondContract
 from config import TZ
 
 
@@ -38,7 +38,7 @@ class TestRetrieveBondToken:
 
     # <Normal_1>
     # not exist Additional info
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_1(self, mock_get, async_client, async_db):
         # prepare data
@@ -165,7 +165,7 @@ class TestRetrieveBondToken:
 
     # <Normal_2>
     # exist Additional info
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(self, mock_get, async_client, async_db):
         # prepare data

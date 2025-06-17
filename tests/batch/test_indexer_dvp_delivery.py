@@ -29,13 +29,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     Account,
     DeliveryStatus,
@@ -49,9 +42,16 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_contract_utils import ContractUtils
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch.indexer_dvp_delivery import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import config_eth_account
@@ -164,7 +164,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -214,7 +214,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = config_eth_account("user1")
@@ -236,7 +236,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=None,
         )
         token_address_1 = token_contract_1.address
@@ -283,7 +283,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -306,7 +306,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -370,7 +370,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -401,7 +401,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -533,7 +533,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -564,7 +564,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -700,7 +700,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -738,7 +738,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -876,7 +876,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -903,7 +903,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -1066,7 +1066,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1094,7 +1094,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -1258,7 +1258,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1286,7 +1286,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -1446,7 +1446,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1477,7 +1477,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -1670,7 +1670,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1707,7 +1707,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -1919,7 +1919,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1950,7 +1950,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -2128,7 +2128,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
@@ -2160,7 +2160,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -2177,7 +2177,7 @@ class TestProcessor:
         token_contract_2 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_2 = token_contract_2.address
@@ -2344,7 +2344,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2365,7 +2365,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token_address_1 = token_contract_1.address
@@ -2411,7 +2411,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_dvp_contract,
         ibet_security_token_escrow_contract,
     ):
@@ -2432,7 +2432,7 @@ class TestProcessor:
         token_contract1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
         )
         token_address_1 = token_contract1.address
@@ -2459,7 +2459,7 @@ class TestProcessor:
         token_contract2 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
             transfer_approval_required=False,
         )
@@ -2495,7 +2495,7 @@ class TestProcessor:
         self,
         main_func,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = config_eth_account("user1")
@@ -2513,7 +2513,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address = token_contract.address
         token = Token()

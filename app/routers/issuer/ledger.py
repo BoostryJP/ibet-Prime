@@ -30,12 +30,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import log
 from app.database import DBAsyncSession
 from app.exceptions import Integer64bitLimitExceededError, InvalidParameterError
-from app.model.blockchain import (
-    ContractPersonalInfoType,
-    IbetShareContract,
-    IbetStraightBondContract,
-    PersonalInfoContract,
-)
 from app.model.db import (
     Account,
     IDXPersonalInfo,
@@ -47,6 +41,12 @@ from app.model.db import (
     Token,
     TokenStatus,
     TokenType,
+)
+from app.model.ibet import (
+    ContractPersonalInfoType,
+    IbetShareContract,
+    IbetStraightBondContract,
+    PersonalInfoContract,
 )
 from app.model.schema import (
     CreateUpdateLedgerDetailsDataRequest,
@@ -61,7 +61,7 @@ from app.model.schema import (
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
-from app.utils.ledger_utils import request_ledger_creation
+from app.utils.ibet_ledger_utils import request_ledger_creation
 from config import TZ
 
 router = APIRouter(

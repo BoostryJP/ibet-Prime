@@ -24,8 +24,8 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_straight_bond import ForcedTransferParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_straight_bond import ForcedTransferParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -40,7 +40,7 @@ class TestTransferBondTokenOwnership:
 
     # <Normal_1>
     # Authorization by eoa-password
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.forced_transfer")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.forced_transfer")
     @pytest.mark.asyncio
     async def test_normal_1(
         self, IbetStraightBondContract_mock, async_client, async_db
@@ -112,7 +112,7 @@ class TestTransferBondTokenOwnership:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.forced_transfer")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.forced_transfer")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, IbetStraightBondContract_mock, async_client, async_db
@@ -581,7 +581,7 @@ class TestTransferBondTokenOwnership:
     # <Error_10>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
+        "app.model.ibet.token.IbetStraightBondContract.forced_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
