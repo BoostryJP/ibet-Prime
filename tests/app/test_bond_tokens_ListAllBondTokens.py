@@ -26,7 +26,7 @@ from web3.datastructures import AttributeDict
 from app.model.db import Token, TokenType, TokenVersion
 from app.model.ibet import IbetStraightBondContract
 from config import TZ
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListAllBondTokens:
@@ -52,7 +52,7 @@ class TestListAllBondTokens:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_2(self, mock_get, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
         token = Token()
@@ -179,9 +179,9 @@ class TestListAllBondTokens:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_3(self, mock_get, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         # 1st Data
@@ -422,9 +422,9 @@ class TestListAllBondTokens:
     # parameter set address, 0 Record
     @pytest.mark.asyncio
     async def test_normal_4(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         # No Target Data
@@ -449,9 +449,9 @@ class TestListAllBondTokens:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5(self, mock_get, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         token_1 = Token()
@@ -590,9 +590,9 @@ class TestListAllBondTokens:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_6(self, mock_get, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         # 1st Data

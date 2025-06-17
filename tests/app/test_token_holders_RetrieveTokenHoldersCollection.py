@@ -35,7 +35,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -54,7 +54,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -98,7 +98,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -125,7 +125,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
@@ -166,7 +166,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_1_1(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -193,13 +193,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -245,7 +245,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_1_2(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -272,13 +272,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -324,7 +324,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_1_3(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -351,13 +351,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -403,7 +403,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_2_1(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -430,13 +430,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -482,7 +482,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_2_2(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -509,13 +509,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -561,7 +561,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_2_3(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -588,13 +588,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -640,7 +640,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_3(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -667,13 +667,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -718,7 +718,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_4(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -745,13 +745,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -794,7 +794,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_3_5(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -821,13 +821,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -853,7 +853,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             self.base_url.format(token_address=token_address, list_id=list_id),
             headers={"issuer-address": issuer_address},
             params={
-                "account_address": config_eth_account("user2")["address"],
+                "account_address": default_eth_account("user2")["address"],
             },
         )
         holders = [holders[0]]
@@ -882,7 +882,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_4(self, sort_item, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -909,13 +909,13 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
-            _personal_info.account_address = config_eth_account(user)["address"]
+            _personal_info.account_address = default_eth_account(user)["address"]
             _personal_info._personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
@@ -957,7 +957,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_normal_5(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -984,7 +984,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
-            _token_holder.account_address = config_eth_account(user)["address"]
+            _token_holder.account_address = default_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i + 1)
             _token_holder.locked_balance = 20000 * (i + 1)
             async_db.add(_token_holder)
@@ -1031,7 +1031,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         list_id = str(uuid.uuid4())
@@ -1055,7 +1055,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -1100,7 +1100,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -1143,7 +1143,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -1180,7 +1180,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address1 = "0xABCdeF1234567890abcdEf123456789000000000"
         token_address2 = "0x000000000987654321fEdcba0987654321FedCBA"
@@ -1234,7 +1234,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -1284,7 +1284,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
         # Issue Token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 

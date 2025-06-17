@@ -29,7 +29,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
@@ -44,7 +44,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # 0 record
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -73,7 +73,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # 1 record
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -120,7 +120,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Multi record
     @pytest.mark.asyncio
     async def test_normal_3_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -228,7 +228,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Multi record (Issuer specified)
     @pytest.mark.asyncio
     async def test_normal_3_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -323,7 +323,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Multi record (status)
     @pytest.mark.asyncio
     async def test_normal_3_3(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -426,7 +426,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Pagination
     @pytest.mark.asyncio
     async def test_normal_4(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -521,7 +521,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Sort
     @pytest.mark.asyncio
     async def test_normal_5(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -637,7 +637,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # query(invalid value)
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 

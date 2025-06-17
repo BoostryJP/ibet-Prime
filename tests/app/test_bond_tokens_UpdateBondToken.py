@@ -42,7 +42,7 @@ from app.model.db import (
 from app.model.ibet import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -83,7 +83,7 @@ class TestUpdateBondToken:
     # <Normal_1_1>
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -230,7 +230,7 @@ class TestUpdateBondToken:
     # Empty str set to currency code
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -377,7 +377,7 @@ class TestUpdateBondToken:
     # Empty str set to redemption date
     @pytest.mark.asyncio
     async def test_normal_1_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -524,7 +524,7 @@ class TestUpdateBondToken:
     # No request parameters
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -589,7 +589,7 @@ class TestUpdateBondToken:
     # Authorization by auth token
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -1207,7 +1207,7 @@ class TestUpdateBondToken:
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -1237,7 +1237,7 @@ class TestUpdateBondToken:
     # RequestValidationError: eoa-password((not decrypt))
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1283,7 +1283,7 @@ class TestUpdateBondToken:
     # RequestValidationError: min value
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1352,7 +1352,7 @@ class TestUpdateBondToken:
     # RequestValidationError: max value
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1414,7 +1414,7 @@ class TestUpdateBondToken:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.update")
     @pytest.mark.asyncio
     async def test_error_7(self, IbetStraightBondContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -1454,7 +1454,7 @@ class TestUpdateBondToken:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.update")
     @pytest.mark.asyncio
     async def test_error_8(self, IbetStraightBondContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1492,7 +1492,7 @@ class TestUpdateBondToken:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.update")
     @pytest.mark.asyncio
     async def test_error_9(self, IbetStraightBondContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1531,7 +1531,7 @@ class TestUpdateBondToken:
     # Processing Token
     @pytest.mark.asyncio
     async def test_error_10(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1581,7 +1581,7 @@ class TestUpdateBondToken:
     )
     @pytest.mark.asyncio
     async def test_error_11(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1626,7 +1626,7 @@ class TestUpdateBondToken:
     # OperationNotSupportedVersionError: v23.12
     @pytest.mark.asyncio
     async def test_error_12_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1688,7 +1688,7 @@ class TestUpdateBondToken:
     )
     @pytest.mark.asyncio
     async def test_error_12_2(self, async_client, async_db, req_param):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"

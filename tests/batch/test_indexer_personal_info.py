@@ -51,7 +51,7 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
 from batch.indexer_personal_info import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -135,7 +135,7 @@ class TestProcessor:
     # not issue token
     @pytest.mark.asyncio
     async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Account
@@ -186,7 +186,7 @@ class TestProcessor:
     # issued token
     @pytest.mark.asyncio
     async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -262,7 +262,7 @@ class TestProcessor:
     # - Register
     @pytest.mark.asyncio
     async def test_normal_2_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -270,7 +270,7 @@ class TestProcessor:
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -375,7 +375,7 @@ class TestProcessor:
     # - Modify
     @pytest.mark.asyncio
     async def test_normal_2_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -383,7 +383,7 @@ class TestProcessor:
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -536,7 +536,7 @@ class TestProcessor:
     # - Modify(twice)
     @pytest.mark.asyncio
     async def test_normal_3(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -544,7 +544,7 @@ class TestProcessor:
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -752,7 +752,7 @@ class TestProcessor:
     # Multi Token
     @pytest.mark.asyncio
     async def test_normal_4(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         issuer_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -761,7 +761,7 @@ class TestProcessor:
         issuer_rsa_public_key_1 = user_1["rsa_public_key"]
         issuer_rsa_passphrase_1 = "password"
 
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
         issuer_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -970,7 +970,7 @@ class TestProcessor:
     # After off-chain registration
     @pytest.mark.asyncio
     async def test_normal_6(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -978,7 +978,7 @@ class TestProcessor:
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1098,7 +1098,7 @@ class TestProcessor:
         ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -1106,7 +1106,7 @@ class TestProcessor:
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")

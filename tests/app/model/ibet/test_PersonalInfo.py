@@ -37,7 +37,7 @@ from app.model.ibet import PersonalInfoContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -79,11 +79,11 @@ class TestGetInfo:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
@@ -130,11 +130,11 @@ class TestGetInfo:
     # Unset Information
     @pytest.mark.asyncio
     async def test_normal_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
         tx = await contract.functions.register(issuer["address"], "").build_transaction(
             {
@@ -176,11 +176,11 @@ class TestGetInfo:
     # Invalid RSA Private Key
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
@@ -241,11 +241,11 @@ class TestGetInfo:
     # Decrypt Fail
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
         tx = await contract.functions.register(
             issuer["address"], "testtest"
@@ -291,11 +291,11 @@ class TestRegisterInfo:
     # not register
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Run Test
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         register_data = {
             "key_manager": "0987654321",
             "name": "name_test2",
@@ -318,11 +318,11 @@ class TestRegisterInfo:
     # registered
     @pytest.mark.asyncio
     async def test_normal_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
@@ -385,11 +385,11 @@ class TestRegisterInfo:
     # SendTransactionError(Timeout)
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Run Test
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         register_data = {
             "key_manager": "0987654321",
             "name": "name_test2",
@@ -413,11 +413,11 @@ class TestRegisterInfo:
     # SendTransactionError(Other Error)
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Run Test
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         register_data = {
             "key_manager": "0987654321",
             "name": "name_test2",
@@ -453,11 +453,11 @@ class TestModifyInfo:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
@@ -520,11 +520,11 @@ class TestModifyInfo:
     # SendTransactionError(Timeout)
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
@@ -586,11 +586,11 @@ class TestModifyInfo:
     # SendTransactionError(Other Error)
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
@@ -652,11 +652,11 @@ class TestModifyInfo:
     # Transaction REVERT(not registered)
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
 
         # Run Test
         update_data = {
@@ -694,13 +694,13 @@ class TestGetRegisterEvent:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         block_number_before = web3.eth.block_number
 
         # Set personal information data(Register)
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
@@ -757,11 +757,11 @@ class TestGetModifyEvent:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
         # Set personal information data
-        setting_user = config_eth_account("user2")
+        setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
             personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password

@@ -34,7 +34,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -53,7 +53,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -109,7 +109,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -177,7 +177,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -221,7 +221,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -259,7 +259,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -305,7 +305,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -350,7 +350,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address1 = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -426,7 +426,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -466,7 +466,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 

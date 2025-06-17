@@ -56,7 +56,7 @@ from app.model.ibet.tx_params.ibet_share import (
 )
 from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
 from config import TOKEN_CACHE_TTL, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 from tests.contract_utils import (
     IbetSecurityTokenContractTestUtils,
     PersonalInfoContractTestUtils,
@@ -74,7 +74,7 @@ class TestCreate:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -122,7 +122,7 @@ class TestCreate:
     # Invalid argument (args length)
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -145,7 +145,7 @@ class TestCreate:
     # Invalid argument type (args)
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -180,7 +180,7 @@ class TestCreate:
     # Invalid argument type (tx_from)
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -215,7 +215,7 @@ class TestCreate:
     # Invalid argument type (private_key)
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
 
         # execute the function
@@ -244,7 +244,7 @@ class TestCreate:
     # Already deployed
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -287,7 +287,7 @@ class TestGet:
     @mock.patch("app.model.ibet.token.TOKEN_CACHE", False)
     async def test_normal_1(self, async_db):
         # prepare account
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -344,7 +344,7 @@ class TestGet:
     @mock.patch("app.model.ibet.token.TOKEN_CACHE", True)
     async def test_normal_2(self, async_db):
         # prepare account
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -442,7 +442,7 @@ class TestGet:
     @mock.patch("app.model.ibet.token.TOKEN_CACHE", True)
     async def test_normal_3(self, async_db):
         # prepare account
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -581,7 +581,7 @@ class TestUpdate:
     # All items are None
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -643,7 +643,7 @@ class TestUpdate:
     # Update all items
     @pytest.mark.asyncio
     async def test_normal_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -771,7 +771,7 @@ class TestUpdate:
     # invalid tx_from
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -811,7 +811,7 @@ class TestUpdate:
     # invalid private key
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -849,7 +849,7 @@ class TestUpdate:
     # TimeExhausted
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -895,7 +895,7 @@ class TestUpdate:
     # Transaction Error
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -941,9 +941,9 @@ class TestUpdate:
     # Transaction REVERT(not owner)
     @pytest.mark.asyncio
     async def test_error_6(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
-        user_account = config_eth_account("user2")
+        user_account = default_eth_account("user2")
         user_address = user_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -999,14 +999,14 @@ class TestForcedTransfer:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1118,14 +1118,14 @@ class TestForcedTransfer:
     # invalid tx_from
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1161,14 +1161,14 @@ class TestForcedTransfer:
     # invalid private key
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1202,14 +1202,14 @@ class TestForcedTransfer:
     # TimeExhausted
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
             password=test_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1249,14 +1249,14 @@ class TestForcedTransfer:
     # Error
     @pytest.mark.asyncio
     async def test_error_6(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
             password=test_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1296,14 +1296,14 @@ class TestForcedTransfer:
     # Transaction REVERT(insufficient balance)
     @pytest.mark.asyncio
     async def test_error_7(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
             password=test_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1357,14 +1357,14 @@ class TestBulkForcedTransfer:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1406,14 +1406,14 @@ class TestBulkForcedTransfer:
     # -> ContractRevertError
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1465,14 +1465,14 @@ class TestBulkForcedTransfer:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1516,14 +1516,14 @@ class TestBulkForcedTransfer:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
 
         # deploy token
@@ -1565,21 +1565,21 @@ class TestBulkTransfer:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to1_account = config_eth_account("user2")
+        to1_account = default_eth_account("user2")
         to1_address = to1_account.get("address")
         to1_pk = decode_keyfile_json(
             raw_keyfile_json=to1_account.get("keyfile_json"),
             password=to1_account.get("password").encode("utf-8"),
         )
 
-        to2_account = config_eth_account("user3")
+        to2_account = default_eth_account("user3")
         to2_address = to2_account.get("address")
         to2_pk = decode_keyfile_json(
             raw_keyfile_json=to2_account.get("keyfile_json"),
@@ -1714,17 +1714,17 @@ class TestBulkTransfer:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to1_account = config_eth_account("user2")
+        to1_account = default_eth_account("user2")
         to1_address = to1_account.get("address")
 
-        to2_account = config_eth_account("user3")
+        to2_account = default_eth_account("user3")
         to2_address = to2_account.get("address")
 
         # deploy token
@@ -1761,17 +1761,17 @@ class TestBulkTransfer:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to1_account = config_eth_account("user2")
+        to1_account = default_eth_account("user2")
         to1_address = to1_account.get("address")
 
-        to2_account = config_eth_account("user3")
+        to2_account = default_eth_account("user3")
         to2_address = to2_account.get("address")
 
         # deploy token
@@ -1807,17 +1807,17 @@ class TestBulkTransfer:
     # -> ContractRevertError
     @pytest.mark.asyncio
     async def test_error_5_1(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to1_account = config_eth_account("user2")
+        to1_account = default_eth_account("user2")
         to1_address = to1_account.get("address")
 
-        to2_account = config_eth_account("user3")
+        to2_account = default_eth_account("user3")
         to2_address = to2_account.get("address")
 
         # deploy token
@@ -1865,17 +1865,17 @@ class TestBulkTransfer:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_5_2(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to1_account = config_eth_account("user2")
+        to1_account = default_eth_account("user2")
         to1_address = to1_account.get("address")
 
-        to2_account = config_eth_account("user3")
+        to2_account = default_eth_account("user3")
         to2_address = to2_account.get("address")
 
         # deploy token
@@ -1919,17 +1919,17 @@ class TestBulkTransfer:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_5_3(self, async_db):
-        from_account = config_eth_account("user1")
+        from_account = default_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
             raw_keyfile_json=from_account.get("keyfile_json"),
             password=from_account.get("password").encode("utf-8"),
         )
 
-        to1_account = config_eth_account("user2")
+        to1_account = default_eth_account("user2")
         to1_address = to1_account.get("address")
 
-        to2_account = config_eth_account("user3")
+        to2_account = default_eth_account("user3")
         to2_address = to2_account.get("address")
 
         # deploy token
@@ -1976,7 +1976,7 @@ class TestAdditionalIssue:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2054,7 +2054,7 @@ class TestAdditionalIssue:
     # invalid parameter (AdditionalIssueParams)
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
 
         _data = {"account_address": issuer_address[:-1], "amount": 0}  # short address
@@ -2084,7 +2084,7 @@ class TestAdditionalIssue:
     # invalid tx_from
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2122,7 +2122,7 @@ class TestAdditionalIssue:
     # invalid private key
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2162,7 +2162,7 @@ class TestAdditionalIssue:
     # TimeExhausted
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2206,7 +2206,7 @@ class TestAdditionalIssue:
     # Error
     @pytest.mark.asyncio
     async def test_error_6(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2250,9 +2250,9 @@ class TestAdditionalIssue:
     # Transaction REVERT(not owner)
     @pytest.mark.asyncio
     async def test_error_7(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
-        user_account = config_eth_account("user2")
+        user_account = default_eth_account("user2")
         user_address = user_account.get("address")
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2309,7 +2309,7 @@ class TestBulkAdditionalIssue:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2364,9 +2364,9 @@ class TestBulkAdditionalIssue:
     # -> ContractRevertError
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
-        user_account = config_eth_account("user2")
+        user_account = default_eth_account("user2")
         user_address = user_account.get("address")
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2422,7 +2422,7 @@ class TestBulkAdditionalIssue:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2467,7 +2467,7 @@ class TestBulkAdditionalIssue:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2513,7 +2513,7 @@ class TestRedeem:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2591,7 +2591,7 @@ class TestRedeem:
     # invalid parameter (RedeemParams)
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
 
         _data = {"account_address": issuer_address[:-1], "amount": 0}  # short address
@@ -2621,7 +2621,7 @@ class TestRedeem:
     # invalid tx_from
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2659,7 +2659,7 @@ class TestRedeem:
     # invalid private key
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2699,7 +2699,7 @@ class TestRedeem:
     # TimeExhausted
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2743,7 +2743,7 @@ class TestRedeem:
     # Error
     @pytest.mark.asyncio
     async def test_error_6(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2787,7 +2787,7 @@ class TestRedeem:
     # Transaction REVERT(lack balance)
     @pytest.mark.asyncio
     async def test_error_7(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2843,7 +2843,7 @@ class TestBulkRedeem:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2898,7 +2898,7 @@ class TestBulkRedeem:
     # -> ContractRevertError
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2950,7 +2950,7 @@ class TestBulkRedeem:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -2995,7 +2995,7 @@ class TestBulkRedeem:
     # -> SendTransactionError
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3038,7 +3038,7 @@ class TestGetAccountBalance:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3070,7 +3070,7 @@ class TestGetAccountBalance:
     # not deployed contract_address
     @pytest.mark.asyncio
     async def test_normal_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
 
         # execute the function
@@ -3088,7 +3088,7 @@ class TestGetAccountBalance:
     # invalid account_address
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3249,21 +3249,21 @@ class TestApproveTransfer:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
         to_pk = decode_keyfile_json(
             raw_keyfile_json=to_account.get("keyfile_json"),
             password=to_account.get("password").encode("utf-8"),
         )
 
-        deployer = config_eth_account("user3")
+        deployer = default_eth_account("user3")
         deployer_address = deployer.get("address")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer.get("keyfile_json"),
@@ -3388,7 +3388,7 @@ class TestApproveTransfer:
     # invalid contract_address : does not exists
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3413,7 +3413,7 @@ class TestApproveTransfer:
     # invalid issuer_address : does not exists
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3452,7 +3452,7 @@ class TestApproveTransfer:
     # invalid private_key : not properly
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3492,21 +3492,21 @@ class TestApproveTransfer:
     # Transaction REVERT(application invalid)
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
         to_pk = decode_keyfile_json(
             raw_keyfile_json=to_account.get("keyfile_json"),
             password=to_account.get("password").encode("utf-8"),
         )
 
-        deployer = config_eth_account("user3")
+        deployer = default_eth_account("user3")
         deployer_address = deployer.get("address")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer.get("keyfile_json"),
@@ -3604,21 +3604,21 @@ class TestCancelTransfer:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
         to_pk = decode_keyfile_json(
             raw_keyfile_json=to_account.get("keyfile_json"),
             password=to_account.get("password").encode("utf-8"),
         )
 
-        deployer = config_eth_account("user3")
+        deployer = default_eth_account("user3")
         deployer_address = deployer.get("address")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer.get("keyfile_json"),
@@ -3741,7 +3741,7 @@ class TestCancelTransfer:
     # invalid contract_address : does not exists
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3766,7 +3766,7 @@ class TestCancelTransfer:
     # invalid issuer_address : does not exists
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3806,7 +3806,7 @@ class TestCancelTransfer:
     # invalid private_key : not properly
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -3846,21 +3846,21 @@ class TestCancelTransfer:
     # Transaction REVERT(application invalid)
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        to_account = config_eth_account("user2")
+        to_account = default_eth_account("user2")
         to_address = to_account.get("address")
         to_pk = decode_keyfile_json(
             raw_keyfile_json=to_account.get("keyfile_json"),
             password=to_account.get("password").encode("utf-8"),
         )
 
-        deployer = config_eth_account("user3")
+        deployer = default_eth_account("user3")
         deployer_address = deployer.get("address")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer.get("keyfile_json"),
@@ -3958,14 +3958,14 @@ class TestLock:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4076,14 +4076,14 @@ class TestLock:
     # Invalid tx_from
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4120,14 +4120,14 @@ class TestLock:
     # Invalid pk
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4164,14 +4164,14 @@ class TestLock:
     # TimeExhausted
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4214,14 +4214,14 @@ class TestLock:
     # TransactionNotFound
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4263,14 +4263,14 @@ class TestLock:
     # ContractRevertError
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4322,14 +4322,14 @@ class TestForceLock:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4460,14 +4460,14 @@ class TestForceLock:
     # SendTransactionError: Invalid tx_from
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4509,14 +4509,14 @@ class TestForceLock:
     # SendTransactionError: Invalid pk
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4558,14 +4558,14 @@ class TestForceLock:
     # SendTransactionError: TimeExhausted
     @pytest.mark.asyncio
     async def test_error_2_3(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4613,14 +4613,14 @@ class TestForceLock:
     # SendTransactionError: TransactionNotFound
     @pytest.mark.asyncio
     async def test_error_2_4(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4668,14 +4668,14 @@ class TestForceLock:
     # SendTransactionError: ContractRevertError
     @pytest.mark.asyncio
     async def test_error_2_5(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4733,14 +4733,14 @@ class TestForceUnlock:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4911,14 +4911,14 @@ class TestForceUnlock:
     # Invalid tx_from
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -4969,14 +4969,14 @@ class TestForceUnlock:
     # Invalid pk
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5027,14 +5027,14 @@ class TestForceUnlock:
     # TimeExhausted
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5091,14 +5091,14 @@ class TestForceUnlock:
     # TransactionNotFound
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5154,14 +5154,14 @@ class TestForceUnlock:
     # ContractRevertError
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5225,17 +5225,17 @@ class TestForceChangeLockedAmount:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
-        other_account = config_eth_account("user3")
+        other_account = default_eth_account("user3")
         other_address = other_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5406,17 +5406,17 @@ class TestForceChangeLockedAmount:
     # Invalid tx_from
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
-        other_account = config_eth_account("user3")
+        other_account = default_eth_account("user3")
         other_address = other_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5465,17 +5465,17 @@ class TestForceChangeLockedAmount:
     # Invalid pk
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
-        other_account = config_eth_account("user3")
+        other_account = default_eth_account("user3")
         other_address = other_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5524,17 +5524,17 @@ class TestForceChangeLockedAmount:
     # TimeExhausted
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
-        other_account = config_eth_account("user3")
+        other_account = default_eth_account("user3")
         other_address = other_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5589,17 +5589,17 @@ class TestForceChangeLockedAmount:
     # TransactionNotFound
     @pytest.mark.asyncio
     async def test_error_4(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
-        other_account = config_eth_account("user3")
+        other_account = default_eth_account("user3")
         other_address = other_account.get("address")
 
         # deploy ibet share token (from issuer)
@@ -5653,17 +5653,17 @@ class TestForceChangeLockedAmount:
     # ContractRevertError
     @pytest.mark.asyncio
     async def test_error_5(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer.get("keyfile_json"),
             password=issuer.get("password").encode("utf-8"),
         )
 
-        lock_account = config_eth_account("user2")
+        lock_account = default_eth_account("user2")
         lock_address = lock_account.get("address")
 
-        other_account = config_eth_account("user3")
+        other_account = default_eth_account("user3")
         other_address = other_account.get("address")
 
         # deploy ibet share token (from issuer)

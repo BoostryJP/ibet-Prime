@@ -44,7 +44,7 @@ from app.model.ibet import IbetStraightBondContract
 from app.model.schema import IbetStraightBondCreate
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -256,7 +256,7 @@ class TestListBondOperationLogHistory:
     # 0 record
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db, ibet_personal_info_contract):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
 
@@ -299,7 +299,7 @@ class TestListBondOperationLogHistory:
     # Multiple record
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db, ibet_personal_info_contract):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -395,7 +395,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_3_1(
         self, async_client, async_db, ibet_personal_info_contract
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -489,7 +489,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_3_2(
         self, async_client, async_db, ibet_personal_info_contract
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -570,7 +570,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_3_3(
         self, async_client, async_db, ibet_personal_info_contract, monkeypatch
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -681,7 +681,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_3_4(
         self, async_client, async_db, ibet_personal_info_contract, monkeypatch
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -786,7 +786,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_4_1(
         self, async_client, async_db, ibet_personal_info_contract
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -886,7 +886,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_4_2(
         self, async_client, async_db, ibet_personal_info_contract
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -987,7 +987,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_5_1(
         self, async_client, async_db, ibet_personal_info_contract
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -1072,7 +1072,7 @@ class TestListBondOperationLogHistory:
     async def test_normal_5_2(
         self, async_client, async_db, ibet_personal_info_contract
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],

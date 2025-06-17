@@ -35,7 +35,7 @@ from app.model.db import (
 from app.model.ibet import IbetStraightBondContract, PersonalInfoContract
 from app.model.schema import PersonalInfoDataSource
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRegisterBondTokenHolderPersonalInfo:
@@ -50,11 +50,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # data_source = on_chain
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -143,11 +143,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # data_source = off_chain
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -245,11 +245,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # Optional items
     @pytest.mark.asyncio
     async def test_normal_2_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -331,11 +331,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # Nullable items
     @pytest.mark.asyncio
     async def test_normal_2_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -424,11 +424,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # Authorization by auth token
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -528,11 +528,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # headers and body required
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -565,11 +565,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # personal_info
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -614,11 +614,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # personal_info.account_address is invalid
     @pytest.mark.asyncio
     async def test_error_1_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -664,7 +664,7 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # issuer_address
     @pytest.mark.asyncio
     async def test_error_1_4(self, async_client, async_db):
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -709,11 +709,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # eoa-password not encrypted
     @pytest.mark.asyncio
     async def test_error_1_5(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -758,11 +758,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # data_source
     @pytest.mark.asyncio
     async def test_error_1_6(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -809,11 +809,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # issuer does not exist
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -851,11 +851,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # password mismatch
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -902,11 +902,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # token not found
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -953,11 +953,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # processing token
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -1013,11 +1013,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # SendTransactionError
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -1095,11 +1095,11 @@ class TestRegisterBondTokenHolderPersonalInfo:
     # PersonalInfoExceedsSizeLimit
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"

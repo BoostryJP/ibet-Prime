@@ -45,7 +45,7 @@ from app.model.ibet import TokenListContract
 from app.model.ibet.token import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import AsyncContractUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -63,7 +63,7 @@ class TestIssueBondToken:
     # create only
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -200,7 +200,7 @@ class TestIssueBondToken:
     # include updates
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -335,7 +335,7 @@ class TestIssueBondToken:
     # Authorization by auth token
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -516,7 +516,7 @@ class TestIssueBondToken:
     #  - personal_info_contract_address
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -688,7 +688,7 @@ class TestIssueBondToken:
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
     async def test_error_2_3(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
+        test_account_1 = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -777,7 +777,7 @@ class TestIssueBondToken:
     # min value
     @pytest.mark.asyncio
     async def test_error_2_5(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -859,7 +859,7 @@ class TestIssueBondToken:
     # max value or max length
     @pytest.mark.asyncio
     async def test_error_2_6(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -1056,8 +1056,8 @@ class TestIssueBondToken:
     # Not Exists Address
     @pytest.mark.asyncio
     async def test_error_3_1(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
+        test_account_1 = default_eth_account("user1")
+        test_account_2 = default_eth_account("user2")
 
         # prepare data
         account = Account()
@@ -1101,7 +1101,7 @@ class TestIssueBondToken:
     # Password Mismatch
     @pytest.mark.asyncio
     async def test_error_3_2(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
+        test_account_1 = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -1146,8 +1146,8 @@ class TestIssueBondToken:
     # IbetStraightBondContract.create
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
+        test_account_1 = default_eth_account("user1")
+        test_account_2 = default_eth_account("user2")
 
         # prepare data
         account = Account()
@@ -1199,7 +1199,7 @@ class TestIssueBondToken:
     # TokenListContract.register
     @pytest.mark.asyncio
     async def test_error_4_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()

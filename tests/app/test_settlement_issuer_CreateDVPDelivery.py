@@ -41,7 +41,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 async def deploy_bond_token_contract(
@@ -99,16 +99,16 @@ class TestCreateDVPDelivery:
         async_client,
         async_db,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         agent_address = user_3["address"]
 
         # prepare data
@@ -198,16 +198,16 @@ class TestCreateDVPDelivery:
         async_client,
         async_db,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         agent_address = user_3["address"]
 
         # prepare data
@@ -310,16 +310,16 @@ class TestCreateDVPDelivery:
         async_client,
         async_db,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         agent_address = user_3["address"]
 
         # prepare data
@@ -411,7 +411,7 @@ class TestCreateDVPDelivery:
     async def test_error_1(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -483,7 +483,7 @@ class TestCreateDVPDelivery:
     async def test_error_2(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -541,7 +541,7 @@ class TestCreateDVPDelivery:
     async def test_error_3(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -658,7 +658,7 @@ class TestCreateDVPDelivery:
     async def test_error_6(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -708,7 +708,7 @@ class TestCreateDVPDelivery:
     async def test_error_7(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -758,7 +758,7 @@ class TestCreateDVPDelivery:
     async def test_error_8(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -808,16 +808,16 @@ class TestCreateDVPDelivery:
         ibet_security_token_dvp_contract,
         ibet_personal_info_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         agent_address = user_3["address"]
 
         # prepare data

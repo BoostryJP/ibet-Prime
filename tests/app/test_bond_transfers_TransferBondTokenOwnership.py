@@ -27,7 +27,7 @@ from app.exceptions import SendTransactionError
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
 from app.model.ibet.tx_params.ibet_straight_bond import ForcedTransferParams
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestTransferBondTokenOwnership:
@@ -45,14 +45,14 @@ class TestTransferBondTokenOwnership:
     async def test_normal_1(
         self, IbetStraightBondContract_mock, async_client, async_db
     ):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -117,14 +117,14 @@ class TestTransferBondTokenOwnership:
     async def test_normal_2(
         self, IbetStraightBondContract_mock, async_client, async_db
     ):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -248,9 +248,9 @@ class TestTransferBondTokenOwnership:
     # RequestValidationError: amount(max)
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -311,10 +311,10 @@ class TestTransferBondTokenOwnership:
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -348,12 +348,12 @@ class TestTransferBondTokenOwnership:
     # RequestValidationError: eoa-password(not decrypt)
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -389,14 +389,14 @@ class TestTransferBondTokenOwnership:
     # AuthorizationError: issuer does not exist
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -428,14 +428,14 @@ class TestTransferBondTokenOwnership:
     # AuthorizationError: password mismatch
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -476,14 +476,14 @@ class TestTransferBondTokenOwnership:
     # InvalidParameterError: token not found
     @pytest.mark.asyncio
     async def test_error_8(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -524,14 +524,14 @@ class TestTransferBondTokenOwnership:
     # InvalidParameterError: processing token
     @pytest.mark.asyncio
     async def test_error_9(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -586,14 +586,14 @@ class TestTransferBondTokenOwnership:
     )
     @pytest.mark.asyncio
     async def test_error_10(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _from_address_account = config_eth_account("user2")
+        _from_address_account = default_eth_account("user2")
         _from_address = _from_address_account["address"]
 
-        _to_address_account = config_eth_account("user3")
+        _to_address_account = default_eth_account("user3")
         _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"

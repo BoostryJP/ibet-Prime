@@ -35,7 +35,7 @@ from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData
 from batch import indexer_block_tx_data
 from batch.indexer_block_tx_data import LOG
 from config import CHAIN_ID, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 from tests.contract_utils import IbetStandardTokenUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -146,7 +146,7 @@ class TestProcessor:
     # TxData: Contract deployment
     @pytest.mark.asyncio
     async def test_normal_3_1(self, processor, async_db, caplog):
-        deployer = config_eth_account("user1")
+        deployer = default_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
             password="password".encode("utf-8"),
@@ -203,12 +203,12 @@ class TestProcessor:
     # TxData: Transaction
     @pytest.mark.asyncio
     async def test_normal_3_2(self, processor, async_db, caplog):
-        deployer = config_eth_account("user1")
+        deployer = default_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
             password="password".encode("utf-8"),
         )
-        to_address = config_eth_account("user2")["address"]
+        to_address = default_eth_account("user2")["address"]
 
         before_block_number = web3.eth.block_number
         await self.set_block_number(async_db, before_block_number)

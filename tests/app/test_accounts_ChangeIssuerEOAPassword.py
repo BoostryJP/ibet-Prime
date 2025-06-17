@@ -25,7 +25,7 @@ from app.model.db import Account, AccountRsaStatus
 from app.model.ibet import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
 from config import EOA_PASSWORD_PATTERN_MSG
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestChangeIssuerEOAPassword:
@@ -39,7 +39,7 @@ class TestChangeIssuerEOAPassword:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
         _old_password = "password"
@@ -103,7 +103,7 @@ class TestChangeIssuerEOAPassword:
     # parameter error(required body)
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
         # request target API
@@ -127,7 +127,7 @@ class TestChangeIssuerEOAPassword:
     # parameter error(required field)
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
         # request target API
@@ -162,7 +162,7 @@ class TestChangeIssuerEOAPassword:
     # parameter error(not decrypt)
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_password = "password"
         _new_password = "passwordnew"
@@ -227,7 +227,7 @@ class TestChangeIssuerEOAPassword:
     # old password mismatch
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
         _old_password = "password"
@@ -263,7 +263,7 @@ class TestChangeIssuerEOAPassword:
     # password policy
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
         _old_password = "password"

@@ -22,17 +22,17 @@ from datetime import UTC, datetime
 import pytest
 
 from app.model.db import IDXPersonalInfoHistory, PersonalInfoEventType
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListTokenHoldersPersonalInfoHistory:
     # target API endpoint
     url = "/token/holders/personal_info/history"
 
-    test_issuer_address_1 = config_eth_account("user1")["address"]
-    test_issuer_address_2 = config_eth_account("user2")["address"]
-    test_account_address_1 = config_eth_account("user3")["address"]
-    test_account_address_2 = config_eth_account("user4")["address"]
+    test_issuer_address_1 = default_eth_account("user1")["address"]
+    test_issuer_address_2 = default_eth_account("user2")["address"]
+    test_account_address_1 = default_eth_account("user3")["address"]
+    test_account_address_2 = default_eth_account("user4")["address"]
 
     ###########################################################################
     # Normal Case

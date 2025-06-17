@@ -39,7 +39,7 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_scheduled_events import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -62,7 +62,7 @@ class TestProcessor:
     # IbetStraightBond
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test1"
@@ -211,7 +211,7 @@ class TestProcessor:
     # IbetShare
     @pytest.mark.asyncio
     async def test_normal_2(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -360,7 +360,7 @@ class TestProcessor:
     # soft_deleted events
     @pytest.mark.asyncio
     async def test_normal_3(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test1"
@@ -442,7 +442,7 @@ class TestProcessor:
     # Account does not exist
     @pytest.mark.asyncio
     async def test_error_1(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -495,7 +495,7 @@ class TestProcessor:
     # fail to get the private key
     @pytest.mark.asyncio
     async def test_error_2(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -553,7 +553,7 @@ class TestProcessor:
     # IbetStraightBond : SendTransactionError
     @pytest.mark.asyncio
     async def test_error_3(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -624,7 +624,7 @@ class TestProcessor:
     # IbetShare : SendTransactionError
     @pytest.mark.asyncio
     async def test_error_4(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -696,7 +696,7 @@ class TestProcessor:
     # IbetStraightBond : ContractRevertError
     @pytest.mark.asyncio
     async def test_error_5(self, processor, async_db, caplog):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -778,7 +778,7 @@ class TestProcessor:
     # IbetShare : ContractRevertError
     @pytest.mark.asyncio
     async def test_error_6(self, processor, async_db, caplog):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"

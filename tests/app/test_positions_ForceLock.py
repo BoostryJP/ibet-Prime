@@ -28,7 +28,7 @@ from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
 from app.model.ibet.tx_params.ibet_security_token import ForceLockParams
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestForceLock:
@@ -49,11 +49,11 @@ class TestForceLock:
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -122,11 +122,11 @@ class TestForceLock:
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -195,11 +195,11 @@ class TestForceLock:
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -396,11 +396,11 @@ class TestForceLock:
     async def test_error_1_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -438,11 +438,11 @@ class TestForceLock:
     async def test_error_1_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -483,11 +483,11 @@ class TestForceLock:
     async def test_error_1_6(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -537,11 +537,11 @@ class TestForceLock:
     async def test_error_2_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -575,11 +575,11 @@ class TestForceLock:
     async def test_error_2_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -621,11 +621,11 @@ class TestForceLock:
     async def test_error_3_1(self, async_client, async_db):
         account_address = "invalid_address"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -676,11 +676,11 @@ class TestForceLock:
     async def test_error_3_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -722,11 +722,11 @@ class TestForceLock:
     async def test_error_3_3(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -777,11 +777,11 @@ class TestForceLock:
     async def test_error_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -835,11 +835,11 @@ class TestForceLock:
     async def test_error_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -893,11 +893,11 @@ class TestForceLock:
     async def test_error_6(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 

@@ -21,7 +21,7 @@ import pytest
 from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaStatus
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestDeleteIssuer:
@@ -35,7 +35,7 @@ class TestDeleteIssuer:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 

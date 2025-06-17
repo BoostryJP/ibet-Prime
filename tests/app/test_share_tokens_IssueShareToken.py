@@ -46,7 +46,7 @@ from app.model.ibet.token import IbetShareContract
 from app.model.ibet.token_list import TokenListContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import AsyncContractUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -64,7 +64,7 @@ class TestIssueShareToken:
     # create only
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -207,7 +207,7 @@ class TestIssueShareToken:
     # No input for symbol, dividends and cancellation_date.
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -334,7 +334,7 @@ class TestIssueShareToken:
     # include updates
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -464,7 +464,7 @@ class TestIssueShareToken:
     # Authorization by auth-token
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -612,7 +612,7 @@ class TestIssueShareToken:
     # YYYYMMDD parameter is not empty
     @pytest.mark.asyncio
     async def test_normal_4_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -695,7 +695,7 @@ class TestIssueShareToken:
     # YYYYMMDD parameter is empty
     @pytest.mark.asyncio
     async def test_normal_4_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -811,7 +811,7 @@ class TestIssueShareToken:
     # format error
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -902,7 +902,7 @@ class TestIssueShareToken:
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
     async def test_error_2_3(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
+        test_account_1 = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -953,7 +953,7 @@ class TestIssueShareToken:
     # min value
     @pytest.mark.asyncio
     async def test_error_2_4(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -1023,7 +1023,7 @@ class TestIssueShareToken:
     # max value or max length
     @pytest.mark.asyncio
     async def test_error_2_5(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -1121,7 +1121,7 @@ class TestIssueShareToken:
     # YYYYMMDD regex
     @pytest.mark.asyncio
     async def test_error_2_6(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -1204,8 +1204,8 @@ class TestIssueShareToken:
     # Not Exists Address
     @pytest.mark.asyncio
     async def test_error_3_1(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
+        test_account_1 = default_eth_account("user1")
+        test_account_2 = default_eth_account("user2")
 
         # prepare data
         account = Account()
@@ -1248,7 +1248,7 @@ class TestIssueShareToken:
     # Password Mismatch
     @pytest.mark.asyncio
     async def test_error_3_2(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
+        test_account_1 = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -1292,8 +1292,8 @@ class TestIssueShareToken:
     # IbetShareContract.create
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
+        test_account_1 = default_eth_account("user1")
+        test_account_2 = default_eth_account("user2")
 
         # prepare data
         account = Account()
@@ -1344,8 +1344,8 @@ class TestIssueShareToken:
     # TokenListContract.register
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
+        test_account_1 = default_eth_account("user1")
+        test_account_2 = default_eth_account("user2")
 
         # prepare data
         account = Account()

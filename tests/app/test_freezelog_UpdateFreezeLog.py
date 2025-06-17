@@ -25,7 +25,7 @@ import pytest
 from app.model.db import FreezeLogAccount
 from app.model.ibet import FreezeLogContract
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestUpdateFreezeLog:
@@ -40,7 +40,7 @@ class TestUpdateFreezeLog:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -93,7 +93,7 @@ class TestUpdateFreezeLog:
     # E2EE_REQUEST_ENABLED = False
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -161,7 +161,7 @@ class TestUpdateFreezeLog:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -227,7 +227,7 @@ class TestUpdateFreezeLog:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -286,7 +286,7 @@ class TestUpdateFreezeLog:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1_3(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -345,7 +345,7 @@ class TestUpdateFreezeLog:
     # -> NotFound
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         password = "password"
 
@@ -375,7 +375,7 @@ class TestUpdateFreezeLog:
     # -> InvalidParameterError
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -414,7 +414,7 @@ class TestUpdateFreezeLog:
     # SendTransactionError
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
