@@ -23,8 +23,8 @@ from unittest.mock import ANY
 
 import pytest
 
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 
 
 class TestListAccountLockUnlockEvents:
@@ -72,7 +72,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_2_1
     # Bond
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -179,7 +179,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_2_2
     # Share
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -283,7 +283,7 @@ class TestListAccountLockUnlockEvents:
     # Normal_3_1
     # Records not subject to extraction
     # account_address
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -356,7 +356,7 @@ class TestListAccountLockUnlockEvents:
     # Normal_3_2
     # Records not subject to extraction
     # token_status
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -429,7 +429,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_4
     # issuer_address is not None
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_4(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -571,7 +571,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_5_1
     # Search filter: category
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -661,7 +661,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_5_2
     # Search filter: token_address
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -761,7 +761,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_5_3
     # Search filter: token_type
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_3(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -861,7 +861,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_5_4
     # Search filter: msg_sender
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_4(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -952,7 +952,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_5_5
     # Search filter: lock_address
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_5(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -1041,7 +1041,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_5_6
     # Search filter: recipient_address
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_6(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -1133,7 +1133,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_6
     # Sort
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_6(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -1294,7 +1294,7 @@ class TestListAccountLockUnlockEvents:
 
     # Normal_7
     # Pagination
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_7(
         self, mock_IbetStraightBondContract_get, async_client, async_db

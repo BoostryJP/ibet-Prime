@@ -29,7 +29,7 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
-from app.utils.contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
@@ -65,7 +65,7 @@ class TestGetContractCode:
                 rtn_bytecode,
                 rtn_deploy_bytecode,
             ) = ContractUtils.get_contract_code(contract_name=contract_name)
-            expected_json = json.load(open(f"contracts/{contract_name}.json", "r"))
+            expected_json = json.load(open(f"contracts/ibet/{contract_name}.json", "r"))
             assert rtn_abi == expected_json["abi"]
             assert rtn_bytecode == expected_json["bytecode"]
             assert rtn_deploy_bytecode == expected_json["deployedBytecode"]
@@ -76,7 +76,7 @@ class TestGetContractCode:
     async def test_normal_2(self):
         for contract_name in self.contract_interface_list:
             rtn = ContractUtils.get_contract_code(contract_name=contract_name)
-            expected_json = json.load(open(f"contracts/{contract_name}.json", "r"))
+            expected_json = json.load(open(f"contracts/ibet/{contract_name}.json", "r"))
             assert rtn == (expected_json["abi"], None, None)
 
     ###########################################################################
@@ -126,7 +126,7 @@ class TestDeployContract:
             private_key=self.private_key,
         )
         expected_abi = json.load(
-            open(f"contracts/{self.test_contract_name}.json", "r")
+            open(f"contracts/ibet/{self.test_contract_name}.json", "r")
         )["abi"]
         assert rtn_abi == expected_abi
 
@@ -152,7 +152,7 @@ class TestDeployContract:
     async def test_error_2(self):
         # mock
         ContractUtils_send_transaction = patch(
-            target="app.utils.contract_utils.ContractUtils.send_transaction",
+            target="app.utils.ibet_contract_utils.ContractUtils.send_transaction",
             side_effect=SendTransactionError,
         )
 
@@ -245,7 +245,7 @@ class TestSendTransaction:
         "test_contract_information",
         "test_privacy_policy",
     ]
-    contract_file = f"contracts/{test_contract_name}.json"
+    contract_file = f"contracts/ibet/{test_contract_name}.json"
     contract_json = json.load(open(contract_file, "r"))
 
     ###########################################################################
@@ -421,7 +421,7 @@ class TestGetBlockByTransactionHash:
         "test_contract_information",
         "test_privacy_policy",
     ]
-    contract_file = f"contracts/{test_contract_name}.json"
+    contract_file = f"contracts/ibet/{test_contract_name}.json"
     contract_json = json.load(open(contract_file, "r"))
 
     ###########################################################################

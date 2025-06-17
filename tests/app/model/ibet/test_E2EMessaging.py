@@ -33,8 +33,8 @@ from web3.exceptions import TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain import E2EMessaging
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import E2EMessaging
+from app.utils.ibet_contract_utils import ContractUtils
 from config import WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
@@ -49,7 +49,7 @@ class TestSendMessage:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, e2e_messaging_contract):
+    async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -61,7 +61,7 @@ class TestSendMessage:
 
         # Run Test
         tx_hash, tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(
             to_address=user_address_2,
             message=message,
@@ -72,7 +72,7 @@ class TestSendMessage:
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        last_message = e2e_messaging_contract.functions.getLastMessage(
+        last_message = ibet_e2e_messaging_contract.functions.getLastMessage(
             user_address_2
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
@@ -87,7 +87,7 @@ class TestSendMessage:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, e2e_messaging_contract):
+    async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -99,11 +99,11 @@ class TestSendMessage:
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 AsyncMock(side_effect=Exception("tx error")),
             ):
                 # Run Test
-                await E2EMessaging(e2e_messaging_contract.address).send_message(
+                await E2EMessaging(ibet_e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
@@ -118,7 +118,7 @@ class TestSendMessage:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, e2e_messaging_contract):
+    async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -130,11 +130,11 @@ class TestSendMessage:
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 AsyncMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 # Run Test
-                await E2EMessaging(e2e_messaging_contract.address).send_message(
+                await E2EMessaging(ibet_e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
@@ -224,7 +224,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, e2e_messaging_contract):
+    async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -237,7 +237,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run Test
         tx_hash, tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             to_address=user_address_2,
             _type=_type,
@@ -250,7 +250,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        last_message = e2e_messaging_contract.functions.getLastMessage(
+        last_message = ibet_e2e_messaging_contract.functions.getLastMessage(
             user_address_2
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
@@ -273,11 +273,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_2>
     # use AWS KMS
     @pytest.mark.asyncio
-    @mock.patch(
-        "app.model.blockchain.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
-    )
+    @mock.patch("app.model.ibet.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
     @mock.patch("boto3.client")
-    async def test_normal_2(self, boto3_mock, async_db, e2e_messaging_contract):
+    async def test_normal_2(self, boto3_mock, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -306,7 +304,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run Test
         tx_hash, tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             to_address=user_address_2,
             _type=_type,
@@ -319,7 +317,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        last_message = e2e_messaging_contract.functions.getLastMessage(
+        last_message = ibet_e2e_messaging_contract.functions.getLastMessage(
             user_address_2
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
@@ -346,7 +344,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, e2e_messaging_contract):
+    async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -360,12 +358,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=Exception("tx error")),
             ):
                 # Run Test
                 await E2EMessaging(
-                    e2e_messaging_contract.address
+                    ibet_e2e_messaging_contract.address
                 ).send_message_external(
                     to_address=user_address_2,
                     _type=_type,
@@ -383,7 +381,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, e2e_messaging_contract):
+    async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -396,12 +394,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 # Run Test
                 await E2EMessaging(
-                    e2e_messaging_contract.address
+                    ibet_e2e_messaging_contract.address
                 ).send_message_external(
                     to_address=user_address_2,
                     _type=_type,
@@ -440,7 +438,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, e2e_messaging_contract):
+    async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -450,7 +448,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run Test
         tx_hash, tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).set_public_key(
             public_key=self.rsa_public_key,
             key_type=key_type,
@@ -461,7 +459,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        public_key = e2e_messaging_contract.functions.getPublicKey(
+        public_key = ibet_e2e_messaging_contract.functions.getPublicKey(
             user_address_1
         ).call()
         assert public_key[0] == self.rsa_public_key
@@ -474,7 +472,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, e2e_messaging_contract):
+    async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -485,11 +483,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=Exception("tx error")),
             ):
                 # Run Test
-                await E2EMessaging(e2e_messaging_contract.address).set_public_key(
+                await E2EMessaging(ibet_e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,
@@ -504,7 +502,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, e2e_messaging_contract):
+    async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -514,11 +512,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 # Run Test
-                await E2EMessaging(e2e_messaging_contract.address).set_public_key(
+                await E2EMessaging(ibet_e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,

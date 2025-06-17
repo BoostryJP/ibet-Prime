@@ -26,10 +26,6 @@ from sqlalchemy.exc import DBAPIError
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-)
 from app.model.db import (
     UTXO,
     IDXPersonalInfo,
@@ -48,7 +44,11 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils import ledger_utils
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
+)
+from app.utils import ibet_ledger_utils
 from config import WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
@@ -113,7 +113,7 @@ class TestRequestLedgerCreation:
     # -> skip
     async def test_normal_1_1(self, async_db):
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, "invalid_address")
+        await ibet_ledger_utils.request_ledger_creation(async_db, "invalid_address")
         await async_db.commit()
 
         # Assertion
@@ -137,7 +137,7 @@ class TestRequestLedgerCreation:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
         await async_db.commit()
 
         # Assertion
@@ -169,7 +169,7 @@ class TestRequestLedgerCreation:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
         await async_db.commit()
 
         # Assertion
@@ -243,7 +243,7 @@ class TestRequestLedgerCreation:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
         await async_db.commit()
 
         # Assertion
@@ -358,7 +358,7 @@ class TestRequestLedgerCreation:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
         await async_db.commit()
 
         # Assertion
@@ -581,7 +581,7 @@ class TestRequestLedgerCreation:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
         await async_db.commit()
 
         # Assertion
@@ -837,7 +837,7 @@ class TestRequestLedgerCreation:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
         await async_db.commit()
 
         # Assertion
@@ -1014,7 +1014,7 @@ class TestRequestLedgerCreation:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.request_ledger_creation(async_db, token_address_1)
+        await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
         await async_db.commit()
 
         # Assertion
@@ -1175,7 +1175,7 @@ class TestRequestLedgerCreation:
 
         # Execute
         async with async_db.begin_nested():
-            await ledger_utils.request_ledger_creation(async_db, token_address_1)
+            await ibet_ledger_utils.request_ledger_creation(async_db, token_address_1)
             with pytest.raises(DBAPIError):
                 await async_db.commit()
 
@@ -1203,7 +1203,7 @@ class TestSyncRequestWithRegisteredPersonalInfo:
         (
             initial_unset_count,
             final_set_count,
-        ) = await ledger_utils.sync_request_with_registered_personal_info(
+        ) = await ibet_ledger_utils.sync_request_with_registered_personal_info(
             async_db,
             request_id="test_request_id",
             issuer_address="test_issuer_address",
@@ -1237,7 +1237,7 @@ class TestSyncRequestWithRegisteredPersonalInfo:
         (
             initial_unset_count,
             final_set_count,
-        ) = await ledger_utils.sync_request_with_registered_personal_info(
+        ) = await ibet_ledger_utils.sync_request_with_registered_personal_info(
             async_db,
             request_id=request_id,
             issuer_address=issuer_address,
@@ -1289,7 +1289,7 @@ class TestSyncRequestWithRegisteredPersonalInfo:
         (
             initial_unset_count,
             final_set_count,
-        ) = await ledger_utils.sync_request_with_registered_personal_info(
+        ) = await ibet_ledger_utils.sync_request_with_registered_personal_info(
             async_db,
             request_id=request_id,
             issuer_address=issuer_address,
@@ -1318,7 +1318,7 @@ class TestFinalizeLedger:
     # -> skip
     async def test_normal_1_1(self, async_db):
         # Execute
-        await ledger_utils.finalize_ledger(
+        await ibet_ledger_utils.finalize_ledger(
             async_db,
             request_id="test_request_id",
             token_address="invalid_token_address",
@@ -1348,7 +1348,7 @@ class TestFinalizeLedger:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.finalize_ledger(
+        await ibet_ledger_utils.finalize_ledger(
             async_db,
             request_id="test_request_id",
             token_address=token_address_1,
@@ -1378,7 +1378,7 @@ class TestFinalizeLedger:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.finalize_ledger(
+        await ibet_ledger_utils.finalize_ledger(
             async_db,
             request_id="test_request_id",
             token_address=token_address_1,
@@ -1451,7 +1451,7 @@ class TestFinalizeLedger:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.finalize_ledger(
+        await ibet_ledger_utils.finalize_ledger(
             async_db,
             request_id="test_request_id",
             token_address=token_address_1,
@@ -1645,7 +1645,7 @@ class TestFinalizeLedger:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.finalize_ledger(
+        await ibet_ledger_utils.finalize_ledger(
             async_db,
             request_id="req_id_1",
             token_address=token_address_1,
@@ -1872,7 +1872,7 @@ class TestFinalizeLedger:
         await async_db.commit()
 
         # Execute
-        await ledger_utils.finalize_ledger(
+        await ibet_ledger_utils.finalize_ledger(
             async_db,
             request_id="req_id_1",
             token_address=token_address_1,

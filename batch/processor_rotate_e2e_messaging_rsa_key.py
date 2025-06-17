@@ -37,10 +37,10 @@ from app.exceptions import (
     SendTransactionError,
     ServiceUnavailableError,
 )
-from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet import E2EMessaging
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
 from config import E2E_MESSAGING_CONTRACT_ADDRESS, ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL

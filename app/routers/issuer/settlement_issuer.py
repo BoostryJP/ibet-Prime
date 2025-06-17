@@ -34,12 +34,6 @@ from sqlalchemy.orm import aliased
 import config
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError, SendTransactionError
-from app.model.blockchain.exchange import IbetSecurityTokenDVP
-from app.model.blockchain.token import IbetSecurityTokenInterface
-from app.model.blockchain.tx_params.ibet_security_token import (
-    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_security_token_dvp import CancelDeliveryParams
 from app.model.db import (
     DVPAsyncProcess,
     DVPAsyncProcessStatus,
@@ -50,6 +44,12 @@ from app.model.db import (
     Token,
     TokenStatus,
 )
+from app.model.ibet.exchange import IbetSecurityTokenDVP
+from app.model.ibet.token import IbetSecurityTokenInterface
+from app.model.ibet.tx_params.ibet_security_token import (
+    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
+)
+from app.model.ibet.tx_params.ibet_security_token_dvp import CancelDeliveryParams
 from app.model.schema import (
     CancelDVPDeliveryRequest,
     CreateDVPDeliveryRequest,

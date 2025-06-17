@@ -27,13 +27,6 @@ from sqlalchemy import select
 
 import config
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token_escrow import (
-    ApproveTransferParams as EscrowApproveTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    ApproveTransferParams,
-    CancelTransferParams,
-)
 from app.model.db import (
     Account,
     AuthToken,
@@ -45,6 +38,13 @@ from app.model.db import (
     TokenVersion,
     TransferApprovalHistory,
     TransferApprovalOperationType,
+)
+from app.model.ibet.tx_params.ibet_security_token_escrow import (
+    ApproveTransferParams as EscrowApproveTransferParams,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    ApproveTransferParams,
+    CancelTransferParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -150,7 +150,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -291,7 +291,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
-            target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+            target="app.model.ibet.exchange.IbetSecurityTokenEscrow.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -431,7 +431,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -576,7 +576,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -1269,7 +1269,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # IbetSecurityTokenInterface.approve_transfer
     # raise SendTransactionError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+        "app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
@@ -1444,11 +1444,11 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             side_effect=ContractRevertError("110902"),
         )
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -1479,7 +1479,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # IbetSecurityTokenEscrow.approve_transfer
     # raise SendTransactionError
     @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+        "app.model.ibet.exchange.IbetSecurityTokenEscrow.approve_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
@@ -1656,7 +1656,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
-            target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+            target="app.model.ibet.exchange.IbetSecurityTokenEscrow.approve_transfer",
             side_effect=ContractRevertError("110902"),
         )
 
@@ -1684,7 +1684,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # IbetSecurityTokenInterface.cancel_transfer
     # raise SendTransactionError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+        "app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
@@ -1859,7 +1859,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
             side_effect=ContractRevertError("110802"),
         )
 
@@ -1928,7 +1928,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -2013,7 +2013,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 

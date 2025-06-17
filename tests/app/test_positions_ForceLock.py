@@ -25,8 +25,8 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token import ForceLockParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_security_token import ForceLockParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -42,7 +42,7 @@ class TestForceLock:
     # <Normal_1_1>
     # Authorization by eoa-password
     # - message is not set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_1(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
@@ -115,7 +115,7 @@ class TestForceLock:
     # <Normal_1_2>
     # Authorization by eoa-password
     # - message is set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
@@ -188,7 +188,7 @@ class TestForceLock:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
@@ -828,7 +828,7 @@ class TestForceLock:
     # <Error_5>
     # ContractRevertError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_lock",
+        "app.model.ibet.token.IbetSecurityTokenInterface.force_lock",
         MagicMock(side_effect=ContractRevertError(code_msg="121601")),
     )
     @pytest.mark.asyncio
@@ -886,7 +886,7 @@ class TestForceLock:
     # <Error_6>
     # SendTransactionError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_lock",
+        "app.model.ibet.token.IbetSecurityTokenInterface.force_lock",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio

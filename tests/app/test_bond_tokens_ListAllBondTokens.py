@@ -23,8 +23,8 @@ import pytest
 import pytz
 from web3.datastructures import AttributeDict
 
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Token, TokenType, TokenVersion
+from app.model.ibet import IbetStraightBondContract
 from config import TZ
 from tests.account_config import config_eth_account
 
@@ -50,7 +50,7 @@ class TestListAllBondTokens:
     # <Normal Case 2>
     # parameter unset address, 1 Record
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_2(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
@@ -177,7 +177,7 @@ class TestListAllBondTokens:
     # <Normal Case 3>
     # parameter unset address, Multi Record
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_3(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
@@ -447,7 +447,7 @@ class TestListAllBondTokens:
     # <Normal Case 5>
     # parameter set address, 1 Record
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
@@ -588,7 +588,7 @@ class TestListAllBondTokens:
     # <Normal Case 6>
     # parameter set address, Multi Record
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_6(self, mock_get, async_client, async_db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]

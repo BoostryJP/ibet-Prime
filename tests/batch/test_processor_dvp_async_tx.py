@@ -28,10 +28,6 @@ from sqlalchemy import select
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token_dvp import (
-    CreateDeliveryParams,
-    WithdrawPartialParams,
-)
 from app.model.db import (
     Account,
     DVPAsyncProcess,
@@ -39,6 +35,10 @@ from app.model.db import (
     DVPAsyncProcessStatus,
     DVPAsyncProcessStepTxStatus,
     DVPAsyncProcessType,
+)
+from app.model.ibet.tx_params.ibet_security_token_dvp import (
+    CreateDeliveryParams,
+    WithdrawPartialParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_dvp_async_tx import LOG, Processor
@@ -188,11 +188,11 @@ class TestProcessor:
         # Execute processor
         with (
             patch(
-                target="app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.create_delivery",
+                target="app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.create_delivery",
                 return_value="mock_create_delivery_tx_hash",
             ) as mocked_create_delivery,
             patch(
-                "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt",
                 MagicMock(side_effect=TimeExhausted()),
             ),
         ):
@@ -274,11 +274,11 @@ class TestProcessor:
         # Execute processor
         with (
             patch(
-                target="app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial",
+                target="app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial",
                 return_value="mocked_withdraw_partial_tx_hash",
             ) as mocked_withdraw_partial,
             patch(
-                "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt",
                 MagicMock(side_effect=TimeExhausted()),
             ),
         ):
@@ -452,7 +452,7 @@ class TestProcessor:
         # Execute processor
         with (
             patch(
-                "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.create_delivery",
+                "app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.create_delivery",
                 MagicMock(side_effect=SendTransactionError()),
             ),
         ):
@@ -540,7 +540,7 @@ class TestProcessor:
     # __sync_step_tx_result
     # - The transaction remains pending.
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
     async def test_normal_2_2(self, mocked_wait_for_tx, processor, async_db, caplog):
@@ -605,7 +605,7 @@ class TestProcessor:
         ],
     )
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
     async def test_normal_2_3(
@@ -664,11 +664,9 @@ class TestProcessor:
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - <Reverted> -> WithdrawPartial
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
-    @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
-    )
+    @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_normal_2_4_1(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
@@ -755,7 +753,7 @@ class TestProcessor:
         ],
     )
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
     async def test_normal_2_4_2(
@@ -819,11 +817,9 @@ class TestProcessor:
     # __sync_step_tx_result
     # - Failed to get issuer's private key
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
-    @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
-    )
+    @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_2_1(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
@@ -880,11 +876,9 @@ class TestProcessor:
     # __sync_step_tx_result
     # - SendTransactionError
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
-    @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
-    )
+    @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_2_2(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
@@ -1013,7 +1007,7 @@ class TestProcessor:
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - The transaction remains pending.
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
     async def test_normal_3_2(self, mocked_wait_for_tx, processor, async_db, caplog):
@@ -1076,7 +1070,7 @@ class TestProcessor:
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - <Success>
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
     async def test_normal_3_3(self, mocked_wait_for_tx, processor, async_db, caplog):
@@ -1137,11 +1131,9 @@ class TestProcessor:
     # - DVPAsyncProcessType: CREATE_DELIVERY
     # - <Reverted> -> Resend revert transaction
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
-    @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
-    )
+    @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_normal_3_4(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
@@ -1208,11 +1200,9 @@ class TestProcessor:
     # - <Reverted>
     # - Failed to get issuer's private key
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
-    @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
-    )
+    @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_3_1(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
@@ -1272,11 +1262,9 @@ class TestProcessor:
     # - <Reverted>
     # - SendTransactionError
     @mock.patch(
-        "app.utils.contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
+        "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
-    @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial"
-    )
+    @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_3_2(
         self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog

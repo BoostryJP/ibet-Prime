@@ -6,7 +6,7 @@ RUN mkdir -p /hardhat
 # Copy files
 COPY package.json /hardhat
 COPY package-lock.json /hardhat
-COPY hardhat.config.js /hardhat
+COPY hardhat-eth.config.js /hardhat
 
 WORKDIR /hardhat
 
@@ -14,4 +14,4 @@ WORKDIR /hardhat
 RUN npm install --only=dev
 
 # Run hardhat node
-CMD ["npx", "hardhat", "--config", "./hardhat.config.js", "node"]
+CMD ["npx", "hardhat", "--config", "./hardhat-eth.config.js", "node"]

@@ -25,8 +25,8 @@ from sqlalchemy import asc, desc, func, select
 
 import config
 from app.database import DBAsyncSession
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import ScheduledEvents, Token, TokenType
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     ListAllIssuedTokensQuery,
     ListAllIssuedTokensResponse,

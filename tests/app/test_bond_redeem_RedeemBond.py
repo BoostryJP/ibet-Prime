@@ -24,8 +24,8 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_straight_bond import RedeemParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_straight_bond import RedeemParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -40,7 +40,7 @@ class TestRedeemBond:
 
     # <Normal_1>
     # Authorization by eoa-password
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.redeem")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.redeem")
     @pytest.mark.asyncio
     async def test_normal_1(
         self, IbetStraightBondContract_mock, async_client, async_db
@@ -92,7 +92,7 @@ class TestRedeemBond:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.redeem")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.redeem")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, IbetStraightBondContract_mock, async_client, async_db
@@ -554,7 +554,7 @@ class TestRedeemBond:
     # <Error_11>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetStraightBondContract.redeem",
+        "app.model.ibet.token.IbetStraightBondContract.redeem",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio

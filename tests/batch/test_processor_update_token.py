@@ -25,12 +25,6 @@ import pytest
 from sqlalchemy import select
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     UTXO,
     Account,
@@ -41,6 +35,12 @@ from app.model.db import (
     TokenType,
     TokenVersion,
     UpdateToken,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_update_token import Processor
@@ -188,19 +188,19 @@ class TestProcessor:
         }
         with (
             patch(
-                target="app.model.blockchain.token.IbetShareContract.update",
+                target="app.model.ibet.token.IbetShareContract.update",
                 return_value=None,
             ) as IbetShareContract_update,
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                target="app.model.ibet.token.IbetStraightBondContract.update",
                 return_value=None,
             ) as IbetStraightBondContract_update,
             patch(
-                target="app.model.blockchain.token_list.TokenListContract.register",
+                target="app.model.ibet.token_list.TokenListContract.register",
                 return_value=None,
             ) as TokenListContract_register,
             patch(
-                target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+                target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
                 return_value=mock_block,
             ) as ContractUtils_get_block_by_transaction_hash,
         ):
@@ -923,11 +923,11 @@ class TestProcessor:
 
         with (
             patch(
-                target="app.model.blockchain.token.IbetShareContract.update",
+                target="app.model.ibet.token.IbetShareContract.update",
                 rside_effect=SendTransactionError(),
             ),
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                target="app.model.ibet.token.IbetStraightBondContract.update",
                 side_effect=SendTransactionError(),
             ),
         ):
@@ -1163,15 +1163,15 @@ class TestProcessor:
 
         with (
             patch(
-                target="app.model.blockchain.token.IbetShareContract.update",
+                target="app.model.ibet.token.IbetShareContract.update",
                 return_value=None,
             ) as IbetShareContract_update,
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                target="app.model.ibet.token.IbetStraightBondContract.update",
                 return_value=None,
             ) as IbetStraightBondContract_update,
             patch(
-                target="app.model.blockchain.token_list.TokenListContract.register",
+                target="app.model.ibet.token_list.TokenListContract.register",
                 side_effect=SendTransactionError(),
             ),
         ):

@@ -31,8 +31,6 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.blockchain.token import IbetShareContract
-from app.model.blockchain.token_list import TokenListContract
 from app.model.db import (
     UTXO,
     Account,
@@ -44,8 +42,10 @@ from app.model.db import (
     TokenVersion,
     UpdateToken,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet.token import IbetShareContract
+from app.model.ibet.token_list import TokenListContract
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -79,7 +79,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -87,11 +87,11 @@ class TestIssueShareToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -222,7 +222,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -230,11 +230,11 @@ class TestIssueShareToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -349,7 +349,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -357,11 +357,11 @@ class TestIssueShareToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -485,7 +485,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -493,11 +493,11 @@ class TestIssueShareToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -625,7 +625,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -633,11 +633,11 @@ class TestIssueShareToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -708,7 +708,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -716,11 +716,11 @@ class TestIssueShareToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -1306,7 +1306,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             side_effect=SendTransactionError(),
         )
 
@@ -1358,7 +1358,7 @@ class TestIssueShareToken:
 
         # mock
         IbetShareContract_create = patch(
-            target="app.model.blockchain.token.IbetShareContract.create",
+            target="app.model.ibet.token.IbetShareContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -1366,7 +1366,7 @@ class TestIssueShareToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             side_effect=SendTransactionError(),
         )
 

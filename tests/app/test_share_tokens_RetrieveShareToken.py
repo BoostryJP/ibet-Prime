@@ -22,8 +22,8 @@ from unittest import mock
 import pytest
 from pytz import timezone
 
-from app.model.blockchain import IbetShareContract
 from app.model.db import Token, TokenType, TokenVersion
+from app.model.ibet import IbetShareContract
 from config import TZ
 
 
@@ -38,7 +38,7 @@ class TestRetrieveShareToken:
 
     # <Normal_1>
     # not exist Additional info
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_1(self, mock_get, async_client, async_db):
         # prepare data
@@ -125,7 +125,7 @@ class TestRetrieveShareToken:
 
     # <Normal_2>
     # exist Additional info
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(self, mock_get, async_client, async_db):
         # prepare data

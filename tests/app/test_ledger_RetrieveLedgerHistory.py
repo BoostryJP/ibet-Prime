@@ -23,7 +23,6 @@ from unittest.mock import call
 
 import pytest
 
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     IDXPersonalInfo,
     Ledger,
@@ -34,6 +33,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
+from app.model.ibet import IbetStraightBondContract
 from tests.account_config import config_eth_account
 
 
@@ -996,10 +996,10 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = True
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
         personal_get_info_mock = mock.patch(
-            "app.model.blockchain.PersonalInfoContract.get_info"
+            "app.model.ibet.PersonalInfoContract.get_info"
         )
 
         # request target API
@@ -1310,10 +1310,10 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = True
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
         personal_get_info_mock = mock.patch(
-            "app.model.blockchain.PersonalInfoContract.get_info"
+            "app.model.ibet.PersonalInfoContract.get_info"
         )
 
         # request target API
@@ -1566,7 +1566,7 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = False
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
 
         # request target API
@@ -1753,7 +1753,7 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = False
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
 
         # request target API
@@ -2015,10 +2015,10 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = True
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
         personal_get_info_mock = mock.patch(
-            "app.model.blockchain.PersonalInfoContract.get_info"
+            "app.model.ibet.PersonalInfoContract.get_info"
         )
 
         # request target API
@@ -2808,7 +2808,7 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = False
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
 
         # request target API

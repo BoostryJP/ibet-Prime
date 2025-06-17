@@ -36,17 +36,6 @@ from app.exceptions import (
     SendTransactionError,
     ServiceUnavailableError,
 )
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-    TokenListContract,
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     UTXO,
     Account,
@@ -57,8 +46,19 @@ from app.model.db import (
     TokenType,
     UpdateToken,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
+    TokenListContract,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler

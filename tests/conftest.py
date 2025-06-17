@@ -36,7 +36,7 @@ from app.database import (
 )
 from app.main import app
 from app.model.db import Base
-from app.utils.contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import ContractUtils as IbetContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
@@ -115,10 +115,10 @@ async def async_db(async_db_engine):
 
 
 #####################################################
-# Blockchain & Smart Contract
+# ibet: Blockchain & Smart Contract
 #####################################################
 @pytest.fixture(scope="function", autouse=True)
-def block_number(request):
+def ibet_block_number(request):
     # save blockchain state before function starts
     evm_snapshot = web3.provider.make_request(RPCEndpoint("evm_snapshot"), [])
 
@@ -135,7 +135,7 @@ def block_number(request):
 
 
 @pytest.fixture(scope="function")
-def personal_info_contract():
+def ibet_personal_info_contract():
     user_1 = config_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
@@ -143,10 +143,10 @@ def personal_info_contract():
     )
 
     # Deploy personal info contract
-    contract_address, _, _ = ContractUtils.deploy_contract(
+    contract_address, _, _ = IbetContractUtils.deploy_contract(
         "PersonalInfo", [], deployer_address, deployer_private_key
     )
-    return ContractUtils.get_contract("PersonalInfo", contract_address)
+    return IbetContractUtils.get_contract("PersonalInfo", contract_address)
 
 
 @pytest.fixture(scope="function")
@@ -158,10 +158,10 @@ def ibet_exchange_contract():
     )
 
     # Deploy payment gateway contract
-    payment_gateway_contract_address, _, _ = ContractUtils.deploy_contract(
+    payment_gateway_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "PaymentGateway", [], deployer_address, deployer_private_key
     )
-    payment_gateway_contract = ContractUtils.get_contract(
+    payment_gateway_contract = IbetContractUtils.get_contract(
         "PaymentGateway", payment_gateway_contract_address
     )
     tx = payment_gateway_contract.functions.addAgent(
@@ -174,15 +174,15 @@ def ibet_exchange_contract():
             "gasPrice": 0,
         }
     )
-    ContractUtils.send_transaction(tx, deployer_private_key)
+    IbetContractUtils.send_transaction(tx, deployer_private_key)
 
     # Deploy storage contract
-    storage_contract_address, _, _ = ContractUtils.deploy_contract(
+    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "ExchangeStorage", [], deployer_address, deployer_private_key
     )
 
     # Deploy exchange contract
-    contract_address, _, _ = ContractUtils.deploy_contract(
+    contract_address, _, _ = IbetContractUtils.deploy_contract(
         "IbetExchange",
         [payment_gateway_contract_address, storage_contract_address],
         deployer_address,
@@ -190,7 +190,7 @@ def ibet_exchange_contract():
     )
 
     # Upgrade version
-    storage_contract = ContractUtils.get_contract(
+    storage_contract = IbetContractUtils.get_contract(
         "ExchangeStorage", storage_contract_address
     )
     tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
@@ -201,9 +201,9 @@ def ibet_exchange_contract():
             "gasPrice": 0,
         }
     )
-    ContractUtils.send_transaction(tx, deployer_private_key)
+    IbetContractUtils.send_transaction(tx, deployer_private_key)
 
-    return ContractUtils.get_contract("IbetExchange", contract_address)
+    return IbetContractUtils.get_contract("IbetExchange", contract_address)
 
 
 @pytest.fixture(scope="function")
@@ -215,17 +215,17 @@ def ibet_escrow_contract():
     )
 
     # Deploy storage contract
-    storage_contract_address, _, _ = ContractUtils.deploy_contract(
+    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "EscrowStorage", [], deployer_address, deployer_private_key
     )
 
     # Deploy escrow contract
-    contract_address, _, _ = ContractUtils.deploy_contract(
+    contract_address, _, _ = IbetContractUtils.deploy_contract(
         "IbetEscrow", [storage_contract_address], deployer_address, deployer_private_key
     )
 
     # Upgrade version
-    storage_contract = ContractUtils.get_contract(
+    storage_contract = IbetContractUtils.get_contract(
         "EscrowStorage", storage_contract_address
     )
     tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
@@ -236,9 +236,9 @@ def ibet_escrow_contract():
             "gasPrice": 0,
         }
     )
-    ContractUtils.send_transaction(tx, deployer_private_key)
+    IbetContractUtils.send_transaction(tx, deployer_private_key)
 
-    return ContractUtils.get_contract("IbetEscrow", contract_address)
+    return IbetContractUtils.get_contract("IbetEscrow", contract_address)
 
 
 @pytest.fixture(scope="function")
@@ -250,12 +250,12 @@ def ibet_security_token_escrow_contract():
     )
 
     # Deploy storage contract
-    storage_contract_address, _, _ = ContractUtils.deploy_contract(
+    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "EscrowStorage", [], deployer_address, deployer_private_key
     )
 
     # Deploy security token escrow contract
-    contract_address, _, _ = ContractUtils.deploy_contract(
+    contract_address, _, _ = IbetContractUtils.deploy_contract(
         "IbetSecurityTokenEscrow",
         [storage_contract_address],
         deployer_address,
@@ -263,7 +263,7 @@ def ibet_security_token_escrow_contract():
     )
 
     # Upgrade version
-    storage_contract = ContractUtils.get_contract(
+    storage_contract = IbetContractUtils.get_contract(
         "EscrowStorage", storage_contract_address
     )
     tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
@@ -274,9 +274,9 @@ def ibet_security_token_escrow_contract():
             "gasPrice": 0,
         }
     )
-    ContractUtils.send_transaction(tx, deployer_private_key)
+    IbetContractUtils.send_transaction(tx, deployer_private_key)
 
-    return ContractUtils.get_contract("IbetSecurityTokenEscrow", contract_address)
+    return IbetContractUtils.get_contract("IbetSecurityTokenEscrow", contract_address)
 
 
 @pytest.fixture(scope="function")
@@ -288,12 +288,12 @@ def ibet_security_token_dvp_contract():
     )
 
     # Deploy storage contract
-    storage_contract_address, _, _ = ContractUtils.deploy_contract(
+    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "DVPStorage", [], deployer_address, deployer_private_key
     )
 
     # Deploy security token DVP contract
-    contract_address, _, _ = ContractUtils.deploy_contract(
+    contract_address, _, _ = IbetContractUtils.deploy_contract(
         "IbetSecurityTokenDVP",
         [storage_contract_address],
         deployer_address,
@@ -301,7 +301,7 @@ def ibet_security_token_dvp_contract():
     )
 
     # Upgrade version
-    storage_contract = ContractUtils.get_contract(
+    storage_contract = IbetContractUtils.get_contract(
         "DVPStorage", storage_contract_address
     )
     tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
@@ -312,13 +312,13 @@ def ibet_security_token_dvp_contract():
             "gasPrice": 0,
         }
     )
-    ContractUtils.send_transaction(tx, deployer_private_key)
+    IbetContractUtils.send_transaction(tx, deployer_private_key)
 
-    return ContractUtils.get_contract("IbetSecurityTokenDVP", contract_address)
+    return IbetContractUtils.get_contract("IbetSecurityTokenDVP", contract_address)
 
 
 @pytest.fixture(scope="function")
-def e2e_messaging_contract():
+def ibet_e2e_messaging_contract():
     user_1 = config_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
@@ -326,14 +326,14 @@ def e2e_messaging_contract():
     )
 
     # Deploy e2e messaging contract
-    contract_address, _, _ = ContractUtils.deploy_contract(
+    contract_address, _, _ = IbetContractUtils.deploy_contract(
         "E2EMessaging", [], deployer_address, deployer_private_key
     )
-    return ContractUtils.get_contract("E2EMessaging", contract_address)
+    return IbetContractUtils.get_contract("E2EMessaging", contract_address)
 
 
 @pytest.fixture(scope="function")
-def freeze_log_contract():
+def ibet_freeze_log_contract():
     user_1 = config_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
@@ -341,7 +341,7 @@ def freeze_log_contract():
     )
 
     # Deploy e2e messaging contract
-    contract_address, _, _ = ContractUtils.deploy_contract(
+    contract_address, _, _ = IbetContractUtils.deploy_contract(
         "FreezeLog", [], deployer_address, deployer_private_key
     )
-    return ContractUtils.get_contract("FreezeLog", contract_address)
+    return IbetContractUtils.get_contract("FreezeLog", contract_address)

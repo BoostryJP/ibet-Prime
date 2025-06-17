@@ -36,7 +36,6 @@ from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetExchangeInterface, IbetShareContract
 from app.model.db import (
     Account,
     IDXLock,
@@ -50,9 +49,10 @@ from app.model.db import (
     TokenStatus,
     TokenType,
 )
+from app.model.ibet import IbetExchangeInterface, IbetShareContract
 from app.utils.asyncio_utils import SemaphoreTaskGroup
-from app.utils.contract_utils import AsyncContractUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch import free_malloc
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS

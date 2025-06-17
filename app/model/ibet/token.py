@@ -36,8 +36,9 @@ from app.exceptions import (
     SendTransactionError,
     ServiceUnavailableError,
 )
-from app.model.blockchain import IbetExchangeInterface
-from app.model.blockchain.tx_params.ibet_security_token import (
+from app.model.db import TokenAttrUpdate, TokenCache
+from app.model.ibet import IbetExchangeInterface
+from app.model.ibet.tx_params.ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
     ApproveTransferParams as IbetSecurityTokenApproveTransfer,
     BulkTransferParams as IbetSecurityTokenBulkTransferParams,
@@ -49,16 +50,15 @@ from app.model.blockchain.tx_params.ibet_security_token import (
     LockParams as IbetSecurityTokenLockParams,
     RedeemParams as IbetSecurityTokenRedeemParams,
 )
-from app.model.blockchain.tx_params.ibet_share import (
+from app.model.ibet.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
 )
-from app.model.blockchain.tx_params.ibet_straight_bond import (
+from app.model.ibet.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import TokenAttrUpdate, TokenCache
 from app.utils.asyncio_utils import SemaphoreTaskGroup
-from app.utils.contract_utils import AsyncContractUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import Web3Wrapper
 from config import (
     CHAIN_ID,
     DEFAULT_CURRENCY,

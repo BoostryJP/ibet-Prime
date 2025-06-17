@@ -30,8 +30,8 @@ from sqlalchemy import select
 
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError, SendTransactionError
-from app.model.blockchain import FreezeLogContract
 from app.model.db import FreezeLogAccount, TransactionLock
+from app.model.ibet import FreezeLogContract
 from app.model.schema import (
     CreateFreezeLogAccountRequest,
     FreezeLogAccountChangeEOAPasswordRequest,

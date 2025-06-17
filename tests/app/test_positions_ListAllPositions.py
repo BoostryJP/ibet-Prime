@@ -21,7 +21,6 @@ from unittest import mock
 
 import pytest
 
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
     IDXLockedPosition,
     IDXPosition,
@@ -29,6 +28,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 
 
 class TestListAllPositions:
@@ -90,7 +90,7 @@ class TestListAllPositions:
 
     # <Normal_2>
     # 1 record
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -185,8 +185,8 @@ class TestListAllPositions:
 
     # <Normal_3_1>
     # multi record
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_1(
         self,
@@ -386,8 +386,8 @@ class TestListAllPositions:
 
     # <Normal_3_2>
     # multi record (Including former holder)
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_2(
         self,
@@ -538,8 +538,8 @@ class TestListAllPositions:
 
     # <Normal_4>
     # specify header
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_4(
         self,
@@ -671,7 +671,7 @@ class TestListAllPositions:
     # Search Filter
     # token_type
     # IbetStraightBond
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -794,7 +794,7 @@ class TestListAllPositions:
     # Search Filter
     # token_type
     # IbetShare
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_2(self, mock_IbetShareContract_get, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
@@ -900,8 +900,8 @@ class TestListAllPositions:
     # <Normal_5_3>
     # Search Filter
     # including_former_position
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_3(
         self,
@@ -1075,8 +1075,8 @@ class TestListAllPositions:
 
     # <Normal_6>
     # Pagination
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_6(
         self,
@@ -1226,7 +1226,7 @@ class TestListAllPositions:
     # <Normal_7_1>
     # include_token_attributes: True
     # - IbetStraightBond
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_7_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -1366,7 +1366,7 @@ class TestListAllPositions:
     # <Normal_7_2>
     # include_token_attributes: True
     # - IbetShare
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_7_2(self, mock_IbetShareContract_get, async_client, async_db):
         issuer_address = "0x1234567890123456789012345678900000000100"

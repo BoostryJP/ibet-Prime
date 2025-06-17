@@ -28,14 +28,6 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_share import (
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    RedeemParams as IbetShareRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    RedeemParams as IbetStraightBondRedeemParams,
-)
 from app.model.db import (
     Account,
     BatchIssueRedeem,
@@ -44,6 +36,14 @@ from app.model.db import (
     Notification,
     NotificationType,
     TokenType,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_batch_issue_redeem import LOG, Processor
@@ -117,7 +117,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
             await processor.process()
@@ -224,7 +224,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.redeem",
+            target="app.model.ibet.token.IbetStraightBondContract.redeem",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_redeem:
             await processor.process()
@@ -331,7 +331,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.additional_issue",
+            target="app.model.ibet.token.IbetShareContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetShareContract_additional_issue:
             await processor.process()
@@ -438,7 +438,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.redeem",
+            target="app.model.ibet.token.IbetShareContract.redeem",
             return_value="mock_tx_hash",
         ) as IbetShareContract_redeem:
             await processor.process()
@@ -535,7 +535,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
             await processor.process()
@@ -631,7 +631,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
             await processor.process()
@@ -734,7 +734,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             side_effect=SendTransactionError(),
         ):
             await processor.process()
@@ -850,11 +850,11 @@ class TestProcessor:
         # mock
         with (
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+                target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
                 side_effect=ContractRevertError("999999"),
             ),
             patch(
-                target="app.model.blockchain.token.IbetShareContract.additional_issue",
+                target="app.model.ibet.token.IbetShareContract.additional_issue",
                 side_effect=ContractRevertError("999999"),
             ),
         ):

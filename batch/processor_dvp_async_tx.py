@@ -31,11 +31,6 @@ from web3.exceptions import TimeExhausted
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import SendTransactionError
-from app.model.blockchain.exchange import IbetSecurityTokenDVPNoWait
-from app.model.blockchain.tx_params.ibet_security_token_dvp import (
-    CreateDeliveryParams,
-    WithdrawPartialParams,
-)
 from app.model.db import (
     Account,
     DVPAsyncProcess,
@@ -44,8 +39,13 @@ from app.model.db import (
     DVPAsyncProcessStepTxStatus,
     DVPAsyncProcessType,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet.exchange import IbetSecurityTokenDVPNoWait
+from app.model.ibet.tx_params.ibet_security_token_dvp import (
+    CreateDeliveryParams,
+    WithdrawPartialParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler

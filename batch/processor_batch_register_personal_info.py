@@ -36,11 +36,6 @@ from app.exceptions import (
     SendTransactionError,
     ServiceUnavailableError,
 )
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-    PersonalInfoContract,
-)
 from app.model.db import (
     Account,
     BatchRegisterPersonalInfo,
@@ -52,7 +47,12 @@ from app.model.db import (
     TokenStatus,
     TokenType,
 )
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
+    PersonalInfoContract,
+)
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler

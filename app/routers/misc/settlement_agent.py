@@ -35,12 +35,12 @@ from sqlalchemy import and_, desc, func, select
 import config
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError, SendTransactionError
-from app.model.blockchain.exchange import IbetSecurityTokenDVP
-from app.model.blockchain.tx_params.ibet_security_token_dvp import (
+from app.model.db import DVPAgentAccount, IDXDelivery, TransactionLock
+from app.model.ibet.exchange import IbetSecurityTokenDVP
+from app.model.ibet.tx_params.ibet_security_token_dvp import (
     AbortDeliveryParams,
     FinishDeliveryParams,
 )
-from app.model.db import DVPAgentAccount, IDXDelivery, TransactionLock
 from app.model.schema import (
     AbortDVPDeliveryRequest,
     CreateDVPAgentAccountRequest,

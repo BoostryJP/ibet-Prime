@@ -20,17 +20,17 @@ SPDX-License-Identifier: Apache-2.0
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token_dvp import (
+from app.model.ibet.tx_params.ibet_security_token_dvp import (
     AbortDeliveryParams,
     CancelDeliveryParams,
     CreateDeliveryParams,
     FinishDeliveryParams,
     WithdrawPartialParams,
 )
-from app.model.blockchain.tx_params.ibet_security_token_escrow import (
+from app.model.ibet.tx_params.ibet_security_token_escrow import (
     ApproveTransferParams,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT
 
 

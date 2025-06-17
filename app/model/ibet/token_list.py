@@ -20,8 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.utils.contract_utils import AsyncContractUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import Web3Wrapper
 from config import CHAIN_ID, TX_GAS_LIMIT
 
 web3 = Web3Wrapper()
