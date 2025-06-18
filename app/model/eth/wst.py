@@ -184,7 +184,7 @@ class IbetWST(ERC20):
             )
 
             # Generate nonce
-            nonce = keccak(secrets.token_bytes(32))
+            nonce = secrets.token_bytes(32)
 
             # Generate domain separator
             domain_separator = await self.domain_separator()
@@ -265,7 +265,7 @@ class IbetWST(ERC20):
             )
 
             # Generate nonce
-            nonce = keccak(secrets.token_bytes(32))
+            nonce = secrets.token_bytes(32)
 
             # Generate domain separator
             domain_separator = await self.domain_separator()
@@ -348,7 +348,7 @@ class IbetWST(ERC20):
             )
 
             # Generate nonce
-            nonce = keccak(secrets.token_bytes(32))
+            nonce = secrets.token_bytes(32)
 
             # Generate domain separator
             domain_separator = await self.domain_separator()
@@ -434,7 +434,7 @@ class IbetWST(ERC20):
             )
 
             # Generate nonce
-            nonce = keccak(secrets.token_bytes(32))
+            nonce = secrets.token_bytes(32)
 
             # Generate domain separator
             domain_separator = await self.domain_separator()
@@ -552,7 +552,7 @@ class IbetWST(ERC20):
             )
 
             # Generate nonce
-            nonce = keccak(secrets.token_bytes(32))
+            nonce = secrets.token_bytes(32)
 
             # Generate domain separator
             domain_separator = await self.domain_separator()
@@ -654,7 +654,7 @@ class IbetWST(ERC20):
             )
 
             # Generate nonce
-            nonce = keccak(secrets.token_bytes(32))
+            nonce = secrets.token_bytes(32)
 
             # Generate domain separator
             domain_separator = await self.domain_separator()
@@ -735,7 +735,7 @@ class IbetWST(ERC20):
             )
 
             # Generate nonce
-            nonce = keccak(secrets.token_bytes(32))
+            nonce = secrets.token_bytes(32)
 
             # Generate domain separator
             domain_separator = await self.domain_separator()
