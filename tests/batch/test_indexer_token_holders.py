@@ -46,7 +46,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
 from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_token_holders import LOG, Processor, main
 from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 from tests.contract_utils import (
     IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
@@ -181,20 +181,20 @@ def token_holders_list(
 class TestProcessor:
     account_list = [
         {
-            "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"],
+            "address": default_eth_account("user1")["address"],
+            "keyfile": default_eth_account("user1")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"],
+            "address": default_eth_account("user2")["address"],
+            "keyfile": default_eth_account("user2")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"],
+            "address": default_eth_account("user3")["address"],
+            "keyfile": default_eth_account("user3")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user4")["address"],
-            "keyfile": config_eth_account("user4")["keyfile_json"],
+            "address": default_eth_account("user4")["address"],
+            "keyfile": default_eth_account("user4")["keyfile_json"],
         },
     ]
 
@@ -217,17 +217,17 @@ class TestProcessor:
         self, processor, async_db, ibet_personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -607,17 +607,17 @@ class TestProcessor:
         ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -860,17 +860,17 @@ class TestProcessor:
         ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1059,17 +1059,17 @@ class TestProcessor:
         self, processor, async_db, ibet_personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1463,17 +1463,17 @@ class TestProcessor:
         ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1716,17 +1716,17 @@ class TestProcessor:
         ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1921,17 +1921,17 @@ class TestProcessor:
             (LOG.name, logging.DEBUG, "There are no pending collect batch")
         )
 
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -2040,17 +2040,17 @@ class TestProcessor:
     ):
         exchange_contract = ibet_exchange_contract
 
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -2236,19 +2236,19 @@ class TestProcessor:
         self, processor, async_db, ibet_personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
         issuer_address = _user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_user_1["keyfile_json"],
             password="password".encode("utf-8"),
         )
-        _user_2 = config_eth_account("user2")
+        _user_2 = default_eth_account("user2")
         user_address_1 = _user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=_user_2["keyfile_json"],
             password="password".encode("utf-8"),
         )
-        _user_3 = config_eth_account("user3")
+        _user_3 = default_eth_account("user3")
         user_address_2 = _user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=_user_3["keyfile_json"],
@@ -2409,7 +2409,7 @@ class TestProcessor:
         current_block_number = 20000000 - 1
         checkpoint_block_number = 10000000 - 1
 
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
         issuer_address = _user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_user_1["keyfile_json"],
@@ -2587,17 +2587,17 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")

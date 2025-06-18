@@ -47,7 +47,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
     CancelTransferParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestUpdateBondTokenTransferApprovalStatus:
@@ -76,7 +76,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -216,7 +216,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -357,7 +357,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_2_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -496,7 +496,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -647,7 +647,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # missing body: operation_type
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
 
@@ -679,7 +679,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # invalid value: body
     @pytest.mark.asyncio
     async def test_error_1_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
 
@@ -747,7 +747,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # not account
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         id = 10
@@ -774,7 +774,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # invalid password
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -810,7 +810,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # token
     @pytest.mark.asyncio
     async def test_error_3_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -846,7 +846,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # transfer approval
     @pytest.mark.asyncio
     async def test_error_3_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -891,7 +891,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # processing Token
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -937,7 +937,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # already approved
     @pytest.mark.asyncio
     async def test_error_4_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1003,7 +1003,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # canceled application
     @pytest.mark.asyncio
     async def test_error_4_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1069,7 +1069,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # escrow has not been finished yet
     @pytest.mark.asyncio
     async def test_error_4_4(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1133,7 +1133,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # application that cannot be canceled
     @pytest.mark.asyncio
     async def test_error_4_5(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1197,7 +1197,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # This operation is duplicated
     @pytest.mark.asyncio
     async def test_error_4_6(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1274,7 +1274,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     )
     @pytest.mark.asyncio
     async def test_error_5_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1371,7 +1371,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # return fail with Revert
     @pytest.mark.asyncio
     async def test_error_5_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1485,7 +1485,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     )
     @pytest.mark.asyncio
     async def test_error_5_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1582,7 +1582,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # return fail with Revert
     @pytest.mark.asyncio
     async def test_error_5_4(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1690,7 +1690,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     )
     @pytest.mark.asyncio
     async def test_error_6_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1786,7 +1786,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # return fail with Revert
     @pytest.mark.asyncio
     async def test_error_6_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1887,7 +1887,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # personal information for from_address is not registered
     @pytest.mark.asyncio
     async def test_error_7_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1956,7 +1956,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # personal information for to_address is not registered
     @pytest.mark.asyncio
     async def test_error_7_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data

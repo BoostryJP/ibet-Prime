@@ -52,7 +52,7 @@ from app.utils.ibet_contract_utils import ContractUtils
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch.indexer_issue_redeem import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -159,7 +159,7 @@ class TestProcessor:
     # No token issued
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Token(processing token)
@@ -193,7 +193,7 @@ class TestProcessor:
     # No events emitted
     @pytest.mark.asyncio
     async def test_normal_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -238,7 +238,7 @@ class TestProcessor:
     # Bond
     @pytest.mark.asyncio
     async def test_normal_3_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -317,7 +317,7 @@ class TestProcessor:
     # Share
     @pytest.mark.asyncio
     async def test_normal_3_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -396,7 +396,7 @@ class TestProcessor:
     # Bond
     @pytest.mark.asyncio
     async def test_normal_4_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -475,7 +475,7 @@ class TestProcessor:
     # Share
     @pytest.mark.asyncio
     async def test_normal_4_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -553,7 +553,7 @@ class TestProcessor:
     # Multiple events have been emitted
     @pytest.mark.asyncio
     async def test_normal_5(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -678,7 +678,7 @@ class TestProcessor:
     async def test_normal_7(
         self, processor: Processor, async_db, ibet_personal_info_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -758,7 +758,7 @@ class TestProcessor:
         ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")

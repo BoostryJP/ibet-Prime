@@ -63,7 +63,7 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 from tests.contract_utils import (
     IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
@@ -147,14 +147,14 @@ class TestProcessor:
     # Execute Batch Run 2nd: Executed Transfer Event
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_1(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # prepare data
@@ -298,14 +298,14 @@ class TestProcessor:
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     @mock.patch("batch.processor_create_utxo.CREATE_UTXO_BLOCK_LOT_MAX_SIZE", 5)
     async def test_normal_2(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # prepare data
@@ -411,17 +411,17 @@ class TestProcessor:
     # bulk transfer(same transaction-hash)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_3(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_1_private_key = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_2_private_key = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -518,7 +518,7 @@ class TestProcessor:
     # to Exchange transfer only
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_4(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -601,17 +601,17 @@ class TestProcessor:
         ibet_personal_info_contract,
         ibet_exchange_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -795,14 +795,14 @@ class TestProcessor:
     # Additional Issue
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_6(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # prepare data
@@ -883,14 +883,14 @@ class TestProcessor:
     # Redeem
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_7(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # prepare data
@@ -1033,22 +1033,22 @@ class TestProcessor:
     # Unlock(account_address!=recipient_address)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_8_1(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
-        user_4 = config_eth_account("user4")
+        user_4 = default_eth_account("user4")
         lock_address = user_4["address"]
 
         # prepare data
@@ -1223,22 +1223,22 @@ class TestProcessor:
     # Unlock(account_address==recipient_address)
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_8_2(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
-        user_4 = config_eth_account("user4")
+        user_4 = default_eth_account("user4")
         lock_address = user_4["address"]
 
         # prepare data
@@ -1405,14 +1405,14 @@ class TestProcessor:
     # Transfer & Additional Issue & Redeem
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")
     async def test_normal_9(self, mock_func, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # prepare data
@@ -1551,22 +1551,22 @@ class TestProcessor:
     # <Normal_10_1>
     # ForceChangeLockedAccount(beforeAccountAddress!=afterAccountAddress)
     async def test_normal_10_1(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
-        user_4 = config_eth_account("user4")
+        user_4 = default_eth_account("user4")
         lock_address = user_4["address"]
 
         # prepare data
@@ -1738,22 +1738,22 @@ class TestProcessor:
     # <Normal_10_2>
     # ForceChangeLockedAccount(beforeAccountAddress==afterAccountAddress)
     async def test_normal_10_2(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
-        user_4 = config_eth_account("user4")
+        user_4 = default_eth_account("user4")
         lock_address = user_4["address"]
 
         # prepare data
@@ -1923,7 +1923,7 @@ class TestProcessor:
     # <Error_1>
     # Web3 Error
     async def test_error_1(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -1965,16 +1965,16 @@ class TestProcessor:
     # An invalid record including the number exceeding the database limit is found
     # => Discarded ledger creation request but saved UTXO data
     async def test_error_2(self, processor, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
 
-        user_1 = config_eth_account("user2")
+        user_1 = default_eth_account("user2")
         user_address_1 = user_1["address"]
 
-        user_2 = config_eth_account("user3")
+        user_2 = default_eth_account("user3")
         user_address_2 = user_2["address"]
 
         # prepare data

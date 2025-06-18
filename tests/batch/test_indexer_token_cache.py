@@ -43,7 +43,7 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_token_cache import LOG, Processor, main
 from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -151,7 +151,7 @@ class TestProcessor:
     # not issue token
     @pytest.mark.asyncio
     async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Token(processing token)
@@ -188,7 +188,7 @@ class TestProcessor:
     # issued token
     @pytest.mark.asyncio
     async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -338,7 +338,7 @@ class TestProcessor:
         ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")

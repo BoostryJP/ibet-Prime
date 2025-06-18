@@ -23,7 +23,7 @@ import pytest
 
 from app.model.db import FreezeLogAccount
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRetrieveFreezeLog:
@@ -38,7 +38,7 @@ class TestRetrieveFreezeLog:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -91,7 +91,7 @@ class TestRetrieveFreezeLog:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -143,7 +143,7 @@ class TestRetrieveFreezeLog:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -201,7 +201,7 @@ class TestRetrieveFreezeLog:
     # -> NotFound
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db, ibet_freeze_log_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api

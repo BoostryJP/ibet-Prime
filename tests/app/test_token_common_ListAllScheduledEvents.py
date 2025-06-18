@@ -27,7 +27,7 @@ import pytz
 from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from config import TZ
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListAllScheduledEvents:
@@ -35,8 +35,8 @@ class TestListAllScheduledEvents:
     api_url = "tokens/scheduled_events"
     local_tz = pytz.timezone(TZ)
 
-    test_issuer_address_1 = config_eth_account("user1")["address"]
-    test_issuer_address_2 = config_eth_account("user2")["address"]
+    test_issuer_address_1 = default_eth_account("user1")["address"]
+    test_issuer_address_2 = default_eth_account("user2")["address"]
 
     test_token_1_address = "0x1234567890123456789012345678900000000010"
     test_token_1_name = "test_token_1"

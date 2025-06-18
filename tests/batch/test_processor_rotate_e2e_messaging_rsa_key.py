@@ -34,7 +34,7 @@ from app.model.ibet import E2EMessaging
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.processor_rotate_e2e_messaging_rsa_key import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -60,7 +60,7 @@ class TestProcessor:
     # E2E messaging account is not exists
     @pytest.mark.asyncio
     async def test_normal_1_1(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -89,7 +89,7 @@ class TestProcessor:
     # E2E messaging account is not auto generated
     @pytest.mark.asyncio
     async def test_normal_1_2(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -138,7 +138,7 @@ class TestProcessor:
     # Last generation is within the interval
     @pytest.mark.asyncio
     async def test_normal_1_3(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -187,13 +187,13 @@ class TestProcessor:
     # auto generate and rotate
     @pytest.mark.asyncio
     async def test_normal_2(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_keyfile_2 = user_2["keyfile_json"]
         user_private_key_2 = decode_keyfile_json(
@@ -389,7 +389,7 @@ class TestProcessor:
     # Could not get the EOA private key
     @pytest.mark.asyncio
     async def test_error_1(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
 
@@ -434,7 +434,7 @@ class TestProcessor:
     # Failed to send transaction
     @pytest.mark.asyncio
     async def test_error_2(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
@@ -503,7 +503,7 @@ class TestProcessor:
         ibet_e2e_messaging_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(

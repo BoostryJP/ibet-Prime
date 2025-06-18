@@ -31,7 +31,7 @@ from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
 from app.utils.ibet_contract_utils import AsyncContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -91,7 +91,7 @@ class TestGetContractCode:
 
 
 class TestDeployContract:
-    test_account = config_eth_account("user1")
+    test_account = default_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
         raw_keyfile_json=test_account["keyfile_json"],
@@ -172,7 +172,7 @@ class TestDeployContract:
 
 
 class TestGetContract:
-    test_account = config_eth_account("user1")
+    test_account = default_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
         raw_keyfile_json=test_account["keyfile_json"],
@@ -219,7 +219,7 @@ class TestGetContract:
             )
 
     # <Error_2>
-    # Contract does not exists
+    # Contract does not exist
     @pytest.mark.asyncio
     async def test_error_2(self):
         with pytest.raises(FileNotFoundError):
@@ -230,7 +230,7 @@ class TestGetContract:
 
 
 class TestSendTransaction:
-    test_account = config_eth_account("user1")
+    test_account = default_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
         raw_keyfile_json=test_account["keyfile_json"],
@@ -408,7 +408,7 @@ class TestSendTransaction:
 
 
 class TestSendTransactionNoWait:
-    test_account = config_eth_account("user1")
+    test_account = default_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
         raw_keyfile_json=test_account["keyfile_json"],
@@ -565,7 +565,7 @@ class TestSendTransactionNoWait:
 
 
 class TestGetBlockByTransactionHash:
-    test_account = config_eth_account("user1")
+    test_account = default_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
         raw_keyfile_json=test_account["keyfile_json"],

@@ -44,7 +44,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_update_token import Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -61,7 +61,7 @@ class TestProcessor:
     # Issuing(IbetShare, IbetStraightBond)
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -354,7 +354,7 @@ class TestProcessor:
     # Issuing: Account does not exist
     @pytest.mark.asyncio
     async def test_error_1(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -580,7 +580,7 @@ class TestProcessor:
     # Issuing: Fail to get the private key
     @pytest.mark.asyncio
     async def test_error_2(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -806,7 +806,7 @@ class TestProcessor:
     # Issuing: Send transaction error(token update)
     @pytest.mark.asyncio
     async def test_error_3(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -1046,7 +1046,7 @@ class TestProcessor:
     # Issuing: Send transaction error(TokenList register)
     @pytest.mark.asyncio
     async def test_error_4(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"

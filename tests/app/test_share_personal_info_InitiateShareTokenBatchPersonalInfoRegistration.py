@@ -35,7 +35,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestInitiateShareTokenBatchPersonalInfoRegistration:
@@ -50,11 +50,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # Authorization by eoa-password
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -123,11 +123,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # Authorization by auth-token
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -207,11 +207,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # headers and body required
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -244,11 +244,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # personal_info
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -297,11 +297,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # personal_info.account_address is invalid
     @pytest.mark.asyncio
     async def test_error_1_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -411,7 +411,7 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # issuer_address
     @pytest.mark.asyncio
     async def test_error_1_4(self, async_client, async_db):
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -458,11 +458,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # eoa-password not encrypted
     @pytest.mark.asyncio
     async def test_error_1_5(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -509,11 +509,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # issuer does not exist
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -553,11 +553,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # password mismatch
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -606,11 +606,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # token not found
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -659,11 +659,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # processing token
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -722,11 +722,11 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # personal info list is empty
     @pytest.mark.asyncio
     async def test_error_4_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -772,14 +772,14 @@ class TestInitiateShareTokenBatchPersonalInfoRegistration:
     # BatchPersonalInfoRegistrationValidationError
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account_1 = config_eth_account("user2")
+        _test_account_1 = default_eth_account("user2")
         _test_account_address_1 = _test_account_1["address"]
 
-        _test_account_2 = config_eth_account("user3")
+        _test_account_2 = default_eth_account("user3")
         _test_account_address_2 = _test_account_2["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"

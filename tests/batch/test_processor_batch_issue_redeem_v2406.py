@@ -47,7 +47,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_batch_issue_redeem import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -72,7 +72,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -83,7 +83,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -179,7 +179,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -190,7 +190,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -286,7 +286,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_3(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -297,7 +297,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -393,7 +393,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_4(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -404,7 +404,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -503,12 +503,12 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -590,14 +590,14 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_2(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("wrong_password")  # wrong password
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -686,14 +686,14 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_3(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -790,14 +790,14 @@ class TestProcessor:
         self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
     ):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 

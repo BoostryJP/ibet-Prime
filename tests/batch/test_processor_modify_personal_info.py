@@ -51,7 +51,7 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from batch.processor_modify_personal_info import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -193,7 +193,7 @@ class TestProcessor:
     async def test_normal_1(
         self, processor, async_db, caplog: pytest.LogCaptureFixture
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
         # prepare data
@@ -265,10 +265,10 @@ class TestProcessor:
         async_db.add(token_4)
 
         # PersonalInfo
-        personal_user_1 = config_eth_account("user2")
-        personal_user_2 = config_eth_account("user3")
-        personal_user_3 = config_eth_account("user4")
-        personal_user_4 = config_eth_account("user5")
+        personal_user_1 = default_eth_account("user2")
+        personal_user_2 = default_eth_account("user3")
+        personal_user_3 = default_eth_account("user4")
+        personal_user_4 = default_eth_account("user5")
 
         idx_1 = IDXPersonalInfo()
         idx_1.issuer_address = user_1["address"]

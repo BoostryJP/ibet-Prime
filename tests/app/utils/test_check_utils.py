@@ -28,7 +28,7 @@ from app.exceptions import AuthorizationError
 from app.model.db import Account, AuthToken
 from app.utils.check_utils import check_auth
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestCheckAuth:
@@ -43,7 +43,7 @@ class TestCheckAuth:
     # Authentication by eoa_password(encrypted)
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -69,7 +69,7 @@ class TestCheckAuth:
     @mock.patch("app.utils.check_utils.E2EE_REQUEST_ENABLED", False)
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -95,7 +95,7 @@ class TestCheckAuth:
     # valid duration = 0
     @pytest.mark.asyncio
     async def test_normal_2_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -128,7 +128,7 @@ class TestCheckAuth:
     # valid duration != 0
     @pytest.mark.asyncio
     async def test_normal_2_2(self, freezer, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -168,7 +168,7 @@ class TestCheckAuth:
     # issuer does not exist
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # test function
         with pytest.raises(AuthorizationError):
@@ -185,7 +185,7 @@ class TestCheckAuth:
     # eoa_password is None and auth_token is None
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -210,7 +210,7 @@ class TestCheckAuth:
     # eoa_password is mismatched (encrypted)
     @pytest.mark.asyncio
     async def test_error_3_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -239,7 +239,7 @@ class TestCheckAuth:
     @mock.patch("app.utils.check_utils.E2EE_REQUEST_ENABLED", False)
     @pytest.mark.asyncio
     async def test_error_3_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -265,7 +265,7 @@ class TestCheckAuth:
     # auth_token does not exist
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -291,7 +291,7 @@ class TestCheckAuth:
     # auth_token is mismatched
     @pytest.mark.asyncio
     async def test_error_4_2(self, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()
@@ -323,7 +323,7 @@ class TestCheckAuth:
     # auth_token has been expired
     @pytest.mark.asyncio
     async def test_error_4_3(self, freezer, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         _account = Account()

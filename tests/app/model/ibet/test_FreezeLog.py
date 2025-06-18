@@ -31,7 +31,7 @@ from app.model.ibet import FreezeLogContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from config import WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -45,7 +45,7 @@ class TestRecordLog:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(
@@ -82,7 +82,7 @@ class TestRecordLog:
     # Transaction Error
     @pytest.mark.asyncio
     async def test_error_1(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(
@@ -112,7 +112,7 @@ class TestRecordLog:
     # Transaction Timeout
     @pytest.mark.asyncio
     async def test_error_2(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(
@@ -147,7 +147,7 @@ class TestUpdateLog:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(
@@ -184,7 +184,7 @@ class TestUpdateLog:
     # Transaction Error
     @pytest.mark.asyncio
     async def test_error_1(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(
@@ -214,7 +214,7 @@ class TestUpdateLog:
     # Transaction Timeout
     @pytest.mark.asyncio
     async def test_error_2(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(
@@ -249,7 +249,7 @@ class TestGetLog:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(
@@ -279,7 +279,7 @@ class TestGetLog:
     # Default value
     @pytest.mark.asyncio
     async def test_normal_2(self, async_db, ibet_freeze_log_contract):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         user_address = user["address"]
 
         log_account = FreezeLogAccount(

@@ -21,7 +21,7 @@ import pytest
 from sqlalchemy import select
 
 from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestDeleteLedgerDetailsData:
@@ -35,7 +35,7 @@ class TestDeleteLedgerDetailsData:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
@@ -165,7 +165,7 @@ class TestDeleteLedgerDetailsData:
     # Token Not Found
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
@@ -189,7 +189,7 @@ class TestDeleteLedgerDetailsData:
     # Processing Token
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"

@@ -45,7 +45,7 @@ from app.model.ibet.tx_params.ibet_share import (
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from batch.processor_batch_register_personal_info import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -62,24 +62,24 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 class TestProcessor:
     account_list = [
         {
-            "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"],
+            "address": default_eth_account("user1")["address"],
+            "keyfile": default_eth_account("user1")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"],
+            "address": default_eth_account("user2")["address"],
+            "keyfile": default_eth_account("user2")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"],
+            "address": default_eth_account("user3")["address"],
+            "keyfile": default_eth_account("user3")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user4")["address"],
-            "keyfile": config_eth_account("user4")["keyfile_json"],
+            "address": default_eth_account("user4")["address"],
+            "keyfile": default_eth_account("user4")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user5")["address"],
-            "keyfile": config_eth_account("user5")["keyfile_json"],
+            "address": default_eth_account("user5")["address"],
+            "keyfile": default_eth_account("user5")["keyfile_json"],
         },
     ]
 

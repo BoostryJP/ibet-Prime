@@ -42,7 +42,7 @@ from app.model.ibet.tx_params.ibet_security_token_dvp import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_dvp_async_tx import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -57,7 +57,7 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 class TestProcessor:
-    issuer_account = config_eth_account("user1")
+    issuer_account = default_eth_account("user1")
     issuer_address = issuer_account["address"]
     issuer_keyfile = issuer_account["keyfile_json"]
     issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -66,10 +66,10 @@ class TestProcessor:
         password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8"),
     )
 
-    user_account = config_eth_account("user2")
+    user_account = default_eth_account("user2")
     user_address = user_account["address"]
 
-    agent_account = config_eth_account("user3")
+    agent_account = default_eth_account("user3")
     agent_address = agent_account["address"]
 
     dvp_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"

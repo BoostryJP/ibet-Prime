@@ -43,7 +43,7 @@ from app.model.ibet import E2EMessaging
 from app.utils.e2ee_utils import E2EEUtils
 from batch.indexer_e2e_messaging import Processor
 from config import WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -167,9 +167,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # not generated RSA key after send
     @pytest.mark.asyncio
     async def test_normal_2_1(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -250,9 +250,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # generated RSA key after send
     @pytest.mark.asyncio
     async def test_normal_2_2(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -374,11 +374,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Multi event logs
     @pytest.mark.asyncio
     async def test_normal_3(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_3 = user_3["address"]
         user_private_key_3 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -559,14 +559,14 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Not target message
     @pytest.mark.asyncio
     async def test_normal_4(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_3 = user_3["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -635,9 +635,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # not json
     @pytest.mark.asyncio
     async def test_error_1_1(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -692,9 +692,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `type` does not exists
     @pytest.mark.asyncio
     async def test_error_1_2(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -766,9 +766,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text` does not exists
     @pytest.mark.asyncio
     async def test_error_1_3(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -827,9 +827,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text` max length over
     @pytest.mark.asyncio
     async def test_error_1_4(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -899,9 +899,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text.cipher_key` does not exists
     @pytest.mark.asyncio
     async def test_error_1_5(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -970,9 +970,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text.message` does not exists
     @pytest.mark.asyncio
     async def test_error_1_6(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1038,9 +1038,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # decoded `text.message` max length over
     @pytest.mark.asyncio
     async def test_error_1_7(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1109,9 +1109,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # RSA key does not exists
     @pytest.mark.asyncio
     async def test_error_2(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1179,9 +1179,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text.cipher_key` is not AES key
     @pytest.mark.asyncio
     async def test_error_3_1(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1248,9 +1248,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text.cipher_key` does not encrypt with RSA key
     @pytest.mark.asyncio
     async def test_error_3_2(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1318,9 +1318,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text.cipher_key` encrypted other RSA key
     @pytest.mark.asyncio
     async def test_error_3_3(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1393,9 +1393,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text.message` does not encrypt
     @pytest.mark.asyncio
     async def test_error_3_4(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1459,9 +1459,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # `text.message` encrypted other AES key
     @pytest.mark.asyncio
     async def test_error_3_5(self, processor, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")

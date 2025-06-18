@@ -29,7 +29,7 @@ from app.model.db import (
     NotificationType,
     TokenType,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListAllNotifications:
@@ -46,9 +46,9 @@ class TestListAllNotifications:
     async def test_normal_1(self, async_client, async_db):
         test_token_address = "test_token_address"
 
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         # prepare data
@@ -403,9 +403,9 @@ class TestListAllNotifications:
     async def test_normal_2(self, async_client, async_db):
         test_token_address = "test_token_address"
 
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         # prepare data
@@ -514,9 +514,9 @@ class TestListAllNotifications:
     async def test_normal_3(self, async_client, async_db):
         test_token_address = "test_token_address"
 
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         # prepare data

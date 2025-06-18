@@ -25,7 +25,7 @@ from sqlalchemy import select
 
 from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestDeleteIssuerAuthToken:
@@ -43,7 +43,7 @@ class TestDeleteIssuerAuthToken:
     # Authorization by eoa_password
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -83,7 +83,7 @@ class TestDeleteIssuerAuthToken:
     # Authorization by auth_token
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -127,7 +127,7 @@ class TestDeleteIssuerAuthToken:
     # issuer-address is not a valid address
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -179,7 +179,7 @@ class TestDeleteIssuerAuthToken:
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -231,7 +231,7 @@ class TestDeleteIssuerAuthToken:
     # eoa-password (or auth-token) not set
     @pytest.mark.asyncio
     async def test_error_3_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -275,7 +275,7 @@ class TestDeleteIssuerAuthToken:
     # eoa-password (or auth-token) is not correct
     @pytest.mark.asyncio
     async def test_error_3_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -321,7 +321,7 @@ class TestDeleteIssuerAuthToken:
     # NotFound
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()

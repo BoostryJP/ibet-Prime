@@ -24,7 +24,7 @@ import pytz
 
 from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
 from config import TZ
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 local_tz = pytz.timezone(TZ)
 
@@ -35,16 +35,16 @@ class TestListShareTokenBulkTransfers:
 
     upload_issuer_list = [
         {
-            "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"],
+            "address": default_eth_account("user1")["address"],
+            "keyfile": default_eth_account("user1")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"],
+            "address": default_eth_account("user2")["address"],
+            "keyfile": default_eth_account("user2")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"],
+            "address": default_eth_account("user3")["address"],
+            "keyfile": default_eth_account("user3")["keyfile_json"],
         },
     ]
 

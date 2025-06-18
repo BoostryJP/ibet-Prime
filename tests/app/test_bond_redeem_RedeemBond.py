@@ -27,7 +27,7 @@ from app.exceptions import SendTransactionError
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
 from app.model.ibet.tx_params.ibet_straight_bond import RedeemParams
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRedeemBond:
@@ -45,7 +45,7 @@ class TestRedeemBond:
     async def test_normal_1(
         self, IbetStraightBondContract_mock, async_client, async_db
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -97,7 +97,7 @@ class TestRedeemBond:
     async def test_normal_2(
         self, IbetStraightBondContract_mock, async_client, async_db
     ):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -156,7 +156,7 @@ class TestRedeemBond:
     # RequestValidationError: account_address
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -204,7 +204,7 @@ class TestRedeemBond:
     # RequestValidationError: amount(min)
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -252,7 +252,7 @@ class TestRedeemBond:
     # RequestValidationError: amount(max)
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -329,7 +329,7 @@ class TestRedeemBond:
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -360,7 +360,7 @@ class TestRedeemBond:
     # RequestValidationError: eoa-password(not decrypt)
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -399,7 +399,7 @@ class TestRedeemBond:
     # issuer does not exist
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -439,7 +439,7 @@ class TestRedeemBond:
     # password mismatch
     @pytest.mark.asyncio
     async def test_error_8(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -474,7 +474,7 @@ class TestRedeemBond:
     # token not found
     @pytest.mark.asyncio
     async def test_error_9(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -509,7 +509,7 @@ class TestRedeemBond:
     # Processing Token
     @pytest.mark.asyncio
     async def test_error_10(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -559,7 +559,7 @@ class TestRedeemBond:
     )
     @pytest.mark.asyncio
     async def test_error_11(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"

@@ -36,7 +36,7 @@ from app.exceptions import SendTransactionError
 from app.model.ibet import E2EMessaging
 from app.utils.ibet_contract_utils import ContractUtils
 from config import WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -50,12 +50,12 @@ class TestSendMessage:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         message = "test message"
 
@@ -88,12 +88,12 @@ class TestSendMessage:
     # Transaction Error
     @pytest.mark.asyncio
     async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         message = "test message"
 
@@ -119,12 +119,12 @@ class TestSendMessage:
     # Transaction Timeout
     @pytest.mark.asyncio
     async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         message = "test message"
 
@@ -225,12 +225,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         message_org = "test message"
         _type = "test_type"
@@ -276,12 +276,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     @mock.patch("app.model.ibet.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
     @mock.patch("boto3.client")
     async def test_normal_2(self, boto3_mock, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         message_org = "test message"
         _type = "test_type"
@@ -345,12 +345,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Transaction Error
     @pytest.mark.asyncio
     async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         message_org = "test message"
         _type = "test_type"
@@ -382,12 +382,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Transaction Timeout
     @pytest.mark.asyncio
     async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         message_org = "test message"
         _type = "test_type"
@@ -439,7 +439,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -473,7 +473,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Transaction Error
     @pytest.mark.asyncio
     async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -503,7 +503,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Transaction Timeout
     @pytest.mark.asyncio
     async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")

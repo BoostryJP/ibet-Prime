@@ -22,7 +22,7 @@ from sqlalchemy import select
 
 from app.model.db import FreezeLogAccount
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestChangeFreezeLogAccountPassword:
@@ -36,7 +36,7 @@ class TestChangeFreezeLogAccountPassword:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_password = "password"
@@ -81,7 +81,7 @@ class TestChangeFreezeLogAccountPassword:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api
@@ -115,7 +115,7 @@ class TestChangeFreezeLogAccountPassword:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api
@@ -154,7 +154,7 @@ class TestChangeFreezeLogAccountPassword:
     # -> NotFound
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         old_password = "password"
         new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
@@ -180,7 +180,7 @@ class TestChangeFreezeLogAccountPassword:
     # -> InvalidParameterError
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_password = "password"

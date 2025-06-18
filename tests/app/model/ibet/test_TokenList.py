@@ -34,7 +34,7 @@ from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.ibet.token_list import TokenListContract
 from app.utils.ibet_contract_utils import ContractUtils
 from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -42,7 +42,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 @pytest.fixture
 def contract_list(async_db):
-    test_account = config_eth_account("user1")
+    test_account = default_eth_account("user1")
     deployer_address = test_account.get("address")
     private_key = decode_keyfile_json(
         raw_keyfile_json=test_account.get("keyfile_json"),
@@ -65,7 +65,7 @@ class TestRegisterTokenList:
     # <Normal_1> token_template is IbetShare
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db, contract_list):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -154,7 +154,7 @@ class TestRegisterTokenList:
     # <Error_1> Invalid argument: token_address
     @pytest.mark.asyncio
     async def test_error_1(self, async_db, contract_list):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -173,7 +173,7 @@ class TestRegisterTokenList:
     # <Error_2> Invalid argument: token_list_address
     @pytest.mark.asyncio
     async def test_error_2(self, async_db, contract_list):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -192,7 +192,7 @@ class TestRegisterTokenList:
     # <Error_3> Invalid argument: account_address
     @pytest.mark.asyncio
     async def test_error_3(self, async_db, contract_list):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -211,7 +211,7 @@ class TestRegisterTokenList:
     # <Error_4> Invalid argument: private_key
     @pytest.mark.asyncio
     async def test_error_4(self, async_db, contract_list):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
 
         with pytest.raises(SendTransactionError) as exc_info:
@@ -226,7 +226,7 @@ class TestRegisterTokenList:
     # <Error_5> SendTransactionError : ContractUtils
     @pytest.mark.asyncio
     async def test_error_5(self, async_db, contract_list):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
@@ -252,7 +252,7 @@ class TestRegisterTokenList:
     # <Error_6> Transaction REVERT(token address is zero)
     @pytest.mark.asyncio
     async def test_error_6(self, async_db, contract_list):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),

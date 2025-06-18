@@ -50,7 +50,7 @@ from app.model.ibet import (
 )
 from app.utils import ibet_ledger_utils
 from config import WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -147,7 +147,7 @@ class TestRequestLedgerCreation:
     # Ledger template is not set
     # -> skip
     async def test_normal_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
@@ -179,7 +179,7 @@ class TestRequestLedgerCreation:
     # Request ledger creation
     # - Ledger details template is not set
     async def test_normal_3(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
@@ -263,7 +263,7 @@ class TestRequestLedgerCreation:
     # Successfully request ledger creation
     # - Create dataset from DB (off-chain data)
     async def test_normal_4_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
@@ -401,15 +401,15 @@ class TestRequestLedgerCreation:
     # - Create dataset from ibet for Fin (on-chain data)
     # - token_type == TokenType.IBET_SHARE
     async def test_normal_4_2_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
-        user_1 = config_eth_account("user2")
+        user_1 = default_eth_account("user2")
         user_address_1 = user_1["address"]
 
-        user_2 = config_eth_account("user3")
+        user_2 = default_eth_account("user3")
         user_address_2 = user_2["address"]
 
         # Prepare data: Token
@@ -657,15 +657,15 @@ class TestRequestLedgerCreation:
     # - Create dataset from ibet for Fin (on-chain data)
     # - token_type == TokenType.IBET_STRAIGHT_BOND
     async def test_normal_4_2_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
-        user_1 = config_eth_account("user2")
+        user_1 = default_eth_account("user2")
         user_address_1 = user_1["address"]
 
-        user_2 = config_eth_account("user3")
+        user_2 = default_eth_account("user3")
         user_address_2 = user_2["address"]
 
         # Prepare data: Token
@@ -912,7 +912,7 @@ class TestRequestLedgerCreation:
     # Successfully request ledger creation
     # - Duplicate ledger detail template
     async def test_normal_5(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
@@ -1060,15 +1060,15 @@ class TestRequestLedgerCreation:
     # Failed to request ledger creation
     # - Create dataset from ibet for Fin (on-chain data) and the balance data is over the BigInteger limit
     async def test_error_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
-        user_1 = config_eth_account("user2")
+        user_1 = default_eth_account("user2")
         user_address_1 = user_1["address"]
 
-        user_2 = config_eth_account("user3")
+        user_2 = default_eth_account("user3")
         user_address_2 = user_2["address"]
 
         # Prepare data: Token
@@ -1332,7 +1332,7 @@ class TestFinalizeLedger:
     # Only IBET_STRAIGHT_BOND/IBET_SHARE can be used as token.type
     # -> skip
     async def test_normal_1_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         token_address_1 = "test_token_address"
 
@@ -1362,7 +1362,7 @@ class TestFinalizeLedger:
     # Ledger template is not set
     # -> skip
     async def test_normal_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         token_address_1 = "test_token_address"
 
@@ -1392,7 +1392,7 @@ class TestFinalizeLedger:
     # Ledger details template is not set
     @pytest.mark.freeze_time("2024-11-06 12:34:56")
     async def test_normal_3(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         token_address_1 = "test_token_address"
 
@@ -1493,9 +1493,9 @@ class TestFinalizeLedger:
     # - Multiple data_type: DB + IBETFIN
     @pytest.mark.freeze_time("2024-11-06 12:34:56")
     async def test_normal_4_1(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
-        user_1 = config_eth_account("user2")
+        user_1 = default_eth_account("user2")
         user_address_1 = user_1["address"]
 
         token_address_1 = "test_token_address"
@@ -1768,9 +1768,9 @@ class TestFinalizeLedger:
     # - Duplicate data_type: DB + DB
     @pytest.mark.freeze_time("2024-11-06 12:34:56")
     async def test_normal_4_2(self, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
-        user_1 = config_eth_account("user2")
+        user_1 = default_eth_account("user2")
         user_address_1 = user_1["address"]
 
         token_address_1 = "test_token_address"

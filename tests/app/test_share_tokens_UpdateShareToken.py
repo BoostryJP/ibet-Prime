@@ -41,7 +41,7 @@ from app.model.db import (
 from app.model.ibet import IbetShareContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -80,7 +80,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -208,7 +208,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # No request parameters
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -274,7 +274,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # Authorization by auth-token
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -409,7 +409,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # YYYYMMDD parameter is not an empty string
     @pytest.mark.asyncio
     async def test_normal_4_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -514,7 +514,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # YYYYMMDD parameter is an empty string
     @pytest.mark.asyncio
     async def test_normal_4_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -623,7 +623,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: dividends
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -656,7 +656,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: dividend information all required
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -689,7 +689,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: tradable_exchange_contract_address
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -719,7 +719,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: personal_info_contract_address
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -749,7 +749,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: is_canceled
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -807,7 +807,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -837,7 +837,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: eoa-password(not decrypt)
     @pytest.mark.asyncio
     async def test_error_8(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -867,7 +867,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: min value
     @pytest.mark.asyncio
     async def test_error_9(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -921,7 +921,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # RequestValidationError: max value
     @pytest.mark.asyncio
     async def test_error_10(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -976,7 +976,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # YYYYMMDD regex
     @pytest.mark.asyncio
     async def test_error_11(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -1055,7 +1055,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     @mock.patch("app.model.ibet.token.IbetShareContract.update")
     @pytest.mark.asyncio
     async def test_error_12(self, IbetShareContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -1097,7 +1097,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     @mock.patch("app.model.ibet.token.IbetShareContract.update")
     @pytest.mark.asyncio
     async def test_error_13(self, IbetShareContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1137,7 +1137,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     @mock.patch("app.model.ibet.token.IbetShareContract.update")
     @pytest.mark.asyncio
     async def test_error_14(self, IbetShareContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1176,7 +1176,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # Processing Token
     @pytest.mark.asyncio
     async def test_error_15(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1226,7 +1226,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     )
     @pytest.mark.asyncio
     async def test_error_16(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1271,7 +1271,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # OperationNotSupportedVersionError: v24.6
     @pytest.mark.asyncio
     async def test_error_17(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"

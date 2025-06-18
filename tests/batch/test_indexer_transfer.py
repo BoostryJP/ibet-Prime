@@ -53,7 +53,7 @@ from app.utils.ibet_contract_utils import ContractUtils
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch.indexer_transfer import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 from tests.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -163,7 +163,7 @@ class TestProcessor:
     # not issue token
     @pytest.mark.asyncio
     async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Token(processing token)
@@ -199,7 +199,7 @@ class TestProcessor:
     # issued token
     @pytest.mark.asyncio
     async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -261,16 +261,16 @@ class TestProcessor:
     # - ForceChangeLockedAccount
     @pytest.mark.asyncio
     async def test_normal_2_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        lock_account = config_eth_account("user3")
+        lock_account = default_eth_account("user3")
         lock_account_pk = decode_keyfile_json(
             raw_keyfile_json=lock_account["keyfile_json"],
             password=lock_account["password"].encode("utf-8"),
@@ -504,13 +504,13 @@ class TestProcessor:
     # - ForceUnlock: Transfer record is not registered because "from" and "to" are the same
     @pytest.mark.asyncio
     async def test_normal_2_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
-        lock_account = config_eth_account("user3")
+        lock_account = default_eth_account("user3")
         lock_account_pk = decode_keyfile_json(
             raw_keyfile_json=lock_account["keyfile_json"],
             password=lock_account["password"].encode("utf-8"),
@@ -625,16 +625,16 @@ class TestProcessor:
     # - ForceUnlock: Transfer record is registered but the data attribute is set null because of invalid data schema
     @pytest.mark.asyncio
     async def test_normal_2_3(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        lock_account = config_eth_account("user3")
+        lock_account = default_eth_account("user3")
         lock_account_pk = decode_keyfile_json(
             raw_keyfile_json=lock_account["keyfile_json"],
             password=lock_account["password"].encode("utf-8"),
@@ -820,19 +820,19 @@ class TestProcessor:
     # - ForceUnlock(twice)
     @pytest.mark.asyncio
     async def test_normal_3_1(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
-        lock_account = config_eth_account("user4")
+        lock_account = default_eth_account("user4")
         lock_account_pk = decode_keyfile_json(
             raw_keyfile_json=lock_account["keyfile_json"],
             password=lock_account["password"].encode("utf-8"),
@@ -1226,27 +1226,27 @@ class TestProcessor:
     # - Transfer(BulkTransfer)
     @pytest.mark.asyncio
     async def test_normal_3_2(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
-        user_4 = config_eth_account("user3")
+        user_4 = default_eth_account("user3")
         user_address_3 = user_4["address"]
         user_pk_3 = decode_keyfile_json(
             raw_keyfile_json=user_4["keyfile_json"], password="password".encode("utf-8")
         )
-        user_5 = config_eth_account("user3")
+        user_5 = default_eth_account("user3")
         user_address_4 = user_5["address"]
         user_pk_4 = decode_keyfile_json(
             raw_keyfile_json=user_5["keyfile_json"], password="password".encode("utf-8")
@@ -1389,14 +1389,14 @@ class TestProcessor:
     # Multi Token
     @pytest.mark.asyncio
     async def test_normal_4(self, processor, async_db, ibet_personal_info_contract):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Account
@@ -1585,7 +1585,7 @@ class TestProcessor:
         ibet_security_token_escrow_contract,
     ):
         escrow_contract = ibet_security_token_escrow_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -1667,7 +1667,7 @@ class TestProcessor:
         ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")

@@ -25,14 +25,14 @@ from web3.middleware import ExtraDataToPOAMiddleware
 from app.model.ibet import IbetExchangeInterface, IbetStraightBondContract
 from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 def deploy_escrow_contract():
-    deployer = config_eth_account("user1")
+    deployer = default_eth_account("user1")
     private_key = decode_keyfile_json(
         raw_keyfile_json=deployer["keyfile_json"],
         password=deployer["password"].encode("utf-8"),
@@ -138,7 +138,7 @@ class TestGetAccountBalance:
     # Default value
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        user1_account = config_eth_account("user1")
+        user1_account = default_eth_account("user1")
 
         # deploy contract
         exchange_contract = deploy_escrow_contract()
@@ -160,12 +160,12 @@ class TestGetAccountBalance:
     # <Normal_2>
     @pytest.mark.asyncio
     async def test_normal_2(self, async_db):
-        user1_account = config_eth_account("user1")
+        user1_account = default_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
             password=user1_account["password"].encode("utf-8"),
         )
-        user2_account = config_eth_account("user2")
+        user2_account = default_eth_account("user2")
 
         # deploy contract
         exchange_contract = deploy_escrow_contract()
@@ -218,7 +218,7 @@ class TestGetAccountBalance:
     # Not deployed contract
     @pytest.mark.asyncio
     async def test_normal_3(self, async_db):
-        user1_account = config_eth_account("user1")
+        user1_account = default_eth_account("user1")
 
         # test IbetExchangeInterface.get_account_balance
         exchange_interface = IbetExchangeInterface(ZERO_ADDRESS)

@@ -38,7 +38,7 @@ from app.main import app
 from app.model.db import Base
 from app.utils.ibet_contract_utils import ContractUtils as IbetContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -136,7 +136,7 @@ def ibet_block_number(request):
 
 @pytest.fixture(scope="function")
 def ibet_personal_info_contract():
-    user_1 = config_eth_account("user1")
+    user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
         raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -151,7 +151,7 @@ def ibet_personal_info_contract():
 
 @pytest.fixture(scope="function")
 def ibet_exchange_contract():
-    user_1 = config_eth_account("user1")
+    user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
         raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -208,7 +208,7 @@ def ibet_exchange_contract():
 
 @pytest.fixture(scope="function")
 def ibet_escrow_contract():
-    user_1 = config_eth_account("user1")
+    user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
         raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -243,7 +243,7 @@ def ibet_escrow_contract():
 
 @pytest.fixture(scope="function")
 def ibet_security_token_escrow_contract():
-    user_1 = config_eth_account("user1")
+    user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
         raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -281,7 +281,7 @@ def ibet_security_token_escrow_contract():
 
 @pytest.fixture(scope="function")
 def ibet_security_token_dvp_contract():
-    user_1 = config_eth_account("user1")
+    user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
         raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -319,7 +319,7 @@ def ibet_security_token_dvp_contract():
 
 @pytest.fixture(scope="function")
 def ibet_e2e_messaging_contract():
-    user_1 = config_eth_account("user1")
+    user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
         raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -334,7 +334,7 @@ def ibet_e2e_messaging_contract():
 
 @pytest.fixture(scope="function")
 def ibet_freeze_log_contract():
-    user_1 = config_eth_account("user1")
+    user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
     deployer_private_key = decode_keyfile_json(
         raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")

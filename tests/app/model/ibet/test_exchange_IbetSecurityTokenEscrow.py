@@ -33,14 +33,14 @@ from app.model.ibet.tx_params.ibet_security_token_escrow import (
 )
 from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 def deploy_security_token_escrow_contract():
-    deployer = config_eth_account("user1")
+    deployer = default_eth_account("user1")
     private_key = decode_keyfile_json(
         raw_keyfile_json=deployer["keyfile_json"],
         password=deployer["password"].encode("utf-8"),
@@ -174,17 +174,17 @@ class TestApproveTransfer:
     # Default value
     @pytest.mark.asyncio
     async def test_normal_1(self, async_db):
-        user1_account = config_eth_account("user1")
+        user1_account = default_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
             password=user1_account["password"].encode("utf-8"),
         )
-        user2_account = config_eth_account("user2")
+        user2_account = default_eth_account("user2")
         user2_account_pk = decode_keyfile_json(
             raw_keyfile_json=user2_account["keyfile_json"],
             password=user2_account["password"].encode("utf-8"),
         )
-        user3_account = config_eth_account("user3")
+        user3_account = default_eth_account("user3")
 
         # deploy contract
         escrow_contract = deploy_security_token_escrow_contract()
@@ -297,17 +297,17 @@ class TestApproveTransfer:
     # Send Transaction Failed with HTTP Connection Error
     @pytest.mark.asyncio
     async def test_error_1(self, async_db):
-        user1_account = config_eth_account("user1")
+        user1_account = default_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
             password=user1_account["password"].encode("utf-8"),
         )
-        user2_account = config_eth_account("user2")
+        user2_account = default_eth_account("user2")
         user2_account_pk = decode_keyfile_json(
             raw_keyfile_json=user2_account["keyfile_json"],
             password=user2_account["password"].encode("utf-8"),
         )
-        user3_account = config_eth_account("user3")
+        user3_account = default_eth_account("user3")
 
         # deploy contract
         escrow_contract = deploy_security_token_escrow_contract()
@@ -409,7 +409,7 @@ class TestApproveTransfer:
     # Timeout Error
     @pytest.mark.asyncio
     async def test_error_2(self, async_db):
-        user1_account = config_eth_account("user1")
+        user1_account = default_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
             password=user1_account["password"].encode("utf-8"),
@@ -445,7 +445,7 @@ class TestApproveTransfer:
     # Not apply
     @pytest.mark.asyncio
     async def test_error_3(self, async_db):
-        user1_account = config_eth_account("user1")
+        user1_account = default_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
             password=user1_account["password"].encode("utf-8"),

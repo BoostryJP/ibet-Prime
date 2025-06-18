@@ -25,7 +25,7 @@ from sqlalchemy import select
 
 from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestGenerateIssuerAuthToken:
@@ -43,7 +43,7 @@ class TestGenerateIssuerAuthToken:
     # New token
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -86,7 +86,7 @@ class TestGenerateIssuerAuthToken:
     # Update token
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -144,7 +144,7 @@ class TestGenerateIssuerAuthToken:
     # [header] missing
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -189,7 +189,7 @@ class TestGenerateIssuerAuthToken:
     # [body] missing
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -235,7 +235,7 @@ class TestGenerateIssuerAuthToken:
     # issuer-address is not a valid address
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -282,7 +282,7 @@ class TestGenerateIssuerAuthToken:
     # [header] eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -331,7 +331,7 @@ class TestGenerateIssuerAuthToken:
     # [body] type error
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -379,7 +379,7 @@ class TestGenerateIssuerAuthToken:
     # [body] valid_duration is greater than or equal to 0
     @pytest.mark.asyncio
     async def test_error_4_2(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -427,7 +427,7 @@ class TestGenerateIssuerAuthToken:
     # [body] valid_duration is less than or equal to 259200
     @pytest.mark.asyncio
     async def test_error_4_3(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -474,7 +474,7 @@ class TestGenerateIssuerAuthToken:
     # AuthorizationError
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -516,7 +516,7 @@ class TestGenerateIssuerAuthToken:
     # valid_duration = 0
     @pytest.mark.asyncio
     async def test_error_6_1(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -553,7 +553,7 @@ class TestGenerateIssuerAuthToken:
     # valid token already exists
     @pytest.mark.asyncio
     async def test_error_6_2(self, async_client, async_db, freezer):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()

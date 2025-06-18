@@ -178,7 +178,12 @@ class EthAsyncContractUtils:
 
     @staticmethod
     async def send_transaction(transaction: dict, private_key: bytes):
-        """Send transaction"""
+        """Send transaction
+
+        :param transaction: Transaction parameters
+        :param private_key: Private key of the sender
+        :return: Transaction hash
+        """
         _tx_from = transaction["from"]
 
         # Get nonce
@@ -195,7 +200,12 @@ class EthAsyncContractUtils:
 
     @staticmethod
     async def wait_for_transaction_receipt(tx_hash: str, timeout: int = 10):
-        """Wait for transaction receipt"""
+        """Wait for transaction receipt
+
+        :param tx_hash: Transaction hash
+        :param timeout: Timeout in seconds
+        :return: Transaction receipt
+        """
         try:
             tx_receipt: TxReceipt = await web3.eth.wait_for_transaction_receipt(
                 transaction_hash=tx_hash, timeout=timeout
@@ -204,33 +214,6 @@ class EthAsyncContractUtils:
             raise
 
         return tx_receipt
-
-    @staticmethod
-    async def inspect_tx_failure(tx_hash: str) -> str:
-        tx = await web3.eth.get_transaction(tx_hash)
-
-        # build a new transaction to replay:
-        replay_tx = {
-            "to": tx.get("to"),
-            "from": tx.get("from"),
-            "value": tx.get("value"),
-            "data": tx.get("input"),
-        }
-
-        # replay the transaction locally:
-        try:
-            await web3.eth.call(replay_tx, tx.blockNumber - 1)
-        except ContractLogicError as e:
-            if len(e.args) == 0:
-                return str(e)
-            if len(e.args[0].split("execution reverted: ")) == 2:
-                msg = e.args[0].split("execution reverted: ")[1]
-            else:
-                msg = e.args[0]
-            return msg
-        except Exception as e:
-            raise e
-        raise Exception("Inspecting transaction revert is failed.")
 
     @staticmethod
     async def get_block_by_transaction_hash(tx_hash: str):
