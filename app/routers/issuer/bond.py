@@ -1334,16 +1334,19 @@ async def list_all_batch_bond_redemption(
     # Get Batch Records
     record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = []
     if upload_ids:
+        join_conditions = [
+            BatchIssueRedeem.account_address == IDXPersonalInfo.account_address
+        ]
+        if issuer_address is not None:
+            join_conditions.append(IDXPersonalInfo.issuer_address == issuer_address)
+
         record_list = (
             (
                 await db.execute(
                     select(BatchIssueRedeem, IDXPersonalInfo)
                     .outerjoin(
                         IDXPersonalInfo,
-                        and_(
-                            BatchIssueRedeem.account_address
-                            == IDXPersonalInfo.account_address
-                        ),
+                        and_(*join_conditions),
                     )
                     .where(BatchIssueRedeem.upload_id.in_(upload_ids))
                 )
