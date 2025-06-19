@@ -41,8 +41,7 @@ from eth_config import ETH_CHAIN_ID, ETH_TX_GAS_LIMIT, ETH_WEB3_HTTP_PROVIDER
 thread_local = threading.local()
 
 
-http_provider = AsyncHTTPProvider(endpoint_uri=ETH_WEB3_HTTP_PROVIDER)
-web3 = AsyncWeb3(http_provider)
+EthWeb3 = AsyncWeb3(AsyncHTTPProvider(endpoint_uri=ETH_WEB3_HTTP_PROVIDER))
 
 
 class EthAsyncContractEventsView:
@@ -99,7 +98,7 @@ class EthAsyncContractUtils:
         except FileNotFoundError as file_not_found_err:
             raise SendTransactionError(file_not_found_err)
 
-        async_contract = web3.eth.contract(
+        async_contract = EthWeb3.eth.contract(
             abi=contract_json["abi"],
             bytecode=contract_json["bytecode"],
             bytecode_runtime=contract_json["deployedBytecode"],
@@ -140,7 +139,7 @@ class EthAsyncContractUtils:
 
         contract_file = f"contracts/eth/{contract_name}.json"
         contract_json = json.load(open(contract_file, "r"))
-        contract_factory = web3.eth.contract(abi=contract_json["abi"])
+        contract_factory = EthWeb3.eth.contract(abi=contract_json["abi"])
         cls.factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
@@ -187,13 +186,13 @@ class EthAsyncContractUtils:
         _tx_from = transaction["from"]
 
         # Get nonce
-        nonce = await web3.eth.get_transaction_count(_tx_from)
+        nonce = await EthWeb3.eth.get_transaction_count(_tx_from)
         transaction["nonce"] = nonce
-        signed_tx = web3.eth.account.sign_transaction(
+        signed_tx = EthWeb3.eth.account.sign_transaction(
             transaction_dict=transaction, private_key=private_key
         )
         # Send Transaction
-        tx_hash = await web3.eth.send_raw_transaction(
+        tx_hash = await EthWeb3.eth.send_raw_transaction(
             signed_tx.raw_transaction.to_0x_hex()
         )
         return tx_hash.to_0x_hex()
@@ -207,7 +206,7 @@ class EthAsyncContractUtils:
         :return: Transaction receipt
         """
         try:
-            tx_receipt: TxReceipt = await web3.eth.wait_for_transaction_receipt(
+            tx_receipt: TxReceipt = await EthWeb3.eth.wait_for_transaction_receipt(
                 transaction_hash=tx_hash, timeout=timeout
             )
         except TimeExhausted:
@@ -222,8 +221,8 @@ class EthAsyncContractUtils:
         :param tx_hash: transaction hash
         :return: block
         """
-        tx = await web3.eth.get_transaction(tx_hash)
-        block = await web3.eth.get_block(tx["blockNumber"])
+        tx = await EthWeb3.eth.get_transaction(tx_hash)
+        block = await EthWeb3.eth.get_block(tx["blockNumber"])
         return block
 
     @staticmethod
