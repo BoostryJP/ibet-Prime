@@ -142,6 +142,7 @@ class Processor:
 
                 # Insert notification events
                 await self.__insert_notification_events(db_session)
+                self.notification_events = []
 
                 await db_session.commit()
         finally:
