@@ -17,10 +17,17 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import secrets
+
 import pytest
 
-from app.model.eth import IbetWST, IbetWSTTrade
-from app.utils.eth_contract_utils import EthAsyncContractUtils
+from app.model.eth import (
+    IbetWST,
+    IbetWSTAuthorization,
+    IbetWSTDigestHelper,
+    IbetWSTTrade,
+)
+from app.utils.eth_contract_utils import EthAsyncContractUtils, EthWeb3
 from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
 
@@ -345,10 +352,33 @@ class TestAddAccountWhiteListWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
+            domain_separator=domain_separator,
+            account_address=self.user1["address"],
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.owner["private_key"])
+        )
+
         # Attempt to add account to whitelist with invalid authorization
         tx_hash = await contract.add_account_white_list_with_authorization(
             account=self.user1["address"],
-            authorizer_key=bytes.fromhex(self.owner["private_key"]),
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -377,12 +407,34 @@ class TestAddAccountWhiteListWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
+            domain_separator=domain_separator,
+            account_address=self.user1["address"],
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.user1["private_key"]),  # Invalid authorizer key
+        )
+
         # Attempt to add account to whitelist with invalid authorization
         tx_hash = await contract.add_account_white_list_with_authorization(
             account=self.user1["address"],
-            authorizer_key=bytes.fromhex(
-                self.user1["private_key"]
-            ),  # Invalid authorizer key
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -429,10 +481,33 @@ class TestDeleteAccountWhiteListWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
+            domain_separator=domain_separator,
+            account_address=self.user1["address"],
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.owner["private_key"])
+        )
+
         # Attempt to remove account from whitelist with valid authorization
         tx_hash = await contract.delete_account_white_list_with_authorization(
             account=self.user1["address"],
-            authorizer_key=bytes.fromhex(self.owner["private_key"]),
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -466,12 +541,34 @@ class TestDeleteAccountWhiteListWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
+            domain_separator=domain_separator,
+            account_address=self.user1["address"],
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.user1["private_key"]),  # Invalid authorizer key
+        )
+
         # Attempt to remove account from whitelist with invalid authorization
         tx_hash = await contract.delete_account_white_list_with_authorization(
             account=self.user1["address"],
-            authorizer_key=bytes.fromhex(
-                self.user1["private_key"]
-            ),  # Invalid authorizer key
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -511,11 +608,35 @@ class TestMintWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_mint_digest(
+            domain_separator=domain_separator,
+            to_address=self.user1["address"],
+            amount=1000,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.owner["private_key"])
+        )
+
         # Attempt to mint tokens with valid authorization
         tx_hash = await contract.mint_with_authorization(
             to_address=self.user1["address"],
             amount=1000,
-            authorizer_key=bytes.fromhex(self.owner["private_key"]),
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -543,13 +664,35 @@ class TestMintWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_mint_digest(
+            domain_separator=domain_separator,
+            to_address=self.user1["address"],
+            amount=1000,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
         # Attempt to mint tokens with invalid authorization
         tx_hash = await contract.mint_with_authorization(
             to_address=self.user1["address"],
             amount=1000,
-            authorizer_key=bytes.fromhex(
-                self.user1["private_key"]
-            ),  # Invalid authorizer key
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -597,11 +740,35 @@ class TestBurnWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_burn_digest(
+            domain_separator=domain_separator,
+            from_address=self.user1["address"],
+            amount=500,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.owner["private_key"])
+        )
+
         # Attempt to burn tokens with valid authorization
         tx_hash = await contract.burn_with_authorization(
             from_address=self.user1["address"],
             amount=500,
-            authorizer_key=bytes.fromhex(self.owner["private_key"]),
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -637,13 +804,36 @@ class TestBurnWithAuthorization:
         # Generate contract instance
         contract = IbetWST(contract_address)
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_burn_digest(
+            domain_separator=domain_separator,
+            from_address=self.user1["address"],
+            amount=500,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.user1["private_key"]),  # Invalid authorizer key
+        )
+
         # Attempt to burn tokens with invalid authorization
         tx_hash = await contract.burn_with_authorization(
             from_address=self.user1["address"],
             amount=500,
-            authorizer_key=bytes.fromhex(
-                self.user1["private_key"]
-            ),  # Invalid authorizer key
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.relayer["address"],
             tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
         )
@@ -792,6 +982,31 @@ class TestRequestTradeWithAuthorization:
             tx_from=self.owner,
         )
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_request_trade_digest(
+            domain_separator=domain_separator,
+            seller_st_account_address=self.seller_st["address"],
+            buyer_st_account_address=self.buyer_st["address"],
+            sc_token_address=sc_token_address,
+            seller_sc_account_address=self.seller_sc["address"],
+            buyer_sc_account_address=self.buyer_sc["address"],
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.seller_st["private_key"])
+        )
+
         # Attempt to request trade with valid authorization
         tx_hash = await token_st.request_trade_with_authorization(
             trade=IbetWSTTrade(
@@ -804,7 +1019,12 @@ class TestRequestTradeWithAuthorization:
                 sc_value=2000,
                 memo="Test Trade",
             ),
-            authorizer_key=bytes.fromhex(self.seller_st["private_key"]),
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.owner["address"],
             tx_sender_key=bytes.fromhex(self.owner["private_key"]),
         )
@@ -855,6 +1075,32 @@ class TestRequestTradeWithAuthorization:
             tx_from=self.owner,
         )
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_request_trade_digest(
+            domain_separator=domain_separator,
+            seller_st_account_address=self.seller_st["address"],
+            buyer_st_account_address=self.buyer_st["address"],
+            sc_token_address=sc_token_address,
+            seller_sc_account_address=self.seller_sc["address"],
+            buyer_sc_account_address=self.buyer_sc["address"],
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.buyer_st["private_key"]),  # Invalid authorizer key
+        )
+
         # Attempt to request trade with invalid authorization
         tx_hash = await token_st.request_trade_with_authorization(
             trade=IbetWSTTrade(
@@ -867,9 +1113,12 @@ class TestRequestTradeWithAuthorization:
                 sc_value=2000,
                 memo="Test Trade",
             ),
-            authorizer_key=bytes.fromhex(
-                self.buyer_st["private_key"]
-            ),  # Invalid authorizer key
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.owner["address"],
             tx_sender_key=bytes.fromhex(self.owner["private_key"]),
         )
@@ -946,10 +1195,33 @@ class TestCancelTradeWithAuthorization:
             tx_from=self.seller_st,
         )
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_cancel_trade_digest(
+            domain_separator=domain_separator,
+            index=1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.seller_st["private_key"])
+        )
+
         # Attempt to cancel trade with valid authorization
         tx_hash = await token_st.cancel_trade_with_authorization(
             index=1,
-            authorizer_key=bytes.fromhex(self.seller_st["private_key"]),
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.owner["address"],
             tx_sender_key=bytes.fromhex(self.owner["private_key"]),
         )
@@ -1013,12 +1285,34 @@ class TestCancelTradeWithAuthorization:
             tx_from=self.seller_st,
         )
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_cancel_trade_digest(
+            domain_separator=domain_separator,
+            index=1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.buyer_st["private_key"]),  # Invalid authorizer key
+        )
+
         # Attempt to cancel trade with invalid authorization
         tx_hash = await token_st.cancel_trade_with_authorization(
             index=1,
-            authorizer_key=bytes.fromhex(
-                self.buyer_st["private_key"]
-            ),  # Invalid authorizer key
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.owner["address"],
             tx_sender_key=bytes.fromhex(self.owner["private_key"]),
         )
@@ -1109,10 +1403,33 @@ class TestAcceptTradeWithAuthorization:
             tx_from=self.seller_st,
         )
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_accept_trade_digest(
+            domain_separator=domain_separator,
+            index=1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.buyer_st["private_key"])
+        )
+
         # Attempt to accept trade with valid authorization
         tx_hash = await token_st.accept_trade_with_authorization(
             index=1,
-            authorizer_key=bytes.fromhex(self.buyer_st["private_key"]),
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.owner["address"],
             tx_sender_key=bytes.fromhex(self.owner["private_key"]),
         )
@@ -1190,12 +1507,34 @@ class TestAcceptTradeWithAuthorization:
             tx_from=self.seller_st,
         )
 
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_accept_trade_digest(
+            domain_separator=domain_separator,
+            index=1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.seller_st["private_key"]),  # Invalid authorizer key
+        )
+
         # Attempt to accept trade with invalid authorization
         tx_hash = await token_st.accept_trade_with_authorization(
             index=1,
-            authorizer_key=bytes.fromhex(
-                self.seller_st["private_key"]
-            ),  # Invalid authorizer key
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
             tx_sender=self.owner["address"],
             tx_sender_key=bytes.fromhex(self.owner["private_key"]),
         )
