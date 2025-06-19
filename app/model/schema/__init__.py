@@ -39,6 +39,7 @@ from .batch_issue_redeem import (
     GetBatchIssueRedeemResponse,
     GetBatchIssueRedeemResult,
     ListBatchIssueRedeemUploadResponse,
+    ListBatchIssueRedeemUploadResponseWithResult,
 )
 from .bc_explorer import (
     BlockDataDetail,

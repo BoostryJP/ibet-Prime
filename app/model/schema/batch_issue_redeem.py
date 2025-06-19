@@ -61,12 +61,6 @@ class ListBatchIssueRedeemUploadResponse(BaseModel):
     uploads: List[BatchIssueRedeemUpload]
 
 
-class BatchIssueRedeemUploadIdResponse(BaseModel):
-    """Batch issue/redeem upload id (RESPONSE)"""
-
-    batch_id: str
-
-
 class GetBatchIssueRedeemResult(BaseModel):
     """Result of Creating Batch issue/redeem schema (RESPONSE)"""
 
@@ -74,6 +68,62 @@ class GetBatchIssueRedeemResult(BaseModel):
     amount: int
     status: int
     personal_information: PersonalInfo
+
+
+class BatchIssueRedeemUploadWithResult(BaseModel):
+    """Batch issue/redeem Upload"""
+
+    batch_id: str = Field(description="UUID v4 required")
+    issuer_address: str
+    token_type: TokenType
+    token_address: str
+    processed: bool
+    created: str
+    results: List[GetBatchIssueRedeemResult]
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
+                    "issuer_address": "0x0000000000000000000000000000000000000000",
+                    "token_type": "Bond",
+                    "token_address": "0x0000000000000000000000000000000000000000",
+                    "processed": True,
+                    "created": "2022-09-02T19:49:33.370874+09:00",
+                    "results": [
+                        {
+                            "account_address": "string",
+                            "amount": 0,
+                            "status": 0,
+                            "personal_information": {
+                                "key_manager": "string",
+                                "name": "string",
+                                "postal_code": "string",
+                                "address": "string",
+                                "email": "string",
+                                "birth": "string",
+                                "is_corporate": True,
+                                "tax_category": 0,
+                            },
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+
+
+class ListBatchIssueRedeemUploadResponseWithResult(BaseModel):
+    """List All Batch issue/redeem Upload(RESPONSE)"""
+
+    result_set: ResultSet
+    uploads: List[BatchIssueRedeemUploadWithResult]
+
+
+class BatchIssueRedeemUploadIdResponse(BaseModel):
+    """Batch issue/redeem upload id (RESPONSE)"""
+
+    batch_id: str
 
 
 class GetBatchIssueRedeemResponse(BaseModel):
