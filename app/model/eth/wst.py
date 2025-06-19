@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import secrets
 from typing import Literal
 
 from eth_abi import encode
@@ -28,7 +27,7 @@ from web3.contract import AsyncContract
 
 from app.exceptions import SendTransactionError
 from app.model import EthereumAddress
-from app.utils.eth_contract_utils import EthAsyncContractUtils, EthWeb3
+from app.utils.eth_contract_utils import EthAsyncContractUtils
 from config import ZERO_ADDRESS
 from eth_config import ETH_CHAIN_ID, ETH_TX_GAS_LIMIT
 
@@ -107,6 +106,532 @@ class IbetWSTTrade(BaseModel):
     memo: str = Field(default="")
 
 
+class IbetWSTAuthorization(BaseModel):
+    """
+    Authorization data for IbetWST contract operations.
+    """
+
+    nonce: bytes
+    v: int
+    r: bytes
+    s: bytes
+
+
+class IbetWSTDigestHelper:
+    """
+    Helper class for generating EIP-712 digests for IbetWST contract operations.
+    """
+
+    @staticmethod
+    def generate_mint_digest(
+        domain_separator: bytes,
+        to_address: str,
+        amount: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for minting tokens with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param to_address: Address to mint tokens to
+        :param amount: Amount of tokens to mint
+        :param nonce: Nonce for the operation, used to prevent replay attacks
+        :return: EIP-712 digest for the mint operation
+        """
+
+        type_hash = keccak(
+            text="MintWithAuthorization(address to,uint256 amount,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # to
+                    "uint256",  # amount
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(to_address),
+                    amount,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_burn_digest(
+        domain_separator: bytes,
+        from_address: str,
+        amount: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for burning tokens with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param from_address: Address to burn tokens from
+        :param amount: Amount of tokens to burn
+        :param nonce: Nonce for the operation, used to prevent replay attacks
+        :return: EIP-712 digest for the burn operation
+        """
+
+        type_hash = keccak(
+            text="BurnWithAuthorization(address from,uint256 amount,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # from
+                    "uint256",  # amount
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(from_address),
+                    amount,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_add_account_whitelist_digest(
+        domain_separator: bytes,
+        account_address: str,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for adding an account to the whitelist.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param account_address: Address of the account to add to the whitelist
+        :param nonce: Nonce for the operation, used to prevent replay attacks
+        :return: EIP-712 digest for the add whitelist operation
+        """
+
+        type_hash = keccak(
+            text="AddAccountWhiteListWithAuthorization(address accountAddress,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # account
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(account_address),
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_delete_account_whitelist_digest(
+        domain_separator: bytes,
+        account_address: str,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for deleting an account from the whitelist.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param account_address: Address of the account to delete from the whitelist
+        :param nonce: Nonce for the operation, used to prevent replay attacks
+        :return: EIP-712 digest for the delete whitelist operation
+        """
+
+        type_hash = keccak(
+            text="DeleteAccountWhiteListWithAuthorization(address accountAddress,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # account
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(account_address),
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_transfer_digest(
+        domain_separator: bytes,
+        _from: str,
+        _to: str,
+        value: int,
+        valid_after: int,
+        valid_before: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for transfer with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param _from: from address
+        :param _to: to address
+        :param value: value to transfer
+        :param valid_after: block timestamp after which the transfer is valid
+        :param valid_before: block timestamp before which the transfer is valid
+        :param nonce: nonce for the transfer, used to prevent replay attacks
+        :return: EIP-712 digest for the transfer
+        """
+
+        type_hash = keccak(
+            text="TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # from
+                    "address",  # to
+                    "uint256",  # value
+                    "uint256",  # validAfter
+                    "uint256",  # validBefore
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(_from),
+                    to_checksum_address(_to),
+                    value,
+                    valid_after,
+                    valid_before,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_receive_digest(
+        domain_separator: bytes,
+        _from: str,
+        _to: str,
+        value: int,
+        valid_after: int,
+        valid_before: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for receive with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param _from: from address
+        :param _to: to address
+        :param value: value to transfer
+        :param valid_after: block timestamp after which the transfer is valid
+        :param valid_before: block timestamp before which the transfer is valid
+        :param nonce: nonce for the transfer, used to prevent replay attacks
+        :return: EIP-712 digest for the transfer
+        """
+
+        type_hash = keccak(
+            text="ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # from
+                    "address",  # to
+                    "uint256",  # value
+                    "uint256",  # validAfter
+                    "uint256",  # validBefore
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(_from),
+                    to_checksum_address(_to),
+                    value,
+                    valid_after,
+                    valid_before,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_request_trade_digest(
+        domain_separator: bytes,
+        seller_st_account_address: str,
+        buyer_st_account_address: str,
+        sc_token_address: str,
+        seller_sc_account_address: str,
+        buyer_sc_account_address: str,
+        st_value: int,
+        sc_value: int,
+        memo: str,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for request trade with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param seller_st_account_address: Seller's ST account address
+        :param buyer_st_account_address: Buyer's ST account address
+        :param sc_token_address: SC contract address
+        :param seller_sc_account_address: Seller's SC account address
+        :param buyer_sc_account_address: Buyer's SC account address
+        :param st_value: Amount of ST to trade
+        :param sc_value: Amount of SC to trade
+        :param memo: Optional memo for the trade request
+        :param nonce: Nonce for the trade, used to prevent replay attacks
+        :return: EIP-712 digest for the trade request
+        """
+
+        type_hash = keccak(
+            text="RequestTradeWithAuthorization(address sellerSTAccountAddress,address buyerSTAccountAddress,address SCTokenAddress,address sellerSCAccountAddress,address buyerSCAccountAddress,uint256 STValue,uint256 SCValue,string memory memo,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # sellerSTAccountAddress
+                    "address",  # buyerSTAccountAddress
+                    "address",  # SCTokenAddress
+                    "address",  # sellerSCAccountAddress
+                    "address",  # buyerSCAccountAddress
+                    "uint256",  # STValue
+                    "uint256",  # SCValue
+                    "string",  # memo
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(seller_st_account_address),
+                    to_checksum_address(buyer_st_account_address),
+                    to_checksum_address(sc_token_address),
+                    to_checksum_address(seller_sc_account_address),
+                    to_checksum_address(buyer_sc_account_address),
+                    st_value,
+                    sc_value,
+                    memo,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_cancel_trade_digest(
+        domain_separator: bytes,
+        index: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for cancel trade with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param index: Index of the trade to cancel
+        :param nonce: Nonce for the trade, used to prevent replay attacks
+        :return: EIP-712 digest for the trade cancellation
+        """
+
+        type_hash = keccak(
+            text="CancelTradeWithAuthorization(uint256 index,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "uint256",  # index
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    index,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
+    def generate_accept_trade_digest(
+        domain_separator: bytes,
+        index: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for accept trade with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param index: Index of the trade to accept
+        :param nonce: Nonce for the trade, used to prevent replay attacks
+        :return: EIP-712 digest for the trade acceptance
+        """
+
+        type_hash = keccak(
+            text="AcceptTradeWithAuthorization(uint256 index,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "uint256",  # index
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    index,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+
 class IbetWST(ERC20):
     """
     IbetWST contract
@@ -164,7 +689,7 @@ class IbetWST(ERC20):
     async def add_account_white_list_with_authorization(
         self,
         account: EthereumAddress,
-        authorizer_key: bytes,
+        authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
     ) -> str:
@@ -172,63 +697,19 @@ class IbetWST(ERC20):
         Add account to white list with authorization
 
         :param account: Account address
-        :param authorizer_key: Private key of the authorizer
+        :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
         :return: Transaction hash
         """
         try:
-            # Type hash
-            type_hash = keccak(
-                text="AddAccountWhiteListWithAuthorization(address accountAddress,bytes32 nonce)"
-            )
-
-            # Generate nonce
-            nonce = secrets.token_bytes(32)
-
-            # Generate domain separator
-            domain_separator = await self.domain_separator()
-
-            # Generate authorization digest
-            struct_hash = keccak(
-                encode(
-                    [
-                        "bytes32",  # typeHash
-                        "address",  # account
-                        "bytes32",  # nonce
-                    ],
-                    [
-                        type_hash,
-                        to_checksum_address(account),
-                        nonce,
-                    ],
-                )
-            )
-            digest = keccak(
-                encode_packed(
-                    [
-                        "bytes2",  # EIP-712 prefix
-                        "bytes32",  # domainSeparator
-                        "bytes32",  # structHash
-                    ],
-                    [
-                        "\x19\x01".encode(),
-                        domain_separator,
-                        struct_hash,
-                    ],
-                )
-            )
-
-            # Sign the digest from the authorizer's private key
-            signature = EthWeb3.eth.account.unsafe_sign_hash(digest, authorizer_key)
-
             # Build the transaction to add the account to the whitelist
             tx = await self.contract.functions.addAccountWhiteListWithAuthorization(
                 account,
-                nonce,
-                signature.v,
-                EthWeb3.to_bytes(signature.r),
-                EthWeb3.to_bytes(signature.s),
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
@@ -236,7 +717,6 @@ class IbetWST(ERC20):
                     "gas": ETH_TX_GAS_LIMIT,
                 }
             )
-
             # Send the transaction
             return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
         except Exception as err:
@@ -245,7 +725,7 @@ class IbetWST(ERC20):
     async def delete_account_white_list_with_authorization(
         self,
         account: EthereumAddress,
-        authorizer_key: bytes,
+        authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
     ) -> str:
@@ -253,63 +733,19 @@ class IbetWST(ERC20):
         Delete account from white list with authorization
 
         :param account: Account address
-        :param authorizer_key: Private key of the authorizer
+        :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
         :return: Transaction hash
         """
         try:
-            # Type hash
-            type_hash = keccak(
-                text="DeleteAccountWhiteListWithAuthorization(address accountAddress,bytes32 nonce)"
-            )
-
-            # Generate nonce
-            nonce = secrets.token_bytes(32)
-
-            # Generate domain separator
-            domain_separator = await self.domain_separator()
-
-            # Generate authorization digest
-            struct_hash = keccak(
-                encode(
-                    [
-                        "bytes32",  # typeHash
-                        "address",  # account
-                        "bytes32",  # nonce
-                    ],
-                    [
-                        type_hash,
-                        to_checksum_address(account),
-                        nonce,
-                    ],
-                )
-            )
-            digest = keccak(
-                encode_packed(
-                    [
-                        "bytes2",  # EIP-712 prefix
-                        "bytes32",  # domainSeparator
-                        "bytes32",  # structHash
-                    ],
-                    [
-                        "\x19\x01".encode(),
-                        domain_separator,
-                        struct_hash,
-                    ],
-                )
-            )
-
-            # Sign the digest from the authorizer's private key
-            signature = EthWeb3.eth.account.unsafe_sign_hash(digest, authorizer_key)
-
             # Build the transaction to delete the account from the whitelist
             tx = await self.contract.functions.deleteAccountWhiteListWithAuthorization(
                 account,
-                nonce,
-                signature.v,
-                EthWeb3.to_bytes(signature.r),
-                EthWeb3.to_bytes(signature.s),
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
@@ -317,7 +753,6 @@ class IbetWST(ERC20):
                     "gas": ETH_TX_GAS_LIMIT,
                 }
             )
-
             # Send the transaction
             return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
         except Exception as err:
@@ -327,7 +762,7 @@ class IbetWST(ERC20):
         self,
         to_address: EthereumAddress,
         amount: int,
-        authorizer_key: bytes,
+        authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
     ) -> str:
@@ -336,66 +771,20 @@ class IbetWST(ERC20):
 
         :param to_address: Address to mint tokens to
         :param amount: Amount of tokens to mint
-        :param authorizer_key: Private key of the authorizer
+        :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
         :return: Transaction hash
         """
         try:
-            # Type hash
-            type_hash = keccak(
-                text="MintWithAuthorization(address to,uint256 amount,bytes32 nonce)"
-            )
-
-            # Generate nonce
-            nonce = secrets.token_bytes(32)
-
-            # Generate domain separator
-            domain_separator = await self.domain_separator()
-
-            # Generate authorization digest
-            struct_hash = keccak(
-                encode(
-                    [
-                        "bytes32",  # typeHash
-                        "address",  # to
-                        "uint256",  # amount
-                        "bytes32",  # nonce
-                    ],
-                    [
-                        type_hash,
-                        to_checksum_address(to_address),
-                        amount,
-                        nonce,
-                    ],
-                )
-            )
-            digest = keccak(
-                encode_packed(
-                    [
-                        "bytes2",  # EIP-712 prefix
-                        "bytes32",  # domainSeparator
-                        "bytes32",  # structHash
-                    ],
-                    [
-                        "\x19\x01".encode(),
-                        domain_separator,
-                        struct_hash,
-                    ],
-                )
-            )
-
-            # Sign the digest from the authorizer's private key
-            signature = EthWeb3.eth.account.unsafe_sign_hash(digest, authorizer_key)
-
             # Build the transaction to mint tokens
             tx = await self.contract.functions.mintWithAuthorization(
                 to_address,
                 amount,
-                nonce,
-                signature.v,
-                EthWeb3.to_bytes(signature.r),
-                EthWeb3.to_bytes(signature.s),
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
@@ -403,7 +792,6 @@ class IbetWST(ERC20):
                     "gas": ETH_TX_GAS_LIMIT,
                 }
             )
-
             # Send the transaction
             return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
         except Exception as err:
@@ -413,7 +801,7 @@ class IbetWST(ERC20):
         self,
         from_address: EthereumAddress,
         amount: int,
-        authorizer_key: bytes,
+        authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
     ) -> str:
@@ -422,66 +810,20 @@ class IbetWST(ERC20):
 
         :param from_address: Address to burn tokens from
         :param amount: Amount of tokens to burn
-        :param authorizer_key: Private key of the authorizer
+        :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
         :return: Transaction hash
         """
         try:
-            # Type hash
-            type_hash = keccak(
-                text="BurnWithAuthorization(address from,uint256 amount,bytes32 nonce)"
-            )
-
-            # Generate nonce
-            nonce = secrets.token_bytes(32)
-
-            # Generate domain separator
-            domain_separator = await self.domain_separator()
-
-            # Generate authorization digest
-            struct_hash = keccak(
-                encode(
-                    [
-                        "bytes32",  # typeHash
-                        "address",  # from
-                        "uint256",  # amount
-                        "bytes32",  # nonce
-                    ],
-                    [
-                        type_hash,
-                        to_checksum_address(from_address),
-                        amount,
-                        nonce,
-                    ],
-                )
-            )
-            digest = keccak(
-                encode_packed(
-                    [
-                        "bytes2",  # EIP-712 prefix
-                        "bytes32",  # domainSeparator
-                        "bytes32",  # structHash
-                    ],
-                    [
-                        "\x19\x01".encode(),
-                        domain_separator,
-                        struct_hash,
-                    ],
-                )
-            )
-
-            # Sign the digest from the authorizer's private key
-            signature = EthWeb3.eth.account.unsafe_sign_hash(digest, authorizer_key)
-
             # Build the transaction to burn tokens
             tx = await self.contract.functions.burnWithAuthorization(
                 from_address,
                 amount,
-                nonce,
-                signature.v,
-                EthWeb3.to_bytes(signature.r),
-                EthWeb3.to_bytes(signature.s),
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
@@ -489,7 +831,6 @@ class IbetWST(ERC20):
                     "gas": ETH_TX_GAS_LIMIT,
                 }
             )
-
             # Send the transaction
             return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
         except Exception as err:
@@ -532,7 +873,7 @@ class IbetWST(ERC20):
     async def request_trade_with_authorization(
         self,
         trade: IbetWSTTrade,
-        authorizer_key: bytes,
+        authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
     ) -> str:
@@ -540,70 +881,12 @@ class IbetWST(ERC20):
         Request a trade with authorization
 
         :param trade: Trade information
-        :param authorizer_key: Private key of the authorizer
+        :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
         :return: Transaction hash
         """
         try:
-            # Type hash
-            type_hash = keccak(
-                text="RequestTradeWithAuthorization(address sellerSTAccountAddress,address buyerSTAccountAddress,address SCTokenAddress,address sellerSCAccountAddress,address buyerSCAccountAddress,uint256 STValue,uint256 SCValue,string memory memo,bytes32 nonce)"
-            )
-
-            # Generate nonce
-            nonce = secrets.token_bytes(32)
-
-            # Generate domain separator
-            domain_separator = await self.domain_separator()
-
-            # Generate authorization digest
-            struct_hash = keccak(
-                encode(
-                    [
-                        "bytes32",  # typeHash
-                        "address",  # sellerStAccount
-                        "address",  # buyerStAccount
-                        "address",  # scTokenAddress
-                        "address",  # sellerScAccount
-                        "address",  # buyerScAccount
-                        "uint256",  # stValue
-                        "uint256",  # scValue
-                        "string",  # memo
-                        "bytes32",  # nonce
-                    ],
-                    [
-                        type_hash,
-                        to_checksum_address(trade.seller_st_account),
-                        to_checksum_address(trade.buyer_st_account),
-                        to_checksum_address(trade.sc_token_address),
-                        to_checksum_address(trade.seller_sc_account),
-                        to_checksum_address(trade.buyer_sc_account),
-                        trade.st_value,
-                        trade.sc_value,
-                        trade.memo,
-                        nonce,
-                    ],
-                )
-            )
-            digest = keccak(
-                encode_packed(
-                    [
-                        "bytes2",  # EIP-712 prefix
-                        "bytes32",  # domainSeparator
-                        "bytes32",  # structHash
-                    ],
-                    [
-                        "\x19\x01".encode(),
-                        domain_separator,
-                        struct_hash,
-                    ],
-                )
-            )
-
-            # Sign the digest from the authorizer's private key
-            signature = EthWeb3.eth.account.unsafe_sign_hash(digest, authorizer_key)
-
             # Build the transaction
             tx = await self.contract.functions.requestTradeWithAuthorization(
                 trade.seller_st_account,
@@ -614,10 +897,10 @@ class IbetWST(ERC20):
                 trade.st_value,
                 trade.sc_value,
                 trade.memo,
-                nonce,
-                signature.v,
-                EthWeb3.to_bytes(signature.r),
-                EthWeb3.to_bytes(signature.s),
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
@@ -625,7 +908,6 @@ class IbetWST(ERC20):
                     "gas": ETH_TX_GAS_LIMIT,
                 }
             )
-
             # Send the transaction
             return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
         except Exception as err:
@@ -634,7 +916,7 @@ class IbetWST(ERC20):
     async def cancel_trade_with_authorization(
         self,
         index: int,
-        authorizer_key: bytes,
+        authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
     ) -> str:
@@ -642,63 +924,19 @@ class IbetWST(ERC20):
         Cancel a trade with authorization
 
         :param index: Trade ID (index)
-        :param authorizer_key: Private key of the authorizer
+        :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
         :return: Transaction hash
         """
         try:
-            # Type hash
-            type_hash = keccak(
-                text="CancelTradeWithAuthorization(uint256 index,bytes32 nonce)"
-            )
-
-            # Generate nonce
-            nonce = secrets.token_bytes(32)
-
-            # Generate domain separator
-            domain_separator = await self.domain_separator()
-
-            # Generate authorization digest
-            struct_hash = keccak(
-                encode(
-                    [
-                        "bytes32",  # typeHash
-                        "uint256",  # index
-                        "bytes32",  # nonce
-                    ],
-                    [
-                        type_hash,
-                        index,
-                        nonce,
-                    ],
-                )
-            )
-            digest = keccak(
-                encode_packed(
-                    [
-                        "bytes2",  # EIP-712 prefix
-                        "bytes32",  # domainSeparator
-                        "bytes32",  # structHash
-                    ],
-                    [
-                        "\x19\x01".encode(),
-                        domain_separator,
-                        struct_hash,
-                    ],
-                )
-            )
-
-            # Sign the digest from the authorizer's private key
-            signature = EthWeb3.eth.account.unsafe_sign_hash(digest, authorizer_key)
-
             # Build the transaction to cancel the trade
             tx = await self.contract.functions.cancelTradeWithAuthorization(
                 index,
-                nonce,
-                signature.v,
-                EthWeb3.to_bytes(signature.r),
-                EthWeb3.to_bytes(signature.s),
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
@@ -706,7 +944,6 @@ class IbetWST(ERC20):
                     "gas": ETH_TX_GAS_LIMIT,
                 }
             )
-
             # Send the transaction
             return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
         except Exception as err:
@@ -715,7 +952,7 @@ class IbetWST(ERC20):
     async def accept_trade_with_authorization(
         self,
         index: int,
-        authorizer_key: bytes,
+        authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
     ) -> str:
@@ -723,63 +960,19 @@ class IbetWST(ERC20):
         Accept a trade with authorization
 
         :param index: Trade ID (index)
-        :param authorizer_key: Private key of the authorizer
+        :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
         :return: Transaction hash
         """
         try:
-            # Type hash
-            type_hash = keccak(
-                text="AcceptTradeWithAuthorization(uint256 index,bytes32 nonce)"
-            )
-
-            # Generate nonce
-            nonce = secrets.token_bytes(32)
-
-            # Generate domain separator
-            domain_separator = await self.domain_separator()
-
-            # Generate authorization digest
-            struct_hash = keccak(
-                encode(
-                    [
-                        "bytes32",  # typeHash
-                        "uint256",  # index
-                        "bytes32",  # nonce
-                    ],
-                    [
-                        type_hash,
-                        index,
-                        nonce,
-                    ],
-                )
-            )
-            digest = keccak(
-                encode_packed(
-                    [
-                        "bytes2",  # EIP-712 prefix
-                        "bytes32",  # domainSeparator
-                        "bytes32",  # structHash
-                    ],
-                    [
-                        "\x19\x01".encode(),
-                        domain_separator,
-                        struct_hash,
-                    ],
-                )
-            )
-
-            # Sign the digest from the authorizer's private key
-            signature = EthWeb3.eth.account.unsafe_sign_hash(digest, authorizer_key)
-
             # Build the transaction to accept the trade
             tx = await self.contract.functions.acceptTradeWithAuthorization(
                 index,
-                nonce,
-                signature.v,
-                EthWeb3.to_bytes(signature.r),
-                EthWeb3.to_bytes(signature.s),
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
@@ -787,7 +980,6 @@ class IbetWST(ERC20):
                     "gas": ETH_TX_GAS_LIMIT,
                 }
             )
-
             # Send the transaction
             return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
         except Exception as err:
