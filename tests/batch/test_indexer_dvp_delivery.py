@@ -2313,6 +2313,25 @@ class TestProcessor:
         ).first()
         assert _idx_delivery_block_number.latest_block_number == block_number
 
+        _notifications = (
+            await async_db.scalars(select(Notification).order_by(Notification.created))
+        ).all()
+        assert len(_notifications) == 1
+        assert _notifications[0].issuer_address == issuer_address
+        assert _notifications[0].priority == 0
+        assert _notifications[0].type == NotificationType.DVP_DELIVERY_INFO
+        assert _notifications[0].code == 0
+        assert _notifications[0].metainfo == {
+            "exchange_address": ibet_security_token_dvp_contract.address,
+            "delivery_id": 1,
+            "token_address": token_address_2,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "seller_address": issuer_address,
+            "buyer_address": user_address_1,
+            "agent_address": agent_address,
+            "amount": 30,
+        }
+
         assert (
             caplog.record_tuples.count(
                 (
