@@ -146,6 +146,7 @@ from app.model.schema import (
     ListAllTokenLockEventsResponse,
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
+    ListBatchIssueRedeemUploadResponseWithResult,
     ListBatchRegisterPersonalInfoUploadResponse,
     ListBulkTransferQuery,
     ListBulkTransferUploadQuery,
@@ -1278,7 +1279,7 @@ async def redeem_bond(
 @router.get(
     "/tokens/{token_address}/redeem/batch",
     operation_id="ListAllBatchBondRedemption",
-    response_model=ListBatchIssueRedeemUploadResponse,
+    response_model=ListBatchIssueRedeemUploadResponseWithResult,
     responses=get_routers_responses(422),
 )
 async def list_all_batch_bond_redemption(
