@@ -31,6 +31,9 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    Token,
+    TokenType,
+    TokenVersion,
 )
 from batch.processor_eth_wst_monitor_txreceipt import (
     LOG,
@@ -145,6 +148,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
             }
         ),
     )
@@ -254,6 +258,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
             }
         ),
     )
@@ -265,6 +270,20 @@ class TestProcessor:
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
         wst_tx = EthIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
@@ -294,7 +313,16 @@ class TestProcessor:
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.finalized is True
 
+        token_af = (
+            await async_db.scalars(
+                select(Token).where(Token.ibet_wst_tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert token_af.ibet_wst_deployed is True
+        assert token_af.ibet_wst_address == "0x9876543210abcdef1234567890abcdef12345678"
+
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
             f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
         ]

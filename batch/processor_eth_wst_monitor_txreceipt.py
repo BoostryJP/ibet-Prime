@@ -26,9 +26,10 @@ from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
+from web3.types import TxReceipt
 
 from app.database import BatchAsyncSessionLocal
-from app.model.db import EthIbetWSTTx, IbetWSTTxStatus
+from app.model.db import EthIbetWSTTx, IbetWSTTxStatus, IbetWSTTxType, Token
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
@@ -113,12 +114,39 @@ class ProcessorEthWSTMonitorTxReceipt:
                 # set the finalized flag to True
                 is_finalized = block_number <= finalized_block_number
                 wst_tx.finalized = is_finalized
-
                 await db_session.merge(wst_tx)
+
+                if is_finalized:
+                    # Finalize the transaction
+                    await finalize_tx(db_session, wst_tx, tx_receipt)
+                    LOG.info(
+                        f"Transaction finalized: id={wst_tx.tx_id}, block_number={block_number}"
+                    )
+
                 await db_session.commit()
         finally:
             # Close the session
             await db_session.close()
+
+
+async def finalize_tx(
+    db_session: AsyncSession, wst_tx: EthIbetWSTTx, tx_receipt: TxReceipt
+):
+    """
+    Finalize the IbetWST transaction.
+    """
+    if wst_tx.tx_type == IbetWSTTxType.DEPLOY:
+        token = (
+            await db_session.scalars(
+                select(Token).where(Token.ibet_wst_tx_id == wst_tx.tx_id).limit(1)
+            )
+        ).first()
+        if token is None:
+            return
+
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = tx_receipt.get("contractAddress", None)
+        await db_session.merge(token)
 
 
 async def main():
