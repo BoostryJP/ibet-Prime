@@ -21,7 +21,7 @@ import math
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Annotated, Optional, Self
+from typing import Annotated, Literal, Optional, Self
 
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -84,6 +84,10 @@ class IbetStraightBondCreate(BaseModel):
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
+
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
 
     @field_validator("base_fx_rate")
     @classmethod
@@ -228,6 +232,10 @@ class IbetShareCreate(BaseModel):
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
     is_canceled: Optional[bool] = None
+
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
 
     @field_validator("dividends")
     @classmethod

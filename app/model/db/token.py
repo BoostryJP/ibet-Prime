@@ -24,6 +24,7 @@ from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, naive_utcnow
+from .ibet_wst import IbetWSTVersion
 
 
 class TokenType(StrEnum):
@@ -69,6 +70,19 @@ class Token(Base):
     )
     # initial position synced
     initial_position_synced: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    # IbetWST activated
+    ibet_wst_activated: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    # IbetWST version
+    ibet_wst_version: Mapped[IbetWSTVersion | None] = mapped_column(
+        String(2), nullable=True
+    )
+    # IbetWST transaction ID
+    # - This is the transaction ID of the IbetWST contract deployment
+    ibet_wst_tx_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    # IbetWST deployed
+    ibet_wst_deployed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    # IbetWST contract address
+    ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
 
 
 class TokenAttrUpdate(Base):

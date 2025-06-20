@@ -226,6 +226,16 @@ class EthAsyncContractUtils:
         return block
 
     @staticmethod
+    async def get_finalized_block_number():
+        """Get block by block number
+
+        :return: finalized block number
+        """
+        block = await EthWeb3.eth.get_block("finalized")
+        block_number = block.get("number")
+        return block_number
+
+    @staticmethod
     async def get_event_logs(
         contract: AsyncContract,
         event: str,

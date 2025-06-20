@@ -339,6 +339,42 @@ class TestGetBlockByTransactionHash:
         assert HexBytes(tx_hash) in block["transactions"]
 
 
+# Test for get_finalized_block_number
+@pytest.mark.asyncio
+class TestGetFinalizedBlockNumber:
+    deployer = default_eth_account("user1")
+    issuer = default_eth_account("user2")
+
+    ########################################################
+    # Normal
+    ########################################################
+
+    # <Normal_1>
+    # Get finalized block number
+    async def test_normal_1(self):
+        # Deploy contract
+        tx_hash = await EthAsyncContractUtils.deploy_contract(
+            contract_name="AuthIbetWST",
+            args=[
+                "Test Token",
+                self.issuer["address"],
+            ],
+            deployer=self.deployer["address"],
+            private_key=bytes.fromhex(self.deployer["private_key"]),
+        )
+
+        # Get latest block number
+        latest_block = await EthAsyncContractUtils.get_block_by_transaction_hash(
+            tx_hash
+        )
+
+        # Get finalized block number
+        block_number = await EthAsyncContractUtils.get_finalized_block_number()
+
+        # Assert
+        assert block_number == latest_block["number"]
+
+
 # Test for get_event_logs
 @pytest.mark.asyncio
 class TestGetEventLogs:
