@@ -398,6 +398,13 @@ DVP_AGENT_FEATURE_ENABLED = (
 DVP_DATA_ENCRYPTION_MODE = os.environ.get("DVP_DATA_ENCRYPTION_MODE") or None
 DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
 
+####################################################
+# Settings for the "IbetWST" feature
+####################################################
+IBET_WST_FEATURE_ENABLED = (
+    True if os.environ.get("IBET_WST_FEATURE_ENABLED") == "1" else False
+)
+
 ######################################################
 # O11y Settings
 ######################################################
