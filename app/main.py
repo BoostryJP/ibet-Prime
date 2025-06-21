@@ -56,6 +56,7 @@ from app.routers.misc import (
     bc_explorer,
     e2e_messaging,
     freeze_log,
+    ibet_wst,
     sealed_tx,
     settlement_agent,
 )
@@ -66,6 +67,7 @@ from config import (
     DEDICATED_SEALED_TX_MODE,
     DVP_AGENT_FEATURE_ENABLED,
     FREEZE_LOG_FEATURE_ENABLED,
+    IBET_WST_FEATURE_ENABLED,
     PROFILING_MODE,
     SERVER_NAME,
 )
@@ -89,6 +91,14 @@ tags_metadata = [
         "description": "Sealed transaction",
     },
 ]
+
+if IBET_WST_FEATURE_ENABLED:
+    tags_metadata.append(
+        {
+            "name": "[misc] ibet_wst",
+            "description": "IbetWST related features",
+        }
+    )
 
 if DVP_AGENT_FEATURE_ENABLED:
     tags_metadata.append(
@@ -185,6 +195,9 @@ else:
     app.include_router(token_holders.router)
     app.include_router(settlement_issuer.router)
     app.include_router(sealed_tx.router)
+
+    if IBET_WST_FEATURE_ENABLED:
+        app.include_router(ibet_wst.router)
 
     if DVP_AGENT_FEATURE_ENABLED:
         app.include_router(settlement_agent.router)
