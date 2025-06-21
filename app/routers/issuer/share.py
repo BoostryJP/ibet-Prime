@@ -75,6 +75,10 @@ from app.model.db import (
     BatchRegisterPersonalInfoUploadStatus,
     BulkTransfer,
     BulkTransferUpload,
+    EthIbetWSTTx,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
     IDXIssueRedeem,
     IDXIssueRedeemEventType,
     IDXIssueRedeemSortItem,
@@ -181,6 +185,7 @@ from app.utils.check_utils import (
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
 from app.utils.ibet_contract_utils import AsyncContractUtils
+from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(
     prefix="/share",
@@ -341,6 +346,23 @@ async def issue_share_token(
     _token.abi = abi
     _token.token_status = token_status
     _token.version = TokenVersion.V_25_06
+    if token.activate_ibet_wst:
+        tx_id = str(uuid.uuid4())
+        # Activate IbetWST
+        _token.ibet_wst_activated = True
+        _token.ibet_wst_version = IbetWSTVersion.V_1
+        # Register IbetWST transaction
+        _ibet_wst_tx = EthIbetWSTTx()
+        _ibet_wst_tx.tx_id = tx_id
+        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+        _ibet_wst_tx.version = IbetWSTVersion.V_1
+        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+        _ibet_wst_tx.tx_params = {
+            "name": token.name,
+            "initialOwner": issuer_address,
+        }
+        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+        db.add(_ibet_wst_tx)
     db.add(_token)
 
     # Register operation log

@@ -12828,6 +12828,13 @@ components:
             - type: boolean
             - type: 'null'
           title: Is Canceled
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       required:
         - name
@@ -13414,6 +13421,13 @@ components:
             - type: boolean
             - type: 'null'
           title: Transfer Approval Required
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       required:
         - name
