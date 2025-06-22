@@ -9668,6 +9668,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/transactions/{tx_id}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Transaction
+      description: |-
+        Get IbetWST transaction details
+
+        - This endpoint retrieves the details of a specific IbetWST transaction by its ID.
+      operationId: GetIbetWSTTransaction
+      parameters:
+        - name: tx_id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST transaction ID
+            title: Tx Id
+          description: IbetWST transaction ID
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -12614,6 +12646,77 @@ components:
         - balance
       title: GetIbetWSTBalanceResponse
       description: GetIbetWSTBalance response schema
+    GetIbetWSTTransactionResponse:
+      properties:
+        tx_id:
+          type: string
+          title: Tx Id
+          description: Transaction ID
+        tx_type:
+          type: string
+          enum:
+            - deploy
+            - mint
+            - burn
+            - add_whitelist
+            - delete_whitelist
+            - request_trade
+            - cancel_trade
+            - accept_trade
+          title: Tx Type
+          description: Transaction type
+        version:
+          type: string
+          title: Version
+          description: IbetWST version
+        status:
+          type: integer
+          enum:
+            - 0
+            - 1
+            - 2
+            - 3
+          title: Status
+          description: 'Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)'
+        tx_sender:
+          type: string
+          title: Tx Sender
+          description: Transaction sender address
+        authorizer:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Authorizer
+          description: Authorizer address
+        tx_hash:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Tx Hash
+          description: Transaction hash
+        block_number:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Block Number
+          description: Block number when transaction was mined
+        finalized:
+          type: boolean
+          title: Finalized
+          description: True if the block is finalized, False otherwise
+      type: object
+      required:
+        - tx_id
+        - tx_type
+        - version
+        - status
+        - tx_sender
+        - authorizer
+        - tx_hash
+        - block_number
+        - finalized
+      title: GetIbetWSTTransactionResponse
+      description: GetIbetWSTTransaction response schema
     HTTPValidationError:
       properties:
         detail:

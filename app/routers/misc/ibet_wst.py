@@ -21,17 +21,18 @@ from typing import Annotated
 
 import pytz
 from eth_utils import to_checksum_address
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import asc, desc, func, select
 
 import config
 from app.database import DBAsyncSession
 from app.model import EthereumAddress
-from app.model.db import Token, TokenType
+from app.model.db import EthIbetWSTTx, Token, TokenType
 from app.model.eth import IbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     GetIbetWSTBalanceResponse,
+    GetIbetWSTTransactionResponse,
     ListAllIbetWSTTokensQuery,
     ListAllIbetWSTTokensResponse,
     ListAllIbetWSTTokensSortItem,
@@ -166,3 +167,43 @@ async def get_ibet_wst_balance(
     balance = await wst_contract.balance_of(to_checksum_address(account_address))
 
     return json_response({"balance": balance})
+
+
+# GET: /ibet_wst/transactions/{tx_id}
+@router.get(
+    "/transactions/{tx_id}",
+    operation_id="GetIbetWSTTransaction",
+    response_model=GetIbetWSTTransactionResponse,
+    responses=get_routers_responses(404),
+)
+async def get_ibet_wst_transaction(
+    db: DBAsyncSession,
+    tx_id: Annotated[str, Path(description="IbetWST transaction ID")],
+):
+    """
+    Get IbetWST transaction details
+
+    - This endpoint retrieves the details of a specific IbetWST transaction by its ID.
+    """
+    # Get Transaction
+    wst_tx: EthIbetWSTTx | None = (
+        await db.scalars(
+            select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+        )
+    ).first()
+    if wst_tx is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    # Response
+    resp = {
+        "tx_id": wst_tx.tx_id,
+        "tx_type": wst_tx.tx_type,
+        "version": wst_tx.version,
+        "status": wst_tx.status,
+        "tx_sender": wst_tx.tx_sender,
+        "authorizer": wst_tx.authorizer,
+        "tx_hash": wst_tx.tx_hash,
+        "block_number": wst_tx.block_number,
+        "finalized": wst_tx.finalized,
+    }
+    return json_response(resp)

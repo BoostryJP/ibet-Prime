@@ -17,8 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import StrEnum
-from typing import Optional
+from enum import IntEnum, StrEnum
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -92,4 +92,33 @@ class ListAllIbetWSTTokensResponse(BaseModel):
 class GetIbetWSTBalanceResponse(BaseModel):
     """GetIbetWSTBalance response schema"""
 
-    balance: int = Field(description="IbetWST balance")
+    balance: int = Field(..., description="IbetWST balance")
+
+
+class GetIbetWSTTransactionResponse(BaseModel):
+    """GetIbetWSTTransaction response schema"""
+
+    tx_id: str = Field(description="Transaction ID")
+    tx_type: Literal[
+        "deploy",
+        "mint",
+        "burn",
+        "add_whitelist",
+        "delete_whitelist",
+        "request_trade",
+        "cancel_trade",
+        "accept_trade",
+    ] = Field(description="Transaction type")
+    version: str = Field(description="IbetWST version")
+    status: Literal[0, 1, 2, 3] = Field(
+        description="Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)"
+    )
+    tx_sender: str = Field(description="Transaction sender address")
+    authorizer: Optional[str] = Field(..., description="Authorizer address")
+    tx_hash: Optional[str] = Field(..., description="Transaction hash")
+    block_number: Optional[int] = Field(
+        ..., description="Block number when transaction was mined"
+    )
+    finalized: bool = Field(
+        description="True if the block is finalized, False otherwise"
+    )

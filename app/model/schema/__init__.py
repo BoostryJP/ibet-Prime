@@ -95,6 +95,7 @@ from .holder import (
 )
 from .ibet_wst import (
     GetIbetWSTBalanceResponse,
+    GetIbetWSTTransactionResponse,
     IbetWSTToken,
     ListAllIbetWSTTokensQuery,
     ListAllIbetWSTTokensResponse,
