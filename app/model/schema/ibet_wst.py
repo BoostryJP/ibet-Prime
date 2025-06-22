@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import IntEnum, StrEnum
+from enum import StrEnum
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
