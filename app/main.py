@@ -64,7 +64,7 @@ from app.utils import o11y_utils
 from app.utils.docs_utils import custom_openapi
 from config import (
     BC_EXPLORER_ENABLED,
-    DEDICATED_SEALED_TX_MODE,
+    DEDICATED_OFFCHAIN_TX_MODE,
     DVP_AGENT_FEATURE_ENABLED,
     FREEZE_LOG_FEATURE_ENABLED,
     IBET_WST_FEATURE_ENABLED,
@@ -179,8 +179,12 @@ async def root(db: DBAsyncSession):
     return {"server": SERVER_NAME}
 
 
-if DEDICATED_SEALED_TX_MODE:
+if DEDICATED_OFFCHAIN_TX_MODE:
     app.include_router(sealed_tx.router)
+
+    if IBET_WST_FEATURE_ENABLED:
+        app.include_router(ibet_wst.router)
+
 else:
     app.include_router(common.router)
     app.include_router(account.router)
@@ -194,10 +198,11 @@ else:
     app.include_router(token_common.router)
     app.include_router(token_holders.router)
     app.include_router(settlement_issuer.router)
-    app.include_router(sealed_tx.router)
+
+    app.include_router(sealed_tx.router)  # offchain tx feature
 
     if IBET_WST_FEATURE_ENABLED:
-        app.include_router(ibet_wst.router)
+        app.include_router(ibet_wst.router)  # offchain tx feature
 
     if DVP_AGENT_FEATURE_ENABLED:
         app.include_router(settlement_agent.router)

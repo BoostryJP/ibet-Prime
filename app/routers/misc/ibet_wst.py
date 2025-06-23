@@ -27,12 +27,17 @@ from sqlalchemy import asc, desc, func, select
 import config
 from app.database import DBAsyncSession
 from app.model import EthereumAddress
-from app.model.db import EthIbetWSTTx, Token, TokenType
+from app.model.db import (
+    EthIbetWSTTx,
+    Token,
+    TokenType,
+)
 from app.model.eth import IbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     GetIbetWSTBalanceResponse,
     GetIbetWSTTransactionResponse,
+    GetIbetWSTWhitelistResponse,
     ListAllIbetWSTTokensQuery,
     ListAllIbetWSTTokensResponse,
     ListAllIbetWSTTokensSortItem,
@@ -200,6 +205,7 @@ async def get_ibet_wst_transaction(
         "tx_type": wst_tx.tx_type,
         "version": wst_tx.version,
         "status": wst_tx.status,
+        "ibet_wst_address": wst_tx.ibet_wst_address,
         "tx_sender": wst_tx.tx_sender,
         "authorizer": wst_tx.authorizer,
         "tx_hash": wst_tx.tx_hash,
@@ -207,3 +213,29 @@ async def get_ibet_wst_transaction(
         "finalized": wst_tx.finalized,
     }
     return json_response(resp)
+
+
+# GET: /ibet_wst/whitelists/{ibet_wst_address}/{account_address}
+@router.get(
+    "/whitelists/{ibet_wst_address}/{account_address}",
+    operation_id="GetIbetWSTWhitelist",
+    response_model=GetIbetWSTWhitelistResponse,
+    responses=get_routers_responses(422),
+)
+async def get_ibet_wst_whitelist(
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    account_address: Annotated[EthereumAddress, Path(description="Account address")],
+):
+    """
+    Get IbetWST whitelist status for a specific account address
+
+    - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+    """
+    wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
+    is_whitelisted = await wst_contract.account_white_list(
+        to_checksum_address(account_address)
+    )
+
+    return json_response({"whitelisted": is_whitelisted})

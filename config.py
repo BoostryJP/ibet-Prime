@@ -372,8 +372,8 @@ BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else 
 ####################################################
 # Settings for the "SealedTx" feature
 ####################################################
-DEDICATED_SEALED_TX_MODE = (
-    True if os.environ.get("DEDICATED_SEALED_TX_MODE") == "1" else False
+DEDICATED_OFFCHAIN_TX_MODE = (
+    True if os.environ.get("DEDICATED_OFFCHAIN_TX_MODE") == "1" else False
 )
 
 ####################################################

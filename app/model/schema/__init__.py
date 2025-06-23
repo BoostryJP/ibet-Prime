@@ -95,9 +95,13 @@ from .holder import (
     RegisterHolderExtraInfoRequest,
 )
 from .ibet_wst import (
+    AddIbetWSTWhitelistRequest,
+    DeleteIbetWSTWhitelistRequest,
     GetIbetWSTBalanceResponse,
     GetIbetWSTTransactionResponse,
+    GetIbetWSTWhitelistResponse,
     IbetWSTToken,
+    IbetWSTTransactionResponse,
     ListAllIbetWSTTokensQuery,
     ListAllIbetWSTTokensResponse,
     ListAllIbetWSTTokensSortItem,

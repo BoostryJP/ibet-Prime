@@ -30,6 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
 from app.model.db import Account, EthIbetWSTTx, IbetWSTTxStatus, IbetWSTTxType
+from app.model.eth import IbetWST, IbetWSTAuthorization
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc
@@ -93,6 +94,16 @@ class ProcessorEthWSTSendTx:
                     if wst_tx.tx_type == IbetWSTTxType.DEPLOY:
                         # Send deployment transaction
                         tx_hash = await send_deploy_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.ADD_WHITELIST:
+                        # Send add whitelist transaction
+                        tx_hash = await send_add_whitelist_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.DELETE_WHITELIST:
+                        # Send delete whitelist transaction
+                        tx_hash = await send_delete_whitelist_transaction(
                             wst_tx, tx_sender_account
                         )
                     else:
@@ -169,6 +180,50 @@ async def send_deploy_transaction(
         ],
         deployer=tx_sender_account.address,
         private_key=tx_sender_account.private_key,
+    )
+    return tx_hash
+
+
+async def send_add_whitelist_transaction(
+    wst_tx: EthIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> str:
+    """
+    Send a transaction to add an account to the IbetWST whitelist.
+    """
+    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    tx_hash = await wst_contract.add_account_white_list_with_authorization(
+        account=wst_tx.tx_params["account_address"],
+        authorization=IbetWSTAuthorization(
+            nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
+            v=wst_tx.authorization["v"],
+            r=bytes(32).fromhex(wst_tx.authorization["r"]),
+            s=bytes(32).fromhex(wst_tx.authorization["s"]),
+        ),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash
+
+
+async def send_delete_whitelist_transaction(
+    wst_tx: EthIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> str:
+    """
+    Send a transaction to delete an account from the IbetWST whitelist.
+    """
+    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    tx_hash = await wst_contract.delete_account_white_list_with_authorization(
+        account=wst_tx.tx_params["account_address"],
+        authorization=IbetWSTAuthorization(
+            nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
+            v=wst_tx.authorization["v"],
+            r=bytes(32).fromhex(wst_tx.authorization["r"]),
+            s=bytes(32).fromhex(wst_tx.authorization["s"]),
+        ),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
     )
     return tx_hash
 

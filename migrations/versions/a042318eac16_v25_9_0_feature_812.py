@@ -1,8 +1,8 @@
 """v25_9_0_feature_812
 
-Revision ID: 1d859b48a7ad
+Revision ID: a042318eac16
 Revises: a7db3bfbfe9e
-Create Date: 2025-06-20 21:31:34.261489
+Create Date: 2025-06-23 17:27:06.185614
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from app.database import get_db_schema
 
 # revision identifiers, used by Alembic.
-revision = "1d859b48a7ad"
+revision = "a042318eac16"
 down_revision = "a7db3bfbfe9e"
 branch_labels = None
 depends_on = None
@@ -26,6 +26,7 @@ def upgrade():
         sa.Column("tx_type", sa.String(length=20), nullable=False),
         sa.Column("version", sa.String(length=2), nullable=False),
         sa.Column("status", sa.Integer(), nullable=False),
+        sa.Column("ibet_wst_address", sa.String(length=42), nullable=True),
         sa.Column("tx_params", sa.JSON(), nullable=False),
         sa.Column("tx_sender", sa.String(length=42), nullable=False),
         sa.Column("authorizer", sa.String(length=42), nullable=True),
