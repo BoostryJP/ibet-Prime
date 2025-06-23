@@ -9521,6 +9521,185 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /ibet_wst/tokens:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: List All Ibet Wst Tokens
+      description: |-
+        List all IbetWST tokens
+
+        - This endpoint retrieves all IbetWST tokens based on the provided query parameters.
+        - Only tokens whose deployment has already been finalized will be returned.
+      operationId: ListAllIbetWSTTokens
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: issuer_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Issuer address (**This affects total number**)
+            title: Issuer Address
+          description: Issuer address (**This affects total number**)
+        - name: ibet_wst_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: ibet_token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: ibet token contract address
+            title: Ibet Token Address
+          description: ibet token contract address
+        - name: token_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/TokenType'
+              - type: 'null'
+            description: Token type
+            title: Token Type
+          description: Token type
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListAllIbetWSTTokensSortItem'
+              - type: 'null'
+            default: created
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllIbetWSTTokensResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/balances/{account_address}/{ibet_wst_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Balance
+      description: |-
+        Get IbetWST balance for a specific account address
+
+        - This endpoint retrieves the IbetWST balance for the specified account address.
+      operationId: GetIbetWSTBalance
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Account address
+            title: Account Address
+          description: Account address
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTBalanceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/transactions/{tx_id}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Transaction
+      description: |-
+        Get IbetWST transaction details
+
+        - This endpoint retrieves the details of a specific IbetWST transaction by its ID.
+      operationId: GetIbetWSTTransaction
+      parameters:
+        - name: tx_id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST transaction ID
+            title: Tx Id
+          description: IbetWST transaction ID
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -12456,6 +12635,88 @@ components:
         - results
       title: GetBatchRegisterPersonalInfoResponse
       description: Get Batch Register PersonalInfo schema (RESPONSE)
+    GetIbetWSTBalanceResponse:
+      properties:
+        balance:
+          type: integer
+          title: Balance
+          description: IbetWST balance
+      type: object
+      required:
+        - balance
+      title: GetIbetWSTBalanceResponse
+      description: GetIbetWSTBalance response schema
+    GetIbetWSTTransactionResponse:
+      properties:
+        tx_id:
+          type: string
+          title: Tx Id
+          description: Transaction ID
+        tx_type:
+          type: string
+          enum:
+            - deploy
+            - mint
+            - burn
+            - add_whitelist
+            - delete_whitelist
+            - request_trade
+            - cancel_trade
+            - accept_trade
+          title: Tx Type
+          description: Transaction type
+        version:
+          type: string
+          title: Version
+          description: IbetWST version
+        status:
+          type: integer
+          enum:
+            - 0
+            - 1
+            - 2
+            - 3
+          title: Status
+          description: 'Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)'
+        tx_sender:
+          type: string
+          title: Tx Sender
+          description: Transaction sender address
+        authorizer:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Authorizer
+          description: Authorizer address
+        tx_hash:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Tx Hash
+          description: Transaction hash
+        block_number:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Block Number
+          description: Block number when transaction was mined
+        finalized:
+          type: boolean
+          title: Finalized
+          description: True if the block is finalized, False otherwise
+      type: object
+      required:
+        - tx_id
+        - tx_type
+        - version
+        - status
+        - tx_sender
+        - authorizer
+        - tx_hash
+        - block_number
+        - finalized
+      title: GetIbetWSTTransactionResponse
+      description: GetIbetWSTTransaction response schema
     HTTPValidationError:
       properties:
         detail:
@@ -13764,6 +14025,43 @@ components:
       type: object
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)
+    IbetWSTToken:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+          description: Issuer address
+        ibet_wst_address:
+          type: string
+          title: Ibet Wst Address
+          description: IbetWST contract address
+        ibet_token_address:
+          type: string
+          title: Ibet Token Address
+          description: ibet token contract address
+        ibet_token_type:
+          $ref: '#/components/schemas/TokenType'
+          description: ibet token type
+        ibet_token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+          title: Ibet Token Attributes
+          description: ibet token attributes
+        created:
+          type: string
+          title: Created
+          description: Created datetime
+      type: object
+      required:
+        - issuer_address
+        - ibet_wst_address
+        - ibet_token_address
+        - ibet_token_type
+        - ibet_token_attributes
+        - created
+      title: IbetWSTToken
+      description: IbetWST Token schema
     Integer64bitLimitExceededErrorCode:
       type: integer
       enum:
@@ -14251,6 +14549,27 @@ components:
         - key_manager
         - holder_name
       title: ListAllHoldersSortItem
+    ListAllIbetWSTTokensResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        tokens:
+          items:
+            $ref: '#/components/schemas/IbetWSTToken'
+          type: array
+          title: Tokens
+      type: object
+      required:
+        - result_set
+        - tokens
+      title: ListAllIbetWSTTokensResponse
+      description: ListAllIbetWSTTokens response schema
+    ListAllIbetWSTTokensSortItem:
+      type: string
+      enum:
+        - created
+        - token_address
+      title: ListAllIbetWSTTokensSortItem
     ListAllIssuedTokensResponse:
       properties:
         result_set:
@@ -17148,6 +17467,8 @@ tags:
     description: Messaging functions with external systems
   - name: '[misc] sealed_tx'
     description: Sealed transaction
+  - name: '[misc] ibet_wst'
+    description: IbetWST related features
   - name: '[misc] settlement_agent'
     description: Settlement related features for paying agent
   - name: '[misc] blockchain_explorer'
