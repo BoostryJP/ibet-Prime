@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 import uuid
+from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Annotated, List, Optional, Sequence
 
@@ -149,6 +150,7 @@ from app.model.schema import (
     ListAllTokenLockEventsResponse,
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
+    ListBatchIssueRedeemUploadResponseWithResult,
     ListBatchRegisterPersonalInfoUploadResponse,
     ListBulkTransferQuery,
     ListBulkTransferUploadQuery,
@@ -1299,7 +1301,7 @@ async def redeem_bond(
 @router.get(
     "/tokens/{token_address}/redeem/batch",
     operation_id="ListAllBatchBondRedemption",
-    response_model=ListBatchIssueRedeemUploadResponse,
+    response_model=ListBatchIssueRedeemUploadResponseWithResult,
     responses=get_routers_responses(422),
 )
 async def list_all_batch_bond_redemption(
@@ -1350,10 +1352,69 @@ async def list_all_batch_bond_redemption(
         stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
+    upload_ids = [_upload.upload_id for _upload in _upload_list]
 
+    # Get issuer_address from token_address
+    if issuer_address is None:
+        _token: Token | None = (
+            await db.scalars(
+                select(Token).where(Token.token_address == token_address).limit(1)
+            )
+        ).first()
+        if _token is not None:
+            issuer_address = _token.issuer_address
+
+    # Get Batch Records
+    record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = []
+    if upload_ids:
+        record_list = (
+            (
+                await db.execute(
+                    select(BatchIssueRedeem, IDXPersonalInfo)
+                    .outerjoin(
+                        IDXPersonalInfo,
+                        and_(
+                            BatchIssueRedeem.account_address
+                            == IDXPersonalInfo.account_address,
+                            IDXPersonalInfo.issuer_address == issuer_address,
+                        ),
+                    )
+                    .where(BatchIssueRedeem.upload_id.in_(upload_ids))
+                )
+            )
+            .tuples()
+            .all()
+        )
+
+    # Group records by upload_id
+    record_list_by_upload_id = defaultdict(list)
+    for record in record_list:
+        record_list_by_upload_id[record[0].upload_id].append(record)
+
+    personal_info_default = {
+        "key_manager": None,
+        "name": None,
+        "postal_code": None,
+        "address": None,
+        "email": None,
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None,
+    }
     uploads = []
     for _upload in _upload_list:
         created_utc = pytz.timezone("UTC").localize(_upload.created)
+        results = [
+            {
+                "account_address": record[0].account_address,
+                "amount": record[0].amount,
+                "status": record[0].status,
+                "personal_information": (
+                    record[1].personal_info if record[1] else personal_info_default
+                ),
+            }
+            for record in record_list_by_upload_id[_upload.upload_id]
+        ]
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -1362,6 +1423,7 @@ async def list_all_batch_bond_redemption(
                 "token_address": _upload.token_address,
                 "processed": _upload.processed,
                 "created": created_utc.astimezone(local_tz).isoformat(),
+                "results": results,
             }
         )
 
