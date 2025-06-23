@@ -18,11 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+import secrets
 import uuid
 from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from eth_utils import to_checksum_address
 from sqlalchemy import select
 
 from app.model.db import (
@@ -51,6 +53,7 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 class TestProcessor:
     eth_master = default_eth_account("user1")
     issuer = default_eth_account("user2")
+    user1 = default_eth_account("user3")
 
     #############################################################
     # Normal
@@ -143,6 +146,142 @@ class TestProcessor:
         # Check if the log was recorded
         assert caplog.messages == [
             f"Processing transaction: id={tx_id}, type=deploy",
+            f"Transaction sent successfully: id={tx_id}",
+        ]
+
+    # Normal_2_2
+    # - Confirm that processing is performed correctly when there is target data to process
+    # - transaction type: Add Whitelist
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        eth_master["address"],
+    )
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        eth_master["private_key"],
+    )
+    @mock.patch(
+        "app.model.eth.wst.IbetWST.add_account_white_list_with_authorization",
+        AsyncMock(return_value="test_tx_hash"),
+    )
+    async def test_normal_2_2(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        account.ibet_wst_activated = True
+        account.ibet_wst_version = IbetWSTVersion.V_1
+        account.ibet_wst_tx_id = tx_id
+        async_db.add(account)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.PENDING
+        wst_tx.ibet_wst_address = to_checksum_address(
+            "0x1234567890abcdef1234567890abcdef12345678"
+        )
+        wst_tx.tx_params = {
+            "account_address": self.user1["address"],
+        }
+        wst_tx.authorizer = self.issuer["address"]
+        wst_tx.authorization = {
+            "nonce": secrets.token_bytes(32).hex(),
+            "v": "27",
+            "r": secrets.token_bytes(32).hex(),
+            "s": secrets.token_bytes(32).hex(),
+        }
+        wst_tx.tx_sender = self.eth_master["address"]
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Check if the transaction was processed
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx_af.tx_hash == "test_tx_hash"
+
+        # Check if the log was recorded
+        assert caplog.messages == [
+            f"Processing transaction: id={tx_id}, type=add_whitelist",
+            f"Transaction sent successfully: id={tx_id}",
+        ]
+
+    # Normal_2_3
+    # - Confirm that processing is performed correctly when there is target data to process
+    # - transaction type: Delete Whitelist
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        eth_master["address"],
+    )
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        eth_master["private_key"],
+    )
+    @mock.patch(
+        "app.model.eth.wst.IbetWST.delete_account_white_list_with_authorization",
+        AsyncMock(return_value="test_tx_hash"),
+    )
+    async def test_normal_2_3(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        account.ibet_wst_activated = True
+        account.ibet_wst_version = IbetWSTVersion.V_1
+        account.ibet_wst_tx_id = tx_id
+        async_db.add(account)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.PENDING
+        wst_tx.ibet_wst_address = to_checksum_address(
+            "0x1234567890abcdef1234567890abcdef12345678"
+        )
+        wst_tx.tx_params = {
+            "account_address": self.user1["address"],
+        }
+        wst_tx.authorizer = self.issuer["address"]
+        wst_tx.authorization = {
+            "nonce": secrets.token_bytes(32).hex(),
+            "v": "27",
+            "r": secrets.token_bytes(32).hex(),
+            "s": secrets.token_bytes(32).hex(),
+        }
+        wst_tx.tx_sender = self.eth_master["address"]
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Check if the transaction was processed
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx_af.tx_hash == "test_tx_hash"
+
+        # Check if the log was recorded
+        assert caplog.messages == [
+            f"Processing transaction: id={tx_id}, type=delete_whitelist",
             f"Transaction sent successfully: id={tx_id}",
         ]
 

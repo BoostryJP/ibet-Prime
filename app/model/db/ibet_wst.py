@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import IntEnum, StrEnum
-from typing import Union
+from typing import TypedDict
 
 from sqlalchemy import JSON, BigInteger, Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -52,6 +52,13 @@ class IbetWSTTxStatus(IntEnum):
     FAILED = 3
 
 
+class IbetWSTAuthorization(TypedDict):
+    nonce: str  # Nonce for the authorization
+    v: int  # v value for the authorization signature
+    r: str  # r value for the authorization signature
+    s: str  # s value for the authorization signature
+
+
 class EthIbetWSTTx(Base):
     """Ethereum IbetWST Transaction Management"""
 
@@ -72,6 +79,10 @@ class EthIbetWSTTx(Base):
     # - SUCCEEDED: Transaction is mined and succeeded
     # - FAILED: Transaction failed (e.g., due to insufficient gas or revert)
     status: Mapped[IbetWSTTxStatus] = mapped_column(Integer, nullable=False)
+    # IbetWST contract address
+    # - Address of the IbetWST contract on the Ethereum network
+    # - This field is set if the transaction is for the deployed IbetWST contract
+    ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
     # Transaction parameters
     # - JSON object containing the parameters for the transaction
     tx_params: Mapped[dict] = mapped_column(JSON, nullable=False)
@@ -81,20 +92,20 @@ class EthIbetWSTTx(Base):
     # Authorizer
     # - Address of the authorizer who created the authorization for the transaction
     # - This field is set if the transaction requires authorization
-    authorizer: Mapped[str] = mapped_column(String(42), nullable=True)
+    authorizer: Mapped[str | None] = mapped_column(String(42), nullable=True)
     # Authorization data
     # - JSON object containing additional data for authorization
     # - This field is set if the transaction requires authorization
-    authorization: Mapped[Union[dict, None]] = mapped_column(
+    authorization: Mapped[IbetWSTAuthorization | None] = mapped_column(
         JSON, nullable=True, default=None
     )
     # Transaction hash
     # - Hash of the transaction on the Ethereum network
     # - Set to None if the transaction is not yet sent
-    tx_hash: Mapped[str] = mapped_column(String(66), nullable=True)
+    tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
     # Block number
     # - Block number when the transaction was mined
-    block_number: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    block_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     # Block finalized
     # - True if the block is finalized, False otherwise
     finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

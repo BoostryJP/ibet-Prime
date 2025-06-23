@@ -79,9 +79,27 @@ class ListAllIbetWSTTokensQuery(BasePaginationQuery):
     )
 
 
+class AddIbetWSTWhitelistRequest(BaseModel):
+    """AddIbetWSTWhitelist request schema"""
+
+    account_address: EthereumAddress = Field(description="Account address to whitelist")
+
+
+class DeleteIbetWSTWhitelistRequest(BaseModel):
+    """DeleteIbetWSTWhitelist request schema"""
+
+    account_address: EthereumAddress = Field(description="Account address to whitelist")
+
+
 ############################
 # RESPONSE
 ############################
+class IbetWSTTransactionResponse(BaseModel):
+    """Common response schema for APIs that send IbetWST transactions"""
+
+    tx_id: str = Field(..., description="Transaction ID")
+
+
 class ListAllIbetWSTTokensResponse(BaseModel):
     """ListAllIbetWSTTokens response schema"""
 
@@ -113,6 +131,7 @@ class GetIbetWSTTransactionResponse(BaseModel):
     status: Literal[0, 1, 2, 3] = Field(
         description="Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)"
     )
+    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
     tx_sender: str = Field(description="Transaction sender address")
     authorizer: Optional[str] = Field(..., description="Authorizer address")
     tx_hash: Optional[str] = Field(..., description="Transaction hash")
@@ -121,4 +140,12 @@ class GetIbetWSTTransactionResponse(BaseModel):
     )
     finalized: bool = Field(
         description="True if the block is finalized, False otherwise"
+    )
+
+
+class GetIbetWSTWhitelistResponse(BaseModel):
+    """GetIbetWSTWhitelist response schema"""
+
+    whitelisted: bool = Field(
+        description="True if the account is whitelisted, False otherwise"
     )

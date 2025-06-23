@@ -47,6 +47,7 @@ class TestGetIbetWSTTransaction:
         tx.tx_type = IbetWSTTxType.MINT
         tx.version = IbetWSTVersion.V_1
         tx.status = IbetWSTTxStatus.SUCCEEDED
+        tx.ibet_wst_address = "0x1234567890abcdef1234567890abcdef12345678"
         tx.tx_params = {}
         tx.tx_sender = self.tx_sender["address"]
         tx.authorizer = self.authorizer["address"]
@@ -69,6 +70,7 @@ class TestGetIbetWSTTransaction:
             "tx_type": IbetWSTTxType.MINT,
             "version": IbetWSTVersion.V_1,
             "status": IbetWSTTxStatus.SUCCEEDED,
+            "ibet_wst_address": "0x1234567890abcdef1234567890abcdef12345678",
             "tx_sender": self.tx_sender["address"],
             "authorizer": self.authorizer["address"],
             "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",

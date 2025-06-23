@@ -1667,7 +1667,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponse'
+                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponseWithResult'
         '422':
           description: Validation Error
           content:
@@ -6301,7 +6301,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponse'
+                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponseWithResult'
         '422':
           description: Validation Error
           content:
@@ -8540,6 +8540,148 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListAllScheduledEventsResponse'
+  /tokens/{token_address}/ibet_wst/whitelists/add:
+    post:
+      tags:
+        - token_common
+      summary: Add Ibet Wst Whitelist
+      description: |-
+        Add an account to the IbetWST whitelist
+
+        - This endpoint allows an issuer to add an account to the whitelist of an IbetWST contract.
+      operationId: AddIbetWSTWhitelist
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Token Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddIbetWSTWhitelistRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /tokens/{token_address}/ibet_wst/whitelists/delete:
+    post:
+      tags:
+        - token_common
+      summary: Delete Ibet Wst Whitelist
+      description: |-
+        Delete an account from the IbetWST whitelist
+
+        - This endpoint allows an issuer to delete an account from the whitelist of an IbetWST contract.
+      operationId: DeleteIbetWSTWhitelist
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Token Address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Issuer-Address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Eoa-Password
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Auth-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteIbetWSTWhitelistRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /token/holders/personal_info:
     get:
       tags:
@@ -9700,6 +9842,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /ibet_wst/whitelists/{ibet_wst_address}/{account_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Whitelist
+      description: |-
+        Get IbetWST whitelist status for a specific account address
+
+        - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+      operationId: GetIbetWSTWhitelist
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Account address
+            title: Account Address
+          description: Account address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTWhitelistResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -10631,6 +10813,17 @@ components:
         1:CREATING
         2:CHANGING
         3:SET
+    AddIbetWSTWhitelistRequest:
+      properties:
+        account_address:
+          type: string
+          title: Account Address
+          description: Account address to whitelist
+      type: object
+      required:
+        - account_address
+      title: AddIbetWSTWhitelistRequest
+      description: AddIbetWSTWhitelist request schema
     AuthTokenAlreadyExistsErrorCode:
       type: integer
       enum:
@@ -10844,6 +11037,62 @@ components:
         - batch_id
       title: BatchIssueRedeemUploadIdResponse
       description: Batch issue/redeem upload id (RESPONSE)
+    BatchIssueRedeemUploadWithResult:
+      properties:
+        batch_id:
+          type: string
+          title: Batch Id
+          description: UUID v4 required
+        issuer_address:
+          type: string
+          title: Issuer Address
+        token_type:
+          $ref: '#/components/schemas/TokenType'
+        token_address:
+          type: string
+          title: Token Address
+        processed:
+          type: boolean
+          title: Processed
+        created:
+          type: string
+          title: Created
+        results:
+          items:
+            $ref: '#/components/schemas/GetBatchIssueRedeemResult'
+          type: array
+          title: Results
+      type: object
+      required:
+        - batch_id
+        - issuer_address
+        - token_type
+        - token_address
+        - processed
+        - created
+        - results
+      title: BatchIssueRedeemUploadWithResult
+      description: Batch issue/redeem Upload
+      examples:
+        - batch_id: cfd83622-34dc-4efe-a68b-2cc275d3d824
+          created: '2022-09-02T19:49:33.370874+09:00'
+          issuer_address: '0x0000000000000000000000000000000000000000'
+          processed: true
+          results:
+            - account_address: string
+              amount: 0
+              personal_information:
+                address: string
+                birth: string
+                email: string
+                is_corporate: true
+                key_manager: string
+                name: string
+                postal_code: string
+                tax_category: 0
+              status: 0
+          token_address: '0x0000000000000000000000000000000000000000'
+          token_type: Bond
     BatchPersonalInfoRegistrationValidationErrorCode:
       type: integer
       enum:
@@ -12098,6 +12347,17 @@ components:
         - notice_type
         - metainfo
       title: DVPDeliveryInfoNotification
+    DeleteIbetWSTWhitelistRequest:
+      properties:
+        account_address:
+          type: string
+          title: Account Address
+          description: Account address to whitelist
+      type: object
+      required:
+        - account_address
+      title: DeleteIbetWSTWhitelistRequest
+      description: DeleteIbetWSTWhitelist request schema
     DeliveryStatus:
       type: integer
       enum:
@@ -12315,6 +12575,44 @@ components:
         - send_timestamp
       title: E2EMessagingResponse
       description: E2E Messaging schema (Response)
+    Error400MetaModel:
+      properties:
+        code:
+          type: integer
+          title: Code
+          examples:
+            - 0
+            - 1
+            - 2
+            - 100001
+        title:
+          type: string
+          title: Title
+          examples:
+            - InvalidParameterError
+            - SendTransactionError
+            - ContractRevertError
+      type: object
+      required:
+        - code
+        - title
+      title: Error400MetaModel
+    Error400Model:
+      properties:
+        meta:
+          $ref: '#/components/schemas/Error400MetaModel'
+        detail:
+          type: string
+          title: Detail
+          examples:
+            - this token is temporarily unavailable
+            - failed to register token address token list
+            - The address has already been registered.
+      type: object
+      required:
+        - meta
+        - detail
+      title: Error400Model
     Error401MetaModel:
       properties:
         code:
@@ -12678,6 +12976,12 @@ components:
             - 3
           title: Status
           description: 'Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)'
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: IbetWST contract address
         tx_sender:
           type: string
           title: Tx Sender
@@ -12710,6 +13014,7 @@ components:
         - tx_type
         - version
         - status
+        - ibet_wst_address
         - tx_sender
         - authorizer
         - tx_hash
@@ -12717,6 +13022,17 @@ components:
         - finalized
       title: GetIbetWSTTransactionResponse
       description: GetIbetWSTTransaction response schema
+    GetIbetWSTWhitelistResponse:
+      properties:
+        whitelisted:
+          type: boolean
+          title: Whitelisted
+          description: True if the account is whitelisted, False otherwise
+      type: object
+      required:
+        - whitelisted
+      title: GetIbetWSTWhitelistResponse
+      description: GetIbetWSTWhitelist response schema
     HTTPValidationError:
       properties:
         detail:
@@ -14062,6 +14378,18 @@ components:
         - created
       title: IbetWSTToken
       description: IbetWST Token schema
+    IbetWSTTransactionResponse:
+      properties:
+        tx_id:
+          type: string
+          title: Tx Id
+          description: Transaction ID
+      type: object
+      required:
+        - tx_id
+      title: IbetWSTTransactionResponse
+      description: Common response schema for APIs that send IbetWST 
+        transactions
     Integer64bitLimitExceededErrorCode:
       type: integer
       enum:
@@ -14769,6 +15097,21 @@ components:
         - result_set
         - uploads
       title: ListBatchIssueRedeemUploadResponse
+      description: List All Batch issue/redeem Upload(RESPONSE)
+    ListBatchIssueRedeemUploadResponseWithResult:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        uploads:
+          items:
+            $ref: '#/components/schemas/BatchIssueRedeemUploadWithResult'
+          type: array
+          title: Uploads
+      type: object
+      required:
+        - result_set
+        - uploads
+      title: ListBatchIssueRedeemUploadResponseWithResult
       description: List All Batch issue/redeem Upload(RESPONSE)
     ListBatchRegisterPersonalInfoUploadResponse:
       properties:
