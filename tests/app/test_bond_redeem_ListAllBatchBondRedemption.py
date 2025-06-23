@@ -116,6 +116,22 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         redeem_record.status = 1
         async_db.add(redeem_record)
 
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = "other_issuer_address"
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_1)
+
         await async_db.commit()
 
         # request target API
@@ -189,7 +205,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
 
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
-        idx_personal_info_1.issuer_address = "other_issuer_address"
+        idx_personal_info_1.issuer_address = issuer_address
         idx_personal_info_1._personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
@@ -350,14 +366,14 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                             "amount": self.account_list[1]["amount"],
                             "status": 1,
                             "personal_information": {
-                                "key_manager": "key_manager_test2",
-                                "name": "name_test2",
-                                "postal_code": "postal_code_test2",
-                                "address": "address_test2",
-                                "email": "email_test2",
-                                "birth": "birth_test2",
-                                "is_corporate": False,
-                                "tax_category": 10,
+                                "key_manager": None,
+                                "address": None,
+                                "birth": None,
+                                "email": None,
+                                "is_corporate": None,
+                                "name": None,
+                                "postal_code": None,
+                                "tax_category": None,
                             },
                         },
                     ],

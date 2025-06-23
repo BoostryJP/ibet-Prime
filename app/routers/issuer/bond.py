@@ -1332,22 +1332,30 @@ async def list_all_batch_bond_redemption(
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
     upload_ids = [_upload.upload_id for _upload in _upload_list]
 
+    # Get issuer_address from token_address
+    if issuer_address is None:
+        _token: Token | None = (
+            await db.scalars(
+                select(Token).where(Token.token_address == token_address).limit(1)
+            )
+        ).first()
+        if _token is not None:
+            issuer_address = _token.issuer_address
+
     # Get Batch Records
     record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = []
     if upload_ids:
-        join_conditions = [
-            BatchIssueRedeem.account_address == IDXPersonalInfo.account_address
-        ]
-        if issuer_address is not None:
-            join_conditions.append(IDXPersonalInfo.issuer_address == issuer_address)
-
         record_list = (
             (
                 await db.execute(
                     select(BatchIssueRedeem, IDXPersonalInfo)
                     .outerjoin(
                         IDXPersonalInfo,
-                        and_(*join_conditions),
+                        and_(
+                            BatchIssueRedeem.account_address
+                            == IDXPersonalInfo.account_address,
+                            IDXPersonalInfo.issuer_address == issuer_address,
+                        ),
                     )
                     .where(BatchIssueRedeem.upload_id.in_(upload_ids))
                 )
