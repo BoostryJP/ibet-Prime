@@ -90,7 +90,7 @@ class TestAddIbetWSTWhitelist:
             },
         )
 
-        # Check response status code
+        # Check response status code and content
         assert resp.status_code == 200
         assert resp.json() == {"tx_id": mock.ANY}
 
@@ -101,7 +101,7 @@ class TestAddIbetWSTWhitelist:
         assert wst_tx.status == IbetWSTTxStatus.PENDING
         assert wst_tx.ibet_wst_address == self.ibet_wst_address
         assert wst_tx.tx_params == {
-            "account_address": self.user1["address"],
+            "accountAddress": self.user1["address"],
         }
         assert wst_tx.tx_sender == self.relayer["address"]
         assert wst_tx.authorizer == self.issuer["address"]
