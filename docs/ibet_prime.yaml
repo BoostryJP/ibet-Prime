@@ -9882,6 +9882,284 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}/request:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Request Ibet Wst Trade
+      description: |-
+        Request an IbetWST trade
+
+        - This endpoint allows a user to send requestTradeWithAuthorization transaction to the IbetWST contract.
+      operationId: RequestIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}/cancel:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Cancel Ibet Wst Trade
+      description: |-
+        Cancel an IbetWST trade
+
+        - This endpoint allows a user to send cancelTradeWithAuthorization transaction to the IbetWST contract.
+      operationId: CancelIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}/accept:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Accept Ibet Wst Trade
+      description: |-
+        Accept an IbetWST trade
+
+        - This endpoint allows a user to send acceptTradeWithAuthorization transaction to the IbetWST contract.
+      operationId: AcceptIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: List Ibet Wst Trades
+      description: |-
+        List IbetWST trades
+
+        - This endpoint retrieves a list of trades from the IbetWST contract based on the provided query parameters.
+      operationId: ListIbetWSTTrades
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: seller_st_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: IbetWST seller account address
+            title: Seller St Account Address
+          description: IbetWST seller account address
+        - name: buyer_st_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: IbetWST buyer account address
+            title: Buyer St Account Address
+          description: IbetWST buyer account address
+        - name: sc_token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: SC token contract address
+            title: Sc Token Address
+          description: SC token contract address
+        - name: seller_sc_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: SC seller account address
+            title: Seller Sc Account Address
+          description: SC seller account address
+        - name: buyer_sc_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: SC buyer account address
+            title: Buyer Sc Account Address
+          description: SC buyer account address
+        - name: state
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - enum:
+                  - Pending
+                  - Executed
+                  - Cancelled
+                type: string
+              - type: 'null'
+            description: Trade state
+            title: State
+          description: Trade state
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListIbetWSTTradesResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}/{index}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Trade
+      description: |-
+        Get details of a specific IbetWST trade
+
+        - This endpoint retrieves the details of a specific trade by its index from the IbetWST contract.
+      operationId: GetIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: index
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: Trade index
+            title: Index
+          description: Trade index
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTTradeResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -10696,6 +10974,26 @@ components:
         - eoa_password
       title: AbortDVPDeliveryRequest
       description: DVP delivery abort schema (REQUEST)
+    AcceptIbetWSTTradeRequest:
+      properties:
+        index:
+          type: integer
+          title: Index
+          description: Trade index
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - index
+        - authorizer
+        - authorization
+      title: AcceptIbetWSTTradeRequest
+      description: AcceptIbetWSTTrade request schema
     Account:
       properties:
         issuer_address:
@@ -11658,6 +11956,26 @@ components:
         - operation_type
       title: CancelDVPDeliveryRequest
       description: DVP delivery cancel schema (REQUEST)
+    CancelIbetWSTTradeRequest:
+      properties:
+        index:
+          type: integer
+          title: Index
+          description: Trade index
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - index
+        - authorizer
+        - authorization
+      title: CancelIbetWSTTradeRequest
+      description: CancelIbetWSTTrade request schema
     ChildAccount:
       properties:
         issuer_address:
@@ -12944,6 +13262,10 @@ components:
         - balance
       title: GetIbetWSTBalanceResponse
       description: GetIbetWSTBalance response schema
+    GetIbetWSTTradeResponse:
+      $ref: '#/components/schemas/IbetWSTTrade'
+      title: GetIbetWSTTradeResponse
+      description: IbetWSTToken response schema
     GetIbetWSTTransactionResponse:
       properties:
         tx_id:
@@ -14341,6 +14663,34 @@ components:
       type: object
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)
+    IbetWSTAuthorization:
+      properties:
+        nonce:
+          type: string
+          title: Nonce
+          description: Nonce for the authorization (Hexadecimal string)
+        v:
+          type: integer
+          title: V
+          description: v value for the authorization signature
+        r:
+          type: string
+          title: R
+          description: r value for the authorization signature (Hexadecimal 
+            string)
+        s:
+          type: string
+          title: S
+          description: s value for the authorization signature (Hexadecimal 
+            string)
+      type: object
+      required:
+        - nonce
+        - v
+        - r
+        - s
+      title: IbetWSTAuthorization
+      description: IbetWST Authorization schema
     IbetWSTToken:
       properties:
         issuer_address:
@@ -14378,6 +14728,66 @@ components:
         - created
       title: IbetWSTToken
       description: IbetWST Token schema
+    IbetWSTTrade:
+      properties:
+        index:
+          type: integer
+          title: Index
+          description: Trade index
+        seller_st_account_address:
+          type: string
+          title: Seller St Account Address
+          description: IbetWST seller account address
+        buyer_st_account_address:
+          type: string
+          title: Buyer St Account Address
+          description: IbetWST buyer account address
+        sc_token_address:
+          type: string
+          title: Sc Token Address
+          description: SC token contract address
+        seller_sc_account_address:
+          type: string
+          title: Seller Sc Account Address
+          description: SC seller account address
+        buyer_sc_account_address:
+          type: string
+          title: Buyer Sc Account Address
+          description: SC buyer account address
+        st_value:
+          type: integer
+          title: St Value
+          description: Value of IbetWST to trade
+        sc_value:
+          type: integer
+          title: Sc Value
+          description: Value of SC token to trade
+        state:
+          type: string
+          enum:
+            - Pending
+            - Executed
+            - Cancelled
+          title: State
+          description: Trade state
+        memo:
+          type: string
+          title: Memo
+          description: Memo for the trade
+      type: object
+      required:
+        - index
+        - seller_st_account_address
+        - buyer_st_account_address
+        - sc_token_address
+        - seller_sc_account_address
+        - buyer_sc_account_address
+        - st_value
+        - sc_value
+        - state
+        - memo
+      title: IbetWSTTrade
+      description: IbetWST Trade schema
     IbetWSTTransactionResponse:
       properties:
         tx_id:
@@ -15128,6 +15538,22 @@ components:
         - uploads
       title: ListBatchRegisterPersonalInfoUploadResponse
       description: List All Batch Register PersonalInfo Upload (Response)
+    ListIbetWSTTradesResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        trades:
+          items:
+            $ref: '#/components/schemas/IbetWSTTrade'
+          type: array
+          title: Trades
+          description: List of IbetWST trades
+      type: object
+      required:
+        - result_set
+        - trades
+      title: ListIbetWSTTradesResponse
+      description: ListIbetWSTTrades response schema
     ListTokenHistorySortItem:
       type: string
       enum:
@@ -16006,6 +16432,61 @@ components:
         - key_manager
       title: RegisterPersonalInfoRequest
       description: Register Personal Information schema (REQUEST)
+    RequestIbetWSTTradeRequest:
+      properties:
+        seller_st_account_address:
+          type: string
+          title: Seller St Account Address
+          description: IbetWST seller account address
+        buyer_st_account_address:
+          type: string
+          title: Buyer St Account Address
+          description: IbetWST buyer account address
+        sc_token_address:
+          type: string
+          title: Sc Token Address
+          description: SC token contract address
+        seller_sc_account_address:
+          type: string
+          title: Seller Sc Account Address
+          description: SC seller account address
+        buyer_sc_account_address:
+          type: string
+          title: Buyer Sc Account Address
+          description: SC buyer account address
+        st_value:
+          type: integer
+          title: St Value
+          description: Value of IbetWST to trade
+        sc_value:
+          type: integer
+          title: Sc Value
+          description: Value of SC token to trade
+        memo:
+          type: string
+          title: Memo
+          description: Memo for the trade
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - seller_st_account_address
+        - buyer_st_account_address
+        - sc_token_address
+        - seller_sc_account_address
+        - buyer_sc_account_address
+        - st_value
+        - sc_value
+        - memo
+        - authorizer
+        - authorization
+      title: RequestIbetWSTTradeRequest
+      description: RequestIbetWSTTrade request schema
     ResponseLimitExceededErrorCode:
       type: integer
       enum:

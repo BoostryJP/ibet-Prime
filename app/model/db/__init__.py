@@ -48,7 +48,15 @@ from .dvp import (
 )
 from .e2e_messaging_account import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from .freeze_log_account import FreezeLogAccount
-from .ibet_wst import EthIbetWSTTx, IbetWSTTxStatus, IbetWSTTxType, IbetWSTVersion
+from .ibet_wst import (
+    EthIbetWSTTx,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
+    IDXEthIbetWSTTrade,
+    IDXEthIbetWSTTradeBlockNumber,
+    IDXEthIbetWSTTradeState,
+)
 from .idx_block_data import IDXBlockData, IDXBlockDataBlockNumber
 from .idx_dvp_delivery import DeliveryStatus, IDXDelivery, IDXDeliveryBlockNumber
 from .idx_e2e_messaging import IDXE2EMessaging, IDXE2EMessagingBlockNumber

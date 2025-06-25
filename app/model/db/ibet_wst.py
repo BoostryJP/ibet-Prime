@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from enum import IntEnum, StrEnum
 from typing import TypedDict
 
-from sqlalchemy import JSON, BigInteger, Boolean, Integer, String
+from sqlalchemy import JSON, BigInteger, Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -53,10 +53,10 @@ class IbetWSTTxStatus(IntEnum):
 
 
 class IbetWSTAuthorization(TypedDict):
-    nonce: str  # Nonce for the authorization
+    nonce: str  # Nonce for the authorization (Hexadecimal string)
     v: int  # v value for the authorization signature
-    r: str  # r value for the authorization signature
-    s: str  # s value for the authorization signature
+    r: str  # r value for the authorization signature (Hexadecimal string)
+    s: str  # s value for the authorization signature (Hexadecimal string)
 
 
 class EthIbetWSTTx(Base):
@@ -109,3 +109,63 @@ class EthIbetWSTTx(Base):
     # Block finalized
     # - True if the block is finalized, False otherwise
     finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class IDXEthIbetWSTTradeBlockNumber(Base):
+    """Synchronized blockNumber of IDXEthIbetWSTTrade"""
+
+    __tablename__ = "idx_eth_ibet_wst_trade_block_number"
+
+    # Record ID
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # Synchronized block number
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
+
+
+class IDXEthIbetWSTTradeState(StrEnum):
+    """IbetWST Trade State"""
+
+    PENDING = "Pending"
+    EXECUTED = "Executed"
+    CANCELLED = "Cancelled"
+
+
+class IDXEthIbetWSTTrade(Base):
+    """INDEX IbetWST Trade (Ethereum)"""
+
+    __tablename__ = "idx_eth_ibet_wst_trade"
+
+    # IbetWST contract address
+    ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # Index of the trade
+    index: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # Seller's IbetWST account address
+    seller_st_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # Buyer's IbetWST account address
+    buyer_st_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # StableCoin contract address
+    sc_token_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # Seller's StableCoin account address
+    seller_sc_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # Buyer's StableCoin account address
+    buyer_sc_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # IbetWST trade amount
+    st_value: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # StableCoin trade amount
+    sc_value: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # Trade state
+    state: Mapped[IDXEthIbetWSTTradeState] = mapped_column(
+        String(20), nullable=False, index=True
+    )
+    # Memo
+    memo: Mapped[str] = mapped_column(Text)

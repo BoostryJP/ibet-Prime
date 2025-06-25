@@ -17,33 +17,46 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Annotated
+import uuid
+from typing import Annotated, Sequence
 
 import pytz
 from eth_utils import to_checksum_address
 from fastapi import APIRouter, HTTPException, Path, Query
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import and_, asc, desc, func, select
 
 import config
 from app.database import DBAsyncSession
 from app.model import EthereumAddress
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
     Token,
     TokenType,
 )
+from app.model.db.ibet_wst import IbetWSTAuthorization, IDXEthIbetWSTTrade
 from app.model.eth import IbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
+    AcceptIbetWSTTradeRequest,
+    CancelIbetWSTTradeRequest,
     GetIbetWSTBalanceResponse,
+    GetIbetWSTTradeResponse,
     GetIbetWSTTransactionResponse,
     GetIbetWSTWhitelistResponse,
+    IbetWSTTransactionResponse,
     ListAllIbetWSTTokensQuery,
     ListAllIbetWSTTokensResponse,
     ListAllIbetWSTTokensSortItem,
+    ListIbetWSTTradesQuery,
+    ListIbetWSTTradesResponse,
+    RequestIbetWSTTradeRequest,
 )
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
+from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(prefix="/ibet_wst", tags=["[misc] ibet_wst"])
 local_tz = pytz.timezone(config.TZ)
@@ -239,3 +252,293 @@ async def get_ibet_wst_whitelist(
     )
 
     return json_response({"whitelisted": is_whitelisted})
+
+
+# POST: /ibet_wst/trades/{ibet_wst_address}/request
+@router.post(
+    "/trades/{ibet_wst_address}/request",
+    operation_id="RequestIbetWSTTrade",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(422),
+)
+async def request_ibet_wst_trade(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    req_params: RequestIbetWSTTradeRequest,
+):
+    """
+    Request an IbetWST trade
+
+    - This endpoint allows a user to send requestTradeWithAuthorization transaction to the IbetWST contract.
+    """
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.REQUEST_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = {
+        "sellerSTAccountAddress": req_params.seller_st_account_address,
+        "buyerSTAccountAddress": req_params.buyer_st_account_address,
+        "SCTokenAddress": req_params.sc_token_address,
+        "sellerSCAccountAddress": req_params.seller_sc_account_address,
+        "buyerSCAccountAddress": req_params.buyer_sc_account_address,
+        "STValue": req_params.st_value,
+        "SCValue": req_params.sc_value,
+        "memo": req_params.memo,
+    }
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
+
+
+# POST: /ibet_wst/trades/{ibet_wst_address}/cancel
+@router.post(
+    "/trades/{ibet_wst_address}/cancel",
+    operation_id="CancelIbetWSTTrade",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(422),
+)
+async def cancel_ibet_wst_trade(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    req_params: CancelIbetWSTTradeRequest,
+):
+    """
+    Cancel an IbetWST trade
+
+    - This endpoint allows a user to send cancelTradeWithAuthorization transaction to the IbetWST contract.
+    """
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.CANCEL_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = {
+        "index": req_params.index,
+    }
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
+
+
+# POST: /ibet_wst/trades/{ibet_wst_address}/accept
+@router.post(
+    "/trades/{ibet_wst_address}/accept",
+    operation_id="AcceptIbetWSTTrade",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(422),
+)
+async def accept_ibet_wst_trade(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    req_params: AcceptIbetWSTTradeRequest,
+):
+    """
+    Accept an IbetWST trade
+
+    - This endpoint allows a user to send acceptTradeWithAuthorization transaction to the IbetWST contract.
+    """
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.ACCEPT_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = {
+        "index": req_params.index,
+    }
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
+
+
+# GET: /ibet_wst/trades/{ibet_wst_address}
+@router.get(
+    "/trades/{ibet_wst_address}",
+    operation_id="ListIbetWSTTrades",
+    response_model=ListIbetWSTTradesResponse,
+    responses=get_routers_responses(422),
+)
+async def list_ibet_wst_trades(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    query: Annotated[
+        ListIbetWSTTradesQuery, Query(description="Query parameters for listing trades")
+    ],
+):
+    """
+    List IbetWST trades
+
+    - This endpoint retrieves a list of trades from the IbetWST contract based on the provided query parameters.
+    """
+    # Base Query
+    stmt = select(IDXEthIbetWSTTrade).where(
+        IDXEthIbetWSTTrade.ibet_wst_address == ibet_wst_address
+    )
+    total = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXEthIbetWSTTrade)
+        .order_by(None)
+    )
+
+    # Search Filter
+    if query.seller_st_account_address is not None:
+        stmt = stmt.where(
+            IDXEthIbetWSTTrade.seller_st_account_address
+            == query.seller_st_account_address
+        )
+    if query.buyer_st_account_address is not None:
+        stmt = stmt.where(
+            IDXEthIbetWSTTrade.buyer_st_account_address
+            == query.buyer_st_account_address
+        )
+    if query.sc_token_address is not None:
+        stmt = stmt.where(IDXEthIbetWSTTrade.sc_token_address == query.sc_token_address)
+    if query.seller_sc_account_address is not None:
+        stmt = stmt.where(
+            IDXEthIbetWSTTrade.seller_sc_account_address
+            == query.seller_sc_account_address
+        )
+    if query.buyer_sc_account_address is not None:
+        stmt = stmt.where(
+            IDXEthIbetWSTTrade.buyer_sc_account_address
+            == query.buyer_sc_account_address
+        )
+    if query.state is not None:
+        stmt = stmt.where(IDXEthIbetWSTTrade.state == query.state)
+    count = await db.scalar(
+        stmt.with_only_columns(func.count())
+        .select_from(IDXEthIbetWSTTrade)
+        .order_by(None)
+    )
+
+    # Sort
+    stmt = stmt.order_by(asc(IDXEthIbetWSTTrade.index))
+
+    # Pagination
+    if query.limit is not None:
+        stmt = stmt.limit(query.limit)
+    if query.offset is not None:
+        stmt = stmt.offset(query.offset)
+
+    # Execute Query
+    _trades: Sequence[IDXEthIbetWSTTrade] = (await db.scalars(stmt)).all()
+
+    # Response
+    trade_list = [
+        {
+            "index": trade.index,
+            "seller_st_account_address": trade.seller_st_account_address,
+            "buyer_st_account_address": trade.buyer_st_account_address,
+            "sc_token_address": trade.sc_token_address,
+            "seller_sc_account_address": trade.seller_sc_account_address,
+            "buyer_sc_account_address": trade.buyer_sc_account_address,
+            "st_value": trade.st_value,
+            "sc_value": trade.sc_value,
+            "state": trade.state,
+            "memo": trade.memo,
+        }
+        for trade in _trades
+    ]
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": query.offset,
+            "limit": query.limit,
+            "total": total,
+        },
+        "trades": trade_list,
+    }
+    return json_response(resp)
+
+
+# GET: /ibet_wst/trades/{ibet_wst_address}/{index}
+@router.get(
+    "/trades/{ibet_wst_address}/{index}",
+    operation_id="GetIbetWSTTrade",
+    response_model=GetIbetWSTTradeResponse,
+    responses=get_routers_responses(404, 422),
+)
+async def get_ibet_wst_trade(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    index: Annotated[int, Path(description="Trade index")],
+):
+    """
+    Get details of a specific IbetWST trade
+
+    - This endpoint retrieves the details of a specific trade by its index from the IbetWST contract.
+    """
+    # Get Trade
+    trade: IDXEthIbetWSTTrade | None = (
+        await db.scalars(
+            select(IDXEthIbetWSTTrade).where(
+                and_(
+                    IDXEthIbetWSTTrade.ibet_wst_address == ibet_wst_address,
+                    IDXEthIbetWSTTrade.index == index,
+                )
+            )
+        )
+    ).first()
+    if trade is None:
+        raise HTTPException(status_code=404, detail="Trade not found")
+
+    # Response
+    resp = {
+        "index": trade.index,
+        "seller_st_account_address": trade.seller_st_account_address,
+        "buyer_st_account_address": trade.buyer_st_account_address,
+        "sc_token_address": trade.sc_token_address,
+        "seller_sc_account_address": trade.seller_sc_account_address,
+        "buyer_sc_account_address": trade.buyer_sc_account_address,
+        "st_value": trade.st_value,
+        "sc_value": trade.sc_value,
+        "state": trade.state,
+        "memo": trade.memo,
+    }
+    return json_response(resp)

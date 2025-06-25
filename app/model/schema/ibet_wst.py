@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from enum import StrEnum
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 from app.model import EthereumAddress
 from app.model.schema.base import (
@@ -47,6 +47,38 @@ class IbetWSTToken(BaseModel):
         description="ibet token attributes"
     )
     created: str = Field(description="Created datetime")
+
+
+class IbetWSTAuthorization(BaseModel):
+    """IbetWST Authorization schema"""
+
+    nonce: str = Field(
+        ..., description="Nonce for the authorization (Hexadecimal string)"
+    )
+    v: int = Field(..., description="v value for the authorization signature")
+    r: str = Field(
+        ..., description="r value for the authorization signature (Hexadecimal string)"
+    )
+    s: str = Field(
+        ..., description="s value for the authorization signature (Hexadecimal string)"
+    )
+
+
+class IbetWSTTrade(BaseModel):
+    """IbetWST Trade schema"""
+
+    index: int = Field(description="Trade index")
+    seller_st_account_address: str = Field(description="IbetWST seller account address")
+    buyer_st_account_address: str = Field(description="IbetWST buyer account address")
+    sc_token_address: str = Field(description="SC token contract address")
+    seller_sc_account_address: str = Field(description="SC seller account address")
+    buyer_sc_account_address: str = Field(description="SC buyer account address")
+    st_value: int = Field(description="Value of IbetWST to trade")
+    sc_value: int = Field(description="Value of SC token to trade")
+    state: Literal["Pending", "Executed", "Cancelled"] = Field(
+        description="Trade state"
+    )
+    memo: str = Field(description="Memo for the trade")
 
 
 ############################
@@ -89,6 +121,74 @@ class DeleteIbetWSTWhitelistRequest(BaseModel):
     """DeleteIbetWSTWhitelist request schema"""
 
     account_address: EthereumAddress = Field(description="Account address to whitelist")
+
+
+class RequestIbetWSTTradeRequest(BaseModel):
+    """RequestIbetWSTTrade request schema"""
+
+    seller_st_account_address: EthereumAddress = Field(
+        description="IbetWST seller account address"
+    )
+    buyer_st_account_address: EthereumAddress = Field(
+        description="IbetWST buyer account address"
+    )
+    sc_token_address: EthereumAddress = Field(description="SC token contract address")
+    seller_sc_account_address: EthereumAddress = Field(
+        description="SC seller account address"
+    )
+    buyer_sc_account_address: EthereumAddress = Field(
+        description="SC buyer account address"
+    )
+    st_value: int = Field(description="Value of IbetWST to trade")
+    sc_value: int = Field(description="Value of SC token to trade")
+    memo: str = Field(description="Memo for the trade")
+    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorization: IbetWSTAuthorization = Field(
+        description="Authorization for the transaction"
+    )
+
+
+class CancelIbetWSTTradeRequest(BaseModel):
+    """CancelIbetWSTTrade request schema"""
+
+    index: int = Field(description="Trade index")
+    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorization: IbetWSTAuthorization = Field(
+        description="Authorization for the transaction"
+    )
+
+
+class AcceptIbetWSTTradeRequest(BaseModel):
+    """AcceptIbetWSTTrade request schema"""
+
+    index: int = Field(description="Trade index")
+    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorization: IbetWSTAuthorization = Field(
+        description="Authorization for the transaction"
+    )
+
+
+class ListIbetWSTTradesQuery(BasePaginationQuery):
+    """ListIbetWSTTrades request query schema"""
+
+    seller_st_account_address: Optional[EthereumAddress] = Field(
+        None, description="IbetWST seller account address"
+    )
+    buyer_st_account_address: Optional[EthereumAddress] = Field(
+        None, description="IbetWST buyer account address"
+    )
+    sc_token_address: Optional[EthereumAddress] = Field(
+        None, description="SC token contract address"
+    )
+    seller_sc_account_address: Optional[EthereumAddress] = Field(
+        None, description="SC seller account address"
+    )
+    buyer_sc_account_address: Optional[EthereumAddress] = Field(
+        None, description="SC buyer account address"
+    )
+    state: Optional[Literal["Pending", "Executed", "Cancelled"]] = Field(
+        None, description="Trade state"
+    )
 
 
 ############################
@@ -149,3 +249,16 @@ class GetIbetWSTWhitelistResponse(BaseModel):
     whitelisted: bool = Field(
         description="True if the account is whitelisted, False otherwise"
     )
+
+
+class ListIbetWSTTradesResponse(BaseModel):
+    """ListIbetWSTTrades response schema"""
+
+    result_set: ResultSet
+    trades: list[IbetWSTTrade] = Field(description="List of IbetWST trades")
+
+
+class GetIbetWSTTradeResponse(RootModel[IbetWSTTrade]):
+    """IbetWSTToken response schema"""
+
+    pass

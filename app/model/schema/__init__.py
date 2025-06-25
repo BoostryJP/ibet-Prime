@@ -95,9 +95,12 @@ from .holder import (
     RegisterHolderExtraInfoRequest,
 )
 from .ibet_wst import (
+    AcceptIbetWSTTradeRequest,
     AddIbetWSTWhitelistRequest,
+    CancelIbetWSTTradeRequest,
     DeleteIbetWSTWhitelistRequest,
     GetIbetWSTBalanceResponse,
+    GetIbetWSTTradeResponse,
     GetIbetWSTTransactionResponse,
     GetIbetWSTWhitelistResponse,
     IbetWSTToken,
@@ -105,6 +108,9 @@ from .ibet_wst import (
     ListAllIbetWSTTokensQuery,
     ListAllIbetWSTTokensResponse,
     ListAllIbetWSTTokensSortItem,
+    ListIbetWSTTradesQuery,
+    ListIbetWSTTradesResponse,
+    RequestIbetWSTTradeRequest,
 )
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse

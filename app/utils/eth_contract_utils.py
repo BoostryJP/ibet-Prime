@@ -227,7 +227,7 @@ class EthAsyncContractUtils:
 
     @staticmethod
     async def get_finalized_block_number():
-        """Get block by block number
+        """Get finalized block number
 
         :return: finalized block number
         """
@@ -237,7 +237,7 @@ class EthAsyncContractUtils:
 
     @staticmethod
     async def get_event_logs(
-        contract: AsyncContract,
+        contract: AsyncContract | EthAsyncContractEventsView,
         event: str,
         block_from: int = None,
         block_to: int = None,

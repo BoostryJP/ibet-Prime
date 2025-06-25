@@ -375,7 +375,7 @@ async def add_ibet_wst_whitelist(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = token.ibet_wst_address
-    wst_tx.tx_params = {"account_address": data.account_address}
+    wst_tx.tx_params = {"accountAddress": data.account_address}
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = issuer_address
     wst_tx.authorization = IbetWSTAuthorization(
@@ -486,7 +486,7 @@ async def delete_ibet_wst_whitelist(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = token.ibet_wst_address
-    wst_tx.tx_params = {"account_address": data.account_address}
+    wst_tx.tx_params = {"accountAddress": data.account_address}
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = issuer_address
     wst_tx.authorization = IbetWSTAuthorization(
