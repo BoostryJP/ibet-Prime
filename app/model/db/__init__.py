@@ -50,6 +50,11 @@ from .e2e_messaging_account import E2EMessagingAccount, E2EMessagingAccountRsaKe
 from .freeze_log_account import FreezeLogAccount
 from .ibet_wst import (
     EthIbetWSTTx,
+    EthToIbetBridgeTx,
+    EthToIbetBridgeTxStatus,
+    EthToIbetBridgeTxType,
+    IbetWSTAuthorization,
+    IbetWSTBridgeSyncedBlockNumber,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,

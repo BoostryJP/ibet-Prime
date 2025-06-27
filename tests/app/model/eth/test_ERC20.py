@@ -55,7 +55,7 @@ async def deploy_token(
 async def mint_token(
     contract_address: str,
     to: str,
-    amount: int,
+    value: int,
     tx_from: dict,
 ) -> None:
     """
@@ -63,7 +63,7 @@ async def mint_token(
 
     :param contract_address: Address of the ERC20 contract.
     :param to: Address of the recipient.
-    :param amount: Amount of tokens to mint.
+    :param value: Value of tokens to mint.
     :param tx_from: Owner of the contract.
     """
     # Get contract
@@ -73,7 +73,7 @@ async def mint_token(
     )
 
     # Mint tokens
-    tx = await contract.functions.mint(to, amount).build_transaction(
+    tx = await contract.functions.mint(to, value).build_transaction(
         {
             "from": tx_from["address"],
             "gas": 2000000,
@@ -89,7 +89,7 @@ async def mint_token(
 async def approve_token(
     contract_address: str,
     spender: str,
-    amount: int,
+    value: int,
     tx_from: dict,
 ) -> None:
     """
@@ -97,7 +97,7 @@ async def approve_token(
 
     :param contract_address: Address of the ERC20 contract.
     :param spender: Address of the spender.
-    :param amount: Amount of tokens to approve.
+    :param value: Value of tokens to approve.
     :param tx_from: Owner of the contract.
     """
     # Get contract
@@ -107,7 +107,7 @@ async def approve_token(
     )
 
     # Approve spender
-    tx = await contract.functions.approve(spender, amount).build_transaction(
+    tx = await contract.functions.approve(spender, value).build_transaction(
         {
             "from": tx_from["address"],
             "gas": 2000000,
@@ -186,7 +186,7 @@ class TestBalanceOf:
         await mint_token(
             contract_address=contract_address,
             to=self.user1["address"],
-            amount=1000,
+            value=1000,
             tx_from=self.issuer,
         )
 
@@ -239,7 +239,7 @@ class TestAllowance:
         await mint_token(
             contract_address=contract_address,
             to=self.user1["address"],
-            amount=1000,
+            value=1000,
             tx_from=self.issuer,
         )
 
@@ -247,7 +247,7 @@ class TestAllowance:
         await approve_token(
             contract_address=contract_address,
             spender=self.user2["address"],
-            amount=500,
+            value=500,
             tx_from=self.user1,
         )
 

@@ -41,6 +41,7 @@ from app.model.eth import IbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     AcceptIbetWSTTradeRequest,
+    BurnIbetWSTRequest,
     CancelIbetWSTTradeRequest,
     GetIbetWSTBalanceResponse,
     GetIbetWSTTradeResponse,
@@ -185,6 +186,51 @@ async def get_ibet_wst_balance(
     balance = await wst_contract.balance_of(to_checksum_address(account_address))
 
     return json_response({"balance": balance})
+
+
+# POST: /ibet_wst/balances/{account_address}/{ibet_wst_address}/burn
+@router.post(
+    "/balances/{account_address}/{ibet_wst_address}/burn",
+    operation_id="BurnIbetWSTBalance",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(422),
+)
+async def burn_ibet_wst_balance(
+    db: DBAsyncSession,
+    account_address: Annotated[EthereumAddress, Path(description="Account address")],
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    req_params: BurnIbetWSTRequest,
+):
+    """
+    Burn IbetWST balance
+    - This endpoint allows a user to send burnWithAuthorization transaction to the IbetWST contract.
+    """
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.BURN
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = {
+        "from_address": to_checksum_address(account_address),
+        "value": req_params.value,
+    }
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
 
 
 # GET: /ibet_wst/transactions/{tx_id}

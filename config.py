@@ -284,6 +284,17 @@ ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = (
     else 10
 )
 
+# IbetWST Bridge
+IBET_WST_BRIDGE_INTERVAL = (
+    int(os.environ.get("IBET_WST_BRIDGE_INTERVAL"))
+    if os.environ.get("IBET_WST_BRIDGE_INTERVAL")
+    else 10
+)
+IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE = (
+    int(os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE"))
+    if os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE")
+    else 10000
+)
 
 ####################################################
 # Password settings
