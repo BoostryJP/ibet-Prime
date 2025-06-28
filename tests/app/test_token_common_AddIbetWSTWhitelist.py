@@ -101,7 +101,7 @@ class TestAddIbetWSTWhitelist:
         assert wst_tx.status == IbetWSTTxStatus.PENDING
         assert wst_tx.ibet_wst_address == self.ibet_wst_address
         assert wst_tx.tx_params == {
-            "accountAddress": self.user1["address"],
+            "account_address": self.user1["address"],
         }
         assert wst_tx.tx_sender == self.relayer["address"]
         assert wst_tx.authorizer == self.issuer["address"]

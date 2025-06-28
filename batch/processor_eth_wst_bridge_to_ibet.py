@@ -34,6 +34,8 @@ from app.model.db import (
     EthToIbetBridgeTx,
     EthToIbetBridgeTxStatus,
     EthToIbetBridgeTxType,
+    IbetBridgeTxParamsForceChangeLockedAccount,
+    IbetBridgeTxParamsForceUnlock,
 )
 from app.model.ibet import IbetSecurityTokenInterface
 from app.model.ibet.tx_params.ibet_security_token import (
@@ -103,13 +105,14 @@ class WSTBridgeToIbetProcessor:
 
                 # Depending on the transaction type, call the appropriate method
                 if pending_tx.tx_type == EthToIbetBridgeTxType.FORCE_UNLOCK:
+                    tx_params: IbetBridgeTxParamsForceUnlock = pending_tx.tx_params
                     tx_hash, tx_receipt = await ibet_token_contract.force_unlock(
                         data=ForceUnlockParams(
-                            lock_address=pending_tx.tx_params["lockAddress"],
-                            account_address=pending_tx.tx_params["accountAddress"],
-                            recipient_address=pending_tx.tx_params["recipientAddress"],
-                            value=pending_tx.tx_params["value"],
-                            data=json.dumps(pending_tx.tx_params["data"]),
+                            lock_address=tx_params["lock_address"],
+                            account_address=tx_params["account_address"],
+                            recipient_address=tx_params["recipient_address"],
+                            value=tx_params["value"],
+                            data=json.dumps(tx_params["data"]),
                         ),
                         tx_from=pending_tx.tx_sender,
                         private_key=issuer_pk,
@@ -118,20 +121,19 @@ class WSTBridgeToIbetProcessor:
                     pending_tx.tx_type
                     == EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
                 ):
+                    tx_params: IbetBridgeTxParamsForceChangeLockedAccount = (
+                        pending_tx.tx_params
+                    )
                     (
                         tx_hash,
                         tx_receipt,
                     ) = await ibet_token_contract.force_change_locked_account(
                         data=ForceChangeLockedAccountParams(
-                            lock_address=pending_tx.tx_params["lockAddress"],
-                            before_account_address=pending_tx.tx_params[
-                                "beforeAccountAddress"
-                            ],
-                            after_account_address=pending_tx.tx_params[
-                                "afterAccountAddress"
-                            ],
-                            value=pending_tx.tx_params["value"],
-                            data=json.dumps(pending_tx.tx_params["data"]),
+                            lock_address=tx_params["lock_address"],
+                            before_account_address=tx_params["before_account_address"],
+                            after_account_address=tx_params["after_account_address"],
+                            value=tx_params["value"],
+                            data=json.dumps(tx_params["data"]),
                         ),
                         tx_from=pending_tx.tx_sender,
                         private_key=issuer_pk,

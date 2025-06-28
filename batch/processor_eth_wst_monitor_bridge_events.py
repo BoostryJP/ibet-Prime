@@ -39,8 +39,11 @@ from app.model.db import (
     EthToIbetBridgeTx,
     EthToIbetBridgeTxStatus,
     EthToIbetBridgeTxType,
+    IbetBridgeTxParamsForceChangeLockedAccount,
+    IbetBridgeTxParamsForceUnlock,
     IbetWSTAuthorization,
     IbetWSTBridgeSyncedBlockNumber,
+    IbetWSTTxParamsMint,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
@@ -429,10 +432,10 @@ class WSTBridgeMonitoringProcessor:
                     wst_tx.version = IbetWSTVersion.V_1
                     wst_tx.status = IbetWSTTxStatus.PENDING
                     wst_tx.ibet_wst_address = wst_address
-                    wst_tx.tx_params = {
-                        "to": args["accountAddress"],
-                        "value": args["value"],
-                    }
+                    wst_tx.tx_params = IbetWSTTxParamsMint(
+                        to_address=args["accountAddress"],
+                        value=args["value"],
+                    )
                     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
                     wst_tx.authorizer = issuer.issuer_address
                     wst_tx.authorization = IbetWSTAuthorization(
@@ -469,13 +472,13 @@ class WSTBridgeMonitoringProcessor:
                 bridge_tx.token_address = bridge_event_viewer.ibet_token_address
                 bridge_tx.tx_type = EthToIbetBridgeTxType.FORCE_UNLOCK
                 bridge_tx.status = EthToIbetBridgeTxStatus.PENDING
-                bridge_tx.tx_params = {
-                    "lockAddress": bridge_event_viewer.issuer_address,
-                    "accountAddress": args["from"],
-                    "recipientAddress": args["from"],
-                    "value": args["value"],
-                    "data": BridgeMessage(message="ibet_wst_bridge").model_dump(),
-                }
+                bridge_tx.tx_params = IbetBridgeTxParamsForceUnlock(
+                    lock_address=bridge_event_viewer.issuer_address,
+                    account_address=args["from"],
+                    recipient_address=args["from"],
+                    value=args["value"],
+                    data=BridgeMessage(message="ibet_wst_bridge").model_dump(),
+                )
                 bridge_tx.tx_sender = bridge_event_viewer.issuer_address
                 db_session.add(bridge_tx)
 
@@ -503,13 +506,13 @@ class WSTBridgeMonitoringProcessor:
                 bridge_tx.token_address = bridge_event_viewer.ibet_token_address
                 bridge_tx.tx_type = EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
                 bridge_tx.status = EthToIbetBridgeTxStatus.PENDING
-                bridge_tx.tx_params = {
-                    "lockAddress": bridge_event_viewer.issuer_address,
-                    "beforeAccountAddress": args["from"],
-                    "afterAccountAddress": args["to"],
-                    "value": args["value"],
-                    "data": BridgeMessage(message="ibet_wst_bridge").model_dump(),
-                }
+                bridge_tx.tx_params = IbetBridgeTxParamsForceChangeLockedAccount(
+                    lock_address=bridge_event_viewer.issuer_address,
+                    before_account_address=args["from"],
+                    after_account_address=args["to"],
+                    value=args["value"],
+                    data=BridgeMessage(message="ibet_wst_bridge").model_dump(),
+                )
                 bridge_tx.tx_sender = bridge_event_viewer.issuer_address
                 db_session.add(bridge_tx)
 

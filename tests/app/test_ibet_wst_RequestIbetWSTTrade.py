@@ -117,13 +117,13 @@ class TestAddIbetWSTWhitelist:
         assert wst_tx.status == IbetWSTTxStatus.PENDING
         assert wst_tx.ibet_wst_address == self.ibet_wst_address
         assert wst_tx.tx_params == {
-            "sellerSTAccountAddress": self.user1["address"],
-            "buyerSTAccountAddress": self.user2["address"],
-            "SCTokenAddress": self.sc_token_address,
-            "sellerSCAccountAddress": self.user1["address"],
-            "buyerSCAccountAddress": self.user2["address"],
-            "STValue": 1000,
-            "SCValue": 2000,
+            "seller_st_account_address": self.user1["address"],
+            "buyer_st_account_address": self.user2["address"],
+            "sc_token_address": self.sc_token_address,
+            "seller_sc_account_address": self.user1["address"],
+            "buyer_sc_account_address": self.user2["address"],
+            "st_value": 1000,
+            "sc_value": 2000,
             "memo": "Test Trade",
         }
         assert wst_tx.tx_sender == self.relayer["address"]

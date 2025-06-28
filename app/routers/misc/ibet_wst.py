@@ -30,13 +30,18 @@ from app.database import DBAsyncSession
 from app.model import EthereumAddress
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTAuthorization,
+    IbetWSTTxParamsAcceptTrade,
+    IbetWSTTxParamsBurn,
+    IbetWSTTxParamsCancelTrade,
+    IbetWSTTxParamsRequestTrade,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    IDXEthIbetWSTTrade,
     Token,
     TokenType,
 )
-from app.model.db.ibet_wst import IbetWSTAuthorization, IDXEthIbetWSTTrade
 from app.model.eth import IbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
@@ -215,10 +220,10 @@ async def burn_ibet_wst_balance(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = ibet_wst_address
-    wst_tx.tx_params = {
-        "from_address": to_checksum_address(account_address),
-        "value": req_params.value,
-    }
+    wst_tx.tx_params = IbetWSTTxParamsBurn(
+        from_address=to_checksum_address(account_address),
+        value=req_params.value,
+    )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = req_params.authorizer
     wst_tx.authorization = IbetWSTAuthorization(
@@ -327,16 +332,16 @@ async def request_ibet_wst_trade(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = ibet_wst_address
-    wst_tx.tx_params = {
-        "sellerSTAccountAddress": req_params.seller_st_account_address,
-        "buyerSTAccountAddress": req_params.buyer_st_account_address,
-        "SCTokenAddress": req_params.sc_token_address,
-        "sellerSCAccountAddress": req_params.seller_sc_account_address,
-        "buyerSCAccountAddress": req_params.buyer_sc_account_address,
-        "STValue": req_params.st_value,
-        "SCValue": req_params.sc_value,
-        "memo": req_params.memo,
-    }
+    wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
+        seller_st_account_address=req_params.seller_st_account_address,
+        buyer_st_account_address=req_params.buyer_st_account_address,
+        sc_token_address=req_params.sc_token_address,
+        seller_sc_account_address=req_params.seller_sc_account_address,
+        buyer_sc_account_address=req_params.buyer_sc_account_address,
+        st_value=req_params.st_value,
+        sc_value=req_params.sc_value,
+        memo=req_params.memo,
+    )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = req_params.authorizer
     wst_tx.authorization = IbetWSTAuthorization(
@@ -378,9 +383,7 @@ async def cancel_ibet_wst_trade(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = ibet_wst_address
-    wst_tx.tx_params = {
-        "index": req_params.index,
-    }
+    wst_tx.tx_params = IbetWSTTxParamsCancelTrade(index=req_params.index)
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = req_params.authorizer
     wst_tx.authorization = IbetWSTAuthorization(
@@ -422,9 +425,7 @@ async def accept_ibet_wst_trade(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = ibet_wst_address
-    wst_tx.tx_params = {
-        "index": req_params.index,
-    }
+    wst_tx.tx_params = IbetWSTTxParamsAcceptTrade(index=req_params.index)
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = req_params.authorizer
     wst_tx.authorization = IbetWSTAuthorization(

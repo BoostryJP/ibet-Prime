@@ -39,7 +39,11 @@ from app.model.db import (
     TokenStatus,
     TokenType,
 )
-from app.model.db.ibet_wst import IbetWSTAuthorization
+from app.model.db.ibet_wst import (
+    IbetWSTAuthorization,
+    IbetWSTTxParamsAddAccountWhiteList,
+    IbetWSTTxParamsDeleteAccountWhiteList,
+)
 from app.model.eth import IbetWST, IbetWSTDigestHelper
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
@@ -375,7 +379,9 @@ async def add_ibet_wst_whitelist(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = token.ibet_wst_address
-    wst_tx.tx_params = {"accountAddress": data.account_address}
+    wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+        account_address=data.account_address
+    )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = issuer_address
     wst_tx.authorization = IbetWSTAuthorization(
@@ -486,7 +492,9 @@ async def delete_ibet_wst_whitelist(
     wst_tx.version = IbetWSTVersion.V_1
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = token.ibet_wst_address
-    wst_tx.tx_params = {"accountAddress": data.account_address}
+    wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
+        account_address=data.account_address
+    )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = issuer_address
     wst_tx.authorization = IbetWSTAuthorization(

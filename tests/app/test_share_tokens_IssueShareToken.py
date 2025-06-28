@@ -960,7 +960,7 @@ class TestIssueShareToken:
             assert ibet_wst_tx_1.status == IbetWSTTxStatus.PENDING
             assert ibet_wst_tx_1.tx_params == {
                 "name": "name_test1",
-                "initialOwner": test_account["address"],
+                "initial_owner": test_account["address"],
             }
             assert (
                 ibet_wst_tx_1.tx_sender == "0x1234567890123456789012345678901234567890"

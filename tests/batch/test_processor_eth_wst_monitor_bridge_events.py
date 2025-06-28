@@ -371,7 +371,7 @@ class TestProcessor:
         assert eth_tx.status == IbetWSTTxStatus.PENDING
         assert eth_tx.ibet_wst_address == self.ibet_wst_address_1
         assert eth_tx.tx_params == {
-            "to": self.user1["address"],
+            "to_address": self.user1["address"],
             "value": 1000,
         }
         assert eth_tx.tx_sender == self.relayer["address"]
@@ -590,9 +590,9 @@ class TestProcessor:
         assert ibet_tx.tx_type == EthToIbetBridgeTxType.FORCE_UNLOCK
         assert ibet_tx.status == EthToIbetBridgeTxStatus.PENDING
         assert ibet_tx.tx_params == {
-            "lockAddress": self.issuer["address"],
-            "accountAddress": self.user1["address"],
-            "recipientAddress": self.user1["address"],
+            "lock_address": self.issuer["address"],
+            "account_address": self.user1["address"],
+            "recipient_address": self.user1["address"],
             "value": 1000,
             "data": {"message": "ibet_wst_bridge"},
         }
@@ -700,9 +700,9 @@ class TestProcessor:
         assert ibet_tx.tx_type == EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
         assert ibet_tx.status == EthToIbetBridgeTxStatus.PENDING
         assert ibet_tx.tx_params == {
-            "lockAddress": self.issuer["address"],
-            "beforeAccountAddress": self.user1["address"],
-            "afterAccountAddress": self.user2["address"],
+            "lock_address": self.issuer["address"],
+            "before_account_address": self.user1["address"],
+            "after_account_address": self.user2["address"],
             "value": 1000,
             "data": {"message": "ibet_wst_bridge"},
         }

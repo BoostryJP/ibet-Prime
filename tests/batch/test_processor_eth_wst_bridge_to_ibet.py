@@ -30,6 +30,8 @@ from app.model.db import (
     EthToIbetBridgeTx,
     EthToIbetBridgeTxStatus,
     EthToIbetBridgeTxType,
+    IbetBridgeTxParamsForceChangeLockedAccount,
+    IbetBridgeTxParamsForceUnlock,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_eth_wst_bridge_to_ibet import (
@@ -106,13 +108,13 @@ class TestProcessor:
             token_address=self.ibet_token_address_1,
             tx_type=EthToIbetBridgeTxType.FORCE_UNLOCK,
             status=EthToIbetBridgeTxStatus.PENDING,
-            tx_params={
-                "lockAddress": self.issuer["address"],
-                "accountAddress": self.user1["address"],
-                "recipientAddress": self.user1["address"],
-                "value": 1000,
-                "data": {"message": "ibet_wst_bridge"},
-            },
+            tx_params=IbetBridgeTxParamsForceUnlock(
+                lock_address=self.issuer["address"],
+                account_address=self.user1["address"],
+                recipient_address=self.user1["address"],
+                value=1000,
+                data={"message": "ibet_wst_bridge"},
+            ),
             tx_sender=self.issuer["address"],
         )
         async_db.add(eth_to_ibet_tx)
@@ -169,13 +171,13 @@ class TestProcessor:
             token_address=self.ibet_token_address_1,
             tx_type=EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT,
             status=EthToIbetBridgeTxStatus.PENDING,
-            tx_params={
-                "lockAddress": self.issuer["address"],
-                "beforeAccountAddress": self.user1["address"],
-                "afterAccountAddress": self.user2["address"],
-                "value": 1000,
-                "data": {"message": "ibet_wst_bridge"},
-            },
+            tx_params=IbetBridgeTxParamsForceChangeLockedAccount(
+                lock_address=self.issuer["address"],
+                before_account_address=self.user1["address"],
+                after_account_address=self.user2["address"],
+                value=1000,
+                data={"message": "ibet_wst_bridge"},
+            ),
             tx_sender=self.issuer["address"],
         )
         async_db.add(eth_to_ibet_tx)
@@ -216,13 +218,13 @@ class TestProcessor:
             token_address=self.ibet_token_address_1,
             tx_type=EthToIbetBridgeTxType.FORCE_UNLOCK,
             status=EthToIbetBridgeTxStatus.PENDING,
-            tx_params={
-                "lockAddress": self.issuer["address"],
-                "accountAddress": self.user1["address"],
-                "recipientAddress": self.user1["address"],
-                "value": 1000,
-                "data": {"message": "ibet_wst_bridge"},
-            },
+            tx_params=IbetBridgeTxParamsForceUnlock(
+                lock_address=self.issuer["address"],
+                account_address=self.user1["address"],
+                recipient_address=self.user1["address"],
+                value=1000,
+                data={"message": "ibet_wst_bridge"},
+            ),
             tx_sender=self.issuer["address"],
         )
         async_db.add(eth_to_ibet_tx)
@@ -263,13 +265,13 @@ class TestProcessor:
             token_address=self.ibet_token_address_1,
             tx_type="unknown_type",  # Invalid transaction type
             status=EthToIbetBridgeTxStatus.PENDING,
-            tx_params={
-                "lockAddress": self.issuer["address"],
-                "accountAddress": self.user1["address"],
-                "recipientAddress": self.user1["address"],
-                "value": 1000,
-                "data": {"message": "ibet_wst_bridge"},
-            },
+            tx_params=IbetBridgeTxParamsForceUnlock(
+                lock_address=self.issuer["address"],
+                account_address=self.user1["address"],
+                recipient_address=self.user1["address"],
+                value=1000,
+                data={"message": "ibet_wst_bridge"},
+            ),
             tx_sender=self.issuer["address"],
         )
         async_db.add(eth_to_ibet_tx)
@@ -324,13 +326,13 @@ class TestProcessor:
             token_address=self.ibet_token_address_1,
             tx_type=EthToIbetBridgeTxType.FORCE_UNLOCK,
             status=EthToIbetBridgeTxStatus.PENDING,
-            tx_params={
-                "lockAddress": self.issuer["address"],
-                "accountAddress": self.user1["address"],
-                "recipientAddress": self.user1["address"],
-                "value": 1000,
-                "data": {"message": "ibet_wst_bridge"},
-            },
+            tx_params=IbetBridgeTxParamsForceUnlock(
+                lock_address=self.issuer["address"],
+                account_address=self.user1["address"],
+                recipient_address=self.user1["address"],
+                value=1000,
+                data={"message": "ibet_wst_bridge"},
+            ),
             tx_sender=self.issuer["address"],
         )
         async_db.add(eth_to_ibet_tx)
