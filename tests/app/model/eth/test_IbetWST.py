@@ -62,7 +62,7 @@ async def deploy_wst_token(
 async def mint_wst_token(
     contract_address: str,
     to: str,
-    amount: int,
+    value: int,
     tx_from: dict,
 ) -> None:
     """
@@ -70,7 +70,7 @@ async def mint_wst_token(
 
     :param contract_address: Address of the ERC20 contract.
     :param to: Address of the recipient.
-    :param amount: Amount of tokens to mint.
+    :param value: Value of tokens to mint.
     :param tx_from: Transaction sender (owner of the contract).
     """
     # Get contract
@@ -80,7 +80,7 @@ async def mint_wst_token(
     )
 
     # Mint tokens
-    tx = await contract.functions.mint(to, amount).build_transaction(
+    tx = await contract.functions.mint(to, value).build_transaction(
         {
             "from": tx_from["address"],
             "gas": 2000000,
@@ -207,7 +207,7 @@ async def deploy_erc20_token(
 async def mint_erc20_token(
     contract_address: str,
     to: str,
-    amount: int,
+    value: int,
     tx_from: dict,
 ) -> None:
     """
@@ -215,7 +215,7 @@ async def mint_erc20_token(
 
     :param contract_address: Address of the ERC20 contract.
     :param to: Address of the recipient.
-    :param amount: Amount of tokens to mint.
+    :param value: Value of tokens to mint.
     :param tx_from: Transaction sender (owner of the contract).
     """
     # Get contract
@@ -225,7 +225,7 @@ async def mint_erc20_token(
     )
 
     # Mint tokens
-    tx = await contract.functions.mint(to, amount).build_transaction(
+    tx = await contract.functions.mint(to, value).build_transaction(
         {
             "from": tx_from["address"],
             "gas": 2000000,
@@ -241,7 +241,7 @@ async def mint_erc20_token(
 async def erc20_approve_token(
     contract_address: str,
     spender: str,
-    amount: int,
+    value: int,
     tx_from: dict,
 ) -> None:
     """
@@ -249,7 +249,7 @@ async def erc20_approve_token(
 
     :param contract_address: Address of the ERC20 contract.
     :param spender: Address of the spender.
-    :param amount: Amount of tokens to approve.
+    :param value: Value of tokens to approve.
     :param tx_from: Transaction sender.
     """
     # Get contract
@@ -259,7 +259,7 @@ async def erc20_approve_token(
     )
 
     # Approve tokens
-    tx = await contract.functions.approve(spender, amount).build_transaction(
+    tx = await contract.functions.approve(spender, value).build_transaction(
         {
             "from": tx_from["address"],
             "gas": 2000000,
@@ -618,7 +618,7 @@ class TestMintWithAuthorization:
         digest = IbetWSTDigestHelper.generate_mint_digest(
             domain_separator=domain_separator,
             to_address=self.user1["address"],
-            amount=1000,
+            value=1000,
             nonce=nonce,
         )
 
@@ -630,7 +630,7 @@ class TestMintWithAuthorization:
         # Attempt to mint tokens with valid authorization
         tx_hash = await contract.mint_with_authorization(
             to_address=self.user1["address"],
-            amount=1000,
+            value=1000,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -674,7 +674,7 @@ class TestMintWithAuthorization:
         digest = IbetWSTDigestHelper.generate_mint_digest(
             domain_separator=domain_separator,
             to_address=self.user1["address"],
-            amount=1000,
+            value=1000,
             nonce=nonce,
         )
 
@@ -686,7 +686,7 @@ class TestMintWithAuthorization:
         # Attempt to mint tokens with invalid authorization
         tx_hash = await contract.mint_with_authorization(
             to_address=self.user1["address"],
-            amount=1000,
+            value=1000,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -733,7 +733,7 @@ class TestBurnWithAuthorization:
         await mint_wst_token(
             contract_address=contract_address,
             to=self.user1["address"],
-            amount=1000,
+            value=1000,
             tx_from=self.owner,
         )
 
@@ -750,7 +750,7 @@ class TestBurnWithAuthorization:
         digest = IbetWSTDigestHelper.generate_burn_digest(
             domain_separator=domain_separator,
             from_address=self.user1["address"],
-            amount=500,
+            value=500,
             nonce=nonce,
         )
 
@@ -762,7 +762,7 @@ class TestBurnWithAuthorization:
         # Attempt to burn tokens with valid authorization
         tx_hash = await contract.burn_with_authorization(
             from_address=self.user1["address"],
-            amount=500,
+            value=500,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -797,7 +797,7 @@ class TestBurnWithAuthorization:
         await mint_wst_token(
             contract_address=contract_address,
             to=self.user1["address"],
-            amount=1000,
+            value=1000,
             tx_from=self.owner,
         )
 
@@ -814,7 +814,7 @@ class TestBurnWithAuthorization:
         digest = IbetWSTDigestHelper.generate_burn_digest(
             domain_separator=domain_separator,
             from_address=self.user1["address"],
-            amount=500,
+            value=500,
             nonce=nonce,
         )
 
@@ -827,7 +827,7 @@ class TestBurnWithAuthorization:
         # Attempt to burn tokens with invalid authorization
         tx_hash = await contract.burn_with_authorization(
             from_address=self.user1["address"],
-            amount=500,
+            value=500,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -1386,7 +1386,7 @@ class TestAcceptTradeWithAuthorization:
         await erc20_approve_token(
             contract_address=sc_token_address,
             spender=st_token_address,
-            amount=2000,
+            value=2000,
             tx_from=self.buyer_sc,
         )
 
@@ -1490,7 +1490,7 @@ class TestAcceptTradeWithAuthorization:
         await erc20_approve_token(
             contract_address=sc_token_address,
             spender=st_token_address,
-            amount=2000,
+            value=2000,
             tx_from=self.buyer_sc,
         )
 

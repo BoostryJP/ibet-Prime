@@ -97,6 +97,7 @@ from .holder import (
 from .ibet_wst import (
     AcceptIbetWSTTradeRequest,
     AddIbetWSTWhitelistRequest,
+    BurnIbetWSTRequest,
     CancelIbetWSTTradeRequest,
     DeleteIbetWSTWhitelistRequest,
     GetIbetWSTBalanceResponse,

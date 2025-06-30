@@ -30,11 +30,19 @@ from sqlalchemy import select
 from app.model.db import (
     Account,
     EthIbetWSTTx,
+    IbetWSTAuthorization,
+    IbetWSTTxParamsAcceptTrade,
+    IbetWSTTxParamsAddAccountWhiteList,
+    IbetWSTTxParamsBurn,
+    IbetWSTTxParamsCancelTrade,
+    IbetWSTTxParamsDeleteAccountWhiteList,
+    IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsMint,
+    IbetWSTTxParamsRequestTrade,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
 )
-from app.model.db.ibet_wst import IbetWSTAuthorization
 from batch.processor_eth_wst_send_tx import LOG, ProcessorEthWSTSendTx
 from tests.account_config import default_eth_account
 
@@ -72,10 +80,10 @@ class TestProcessor:
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SUCCEEDED
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token",
+            initial_owner=self.issuer["address"],
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         async_db.add(wst_tx)
         await async_db.commit()
@@ -114,9 +122,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -124,10 +129,10 @@ class TestProcessor:
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token",
+            initial_owner=self.issuer["address"],
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         async_db.add(wst_tx)
         await async_db.commit()
@@ -173,9 +178,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -186,9 +188,9 @@ class TestProcessor:
         wst_tx.ibet_wst_address = to_checksum_address(
             "0x1234567890abcdef1234567890abcdef12345678"
         )
-        wst_tx.tx_params = {
-            "accountAddress": self.user1["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+            account_address=self.user1["address"],
+        )
         wst_tx.authorizer = self.issuer["address"]
         wst_tx.authorization = IbetWSTAuthorization(
             nonce=secrets.token_bytes(32).hex(),
@@ -241,9 +243,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -254,9 +253,9 @@ class TestProcessor:
         wst_tx.ibet_wst_address = to_checksum_address(
             "0x1234567890abcdef1234567890abcdef12345678"
         )
-        wst_tx.tx_params = {
-            "accountAddress": self.user1["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
+            account_address=self.user1["address"],
+        )
         wst_tx.authorizer = self.issuer["address"]
         wst_tx.authorization = IbetWSTAuthorization(
             nonce=secrets.token_bytes(32).hex(),
@@ -309,9 +308,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -322,18 +318,18 @@ class TestProcessor:
         wst_tx.ibet_wst_address = to_checksum_address(
             "0x1234567890abcdef1234567890abcdef12345678"
         )
-        wst_tx.tx_params = {
-            "sellerSTAccountAddress": self.user1["address"],
-            "buyerSTAccountAddress": self.user2["address"],
-            "SCTokenAddress": to_checksum_address(
+        wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
+            seller_st_account_address=self.user1["address"],
+            buyer_st_account_address=self.user2["address"],
+            sc_token_address=to_checksum_address(
                 "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
             ),
-            "sellerSCAccountAddress": self.user1["address"],
-            "buyerSCAccountAddress": self.user2["address"],
-            "STValue": 1000,
-            "SCValue": 2000,
-            "memo": "Test trade request",
-        }
+            seller_sc_account_address=self.user1["address"],
+            buyer_sc_account_address=self.user2["address"],
+            st_value=1000,
+            sc_value=2000,
+            memo="Test trade request",
+        )
         wst_tx.authorizer = self.user1["address"]
         wst_tx.authorization = IbetWSTAuthorization(
             nonce=secrets.token_bytes(32).hex(),
@@ -386,9 +382,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -399,7 +392,9 @@ class TestProcessor:
         wst_tx.ibet_wst_address = to_checksum_address(
             "0x1234567890abcdef1234567890abcdef12345678"
         )
-        wst_tx.tx_params = {"index": 10}
+        wst_tx.tx_params = IbetWSTTxParamsCancelTrade(
+            index=10,
+        )
         wst_tx.authorizer = self.user1["address"]
         wst_tx.authorization = IbetWSTAuthorization(
             nonce=secrets.token_bytes(32).hex(),
@@ -452,9 +447,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -465,9 +457,7 @@ class TestProcessor:
         wst_tx.ibet_wst_address = to_checksum_address(
             "0x1234567890abcdef1234567890abcdef12345678"
         )
-        wst_tx.tx_params = {
-            "index": 10,
-        }
+        wst_tx.tx_params = IbetWSTTxParamsAcceptTrade(index=10)
         wst_tx.authorizer = self.user2["address"]
         wst_tx.authorization = IbetWSTAuthorization(
             nonce=secrets.token_bytes(32).hex(),
@@ -498,6 +488,138 @@ class TestProcessor:
             f"Transaction sent successfully: id={tx_id}",
         ]
 
+    # Normal_2_7
+    # - Confirm that processing is performed correctly when there is target data to process
+    # - transaction type: Mint
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        eth_master["address"],
+    )
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        eth_master["private_key"],
+    )
+    @mock.patch(
+        "app.model.eth.wst.IbetWST.mint_with_authorization",
+        AsyncMock(return_value="test_tx_hash"),
+    )
+    async def test_normal_2_7(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        async_db.add(account)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.MINT
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.PENDING
+        wst_tx.ibet_wst_address = to_checksum_address(
+            "0x1234567890abcdef1234567890abcdef12345678"
+        )
+        wst_tx.tx_params = IbetWSTTxParamsMint(
+            to_address=self.user1["address"],
+            value=1000,
+        )
+        wst_tx.authorizer = self.user1["address"]
+        wst_tx.authorization = IbetWSTAuthorization(
+            nonce=secrets.token_bytes(32).hex(),
+            v=27,
+            r=secrets.token_bytes(32).hex(),
+            s=secrets.token_bytes(32).hex(),
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Check if the transaction was processed
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx_af.tx_hash == "test_tx_hash"
+
+        # Check if the log was recorded
+        assert caplog.messages == [
+            f"Processing transaction: id={tx_id}, type=mint",
+            f"Transaction sent successfully: id={tx_id}",
+        ]
+
+    # Normal_2_8
+    # - Confirm that processing is performed correctly when there is target data to process
+    # - transaction type: Burn
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        eth_master["address"],
+    )
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        eth_master["private_key"],
+    )
+    @mock.patch(
+        "app.model.eth.wst.IbetWST.burn_with_authorization",
+        AsyncMock(return_value="test_tx_hash"),
+    )
+    async def test_normal_2_8(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        async_db.add(account)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.BURN
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.PENDING
+        wst_tx.ibet_wst_address = to_checksum_address(
+            "0x1234567890abcdef1234567890abcdef12345678"
+        )
+        wst_tx.tx_params = IbetWSTTxParamsBurn(
+            from_address=self.user1["address"],
+            value=1000,
+        )
+        wst_tx.authorizer = self.user1["address"]
+        wst_tx.authorization = IbetWSTAuthorization(
+            nonce=secrets.token_bytes(32).hex(),
+            v=27,
+            r=secrets.token_bytes(32).hex(),
+            s=secrets.token_bytes(32).hex(),
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Check if the transaction was processed
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx_af.tx_hash == "test_tx_hash"
+
+        # Check if the log was recorded
+        assert caplog.messages == [
+            f"Processing transaction: id={tx_id}, type=burn",
+            f"Transaction sent successfully: id={tx_id}",
+        ]
+
     #############################################################
     # Error
     #############################################################
@@ -511,9 +633,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -521,10 +640,10 @@ class TestProcessor:
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token",
+            initial_owner=self.issuer["address"],
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         async_db.add(wst_tx)
         await async_db.commit()
@@ -568,9 +687,6 @@ class TestProcessor:
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
-        account.ibet_wst_activated = True
-        account.ibet_wst_version = IbetWSTVersion.V_1
-        account.ibet_wst_tx_id = tx_id
         async_db.add(account)
 
         wst_tx = EthIbetWSTTx()
@@ -578,10 +694,10 @@ class TestProcessor:
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token",
+            initial_owner=self.issuer["address"],
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         async_db.add(wst_tx)
         await async_db.commit()

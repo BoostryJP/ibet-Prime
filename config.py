@@ -284,7 +284,6 @@ ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = (
     else 10
 )
 
-
 ####################################################
 # Password settings
 ####################################################
@@ -403,6 +402,18 @@ DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
 ####################################################
 IBET_WST_FEATURE_ENABLED = (
     True if os.environ.get("IBET_WST_FEATURE_ENABLED") == "1" else False
+)
+
+# IbetWST Bridge
+IBET_WST_BRIDGE_INTERVAL = (
+    int(os.environ.get("IBET_WST_BRIDGE_INTERVAL"))
+    if os.environ.get("IBET_WST_BRIDGE_INTERVAL")
+    else 10
+)
+IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE = (
+    int(os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE"))
+    if os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE")
+    else 10000
 )
 
 ######################################################

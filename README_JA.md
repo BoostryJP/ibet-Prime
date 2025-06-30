@@ -103,7 +103,7 @@ $ npm install
     <tr>
         <td>WEB3_HTTP_PROVIDER</td>
         <td>False</td>
-        <td nowrap>Web3 プロバイダー</td>
+        <td nowrap>ibet ネットワーク用 Web3 プロバイダー</td>
         <td>http://localhost:8545</td>
     </tr>
     <tr>
@@ -135,6 +135,18 @@ $ npm install
         <td>False</td>
         <td nowrap>タイムゾーン</td>
         <td>Asia/Tokyo</td>
+    </tr>
+    <tr>
+        <td>ETH_WEB3_HTTP_PROVIDER</td>
+        <td>False</td>
+        <td nowrap>Ethereum ネットワーク用 Web3 プロバイダー</td>
+        <td>http://localhost:8545</td>
+    </tr>
+    <tr>
+        <td>IBET_WST_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>IbetWST関連機能の利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
     </tr>
 </table>
 

@@ -31,6 +31,10 @@ if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   PROC_LIST="${PROC_LIST} batch/indexer_e2e_messaging.py"
 fi
 
+if [[ $IBET_WST_FEATURE_ENABLED = 1 ]]; then
+  PROC_LIST="${PROC_LIST} batch/indexer_eth_wst_trades.py"
+fi
+
 if [[ $BC_EXPLORER_ENABLED = 1 ]]; then
   PROC_LIST="${PROC_LIST} batch/indexer_block_tx_data.py"
 fi

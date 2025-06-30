@@ -36,15 +36,13 @@ from tests.account_config import default_eth_account
 
 
 @pytest.mark.asyncio
-class TestAddIbetWSTWhitelist:
+class TestBurnIbetWSTBalance:
     # API endpoint
-    api_url = "/ibet_wst/trades/{ibet_wst_address}/request"
+    api_url = "/ibet_wst/balances/{account_address}/{ibet_wst_address}/burn"
 
     relayer = default_eth_account("user1")
     user1 = default_eth_account("user2")
-    user2 = default_eth_account("user3")
 
-    sc_token_address = to_checksum_address("0x1234567890abcdef1234567890abcdef12345678")
     ibet_wst_address = to_checksum_address("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd")
 
     ###########################################################################
@@ -52,7 +50,7 @@ class TestAddIbetWSTWhitelist:
     ###########################################################################
 
     # <Normal_1>
-    # Add account to whitelist
+    # Cancel trade request
     @mock.patch(
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
@@ -66,16 +64,10 @@ class TestAddIbetWSTWhitelist:
         domain_separator = await token_st.domain_separator()
 
         # Generate digest
-        digest = IbetWSTDigestHelper.generate_request_trade_digest(
+        digest = IbetWSTDigestHelper.generate_burn_digest(
             domain_separator=domain_separator,
-            seller_st_account_address=self.user1["address"],
-            buyer_st_account_address=self.user2["address"],
-            sc_token_address=self.sc_token_address,
-            seller_sc_account_address=self.user1["address"],
-            buyer_sc_account_address=self.user2["address"],
-            st_value=1000,
-            sc_value=2000,
-            memo="Test Trade",
+            from_address=self.user1["address"],
+            value=1000,
             nonce=nonce,
         )
 
@@ -86,16 +78,13 @@ class TestAddIbetWSTWhitelist:
 
         # Send request
         resp = await async_client.post(
-            self.api_url.format(ibet_wst_address=self.ibet_wst_address),
+            self.api_url.format(
+                account_address=self.user1["address"],
+                ibet_wst_address=self.ibet_wst_address,
+            ),
             json={
-                "seller_st_account_address": self.user1["address"],
-                "buyer_st_account_address": self.user2["address"],
-                "sc_token_address": self.sc_token_address,
-                "seller_sc_account_address": self.user1["address"],
-                "buyer_sc_account_address": self.user2["address"],
-                "st_value": 1000,
-                "sc_value": 2000,
-                "memo": "Test Trade",
+                "from_address": self.user1["address"],
+                "value": 1000,
                 "authorizer": self.user1["address"],
                 "authorization": {
                     "nonce": nonce.hex(),
@@ -112,19 +101,13 @@ class TestAddIbetWSTWhitelist:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
-        assert wst_tx.tx_type == IbetWSTTxType.REQUEST_TRADE
+        assert wst_tx.tx_type == IbetWSTTxType.BURN
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
         assert wst_tx.ibet_wst_address == self.ibet_wst_address
         assert wst_tx.tx_params == {
-            "seller_st_account_address": self.user1["address"],
-            "buyer_st_account_address": self.user2["address"],
-            "sc_token_address": self.sc_token_address,
-            "seller_sc_account_address": self.user1["address"],
-            "buyer_sc_account_address": self.user2["address"],
-            "st_value": 1000,
-            "sc_value": 2000,
-            "memo": "Test Trade",
+            "from_address": self.user1["address"],
+            "value": 1000,
         }
         assert wst_tx.tx_sender == self.relayer["address"]
         assert wst_tx.authorizer == self.user1["address"]
@@ -144,7 +127,11 @@ class TestAddIbetWSTWhitelist:
     async def test_error_1(self, async_client):
         # Send request
         resp = await async_client.post(
-            self.api_url.format(ibet_wst_address=self.ibet_wst_address), json={}
+            self.api_url.format(
+                account_address=self.user1["address"],
+                ibet_wst_address=self.ibet_wst_address,
+            ),
+            json={},
         )
 
         # Check response status code
@@ -154,49 +141,7 @@ class TestAddIbetWSTWhitelist:
             "detail": [
                 {
                     "type": "missing",
-                    "loc": ["body", "seller_st_account_address"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "buyer_st_account_address"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "sc_token_address"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "seller_sc_account_address"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "buyer_sc_account_address"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "st_value"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "sc_value"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "memo"],
+                    "loc": ["body", "value"],
                     "msg": "Field required",
                     "input": {},
                 },
@@ -211,6 +156,48 @@ class TestAddIbetWSTWhitelist:
                     "loc": ["body", "authorization"],
                     "msg": "Field required",
                     "input": {},
+                },
+            ],
+        }
+
+    # <Error_2>
+    async def test_error_2(self, async_client):
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(
+                account_address=self.user1["address"],
+                ibet_wst_address=self.ibet_wst_address,
+            ),
+            json={
+                "value": 0,
+                "authorizer": "invalid_address",
+                "authorization": {
+                    "nonce": "test_nonce",
+                    "v": 27,
+                    "r": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                    "s": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                },
+            },
+        )
+
+        # Check response status code
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "greater_than",
+                    "loc": ["body", "value"],
+                    "msg": "Input should be greater than 0",
+                    "input": 0,
+                    "ctx": {"gt": 0},
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["body", "authorizer"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "invalid_address",
+                    "ctx": {"error": {}},
                 },
             ],
         }

@@ -323,8 +323,8 @@ async def main():
             await processor.sync_events()
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.error(ex)
+        except Exception:
+            LOG.exception("An exception occurred during processing")
 
         await asyncio.sleep(INDEXER_SYNC_INTERVAL)
         free_malloc()
