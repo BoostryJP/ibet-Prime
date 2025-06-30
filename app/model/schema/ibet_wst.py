@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from enum import StrEnum
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, Field, PositiveInt, RootModel
 
 from app.model import EthereumAddress
 from app.model.schema.base import (
@@ -123,6 +123,16 @@ class DeleteIbetWSTWhitelistRequest(BaseModel):
     account_address: EthereumAddress = Field(description="Account address to whitelist")
 
 
+class BurnIbetWSTRequest(BaseModel):
+    """BurnIbetWST request schema"""
+
+    value: PositiveInt = Field(description="Amount of IbetWST to burn")
+    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorization: IbetWSTAuthorization = Field(
+        description="Authorization for the transaction"
+    )
+
+
 class RequestIbetWSTTradeRequest(BaseModel):
     """RequestIbetWSTTrade request schema"""
 
@@ -139,8 +149,8 @@ class RequestIbetWSTTradeRequest(BaseModel):
     buyer_sc_account_address: EthereumAddress = Field(
         description="SC buyer account address"
     )
-    st_value: int = Field(description="Value of IbetWST to trade")
-    sc_value: int = Field(description="Value of SC token to trade")
+    st_value: PositiveInt = Field(description="Value of IbetWST to trade")
+    sc_value: PositiveInt = Field(description="Value of SC token to trade")
     memo: str = Field(description="Memo for the trade")
     authorizer: EthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
@@ -151,7 +161,7 @@ class RequestIbetWSTTradeRequest(BaseModel):
 class CancelIbetWSTTradeRequest(BaseModel):
     """CancelIbetWSTTrade request schema"""
 
-    index: int = Field(description="Trade index")
+    index: PositiveInt = Field(description="Trade index")
     authorizer: EthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
@@ -161,7 +171,7 @@ class CancelIbetWSTTradeRequest(BaseModel):
 class AcceptIbetWSTTradeRequest(BaseModel):
     """AcceptIbetWSTTrade request schema"""
 
-    index: int = Field(description="Trade index")
+    index: PositiveInt = Field(description="Trade index")
     authorizer: EthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"

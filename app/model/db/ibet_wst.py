@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import IntEnum, StrEnum
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 from sqlalchemy import JSON, BigInteger, Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,6 +26,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
 
+class IbetWSTVersion(StrEnum):
+    V_1 = "1"
+
+
+############################################################
+# Transaction Management
+############################################################
 class IbetWSTTxType(StrEnum):
     """Transaction Type"""
 
@@ -37,10 +44,6 @@ class IbetWSTTxType(StrEnum):
     REQUEST_TRADE = "request_trade"
     CANCEL_TRADE = "cancel_trade"
     ACCEPT_TRADE = "accept_trade"
-
-
-class IbetWSTVersion(StrEnum):
-    V_1 = "1"
 
 
 class IbetWSTTxStatus(IntEnum):
@@ -57,6 +60,64 @@ class IbetWSTAuthorization(TypedDict):
     v: int  # v value for the authorization signature
     r: str  # r value for the authorization signature (Hexadecimal string)
     s: str  # s value for the authorization signature (Hexadecimal string)
+
+
+class IbetWSTTxParamsDeploy(TypedDict):
+    """Parameters for IbetWST Deploy Transaction"""
+
+    name: str  # Name of the IbetWST token
+    initial_owner: str  # Initial owner of the IbetWST token
+
+
+class IbetWSTTxParamsAddAccountWhiteList(TypedDict):
+    """Parameters for IbetWST addAccountWhiteListWithAuthorization Transaction"""
+
+    account_address: str  # Address to be added to the whitelist
+
+
+class IbetWSTTxParamsDeleteAccountWhiteList(TypedDict):
+    """Parameters for IbetWST deleteAccountWhiteListWithAuthorization Transaction"""
+
+    account_address: str  # Address to be removed from the whitelist
+
+
+class IbetWSTTxParamsMint(TypedDict):
+    """Parameters for IbetWST mintWithAuthorization Transaction"""
+
+    to_address: str  # Address to which the tokens will be minted
+    value: int  # Amount of IbetWST to be minted
+
+
+class IbetWSTTxParamsBurn(TypedDict):
+    """Parameters for IbetWST burnWithAuthorization Transaction"""
+
+    from_address: str  # Address from which the tokens will be burned
+    value: int  # Amount of IbetWST to be burned
+
+
+class IbetWSTTxParamsRequestTrade(TypedDict):
+    """Parameters for IbetWST requestTradeWithAuthorization Transaction"""
+
+    seller_st_account_address: str  # Seller's IbetWST account address
+    buyer_st_account_address: str  # Buyer's IbetWST account address
+    sc_token_address: str  # StableCoin contract address
+    seller_sc_account_address: str  # Seller's StableCoin account address
+    buyer_sc_account_address: str  # Buyer's StableCoin account address
+    st_value: int  # Amount of IbetWST to be traded
+    sc_value: int  # Amount of StableCoin to be traded
+    memo: str  # Memo for the trade request
+
+
+class IbetWSTTxParamsCancelTrade(TypedDict):
+    """Parameters for IbetWST cancelTradeWithAuthorization Transaction"""
+
+    index: int  # Index of the trade to be cancelled
+
+
+class IbetWSTTxParamsAcceptTrade(TypedDict):
+    """Parameters for IbetWST acceptTradeWithAuthorization Transaction"""
+
+    index: int  # Index of the trade to be accepted
 
 
 class EthIbetWSTTx(Base):
@@ -85,7 +146,16 @@ class EthIbetWSTTx(Base):
     ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
     # Transaction parameters
     # - JSON object containing the parameters for the transaction
-    tx_params: Mapped[dict] = mapped_column(JSON, nullable=False)
+    tx_params: Mapped[
+        IbetWSTTxParamsDeploy
+        | IbetWSTTxParamsAddAccountWhiteList
+        | IbetWSTTxParamsDeleteAccountWhiteList
+        | IbetWSTTxParamsMint
+        | IbetWSTTxParamsBurn
+        | IbetWSTTxParamsRequestTrade
+        | IbetWSTTxParamsCancelTrade
+        | IbetWSTTxParamsAcceptTrade
+    ] = mapped_column(JSON, nullable=False)
     # Transaction sender
     # - Address of the sender who initiated the transaction
     tx_sender: Mapped[str] = mapped_column(String(42), nullable=False)
@@ -111,6 +181,9 @@ class EthIbetWSTTx(Base):
     finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
+############################################################
+# Trade Management
+############################################################
 class IDXEthIbetWSTTradeBlockNumber(Base):
     """Synchronized blockNumber of IDXEthIbetWSTTrade"""
 
@@ -169,3 +242,85 @@ class IDXEthIbetWSTTrade(Base):
     )
     # Memo
     memo: Mapped[str] = mapped_column(Text)
+
+
+############################################################
+# Bridge Management
+############################################################
+class IbetWSTBridgeSyncedBlockNumber(Base):
+    """Synchronized block number for IbetWST Bridge"""
+
+    __tablename__ = "ibet_wst_bridge_synced_block_number"
+
+    # Network name
+    # - Used to identify the network
+    network: Mapped[Literal["ethereum", "ibetfin"]] = mapped_column(
+        String(20), primary_key=True
+    )
+    # Synchronized block number
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
+
+
+class IbetBridgeTxParamsForceUnlock(TypedDict):
+    """Parameters for ibetfin Force Unlock Transaction"""
+
+    lock_address: str  # Address of the locked account
+    account_address: str  # Address of the account to be unlocked
+    recipient_address: str  # Address to receive the unlocked tokens
+    value: int  # Amount to be unlocked
+    data: dict  # Additional data for the transaction
+
+
+class IbetBridgeTxParamsForceChangeLockedAccount(TypedDict):
+    """Parameters for ibetfin Force Change Locked Account Transaction"""
+
+    lock_address: str  # Address of the locked account
+    before_account_address: str  # Address of the account before change
+    after_account_address: str  # Address of the account after change
+    value: int  # Amount to be changed
+    data: dict  # Additional data for the transaction
+
+
+class EthToIbetBridgeTxType(StrEnum):
+    """Ethereum to Ibet Bridge Transaction Type"""
+
+    FORCE_UNLOCK = "force_unlock"
+    FORCE_CHANGE_LOCKED_ACCOUNT = "force_change_locked_account"
+
+
+class EthToIbetBridgeTxStatus(IntEnum):
+    """Ethereum to Ibet Bridge Transaction Status"""
+
+    PENDING = 0
+    SUCCEEDED = 1
+    FAILED = 2
+
+
+class EthToIbetBridgeTx(Base):
+    """Ethereum to Ibet Bridge Transaction Management"""
+
+    __tablename__ = "eth_to_ibet_bridge_tx"
+
+    # Transaction ID
+    tx_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    # Token address
+    # - Token address on the ibetfin network
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
+    # Transaction type
+    tx_type: Mapped[EthToIbetBridgeTxType] = mapped_column(String(30), nullable=False)
+    # Transaction status
+    status: Mapped[EthToIbetBridgeTxStatus] = mapped_column(Integer, nullable=False)
+    # Transaction parameters
+    # - JSON object containing the parameters for the transaction
+    tx_params: Mapped[
+        IbetBridgeTxParamsForceUnlock | IbetBridgeTxParamsForceChangeLockedAccount
+    ] = mapped_column(JSON, nullable=False)
+    # Transaction sender
+    # - Address of the sender who initiated the transaction
+    tx_sender: Mapped[str] = mapped_column(String(42), nullable=False)
+    # ibet transaction hash
+    # - Hash of the transaction on the Ibet network
+    # - Set to None if the transaction is not yet sent or not applicable
+    tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
+    # Block number
+    block_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True)

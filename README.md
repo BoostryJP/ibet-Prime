@@ -102,7 +102,7 @@ The main environment variables are as follows.
     <tr>
         <td>WEB3_HTTP_PROVIDER</td>
         <td>False</td>
-        <td nowrap>Web3 provider</td>
+        <td nowrap>Web3 provider for ibet network</td>
         <td>http://localhost:8545</td>
     </tr>
     <tr>
@@ -134,6 +134,18 @@ The main environment variables are as follows.
         <td>False</td>
         <td nowrap>Timezone</td>
         <td>Asia/Tokyo</td>
+    </tr>
+    <tr>
+        <td>ETH_WEB3_HTTP_PROVIDER</td>
+        <td>False</td>
+        <td nowrap>Web3 provider for Ethereum network</td>
+        <td>http://localhost:8545</td>
+    </tr>
+    <tr>
+        <td>IBET_WST_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Weather to use IbetWST features</td>
+        <td>1</td>
     </tr>
 </table>
 

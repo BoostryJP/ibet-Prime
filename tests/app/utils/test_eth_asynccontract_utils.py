@@ -438,7 +438,7 @@ class TestGetEventLogs:
 
         assert logs[0]["event"] == "Mint"
         assert logs[0]["args"]["to"] == self.issuer["address"]
-        assert logs[0]["args"]["amount"] == 1000
+        assert logs[0]["args"]["value"] == 1000
 
     ########################################################
     # Error

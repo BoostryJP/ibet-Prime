@@ -28,6 +28,7 @@ from web3.exceptions import TimeExhausted
 
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTTxParamsDeploy,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
@@ -74,10 +75,9 @@ class TestProcessor:
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SUCCEEDED
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token", initial_owner=self.issuer["address"]
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = True
         async_db.add(wst_tx)
@@ -112,10 +112,9 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token", initial_owner=self.issuer["address"]
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
         async_db.add(wst_tx)
@@ -166,10 +165,9 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token", initial_owner=self.issuer["address"]
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
         async_db.add(wst_tx)
@@ -220,10 +218,9 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token", initial_owner=self.issuer["address"]
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
         async_db.add(wst_tx)
@@ -290,10 +287,9 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.tx_params = {
-            "name": "Test Token",
-            "initialOwner": self.issuer["address"],
-        }
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token", initial_owner=self.issuer["address"]
+        )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
         async_db.add(wst_tx)
