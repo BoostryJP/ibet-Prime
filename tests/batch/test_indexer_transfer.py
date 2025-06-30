@@ -372,7 +372,7 @@ class TestProcessor:
             lock_account["address"],
             issuer_address,
             user_address_1,
-            10,
+            5,
             json.dumps({"message": "force_unlock"}),
         ).build_transaction(
             {
@@ -384,6 +384,24 @@ class TestProcessor:
         )
         tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(
             tx_2_4, issuer_private_key
+        )
+
+        tx_2_5 = token_contract_1.functions.forceUnlock(
+            lock_account["address"],
+            issuer_address,
+            user_address_1,
+            5,
+            json.dumps({"message": "ibet_wst_bridge"}),
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_5, tx_receipt_5 = ContractUtils.send_transaction(
+            tx_2_5, issuer_private_key
         )
 
         # Emit ForceChangeLockedAccount events
@@ -406,8 +424,8 @@ class TestProcessor:
             lock_account["address"],
             issuer_address,
             user_address_1,
-            10,
-            "",
+            5,
+            json.dumps({"message": "ibet_wst_bridge"}),
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -416,7 +434,7 @@ class TestProcessor:
                 "gasPrice": 0,
             }
         )
-        tx_hash_5, tx_receipt_5 = ContractUtils.send_transaction(
+        tx_hash_6, tx_receipt_6 = ContractUtils.send_transaction(
             tx_3_2, issuer_private_key
         )
 
@@ -427,7 +445,7 @@ class TestProcessor:
 
         # Assertion
         _transfer_list = (await async_db.scalars(select(IDXTransfer))).all()
-        assert len(_transfer_list) == 4
+        assert len(_transfer_list) == 5
 
         _transfer = _transfer_list[0]
         assert _transfer.id == 1
@@ -464,7 +482,7 @@ class TestProcessor:
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
-        assert _transfer.amount == 10
+        assert _transfer.amount == 5
         assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
         assert _transfer.data == {"message": "force_unlock"}
         assert _transfer.message == "force_unlock"
@@ -479,13 +497,28 @@ class TestProcessor:
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
-        assert _transfer.amount == 10
+        assert _transfer.amount == 5
+        assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
+        assert _transfer.data == {"message": "ibet_wst_bridge"}
+        assert _transfer.message == "ibet_wst_bridge"
+        block = web3.eth.get_block(tx_receipt_5["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+
+        _transfer = _transfer_list[4]
+        assert _transfer.id == 5
+        assert _transfer.transaction_hash == tx_hash_6
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 5
         assert (
             _transfer.source_event
             == IDXTransferSourceEventType.FORCE_CHANGE_LOCKED_ACCOUNT.value
         )
-        assert _transfer.data == {}
-        assert _transfer.message is None
+        assert _transfer.data == {"message": "ibet_wst_bridge"}
+        assert _transfer.message == "ibet_wst_bridge"
         block = web3.eth.get_block(tx_receipt_5["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -1020,7 +1053,7 @@ class TestProcessor:
         tx_7_1 = token_contract_1.functions.lock(
             lock_account["address"],
             10,
-            "",
+            json.dumps({"message": "ibet_wst_bridge"}),
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1036,7 +1069,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             10,
-            "",
+            json.dumps({"message": "ibet_wst_bridge"}),
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1052,7 +1085,7 @@ class TestProcessor:
         tx_8_1 = token_contract_1.functions.lock(
             lock_account["address"],
             10,
-            "",
+            json.dumps({"message": "ibet_wst_bridge"}),
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1068,7 +1101,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             10,
-            "",
+            json.dumps({"message": "ibet_wst_bridge"}),
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1189,8 +1222,8 @@ class TestProcessor:
             _transfer.source_event
             == IDXTransferSourceEventType.FORCE_CHANGE_LOCKED_ACCOUNT.value
         )
-        assert _transfer.data == {}
-        assert _transfer.message is None
+        assert _transfer.data == {"message": "ibet_wst_bridge"}
+        assert _transfer.message == "ibet_wst_bridge"
         block = web3.eth.get_block(tx_receipt_7["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC
@@ -1207,8 +1240,8 @@ class TestProcessor:
             _transfer.source_event
             == IDXTransferSourceEventType.FORCE_CHANGE_LOCKED_ACCOUNT.value
         )
-        assert _transfer.data == {}
-        assert _transfer.message is None
+        assert _transfer.data == {"message": "ibet_wst_bridge"}
+        assert _transfer.message == "ibet_wst_bridge"
         block = web3.eth.get_block(tx_receipt_8["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC

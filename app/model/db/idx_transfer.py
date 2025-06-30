@@ -42,6 +42,7 @@ class DataMessage(BaseModel):
         "garnishment",
         "inheritance",
         "force_unlock",
+        "ibet_wst_bridge",
     ]
 
 
@@ -73,7 +74,7 @@ class IDXTransfer(Base):
     #   source_event = "Transfer"
     #     => None
     #   source_event = "Unlock"
-    #     => "force_unlock", "garnishment" or "inheritance"
+    #     => "force_unlock", "garnishment", "inheritance" or "ibet_wst_bridge"
     message: Mapped[str | None] = mapped_column(String(50), index=True)
     # block timestamp
     block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)

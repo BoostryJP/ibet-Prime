@@ -521,11 +521,15 @@ class TestForceLock:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "enum",
-                    "loc": ["body", "message"],
-                    "msg": "Input should be 'garnishment', 'inheritance' or 'force_lock'",
+                    "ctx": {
+                        "expected": "'garnishment', 'inheritance', 'force_lock' "
+                        "or 'ibet_wst_bridge'"
+                    },
                     "input": "invalid_message",
-                    "ctx": {"expected": "'garnishment', 'inheritance' or 'force_lock'"},
+                    "loc": ["body", "message"],
+                    "msg": "Input should be 'garnishment', 'inheritance', "
+                    "'force_lock' or 'ibet_wst_bridge'",
+                    "type": "enum",
                 }
             ],
         }
