@@ -383,7 +383,7 @@ class WSTBridgeMonitoringProcessor:
                 try:
                     # Skip if the data is not a valid BridgeMessage
                     BridgeMessage(**json.loads(args["data"]))
-                except (json.JSONDecodeError, ValidationError):
+                except (json.JSONDecodeError, ValidationError, TypeError):
                     continue
 
                 # Retrieve the issuer's private key
