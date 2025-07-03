@@ -3169,6 +3169,8 @@ paths:
                 type: string
               - const: force_unlock
                 type: string
+              - const: ibet_wst_bridge
+                type: string
               - type: 'null'
             description: message field in source event data
             title: Message
@@ -7803,6 +7805,8 @@ paths:
                 type: string
               - const: force_unlock
                 type: string
+              - const: ibet_wst_bridge
+                type: string
               - type: 'null'
             description: message field in source event data
             title: Message
@@ -10028,6 +10032,44 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AcceptIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}/reject:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Reject Ibet Wst Trade
+      description: |-
+        Reject an IbetWST trade
+
+        - This endpoint allows a user to send rejectTradeWithAuthorization transaction to the IbetWST contract.
+      operationId: RejectIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectIbetWSTTradeRequest'
       responses:
         '200':
           description: Successful Response
@@ -15873,6 +15915,7 @@ components:
         - garnishment
         - inheritance
         - force_lock
+        - ibet_wst_bridge
       title: LockMessage
     LockedPosition:
       properties:
@@ -16500,6 +16543,27 @@ components:
         - key_manager
       title: RegisterPersonalInfoRequest
       description: Register Personal Information schema (REQUEST)
+    RejectIbetWSTTradeRequest:
+      properties:
+        index:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Index
+          description: Trade index
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - index
+        - authorizer
+        - authorization
+      title: RejectIbetWSTTradeRequest
+      description: RejectIbetWSTTrade request schema
     RequestIbetWSTTradeRequest:
       properties:
         seller_st_account_address:
@@ -18169,6 +18233,7 @@ components:
         - garnishment
         - inheritance
         - force_unlock
+        - ibet_wst_bridge
       title: UnlockMessage
     UnlockTransfer:
       properties:
@@ -18233,6 +18298,7 @@ components:
             - garnishment
             - inheritance
             - force_unlock
+            - ibet_wst_bridge
           title: Message
       type: object
       required:
