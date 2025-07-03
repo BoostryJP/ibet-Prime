@@ -178,6 +178,16 @@ class AcceptIbetWSTTradeRequest(BaseModel):
     )
 
 
+class RejectIbetWSTTradeRequest(BaseModel):
+    """RejectIbetWSTTrade request schema"""
+
+    index: PositiveInt = Field(description="Trade index")
+    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorization: IbetWSTAuthorization = Field(
+        description="Authorization for the transaction"
+    )
+
+
 class ListIbetWSTTradesQuery(BasePaginationQuery):
     """ListIbetWSTTrades request query schema"""
 

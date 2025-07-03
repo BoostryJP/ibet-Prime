@@ -205,6 +205,7 @@ class Processor:
         await self.__sync_trade_requested(db_session, block_from, block_to)
         await self.__sync_trade_accepted(db_session, block_from, block_to)
         await self.__sync_trade_cancelled(db_session, block_from, block_to)
+        await self.__sync_trade_rejected(db_session, block_from, block_to)
 
     async def __sync_trade_requested(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -271,6 +272,33 @@ class Processor:
             events = await EthAsyncContractUtils.get_event_logs(
                 contract=wst_events,
                 event="TradeCancelled",
+                block_from=block_from,
+                block_to=block_to,
+            )
+            for event in events:
+                trade_index = event["args"]["index"]
+                # Fetch the trade details from the contract
+                wst_contract = IbetWST(wst_address)
+                wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
+                # Upsert the trade into the database
+                await self.__upsert_trade(
+                    db_session=db_session,
+                    wst_address=wst_address,
+                    wst_trade_index=trade_index,
+                    wst_trade=wst_trade,
+                )
+
+    async def __sync_trade_rejected(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
+        """
+        Sync trade rejected events from the WST contracts.
+        """
+        for wst_address, wst_events in self.wst_list.items():
+            # Fetch TradeCancelled events from the contract
+            events = await EthAsyncContractUtils.get_event_logs(
+                contract=wst_events,
+                event="TradeRejected",
                 block_from=block_from,
                 block_to=block_to,
             )

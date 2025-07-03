@@ -111,6 +111,7 @@ from .ibet_wst import (
     ListAllIbetWSTTokensSortItem,
     ListIbetWSTTradesQuery,
     ListIbetWSTTradesResponse,
+    RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
 )
 from .index import BlockNumberResponse, E2EEResponse

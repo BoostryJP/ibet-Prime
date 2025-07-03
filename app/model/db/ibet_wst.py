@@ -44,6 +44,7 @@ class IbetWSTTxType(StrEnum):
     REQUEST_TRADE = "request_trade"
     CANCEL_TRADE = "cancel_trade"
     ACCEPT_TRADE = "accept_trade"
+    REJECT_TRADE = "reject_trade"
 
 
 class IbetWSTTxStatus(IntEnum):
@@ -120,6 +121,12 @@ class IbetWSTTxParamsAcceptTrade(TypedDict):
     index: int  # Index of the trade to be accepted
 
 
+class IbetWSTTxParamsRejectTrade(TypedDict):
+    """Parameters for IbetWST rejectTradeWithAuthorization Transaction"""
+
+    index: int  # Index of the trade to be rejected
+
+
 class EthIbetWSTTx(Base):
     """Ethereum IbetWST Transaction Management"""
 
@@ -155,6 +162,7 @@ class EthIbetWSTTx(Base):
         | IbetWSTTxParamsRequestTrade
         | IbetWSTTxParamsCancelTrade
         | IbetWSTTxParamsAcceptTrade
+        | IbetWSTTxParamsRejectTrade
     ] = mapped_column(JSON, nullable=False)
     # Transaction sender
     # - Address of the sender who initiated the transaction
@@ -201,6 +209,7 @@ class IDXEthIbetWSTTradeState(StrEnum):
     PENDING = "Pending"
     EXECUTED = "Executed"
     CANCELLED = "Cancelled"
+    REJECTED = "Rejected"
 
 
 class IDXEthIbetWSTTrade(Base):

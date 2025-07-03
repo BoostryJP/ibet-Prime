@@ -39,6 +39,7 @@ from app.model.db import (
     IbetWSTTxParamsDeleteAccountWhiteList,
     IbetWSTTxParamsDeploy,
     IbetWSTTxParamsMint,
+    IbetWSTTxParamsRejectTrade,
     IbetWSTTxParamsRequestTrade,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -138,6 +139,11 @@ class ProcessorEthWSTSendTx:
                     elif wst_tx.tx_type == IbetWSTTxType.ACCEPT_TRADE:
                         # Send accept trade transaction
                         tx_hash = await accept_trade_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.REJECT_TRADE:
+                        # Send reject trade transaction
+                        tx_hash = await reject_trade_transaction(
                             wst_tx, tx_sender_account
                         )
                     else:
@@ -378,6 +384,29 @@ async def accept_trade_transaction(
     wst_contract = IbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsAcceptTrade = wst_tx.tx_params
     tx_hash = await wst_contract.accept_trade_with_authorization(
+        index=tx_params["index"],
+        authorization=IbetWSTAuthorization(
+            nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
+            v=wst_tx.authorization["v"],
+            r=bytes(32).fromhex(wst_tx.authorization["r"]),
+            s=bytes(32).fromhex(wst_tx.authorization["s"]),
+        ),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash
+
+
+async def reject_trade_transaction(
+    wst_tx: EthIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> str:
+    """
+    Send a transaction to reject a trade for the IbetWST.
+    """
+    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    tx_params: IbetWSTTxParamsRejectTrade = wst_tx.tx_params
+    tx_hash = await wst_contract.reject_trade_with_authorization(
         index=tx_params["index"],
         authorization=IbetWSTAuthorization(
             nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),

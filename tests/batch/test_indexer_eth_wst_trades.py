@@ -172,6 +172,7 @@ class TestProcessor:
                 [{"args": {"index": 1}}],  # "TradeRequested" event exists
                 [],  # No "TradeAccepted" event
                 [],  # No "TradeCancelled" event
+                [],  # No "TradeRejected" event
             ]
         ),
     )
@@ -260,6 +261,7 @@ class TestProcessor:
                 [],  # No "TradeRequested" event
                 [{"args": {"index": 1}}],  # "TradeAccepted" event exists
                 [],  # No "TradeCancelled" event
+                [],  # No "TradeRejected" event
             ]
         ),
     )
@@ -337,7 +339,7 @@ class TestProcessor:
             "Sync completed successfully",
         ]
 
-    # <Normal_2_2>
+    # <Normal_2_3>
     # "TradeCancelled" event exists
     # - Trade data is updated.
     @mock.patch(
@@ -347,6 +349,7 @@ class TestProcessor:
                 [],  # No "TradeRequested" event
                 [],  # No "TradeAccepted" event
                 [{"args": {"index": 1}}],  # "TradeCancelled" event exists
+                [],  # No "TradeRejected" event
             ]
         ),
     )
@@ -424,6 +427,94 @@ class TestProcessor:
             "Sync completed successfully",
         ]
 
+    # <Normal_2_4>
+    # "TradeRejected" event exists
+    # - Trade data is updated.
+    @mock.patch(
+        "batch.indexer_eth_wst_trades.EthAsyncContractUtils.get_event_logs",
+        AsyncMock(
+            side_effect=[
+                [],  # No "TradeRequested" event
+                [],  # No "TradeAccepted" event
+                [],  # No "TradeCancelled" event
+                [{"args": {"index": 1}}],  # "TradeRejected" event exists
+            ]
+        ),
+    )
+    @mock.patch(
+        "batch.indexer_eth_wst_trades.IbetWST.get_trade",
+        AsyncMock(
+            return_value=IbetWSTTrade(
+                seller_st_account=user_address_1,
+                buyer_st_account=user_address_2,
+                sc_token_address=sc_token_address_1,
+                seller_sc_account=user_address_1,
+                buyer_sc_account=user_address_2,
+                st_value=1000,
+                sc_value=2000,
+                state="Rejected",
+                memo="",
+            )
+        ),
+    )
+    async def test_normal_2_4(self, processor, async_db, caplog):
+        # Generate empty block
+        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+
+        # Prepare test data
+        token = Token()
+        token.token_address = self.ibet_token_address_1
+        token.issuer_address = self.issuer_address_1
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = self.ibet_wst_address_1
+        async_db.add(token)
+
+        account = Account()
+        account.issuer_address = self.issuer_address_1
+        account.is_deleted = False
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # Run target process
+        latest_finalized_block = await processor.get_finalized_block_number()
+        await processor.sync_events()
+        async_db.expire_all()
+
+        # Check IDXEthIbetWSTTradeBlockNumber
+        synced_block_number = (
+            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+        ).first()
+        assert synced_block_number.latest_block_number == latest_finalized_block
+
+        wst_trade = (
+            await async_db.scalars(
+                select(IDXEthIbetWSTTrade)
+                .where(IDXEthIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
+                .limit(1)
+            )
+        ).first()
+        assert wst_trade.index == 1
+        assert wst_trade.seller_st_account_address == self.user_address_1
+        assert wst_trade.buyer_st_account_address == self.user_address_2
+        assert wst_trade.sc_token_address == self.sc_token_address_1
+        assert wst_trade.seller_sc_account_address == self.user_address_1
+        assert wst_trade.buyer_sc_account_address == self.user_address_2
+        assert wst_trade.st_value == 1000
+        assert wst_trade.sc_value == 2000
+        assert wst_trade.state == IDXEthIbetWSTTradeState.REJECTED
+        assert wst_trade.memo == ""
+
+        # Check log
+        assert caplog.messages == [
+            f"Syncing IbetWST trade events from=1, to={latest_finalized_block}",
+            "Sync completed successfully",
+        ]
+
     # <Normal_3>
     # Multiple Trade events for the same trade index occur in one process
     # - A single record is created in the final state.
@@ -434,6 +525,7 @@ class TestProcessor:
                 [{"args": {"index": 1}}],  # "TradeRequested" event exists
                 [{"args": {"index": 1}}],  # "TradeAccepted" event exists
                 [],  # No "TradeCancelled" event
+                [],  # No "TradeRejected" event
             ]
         ),
     )

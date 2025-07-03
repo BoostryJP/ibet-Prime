@@ -102,7 +102,9 @@ class IbetWSTTrade(BaseModel):
     buyer_sc_account: EthereumAddress = Field(default=ZERO_ADDRESS)
     st_value: int = Field(default=0)
     sc_value: int = Field(default=0)
-    state: Literal["Pending", "Executed", "Cancelled"] = Field(default="Pending")
+    state: Literal["Pending", "Executed", "Cancelled", "Rejected"] = Field(
+        default="Pending"
+    )
     memo: str = Field(default="")
 
 
@@ -631,6 +633,55 @@ class IbetWSTDigestHelper:
         )
         return digest
 
+    @staticmethod
+    def generate_reject_trade_digest(
+        domain_separator: bytes,
+        index: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for reject trade with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param index: Index of the trade to reject
+        :param nonce: Nonce for the trade, used to prevent replay attacks
+        :return: EIP-712 digest for the trade cancellation
+        """
+
+        type_hash = keccak(
+            text="RejectTradeWithAuthorization(uint256 index,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "uint256",  # index
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    index,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
 
 class IbetWST(ERC20):
     """
@@ -857,6 +908,8 @@ class IbetWST(ERC20):
                 _state = "Executed"
             case 2:
                 _state = "Cancelled"
+            case 3:
+                _state = "Rejected"
 
         return IbetWSTTrade(
             seller_st_account=to_checksum_address(trade[0]),
@@ -968,6 +1021,42 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to accept the trade
             tx = await self.contract.functions.acceptTradeWithAuthorization(
+                index,
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
+            ).build_transaction(
+                {
+                    "chainId": ETH_CHAIN_ID,
+                    "from": tx_sender,
+                    "gas": ETH_TX_GAS_LIMIT,
+                }
+            )
+            # Send the transaction
+            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def reject_trade_with_authorization(
+        self,
+        index: int,
+        authorization: IbetWSTAuthorization,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
+    ) -> str:
+        """
+        Reject a trade with authorization
+
+        :param index: Trade ID (index)
+        :param authorization: Authorization data containing nonce, v, r, s
+        :param tx_sender: Address of the transaction sender
+        :param tx_sender_key: Private key of the transaction sender
+        :return: Transaction hash
+        """
+        try:
+            # Build the transaction to reject the trade
+            tx = await self.contract.functions.rejectTradeWithAuthorization(
                 index,
                 authorization.nonce,
                 authorization.v,
