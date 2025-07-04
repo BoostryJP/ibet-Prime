@@ -34,6 +34,7 @@ from app.model.db import (
     IbetWSTTxParamsAcceptTrade,
     IbetWSTTxParamsBurn,
     IbetWSTTxParamsCancelTrade,
+    IbetWSTTxParamsRejectTrade,
     IbetWSTTxParamsRequestTrade,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -58,6 +59,7 @@ from app.model.schema import (
     ListAllIbetWSTTokensSortItem,
     ListIbetWSTTradesQuery,
     ListIbetWSTTradesResponse,
+    RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
 )
 from app.utils.docs_utils import get_routers_responses
@@ -426,6 +428,48 @@ async def accept_ibet_wst_trade(
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = ibet_wst_address
     wst_tx.tx_params = IbetWSTTxParamsAcceptTrade(index=req_params.index)
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
+
+
+# POST: /ibet_wst/trades/{ibet_wst_address}/reject
+@router.post(
+    "/trades/{ibet_wst_address}/reject",
+    operation_id="RejectIbetWSTTrade",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(422),
+)
+async def reject_ibet_wst_trade(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    req_params: RejectIbetWSTTradeRequest,
+):
+    """
+    Reject an IbetWST trade
+
+    - This endpoint allows a user to send rejectTradeWithAuthorization transaction to the IbetWST contract.
+    """
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.REJECT_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsRejectTrade(index=req_params.index)
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = req_params.authorizer
     wst_tx.authorization = IbetWSTAuthorization(

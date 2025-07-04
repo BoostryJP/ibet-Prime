@@ -1556,3 +1556,197 @@ class TestAcceptTradeWithAuthorization:
             "state": "Pending",  # Trade should still be pending
             "memo": "Test Trade",
         }
+
+
+@pytest.mark.asyncio
+class TestRejectTradeWithAuthorization:
+    """
+    Test cases for the reject_trade_with_authorization function of the AuthIbetWST contract.
+    """
+
+    owner = default_eth_account("user1")
+    seller_st = default_eth_account("user2")
+    seller_sc = default_eth_account("user3")
+    buyer_st = default_eth_account("user4")
+    buyer_sc = default_eth_account("user5")
+
+    #################################################################
+    # Normal
+    #################################################################
+
+    # Normal_1
+    # - Test that a trade can be rejected with authorization.
+    async def test_normal_1(self):
+        # Deploy contract (WST)
+        st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
+        token_st = IbetWST(st_token_address)
+
+        # Deploy contract (SC token)
+        sc_token_address = await deploy_erc20_token(
+            "Test Token", self.owner, self.owner
+        )
+
+        # Add account to whitelist
+        await wst_add_account_to_whitelist(
+            contract_address=st_token_address,
+            account=self.seller_st["address"],
+            tx_from=self.owner,
+        )
+        await wst_add_account_to_whitelist(
+            contract_address=st_token_address,
+            account=self.buyer_st["address"],
+            tx_from=self.owner,
+        )
+
+        # Request a trade
+        await wst_request_trade(
+            contract_address=st_token_address,
+            buyer_st_account=self.buyer_st["address"],
+            sc_token_address=sc_token_address,
+            seller_sc_account=self.seller_sc["address"],
+            buyer_sc_account=self.buyer_sc["address"],
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
+            tx_from=self.seller_st,
+        )
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_reject_trade_digest(
+            domain_separator=domain_separator,
+            index=1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.buyer_st["private_key"])
+        )
+
+        # Attempt to reject trade with valid authorization
+        tx_hash = await token_st.reject_trade_with_authorization(
+            index=1,
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.owner["address"],
+            tx_sender_key=bytes.fromhex(self.owner["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        assert tx_receipt["status"] == 1  # Transaction was successful
+
+        # Check the trade information
+        trade_info = await token_st.get_trade(1)
+        assert trade_info.model_dump() == {
+            "seller_st_account": self.seller_st["address"],
+            "buyer_st_account": self.buyer_st["address"],
+            "sc_token_address": sc_token_address,
+            "seller_sc_account": self.seller_sc["address"],
+            "buyer_sc_account": self.buyer_sc["address"],
+            "st_value": 1000,
+            "sc_value": 2000,
+            "state": "Rejected",
+            "memo": "Test Trade",
+        }
+
+    #################################################################
+    # Error
+    #################################################################
+
+    # Error_1
+    # - Test that an error is raised when trying to reject a trade with invalid authorization.
+    async def test_error_1(self):
+        # Deploy contract (WST)
+        st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
+        token_st = IbetWST(st_token_address)
+
+        # Deploy contract (SC token)
+        sc_token_address = await deploy_erc20_token(
+            "Test Token", self.owner, self.owner
+        )
+
+        # Add account to whitelist
+        await wst_add_account_to_whitelist(
+            contract_address=st_token_address,
+            account=self.seller_st["address"],
+            tx_from=self.owner,
+        )
+        await wst_add_account_to_whitelist(
+            contract_address=st_token_address,
+            account=self.buyer_st["address"],
+            tx_from=self.owner,
+        )
+
+        # Request a trade
+        await wst_request_trade(
+            contract_address=st_token_address,
+            buyer_st_account=self.buyer_st["address"],
+            sc_token_address=sc_token_address,
+            seller_sc_account=self.seller_sc["address"],
+            buyer_sc_account=self.buyer_sc["address"],
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
+            tx_from=self.seller_st,
+        )
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_reject_trade_digest(
+            domain_separator=domain_separator,
+            index=1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.seller_st["private_key"]),  # Invalid authorizer key
+        )
+
+        # Attempt to reject trade with invalid authorization
+        tx_hash = await token_st.reject_trade_with_authorization(
+            index=1,
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.owner["address"],
+            tx_sender_key=bytes.fromhex(self.owner["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        assert tx_receipt["status"] == 0
+
+        # Check that the trade was not rejected
+        trade_info = await token_st.get_trade(1)
+        assert trade_info.model_dump() == {
+            "seller_st_account": self.seller_st["address"],
+            "buyer_st_account": self.buyer_st["address"],
+            "sc_token_address": sc_token_address,
+            "seller_sc_account": self.seller_sc["address"],
+            "buyer_sc_account": self.buyer_sc["address"],
+            "st_value": 1000,
+            "sc_value": 2000,
+            "state": "Pending",  # Trade should still be pending
+            "memo": "Test Trade",
+        }
