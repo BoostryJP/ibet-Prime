@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
+from app.model import EthereumAddress
 from app.utils.ibet_contract_utils import AsyncContractUtils
 from app.utils.ibet_web3_utils import Web3Wrapper
 from config import CHAIN_ID, TX_GAS_LIMIT
@@ -34,14 +35,18 @@ class TokenListContract:
         self.contract_address = contract_address
 
     async def register(
-        self, token_address: str, token_template: str, tx_from: str, private_key: bytes
+        self,
+        token_address: str,
+        token_template: str,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ) -> None:
         """Register TokenList
 
         :param token_address: token address
         :param token_template: token type
-        :param tx_from: transaction from
-        :param private_key: private_key
+        :param tx_sender: transaction from
+        :param tx_sender_key: private_key
         :return: None
         """
         try:
@@ -54,13 +59,13 @@ class TokenListContract:
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise

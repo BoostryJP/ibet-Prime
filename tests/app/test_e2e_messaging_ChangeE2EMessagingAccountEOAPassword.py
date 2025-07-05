@@ -89,7 +89,7 @@ class TestChangeE2EMessagingAccountEOAPassword:
             "purpose_test",
         ]
         await IbetStraightBondContract().create(
-            args=arguments, tx_from=user_address_1, private_key=private_key
+            args=arguments, tx_sender=user_address_1, tx_sender_key=private_key
         )
 
     ###########################################################################

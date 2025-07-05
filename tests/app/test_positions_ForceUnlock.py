@@ -97,7 +97,7 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            tx_params=ForceUnlockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -108,8 +108,8 @@ class TestForceUnlock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -174,7 +174,7 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            tx_params=ForceUnlockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -185,8 +185,8 @@ class TestForceUnlock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -252,7 +252,7 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            tx_params=ForceUnlockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -263,8 +263,8 @@ class TestForceUnlock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200

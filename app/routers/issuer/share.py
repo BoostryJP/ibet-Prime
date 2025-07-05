@@ -265,7 +265,7 @@ async def issue_share_token(
     ]
     try:
         contract_address, abi, tx_hash = await IbetShareContract().create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -309,8 +309,8 @@ async def issue_share_token(
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=contract_address,
                 token_template=TokenType.IBET_SHARE,
-                tx_from=issuer_address,
-                private_key=private_key,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
         except SendTransactionError:
             raise SendTransactionError("failed to register token address token list")
@@ -554,9 +554,9 @@ async def update_share_token(
         token_contract = IbetShareContract(token_address)
         original_contents = (await token_contract.get()).__dict__
         await token_contract.update(
-            data=UpdateParams(**update_data.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=UpdateParams(**update_data.model_dump()),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -832,9 +832,9 @@ async def issuer_additional_share(
     # Send transaction
     try:
         await IbetShareContract(token_address).additional_issue(
-            data=AdditionalIssueParams(**data.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=AdditionalIssueParams(**data.model_dump()),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -1254,9 +1254,9 @@ async def redeem_share(
     # Send transaction
     try:
         await IbetShareContract(token_address).redeem(
-            data=RedeemParams(**data.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=RedeemParams(**data.model_dump()),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -3249,9 +3249,9 @@ async def transfer_share_token_ownership(
 
     try:
         await IbetShareContract(token.token_address).forced_transfer(
-            data=ForcedTransferParams(**token.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=ForcedTransferParams(**token.model_dump()),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -4041,9 +4041,9 @@ async def update_share_token_transfer_approval_status(
                 }
                 try:
                     await IbetShareContract(token_address).approve_transfer(
-                        data=ApproveTransferParams(**_data),
-                        tx_from=issuer_address,
-                        private_key=private_key,
+                        tx_params=ApproveTransferParams(**_data),
+                        tx_sender=issuer_address,
+                        tx_sender_key=private_key,
                     )
                 except ContractRevertError:
                     # If approveTransfer end with revert,
@@ -4051,9 +4051,9 @@ async def update_share_token_transfer_approval_status(
                     # After cancelTransfer, ContractRevertError is returned.
                     try:
                         await IbetShareContract(token_address).cancel_transfer(
-                            data=CancelTransferParams(**_data),
-                            tx_from=issuer_address,
-                            private_key=private_key,
+                            tx_params=CancelTransferParams(**_data),
+                            tx_sender=issuer_address,
+                            tx_sender_key=private_key,
                         )
                     except ContractRevertError:
                         raise
@@ -4066,9 +4066,9 @@ async def update_share_token_transfer_approval_status(
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
                 try:
                     await escrow.approve_transfer(
-                        data=EscrowApproveTransferParams(**_data),
-                        tx_from=issuer_address,
-                        private_key=private_key,
+                        tx_params=EscrowApproveTransferParams(**_data),
+                        tx_sender=issuer_address,
+                        tx_sender_key=private_key,
                     )
                 except ContractRevertError:
                     # If approveTransfer end with revert, error should be thrown immediately.
@@ -4079,9 +4079,9 @@ async def update_share_token_transfer_approval_status(
             _data = {"application_id": _transfer_approval.application_id, "data": now}
             try:
                 await IbetShareContract(token_address).cancel_transfer(
-                    data=CancelTransferParams(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
+                    tx_params=CancelTransferParams(**_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
             except ContractRevertError:
                 # If cancelTransfer end with revert, error should be thrown immediately.

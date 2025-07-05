@@ -107,15 +107,15 @@ class WSTBridgeToIbetProcessor:
                 if pending_tx.tx_type == EthToIbetBridgeTxType.FORCE_UNLOCK:
                     tx_params: IbetBridgeTxParamsForceUnlock = pending_tx.tx_params
                     tx_hash, tx_receipt = await ibet_token_contract.force_unlock(
-                        data=ForceUnlockParams(
+                        tx_params=ForceUnlockParams(
                             lock_address=tx_params["lock_address"],
                             account_address=tx_params["account_address"],
                             recipient_address=tx_params["recipient_address"],
                             value=tx_params["value"],
                             data=json.dumps(tx_params["data"]),
                         ),
-                        tx_from=pending_tx.tx_sender,
-                        private_key=issuer_pk,
+                        tx_sender=pending_tx.tx_sender,
+                        tx_sender_key=issuer_pk,
                     )
                 elif (
                     pending_tx.tx_type
@@ -128,15 +128,15 @@ class WSTBridgeToIbetProcessor:
                         tx_hash,
                         tx_receipt,
                     ) = await ibet_token_contract.force_change_locked_account(
-                        data=ForceChangeLockedAccountParams(
+                        tx_params=ForceChangeLockedAccountParams(
                             lock_address=tx_params["lock_address"],
                             before_account_address=tx_params["before_account_address"],
                             after_account_address=tx_params["after_account_address"],
                             value=tx_params["value"],
                             data=json.dumps(tx_params["data"]),
                         ),
-                        tx_from=pending_tx.tx_sender,
-                        private_key=issuer_pk,
+                        tx_sender=pending_tx.tx_sender,
+                        tx_sender_key=issuer_pk,
                     )
                 else:
                     LOG.error(

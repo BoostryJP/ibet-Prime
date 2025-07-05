@@ -65,8 +65,8 @@ class TestSendMessage:
         ).send_message(
             to_address=user_address_2,
             message=message,
-            tx_from=user_address_1,
-            private_key=user_private_key_1,
+            tx_sender=user_address_1,
+            tx_sender_key=user_private_key_1,
         )
 
         # Assertion
@@ -106,8 +106,8 @@ class TestSendMessage:
                 await E2EMessaging(ibet_e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
-                    tx_from=user_address_1,
-                    private_key=user_private_key_1,
+                    tx_sender=user_address_1,
+                    tx_sender_key=user_private_key_1,
                 )
 
         # Assertion
@@ -137,8 +137,8 @@ class TestSendMessage:
                 await E2EMessaging(ibet_e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
-                    tx_from=user_address_1,
-                    private_key=user_private_key_1,
+                    tx_sender=user_address_1,
+                    tx_sender_key=user_private_key_1,
                 )
 
         # Assertion
@@ -243,8 +243,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             _type=_type,
             message_org=message_org,
             to_rsa_public_key=self.rsa_public_key,
-            tx_from=user_address_1,
-            private_key=user_private_key_1,
+            tx_sender=user_address_1,
+            tx_sender_key=user_private_key_1,
         )
 
         # Assertion
@@ -310,8 +310,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             _type=_type,
             message_org=message_org,
             to_rsa_public_key=self.rsa_public_key,
-            tx_from=user_address_1,
-            private_key=user_private_key_1,
+            tx_sender=user_address_1,
+            tx_sender_key=user_private_key_1,
         )
 
         # Assertion
@@ -369,8 +369,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                     _type=_type,
                     message_org=message_org,
                     to_rsa_public_key=self.rsa_public_key,
-                    tx_from=user_address_1,
-                    private_key=user_private_key_1,
+                    tx_sender=user_address_1,
+                    tx_sender_key=user_private_key_1,
                 )
 
         # Assertion
@@ -405,8 +405,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                     _type=_type,
                     message_org=message_org,
                     to_rsa_public_key=self.rsa_public_key,
-                    tx_from=user_address_1,
-                    private_key=user_private_key_1,
+                    tx_sender=user_address_1,
+                    tx_sender_key=user_private_key_1,
                 )
 
         # Assertion
@@ -452,8 +452,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         ).set_public_key(
             public_key=self.rsa_public_key,
             key_type=key_type,
-            tx_from=user_address_1,
-            private_key=user_private_key_1,
+            tx_sender=user_address_1,
+            tx_sender_key=user_private_key_1,
         )
 
         # Assertion
@@ -490,8 +490,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 await E2EMessaging(ibet_e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
-                    tx_from=user_address_1,
-                    private_key=user_private_key_1,
+                    tx_sender=user_address_1,
+                    tx_sender_key=user_private_key_1,
                 )
 
         # Assertion
@@ -519,8 +519,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 await E2EMessaging(ibet_e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
-                    tx_from=user_address_1,
-                    private_key=user_private_key_1,
+                    tx_sender=user_address_1,
+                    tx_sender_key=user_private_key_1,
                 )
 
         # Assertion

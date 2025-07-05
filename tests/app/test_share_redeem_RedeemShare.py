@@ -82,7 +82,9 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=RedeemParams(**req_param), tx_from=_issuer_address, private_key=ANY
+            tx_params=RedeemParams(**req_param),
+            tx_sender=_issuer_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -138,7 +140,9 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=RedeemParams(**req_param), tx_from=_issuer_address, private_key=ANY
+            tx_params=RedeemParams(**req_param),
+            tx_sender=_issuer_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200

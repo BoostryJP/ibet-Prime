@@ -106,7 +106,7 @@ async def issue_bond_token(issuer: dict, exchange_address: str):
         "発行目的",
     ]
     token_contract_address, _, _ = await IbetStraightBondContract().create(
-        args=arguments, tx_from=issuer_address, private_key=issuer_pk
+        args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
     )
     token_contract = ContractUtils.get_contract(
         contract_name="IbetStraightBond", contract_address=token_contract_address
@@ -268,9 +268,9 @@ class TestApproveTransfer:
         # test IbetSecurityTokenEscrow.approve_transfer
         security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
         tx_hash, tx_receipt = await security_token_escrow.approve_transfer(
-            data=ApproveTransferParams(escrow_id=1, data="test"),
-            tx_from=user1_account["address"],
-            private_key=user1_account_pk,
+            tx_params=ApproveTransferParams(escrow_id=1, data="test"),
+            tx_sender=user1_account["address"],
+            tx_sender_key=user1_account_pk,
         )
 
         # assertion
@@ -397,9 +397,9 @@ class TestApproveTransfer:
         with InspectionMock, pytest.raises(SendTransactionError) as exc_info:
             security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
             await security_token_escrow.approve_transfer(
-                data=ApproveTransferParams(escrow_id=1, data="test"),
-                tx_from=user1_account["address"],
-                private_key=user1_account_pk,
+                tx_params=ApproveTransferParams(escrow_id=1, data="test"),
+                tx_sender=user1_account["address"],
+                tx_sender_key=user1_account_pk,
             )
 
         cause = exc_info.value.args[0]
@@ -431,9 +431,9 @@ class TestApproveTransfer:
                     exchange_contract.address
                 )
                 await security_token_escrow.approve_transfer(
-                    data=ApproveTransferParams(escrow_id=0, data="test"),
-                    tx_from=user1_account["address"],
-                    private_key=user1_account_pk,
+                    tx_params=ApproveTransferParams(escrow_id=0, data="test"),
+                    tx_sender=user1_account["address"],
+                    tx_sender_key=user1_account_pk,
                 )
 
         cause = exc_info.value.args[0]
@@ -469,9 +469,9 @@ class TestApproveTransfer:
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             security_token_escrow = IbetSecurityTokenEscrow(exchange_contract.address)
             await security_token_escrow.approve_transfer(
-                data=ApproveTransferParams(escrow_id=0, data="test"),
-                tx_from=user1_account["address"],
-                private_key=user1_account_pk,
+                tx_params=ApproveTransferParams(escrow_id=0, data="test"),
+                tx_sender=user1_account["address"],
+                tx_sender_key=user1_account_pk,
             )
 
         assert exc_info.value.args[0] == "execution reverted"

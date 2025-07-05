@@ -92,7 +92,7 @@ class TestChangeIssuerEOAPassword:
             "purpose_test",
         ]
         await IbetStraightBondContract().create(
-            args=arguments, tx_from=_issuer_address, private_key=private_key
+            args=arguments, tx_sender=_issuer_address, tx_sender_key=private_key
         )
 
     ###########################################################################

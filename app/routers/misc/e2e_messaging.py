@@ -141,8 +141,8 @@ async def create_e2e_messaging_account(
         tx_hash, _ = await E2EMessaging(E2E_MESSAGING_CONTRACT_ADDRESS).set_public_key(
             public_key=rsa_public_key,
             key_type="RSA4096",
-            tx_from=addr,
-            private_key=private_key,
+            tx_sender=addr,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")

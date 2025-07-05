@@ -54,14 +54,14 @@ async def deploy_bond_token_contract(
     bond_contrat = IbetStraightBondContract()
     token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
     await bond_contrat.update(
-        data=IbetStraightBondUpdateParams(
+        tx_params=IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
         ),
-        tx_from=address,
-        private_key=private_key,
+        tx_sender=address,
+        tx_sender_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)

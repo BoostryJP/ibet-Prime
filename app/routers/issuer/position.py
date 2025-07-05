@@ -595,9 +595,9 @@ async def force_lock(
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_lock(
-            data=ForceLockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=ForceLockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except ContractRevertError:
         raise
@@ -687,9 +687,9 @@ async def force_unlock(
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_unlock(
-            data=ForceUnlockParams(**unlock_data),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=ForceUnlockParams(**unlock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except ContractRevertError:
         raise

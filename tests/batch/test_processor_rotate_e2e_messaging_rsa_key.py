@@ -308,14 +308,14 @@ class TestProcessor:
                     call(
                         public_key=ANY,
                         key_type="RSA4096",
-                        tx_from=user_address_2,
-                        private_key=user_private_key_2,
+                        tx_sender=user_address_2,
+                        tx_sender_key=user_private_key_2,
                     ),
                     call(
                         public_key=ANY,
                         key_type="RSA4096",
-                        tx_from=user_address_1,
-                        private_key=user_private_key_1,
+                        tx_sender=user_address_1,
+                        tx_sender_key=user_private_key_1,
                     ),
                 ]
             )
@@ -480,8 +480,8 @@ class TestProcessor:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=user_address_1,
-                private_key=user_private_key_1,
+                tx_sender=user_address_1,
+                tx_sender_key=user_private_key_1,
             )
 
         _rsa_key_list = (
@@ -549,8 +549,8 @@ class TestProcessor:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=user_address_1,
-                private_key=user_private_key_1,
+                tx_sender=user_address_1,
+                tx_sender_key=user_private_key_1,
             )
 
         _rsa_key_list = (

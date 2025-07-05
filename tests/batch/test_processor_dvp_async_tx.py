@@ -210,15 +210,15 @@ class TestProcessor:
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
 
         mocked_create_delivery.assert_called_with(
-            data=CreateDeliveryParams(
+            tx_params=CreateDeliveryParams(
                 token_address=self.token_address,
                 buyer_address=self.user_address,
                 amount=10,
                 agent_address=self.agent_address,
                 data="test_data",
             ),
-            tx_from=self.issuer_address,
-            private_key=self.issuer_pk,
+            tx_sender=self.issuer_address,
+            tx_sender_key=self.issuer_pk,
         )
 
         assert caplog.messages == [
@@ -296,12 +296,12 @@ class TestProcessor:
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
 
         mocked_withdraw_partial.assert_called_with(
-            data=WithdrawPartialParams(
+            tx_params=WithdrawPartialParams(
                 token_address=self.token_address,
                 value=10,
             ),
-            tx_from=self.issuer_address,
-            private_key=self.issuer_pk,
+            tx_sender=self.issuer_address,
+            tx_sender_key=self.issuer_pk,
         )
 
         assert caplog.messages == [
@@ -721,12 +721,12 @@ class TestProcessor:
         assert after_dvp_process.process_status == DVPAsyncProcessStatus.PROCESSING
 
         mocked_withdraw_partial.assert_called_with(
-            data=WithdrawPartialParams(
+            tx_params=WithdrawPartialParams(
                 token_address=self.token_address,
                 value=10,
             ),
-            tx_from=self.issuer_address,
-            private_key=self.issuer_pk,
+            tx_sender=self.issuer_address,
+            tx_sender_key=self.issuer_pk,
         )
 
         assert caplog.messages == [

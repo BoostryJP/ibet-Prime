@@ -147,8 +147,8 @@ class Processor:
                 ).set_public_key(
                     public_key=rsa_public_key,
                     key_type="RSA4096",
-                    tx_from=e2e_messaging_account.account_address,
-                    private_key=private_key,
+                    tx_sender=e2e_messaging_account.account_address,
+                    tx_sender_key=private_key,
                 )
                 LOG.info(
                     f"New RSA key created: account_address={e2e_messaging_account.account_address}"

@@ -161,9 +161,9 @@ class Processor:
                             arguments=_update_token.arguments,
                         )
                         await IbetShareContract(_update_token.token_address).update(
-                            data=_update_data,
-                            tx_from=_update_token.issuer_address,
-                            private_key=private_key,
+                            tx_params=_update_data,
+                            tx_sender=_update_token.issuer_address,
+                            tx_sender_key=private_key,
                         )
                         token_template = TokenType.IBET_SHARE.value
 
@@ -176,9 +176,9 @@ class Processor:
                         await IbetStraightBondContract(
                             _update_token.token_address
                         ).update(
-                            data=_update_data,
-                            tx_from=_update_token.issuer_address,
-                            private_key=private_key,
+                            tx_params=_update_data,
+                            tx_sender=_update_token.issuer_address,
+                            tx_sender_key=private_key,
                         )
                         token_template = TokenType.IBET_STRAIGHT_BOND.value
 
@@ -187,8 +187,8 @@ class Processor:
                         await TokenListContract(TOKEN_LIST_CONTRACT_ADDRESS).register(
                             token_address=_update_token.token_address,
                             token_template=token_template,
-                            tx_from=_update_token.issuer_address,
-                            private_key=private_key,
+                            tx_sender=_update_token.issuer_address,
+                            tx_sender_key=private_key,
                         )
 
                         # Insert initial position data

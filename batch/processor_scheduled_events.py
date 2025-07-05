@@ -216,9 +216,9 @@ class Processor:
                         original_contents = (await token_contract.get()).__dict__
                         _update_data = IbetShareUpdateParams(**_event.data)
                         await token_contract.update(
-                            data=_update_data,
-                            tx_from=_event.issuer_address,
-                            private_key=private_key,
+                            tx_params=_update_data,
+                            tx_sender=_event.issuer_address,
+                            tx_sender_key=private_key,
                         )
                         await self.__sink_on_token_update_operation_log(
                             db_session=db_session,
@@ -236,9 +236,9 @@ class Processor:
                         original_contents = (await token_contract.get()).__dict__
                         _update_data = IbetStraightBondUpdateParams(**_event.data)
                         await IbetStraightBondContract(_event.token_address).update(
-                            data=_update_data,
-                            tx_from=_event.issuer_address,
-                            private_key=private_key,
+                            tx_params=_update_data,
+                            tx_sender=_event.issuer_address,
+                            tx_sender_key=private_key,
                         )
                         await self.__sink_on_token_update_operation_log(
                             db_session=db_session,

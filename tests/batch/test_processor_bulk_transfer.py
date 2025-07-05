@@ -135,13 +135,13 @@ class TestProcessor:
 
         # Assertion
         IbetStraightBondContract_transfer.assert_called_with(
-            data=ForcedTransferParams(
+            tx_params=ForcedTransferParams(
                 from_address=_from_address["address"],
                 to_address=_to_address["address"],
                 amount=1,
             ),
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (
@@ -215,13 +215,13 @@ class TestProcessor:
 
         # Assertion
         IbetShareContract_transfer.assert_called_with(
-            data=ForcedTransferParams(
+            tx_params=ForcedTransferParams(
                 from_address=_from_address["address"],
                 to_address=_to_address["address"],
                 amount=1,
             ),
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (
@@ -306,7 +306,7 @@ class TestProcessor:
 
         # Assertion
         IbetStraightBondContract_bulk_transfer.assert_called_with(
-            data=[
+            tx_params=[
                 ForcedTransferParams(
                     from_address=_from_address["address"],
                     to_address=_to_address["address"],
@@ -323,8 +323,8 @@ class TestProcessor:
                     amount=1,
                 ),
             ],
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (
@@ -409,7 +409,7 @@ class TestProcessor:
 
         # Assertion
         IbetShareContract_bulk_transfer.assert_called_with(
-            data=[
+            tx_params=[
                 ForcedTransferParams(
                     from_address=_from_address["address"],
                     to_address=_to_address["address"],
@@ -426,8 +426,8 @@ class TestProcessor:
                     amount=1,
                 ),
             ],
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (

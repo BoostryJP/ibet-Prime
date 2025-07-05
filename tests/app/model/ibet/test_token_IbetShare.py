@@ -95,7 +95,7 @@ class TestCreate:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -134,7 +134,7 @@ class TestCreate:
         share_contract = IbetShareContract()
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.create(
-                args=arguments, tx_from=issuer_address, private_key=private_key
+                args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
             )
 
         # assertion
@@ -167,7 +167,7 @@ class TestCreate:
         share_contract = IbetShareContract()
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.create(
-                args=arguments, tx_from=issuer_address, private_key=private_key
+                args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
             )
 
         # assertion
@@ -203,8 +203,8 @@ class TestCreate:
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.create(
                 args=arguments,
-                tx_from=issuer_address[:-1],  # short address
-                private_key=private_key,
+                tx_sender=issuer_address[:-1],  # short address
+                tx_sender_key=private_key,
             )
 
         # assertion
@@ -233,7 +233,9 @@ class TestCreate:
         share_contract = IbetShareContract()
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.create(
-                args=arguments, tx_from=issuer_address, private_key="some_private_key"
+                args=arguments,
+                tx_sender=issuer_address,
+                tx_sender_key="some_private_key",
             )
 
         # assertion
@@ -264,12 +266,12 @@ class TestCreate:
             10000,
         ]
         contract_address, _, _ = await IbetShareContract().create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
             await IbetShareContract(contract_address).create(
-                args=arguments, tx_from=issuer_address, private_key=private_key
+                args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
             )
 
         # assertion
@@ -308,7 +310,7 @@ class TestGet:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # execute the function
@@ -365,7 +367,7 @@ class TestGet:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # create cache
@@ -463,7 +465,7 @@ class TestGet:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # create cache
@@ -602,7 +604,7 @@ class TestUpdate:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # update
@@ -610,7 +612,7 @@ class TestUpdate:
         _add_data = UpdateParams(**_data)
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.update(
-            data=_add_data, tx_from=issuer_address, private_key=private_key
+            tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -664,7 +666,7 @@ class TestUpdate:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # update
@@ -689,7 +691,7 @@ class TestUpdate:
         _add_data = UpdateParams(**_data)
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.update(
-            data=_add_data, tx_from=issuer_address, private_key=private_key
+            tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -792,7 +794,7 @@ class TestUpdate:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # update
@@ -800,9 +802,9 @@ class TestUpdate:
         _add_data = UpdateParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.update(
-                data=_add_data,
-                tx_from="invalid_tx_from",
-                private_key="invalid private key",
+                tx_params=_add_data,
+                tx_sender="invalid_tx_from",
+                tx_sender_key="invalid private key",
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
@@ -832,7 +834,7 @@ class TestUpdate:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # update
@@ -840,9 +842,9 @@ class TestUpdate:
         _add_data = UpdateParams(**_data)
         with pytest.raises(SendTransactionError):
             await share_contract.update(
-                data=_add_data,
-                tx_from=issuer_address,
-                private_key="invalid private key",
+                tx_params=_add_data,
+                tx_sender=issuer_address,
+                tx_sender_key="invalid private key",
             )
 
     # <Error_4>
@@ -870,7 +872,7 @@ class TestUpdate:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -885,7 +887,9 @@ class TestUpdate:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.update(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
 
         # assertion
@@ -916,7 +920,7 @@ class TestUpdate:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -931,7 +935,9 @@ class TestUpdate:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.update(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
 
         # assertion
@@ -968,7 +974,7 @@ class TestUpdate:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -984,7 +990,9 @@ class TestUpdate:
         _add_data = UpdateParams(**_data)
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.update(
-                data=_add_data, tx_from=user_address, private_key=user_private_key
+                tx_params=_add_data,
+                tx_sender=user_address,
+                tx_sender_key=user_private_key,
             )
 
         # assertion
@@ -1023,14 +1031,16 @@ class TestForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_private_key
+            args=arguments, tx_sender=from_address, tx_sender_key=from_private_key
         )
 
         # transfer
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
         _transfer_data = ForcedTransferParams(**_data)
         await share_contract.forced_transfer(
-            data=_transfer_data, tx_from=from_address, private_key=from_private_key
+            tx_params=_transfer_data,
+            tx_sender=from_address,
+            tx_sender_key=from_private_key,
         )
 
         # assertion
@@ -1142,7 +1152,7 @@ class TestForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_private_key
+            args=arguments, tx_sender=from_address, tx_sender_key=from_private_key
         )
 
         # transfer
@@ -1150,9 +1160,9 @@ class TestForcedTransfer:
         _transfer_data = ForcedTransferParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.forced_transfer(
-                data=_transfer_data,
-                tx_from="invalid_tx_from",
-                private_key=from_private_key,
+                tx_params=_transfer_data,
+                tx_sender="invalid_tx_from",
+                tx_sender_key=from_private_key,
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
@@ -1185,7 +1195,7 @@ class TestForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_private_key
+            args=arguments, tx_sender=from_address, tx_sender_key=from_private_key
         )
 
         # transfer
@@ -1193,9 +1203,9 @@ class TestForcedTransfer:
         _transfer_data = ForcedTransferParams(**_data)
         with pytest.raises(SendTransactionError):
             await share_contract.forced_transfer(
-                data=_transfer_data,
-                tx_from=from_address,
-                private_key="invalid_private_key",
+                tx_params=_transfer_data,
+                tx_sender=from_address,
+                tx_sender_key="invalid_private_key",
             )
 
     # <Error_5>
@@ -1226,7 +1236,7 @@ class TestForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -1241,7 +1251,9 @@ class TestForcedTransfer:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.forced_transfer(
-                    data=_transfer_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_transfer_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
@@ -1273,7 +1285,7 @@ class TestForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -1288,7 +1300,9 @@ class TestForcedTransfer:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.forced_transfer(
-                    data=_transfer_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_transfer_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
@@ -1320,7 +1334,7 @@ class TestForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # transfer with insufficient balance
@@ -1342,7 +1356,9 @@ class TestForcedTransfer:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.forced_transfer(
-                data=_transfer_data, tx_from=issuer_address, private_key=private_key
+                tx_params=_transfer_data,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
 
         # assertion
@@ -1381,14 +1397,16 @@ class TestBulkForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_private_key
+            args=arguments, tx_sender=from_address, tx_sender_key=from_private_key
         )
 
         # bulk transfer
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
         transfer_list = [ForcedTransferParams(**_data), ForcedTransferParams(**_data)]
         await share_contract.bulk_forced_transfer(
-            data=transfer_list, tx_from=from_address, private_key=from_private_key
+            tx_params=transfer_list,
+            tx_sender=from_address,
+            tx_sender_key=from_private_key,
         )
 
         # assertion
@@ -1430,7 +1448,7 @@ class TestBulkForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_private_key
+            args=arguments, tx_sender=from_address, tx_sender_key=from_private_key
         )
 
         # mock
@@ -1452,9 +1470,9 @@ class TestBulkForcedTransfer:
         ]
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.bulk_forced_transfer(
-                data=transfer_list,
-                tx_from=from_address,
-                private_key=from_private_key,
+                tx_params=transfer_list,
+                tx_sender=from_address,
+                tx_sender_key=from_private_key,
             )
 
         # assertion
@@ -1489,7 +1507,7 @@ class TestBulkForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_private_key
+            args=arguments, tx_sender=from_address, tx_sender_key=from_private_key
         )
 
         # mock
@@ -1504,9 +1522,9 @@ class TestBulkForcedTransfer:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.bulk_forced_transfer(
-                    data=transfer_list,
-                    tx_from=from_address,
-                    private_key=from_private_key,
+                    tx_params=transfer_list,
+                    tx_sender=from_address,
+                    tx_sender_key=from_private_key,
                 )
         # assertion
         assert isinstance(exc_info.value.args[0], TimeExhausted)
@@ -1540,7 +1558,7 @@ class TestBulkForcedTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_private_key
+            args=arguments, tx_sender=from_address, tx_sender_key=from_private_key
         )
 
         # bulk transfer
@@ -1548,9 +1566,9 @@ class TestBulkForcedTransfer:
         transfer_list = [ForcedTransferParams(**_data), ForcedTransferParams(**_data)]
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.bulk_forced_transfer(
-                data=transfer_list,
-                tx_from="invalid_tx_from",  # invalid
-                private_key=from_private_key,
+                tx_params=transfer_list,
+                tx_sender="invalid_tx_from",  # invalid
+                tx_sender_key=from_private_key,
             )
 
         assert isinstance(exc_info.value.args[0], InvalidAddress)
@@ -1623,7 +1641,7 @@ class TestBulkTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_pk
+            args=arguments, tx_sender=from_address, tx_sender_key=from_pk
         )
 
         update_data = {
@@ -1631,16 +1649,16 @@ class TestBulkTransfer:
             "transferable": True,
         }
         await share_contract.update(
-            data=UpdateParams(**update_data),
-            tx_from=from_address,
-            private_key=from_pk,
+            tx_params=UpdateParams(**update_data),
+            tx_sender=from_address,
+            tx_sender_key=from_pk,
         )
 
         # bulk transfer
         _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
         _transfer_data = BulkTransferParams(**_data)
         await share_contract.bulk_transfer(
-            data=_transfer_data, tx_from=from_address, private_key=from_pk
+            tx_params=_transfer_data, tx_sender=from_address, tx_sender_key=from_pk
         )
 
         # assertion
@@ -1741,7 +1759,7 @@ class TestBulkTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_pk
+            args=arguments, tx_sender=from_address, tx_sender_key=from_pk
         )
 
         # bulk transfer
@@ -1749,7 +1767,9 @@ class TestBulkTransfer:
         _transfer_data = BulkTransferParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.bulk_transfer(
-                data=_transfer_data, tx_from="invalid_tx_from", private_key=from_pk
+                tx_params=_transfer_data,
+                tx_sender="invalid_tx_from",
+                tx_sender_key=from_pk,
             )
 
         # assertion
@@ -1788,7 +1808,7 @@ class TestBulkTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_pk
+            args=arguments, tx_sender=from_address, tx_sender_key=from_pk
         )
 
         # bulk transfer
@@ -1796,9 +1816,9 @@ class TestBulkTransfer:
         _transfer_data = BulkTransferParams(**_data)
         with pytest.raises(SendTransactionError):
             await share_contract.bulk_transfer(
-                data=_transfer_data,
-                tx_from=from_address,
-                private_key="invalid_private_key",
+                tx_params=_transfer_data,
+                tx_sender=from_address,
+                tx_sender_key="invalid_private_key",
             )
 
     # <Error_5_1>
@@ -1834,7 +1854,7 @@ class TestBulkTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_pk
+            args=arguments, tx_sender=from_address, tx_sender_key=from_pk
         )
 
         # mock
@@ -1850,7 +1870,7 @@ class TestBulkTransfer:
         _transfer_data = BulkTransferParams(**_data)
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.bulk_transfer(
-                data=_transfer_data, tx_from=from_address, private_key=from_pk
+                tx_params=_transfer_data, tx_sender=from_address, tx_sender_key=from_pk
             )
 
         # assertion
@@ -1892,7 +1912,7 @@ class TestBulkTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_pk
+            args=arguments, tx_sender=from_address, tx_sender_key=from_pk
         )
 
         # mock
@@ -1907,7 +1927,9 @@ class TestBulkTransfer:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.bulk_transfer(
-                    data=_transfer_data, tx_from=from_address, private_key=from_pk
+                    tx_params=_transfer_data,
+                    tx_sender=from_address,
+                    tx_sender_key=from_pk,
                 )
 
         # assertion
@@ -1946,7 +1968,7 @@ class TestBulkTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=from_address, private_key=from_pk
+            args=arguments, tx_sender=from_address, tx_sender_key=from_pk
         )
 
         # mock
@@ -1961,7 +1983,9 @@ class TestBulkTransfer:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.bulk_transfer(
-                    data=_transfer_data, tx_from=from_address, private_key=from_pk
+                    tx_params=_transfer_data,
+                    tx_sender=from_address,
+                    tx_sender_key=from_pk,
                 )
 
         # assertion
@@ -1997,7 +2021,7 @@ class TestAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # additional issue
@@ -2005,7 +2029,7 @@ class TestAdditionalIssue:
         _add_data = AdditionalIssueParams(**_data)
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.additional_issue(
-            data=_add_data, tx_from=issuer_address, private_key=private_key
+            tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -2105,7 +2129,7 @@ class TestAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # additional issue
@@ -2113,7 +2137,9 @@ class TestAdditionalIssue:
         _add_data = AdditionalIssueParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.additional_issue(
-                data=_add_data, tx_from="invalid_tx_from", private_key=private_key
+                tx_params=_add_data,
+                tx_sender="invalid_tx_from",
+                tx_sender_key=private_key,
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
@@ -2143,7 +2169,7 @@ class TestAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # additional issue
@@ -2151,9 +2177,9 @@ class TestAdditionalIssue:
         _add_data = AdditionalIssueParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.additional_issue(
-                data=_add_data,
-                tx_from=test_account.get("address"),
-                private_key="invalid_private_key",
+                tx_params=_add_data,
+                tx_sender=test_account.get("address"),
+                tx_sender_key="invalid_private_key",
             )
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
@@ -2183,7 +2209,7 @@ class TestAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -2198,7 +2224,9 @@ class TestAdditionalIssue:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.additional_issue(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
@@ -2227,7 +2255,7 @@ class TestAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -2242,7 +2270,9 @@ class TestAdditionalIssue:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.additional_issue(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
@@ -2277,7 +2307,7 @@ class TestAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_private_key
         )
 
         # additional issue
@@ -2294,7 +2324,9 @@ class TestAdditionalIssue:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.additional_issue(
-                data=_add_data, tx_from=user_address, private_key=user_private_key
+                tx_params=_add_data,
+                tx_sender=user_address,
+                tx_sender_key=user_private_key,
             )
 
         # assertion
@@ -2330,7 +2362,7 @@ class TestBulkAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # additional issue
@@ -2338,7 +2370,7 @@ class TestBulkAdditionalIssue:
         _add_data = [AdditionalIssueParams(**_data), AdditionalIssueParams(**_data)]
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.bulk_additional_issue(
-            data=_add_data, tx_from=issuer_address, private_key=private_key
+            tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -2391,7 +2423,7 @@ class TestBulkAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_private_key
         )
 
         # additional issue
@@ -2411,7 +2443,9 @@ class TestBulkAdditionalIssue:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.bulk_additional_issue(
-                data=_add_data, tx_from=user_address, private_key=user_private_key
+                tx_params=_add_data,
+                tx_sender=user_address,
+                tx_sender_key=user_private_key,
             )
 
         # assertion
@@ -2443,7 +2477,7 @@ class TestBulkAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -2458,7 +2492,9 @@ class TestBulkAdditionalIssue:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.bulk_additional_issue(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
@@ -2488,7 +2524,7 @@ class TestBulkAdditionalIssue:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # additional issue
@@ -2499,7 +2535,9 @@ class TestBulkAdditionalIssue:
         ]
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.bulk_additional_issue(
-                data=_add_data, tx_from="invalid_tx_from", private_key=private_key
+                tx_params=_add_data,
+                tx_sender="invalid_tx_from",
+                tx_sender_key=private_key,
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
@@ -2534,7 +2572,7 @@ class TestRedeem:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # redeem
@@ -2542,7 +2580,7 @@ class TestRedeem:
         _add_data = RedeemParams(**_data)
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.redeem(
-            data=_add_data, tx_from=issuer_address, private_key=private_key
+            tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -2642,7 +2680,7 @@ class TestRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # redeem
@@ -2650,7 +2688,9 @@ class TestRedeem:
         _add_data = RedeemParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.redeem(
-                data=_add_data, tx_from="invalid_tx_from", private_key=private_key
+                tx_params=_add_data,
+                tx_sender="invalid_tx_from",
+                tx_sender_key=private_key,
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
@@ -2680,7 +2720,7 @@ class TestRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # redeem
@@ -2688,9 +2728,9 @@ class TestRedeem:
         _add_data = RedeemParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.redeem(
-                data=_add_data,
-                tx_from=test_account.get("address"),
-                private_key="invalid_private_key",
+                tx_params=_add_data,
+                tx_sender=test_account.get("address"),
+                tx_sender_key="invalid_private_key",
             )
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
@@ -2720,7 +2760,7 @@ class TestRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -2735,7 +2775,9 @@ class TestRedeem:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.redeem(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
@@ -2764,7 +2806,7 @@ class TestRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -2779,7 +2821,9 @@ class TestRedeem:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.redeem(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
@@ -2808,7 +2852,7 @@ class TestRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # redeem
@@ -2825,7 +2869,7 @@ class TestRedeem:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.redeem(
-                data=_add_data, tx_from=issuer_address, private_key=private_key
+                tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
             )
 
         # assertion
@@ -2864,7 +2908,7 @@ class TestBulkRedeem:
         ]
         share_contract = IbetShareContract()
         contract_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # redeem
@@ -2872,7 +2916,7 @@ class TestBulkRedeem:
         _add_data = [RedeemParams(**_data), RedeemParams(**_data)]
         pre_datetime = datetime.now(UTC).replace(tzinfo=None)
         await share_contract.bulk_redeem(
-            data=_add_data, tx_from=issuer_address, private_key=private_key
+            tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -2919,7 +2963,7 @@ class TestBulkRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # redeem
@@ -2936,7 +2980,7 @@ class TestBulkRedeem:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.bulk_redeem(
-                data=_add_data, tx_from=issuer_address, private_key=private_key
+                tx_params=_add_data, tx_sender=issuer_address, tx_sender_key=private_key
             )
 
         # assertion
@@ -2971,7 +3015,7 @@ class TestBulkRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # mock
@@ -2986,7 +3030,9 @@ class TestBulkRedeem:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.bulk_redeem(
-                    data=_add_data, tx_from=issuer_address, private_key=private_key
+                    tx_params=_add_data,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
@@ -3016,7 +3062,7 @@ class TestBulkRedeem:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # redeem
@@ -3024,7 +3070,9 @@ class TestBulkRedeem:
         _add_data = [RedeemParams(**_data), RedeemParams(**_data)]
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.bulk_redeem(
-                data=_add_data, tx_from="invalid_tx_from", private_key=private_key
+                tx_params=_add_data,
+                tx_sender="invalid_tx_from",
+                tx_sender_key=private_key,
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
@@ -3059,7 +3107,7 @@ class TestGetAccountBalance:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # assertion
@@ -3109,7 +3157,7 @@ class TestGetAccountBalance:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # execute the function
@@ -3292,7 +3340,7 @@ class TestApproveTransfer:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # update token (from issuer)
@@ -3302,9 +3350,9 @@ class TestApproveTransfer:
             "transferable": True,
         }
         await share_contract.update(
-            data=UpdateParams(**update_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=UpdateParams(**update_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # register personal info (to_account)
@@ -3326,9 +3374,9 @@ class TestApproveTransfer:
         # approve transfer (from issuer)
         approve_data = {"application_id": 0, "data": "approve transfer test"}
         tx_hash, tx_receipt = await share_contract.approve_transfer(
-            data=ApproveTransferParams(**approve_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=ApproveTransferParams(**approve_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # assertion
@@ -3401,9 +3449,9 @@ class TestApproveTransfer:
         share_contract = IbetShareContract("not address")
         with pytest.raises(SendTransactionError) as ex_info:
             await share_contract.approve_transfer(
-                data=_approve_transfer_data,
-                tx_from=issuer_address,
-                private_key=private_key,
+                tx_params=_approve_transfer_data,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
         assert ex_info.match(
             "when sending a str, it must be a hex string. Got: 'not address'"
@@ -3434,7 +3482,7 @@ class TestApproveTransfer:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # Transfer approve
@@ -3442,9 +3490,9 @@ class TestApproveTransfer:
         _approve_transfer_data = ApproveTransferParams(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             await share_contract.approve_transfer(
-                data=_approve_transfer_data,
-                tx_from=issuer_address[:-1],
-                private_key=private_key,
+                tx_params=_approve_transfer_data,
+                tx_sender=issuer_address[:-1],
+                tx_sender_key=private_key,
             )
         assert ex_info.match(f"ENS name: '{issuer_address[:-1]}' is invalid.")
 
@@ -3474,7 +3522,7 @@ class TestApproveTransfer:
 
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # Transfer approve
@@ -3482,9 +3530,9 @@ class TestApproveTransfer:
         _approve_transfer_data = ApproveTransferParams(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             await share_contract.approve_transfer(
-                data=_approve_transfer_data,
-                tx_from=issuer_address,
-                private_key="dummy-private",
+                tx_params=_approve_transfer_data,
+                tx_sender=issuer_address,
+                tx_sender_key="dummy-private",
             )
         assert ex_info.match("Non-hexadecimal digit found")
 
@@ -3535,7 +3583,7 @@ class TestApproveTransfer:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # update token (from issuer)
@@ -3545,9 +3593,9 @@ class TestApproveTransfer:
             "transferable": True,
         }
         await share_contract.update(
-            data=UpdateParams(**update_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=UpdateParams(**update_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # register personal info (to_account)
@@ -3569,9 +3617,9 @@ class TestApproveTransfer:
         # approve transfer (from issuer)
         approve_data = {"application_id": 0, "data": "approve transfer test"}
         await share_contract.approve_transfer(
-            data=ApproveTransferParams(**approve_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=ApproveTransferParams(**approve_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Then send approveTransfer transaction again.
@@ -3587,9 +3635,9 @@ class TestApproveTransfer:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.approve_transfer(
-                data=ApproveTransferParams(**approve_data),
-                tx_from=issuer_address,
-                private_key=issuer_pk,
+                tx_params=ApproveTransferParams(**approve_data),
+                tx_sender=issuer_address,
+                tx_sender_key=issuer_pk,
             )
 
         # assertion
@@ -3647,7 +3695,7 @@ class TestCancelTransfer:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # update token (from issuer)
@@ -3657,9 +3705,9 @@ class TestCancelTransfer:
             "transferable": True,
         }
         await share_contract.update(
-            data=UpdateParams(**update_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=UpdateParams(**update_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # register personal info (to_account)
@@ -3683,7 +3731,9 @@ class TestCancelTransfer:
         _approve_transfer_data = CancelTransferParams(**cancel_data)
 
         tx_hash, tx_receipt = await share_contract.cancel_transfer(
-            data=_approve_transfer_data, tx_from=issuer_address, private_key=issuer_pk
+            tx_params=_approve_transfer_data,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # assertion
@@ -3754,9 +3804,9 @@ class TestCancelTransfer:
         share_contract = IbetShareContract("not address")
         with pytest.raises(SendTransactionError) as ex_info:
             await share_contract.cancel_transfer(
-                data=_cancel_transfer_data,
-                tx_from=issuer_address,
-                private_key=private_key,
+                tx_params=_cancel_transfer_data,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
         assert ex_info.match(
             "when sending a str, it must be a hex string. Got: 'not address'"
@@ -3788,7 +3838,7 @@ class TestCancelTransfer:
 
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # Transfer cancel
@@ -3796,9 +3846,9 @@ class TestCancelTransfer:
         _cancel_transfer_data = CancelTransferParams(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             await share_contract.cancel_transfer(
-                data=_cancel_transfer_data,
-                tx_from=issuer_address[:-1],
-                private_key=private_key,
+                tx_params=_cancel_transfer_data,
+                tx_sender=issuer_address[:-1],
+                tx_sender_key=private_key,
             )
         assert ex_info.match(f"ENS name: '{issuer_address[:-1]}' is invalid.")
 
@@ -3828,7 +3878,7 @@ class TestCancelTransfer:
 
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         # Transfer cancel
@@ -3836,9 +3886,9 @@ class TestCancelTransfer:
         _cancel_transfer_data = CancelTransferParams(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             await share_contract.cancel_transfer(
-                data=_cancel_transfer_data,
-                tx_from=issuer_address,
-                private_key="dummy-private",
+                tx_params=_cancel_transfer_data,
+                tx_sender=issuer_address,
+                tx_sender_key="dummy-private",
             )
         assert ex_info.match("Non-hexadecimal digit found")
 
@@ -3889,7 +3939,7 @@ class TestCancelTransfer:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # update token (from issuer)
@@ -3899,9 +3949,9 @@ class TestCancelTransfer:
             "transferable": True,
         }
         await share_contract.update(
-            data=UpdateParams(**update_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=UpdateParams(**update_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # register personal info (to_account)
@@ -3923,9 +3973,9 @@ class TestCancelTransfer:
         # approve transfer (from issuer)
         approve_data = {"application_id": 0, "data": "approve transfer test"}
         await share_contract.approve_transfer(
-            data=ApproveTransferParams(**approve_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=ApproveTransferParams(**approve_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Then send cancelTransfer transaction. This would be failed.
@@ -3941,9 +3991,9 @@ class TestCancelTransfer:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.cancel_transfer(
-                data=CancelTransferParams(**cancel_data),
-                tx_from=issuer_address,
-                private_key=issuer_pk,
+                tx_params=CancelTransferParams(**cancel_data),
+                tx_sender=issuer_address,
+                tx_sender_key=issuer_pk,
             )
 
         # assertion
@@ -3982,15 +4032,15 @@ class TestLock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         tx_hash, tx_receipt = await share_contract.lock(
-            data=LockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # assertion
@@ -4100,16 +4150,16 @@ class TestLock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.lock(
-                data=LockParams(**lock_data),
-                tx_from="invalid_tx_from",  # invalid tx from
-                private_key="",
+                tx_params=LockParams(**lock_data),
+                tx_sender="invalid_tx_from",  # invalid tx from
+                tx_sender_key="",
             )
 
         assert isinstance(exc_info.value.args[0], InvalidAddress)
@@ -4144,16 +4194,16 @@ class TestLock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.lock(
-                data=LockParams(**lock_data),
-                tx_from=issuer_address,
-                private_key="invalid_pk",  # invalid pk
+                tx_params=LockParams(**lock_data),
+                tx_sender=issuer_address,
+                tx_sender_key="invalid_pk",  # invalid pk
             )
 
         assert isinstance(exc_info.value.args[0], Error)
@@ -4188,7 +4238,7 @@ class TestLock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # mock
@@ -4202,9 +4252,9 @@ class TestLock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.lock(
-                    data=LockParams(**lock_data),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_params=LockParams(**lock_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         assert exc_info.type(SendTransactionError(TimeExhausted))
@@ -4238,7 +4288,7 @@ class TestLock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # mock
@@ -4252,9 +4302,9 @@ class TestLock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.lock(
-                    data=LockParams(**lock_data),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_params=LockParams(**lock_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         assert exc_info.type(SendTransactionError(TransactionNotFound))
@@ -4287,7 +4337,7 @@ class TestLock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # mock
@@ -4302,9 +4352,9 @@ class TestLock:
         lock_data = {"lock_address": lock_address, "value": 20001, "data": ""}
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.lock(
-                data=LockParams(**lock_data),
-                tx_from=issuer_address,
-                private_key=issuer_pk,
+                tx_params=LockParams(**lock_data),
+                tx_sender=issuer_address,
+                tx_sender_key=issuer_pk,
             )
 
         # assertion
@@ -4346,7 +4396,7 @@ class TestForceLock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # force lock
@@ -4357,9 +4407,9 @@ class TestForceLock:
             "data": "",
         }
         tx_hash, tx_receipt = await share_contract.force_lock(
-            data=ForceLockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=ForceLockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # assertion
@@ -4484,7 +4534,7 @@ class TestForceLock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # force lock
@@ -4496,9 +4546,9 @@ class TestForceLock:
         }
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.force_lock(
-                data=ForceLockParams(**lock_data),
-                tx_from="invalid_tx_from",  # invalid tx_from
-                private_key=issuer_pk,
+                tx_params=ForceLockParams(**lock_data),
+                tx_sender="invalid_tx_from",  # invalid tx_from
+                tx_sender_key=issuer_pk,
             )
 
         # assertion
@@ -4533,7 +4583,7 @@ class TestForceLock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # force lock
@@ -4545,9 +4595,9 @@ class TestForceLock:
         }
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.force_lock(
-                data=ForceLockParams(**lock_data),
-                tx_from=issuer_address,
-                private_key="invalid_pk",  # invalid pk
+                tx_params=ForceLockParams(**lock_data),
+                tx_sender=issuer_address,
+                tx_sender_key="invalid_pk",  # invalid pk
             )
 
         # assertion
@@ -4582,7 +4632,7 @@ class TestForceLock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # mock
@@ -4601,9 +4651,9 @@ class TestForceLock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.force_lock(
-                    data=ForceLockParams(**lock_data),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_params=ForceLockParams(**lock_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         # assertion
@@ -4637,7 +4687,7 @@ class TestForceLock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # mock
@@ -4656,9 +4706,9 @@ class TestForceLock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.force_lock(
-                    data=ForceLockParams(**lock_data),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_params=ForceLockParams(**lock_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         # assertion
@@ -4692,7 +4742,7 @@ class TestForceLock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # mock
@@ -4712,9 +4762,9 @@ class TestForceLock:
         }
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.force_lock(
-                data=ForceLockParams(**lock_data),
-                tx_from=issuer_address,
-                private_key=issuer_pk,
+                tx_params=ForceLockParams(**lock_data),
+                tx_sender=issuer_address,
+                tx_sender_key=issuer_pk,
             )
 
         # assertion
@@ -4757,15 +4807,15 @@ class TestForceUnlock:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         await share_contract.lock(
-            data=LockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # forceUnlock
@@ -4778,9 +4828,9 @@ class TestForceUnlock:
         }
         block_from = web3.eth.block_number
         tx_hash, tx_receipt = await share_contract.force_unlock(
-            data=ForceUnlockPrams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=ForceUnlockPrams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
         block_to = web3.eth.block_number
 
@@ -4935,15 +4985,15 @@ class TestForceUnlock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         await share_contract.lock(
-            data=LockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # forceUnlock
@@ -4956,9 +5006,9 @@ class TestForceUnlock:
         }
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.force_unlock(
-                data=ForceUnlockPrams(**lock_data),
-                tx_from="invalid_tx_from",  # invalid tx from
-                private_key="",
+                tx_params=ForceUnlockPrams(**lock_data),
+                tx_sender="invalid_tx_from",  # invalid tx from
+                tx_sender_key="",
             )
 
         assert isinstance(exc_info.value.args[0], InvalidAddress)
@@ -4993,15 +5043,15 @@ class TestForceUnlock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         await share_contract.lock(
-            data=LockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # forceUnlock
@@ -5014,9 +5064,9 @@ class TestForceUnlock:
         }
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.force_unlock(
-                data=ForceUnlockPrams(**lock_data),
-                tx_from=issuer_address,
-                private_key="invalid_pk",  # invalid pk
+                tx_params=ForceUnlockPrams(**lock_data),
+                tx_sender=issuer_address,
+                tx_sender_key="invalid_pk",  # invalid pk
             )
 
         assert isinstance(exc_info.value.args[0], Error)
@@ -5051,15 +5101,15 @@ class TestForceUnlock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         await share_contract.lock(
-            data=LockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # mock
@@ -5079,9 +5129,9 @@ class TestForceUnlock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.force_unlock(
-                    data=ForceUnlockPrams(**lock_data),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_params=ForceUnlockPrams(**lock_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         assert exc_info.type(SendTransactionError(TimeExhausted))
@@ -5115,15 +5165,15 @@ class TestForceUnlock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         await share_contract.lock(
-            data=LockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # mock
@@ -5143,9 +5193,9 @@ class TestForceUnlock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.force_unlock(
-                    data=ForceUnlockPrams(**lock_data),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_params=ForceUnlockPrams(**lock_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         assert exc_info.type(SendTransactionError(TransactionNotFound))
@@ -5178,15 +5228,15 @@ class TestForceUnlock:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         await share_contract.lock(
-            data=LockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # mock
@@ -5207,9 +5257,9 @@ class TestForceUnlock:
         }
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.force_unlock(
-                data=ForceUnlockPrams(**lock_data),
-                tx_from=issuer_address,
-                private_key=issuer_pk,
+                tx_params=ForceUnlockPrams(**lock_data),
+                tx_sender=issuer_address,
+                tx_sender_key=issuer_pk,
             )
 
         # assertion
@@ -5252,28 +5302,28 @@ class TestForceChangeLockedAmount:
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         await share_contract.lock(
-            data=LockParams(lock_address=lock_address, value=10, data=""),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # forceChangeLockedAmount
         block_from = web3.eth.block_number
         tx_hash, tx_receipt = await share_contract.force_change_locked_account(
-            data=ForceChangeLockedAccountParams(
+            tx_params=ForceChangeLockedAccountParams(
                 lock_address=lock_address,
                 before_account_address=issuer_address,
                 after_account_address=other_address,
                 value=5,
                 data=json.dumps({"message": "force_change_locked_account"}),
             ),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
         block_to = web3.eth.block_number
 
@@ -5433,28 +5483,28 @@ class TestForceChangeLockedAmount:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         await share_contract.lock(
-            data=LockParams(lock_address=lock_address, value=10, data=""),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # forceChangeLockedAccount
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.force_change_locked_account(
-                data=ForceChangeLockedAccountParams(
+                tx_params=ForceChangeLockedAccountParams(
                     lock_address=lock_address,
                     before_account_address=issuer_address,
                     after_account_address=other_address,
                     value=5,
                     data=json.dumps({"message": "force_change_locked_account"}),
                 ),
-                tx_from="invalid_tx_from",  # invalid tx from
-                private_key=issuer_pk,
+                tx_sender="invalid_tx_from",  # invalid tx from
+                tx_sender_key=issuer_pk,
             )
 
         assert isinstance(exc_info.value.args[0], InvalidAddress)
@@ -5492,28 +5542,28 @@ class TestForceChangeLockedAmount:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         await share_contract.lock(
-            data=LockParams(lock_address=lock_address, value=10, data=""),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # forceChangeLockedAccount
         with pytest.raises(SendTransactionError) as exc_info:
             await share_contract.force_change_locked_account(
-                data=ForceChangeLockedAccountParams(
+                tx_params=ForceChangeLockedAccountParams(
                     lock_address=lock_address,
                     before_account_address=issuer_address,
                     after_account_address=other_address,
                     value=5,
                     data=json.dumps({"message": "force_change_locked_account"}),
                 ),
-                tx_from=issuer_address,
-                private_key="invalid_pk",  # invalid pk
+                tx_sender=issuer_address,
+                tx_sender_key="invalid_pk",  # invalid pk
             )
 
         assert isinstance(exc_info.value.args[0], Error)
@@ -5551,14 +5601,14 @@ class TestForceChangeLockedAmount:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         await share_contract.lock(
-            data=LockParams(lock_address=lock_address, value=10, data=""),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # mock
@@ -5571,15 +5621,15 @@ class TestForceChangeLockedAmount:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.force_change_locked_account(
-                    data=ForceChangeLockedAccountParams(
+                    tx_params=ForceChangeLockedAccountParams(
                         lock_address=lock_address,
                         before_account_address=issuer_address,
                         after_account_address=other_address,
                         value=5,
                         data=json.dumps({"message": "force_change_locked_account"}),
                     ),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         assert exc_info.type(SendTransactionError(TimeExhausted))
@@ -5616,14 +5666,14 @@ class TestForceChangeLockedAmount:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         await share_contract.lock(
-            data=LockParams(lock_address=lock_address, value=10, data=""),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # mock
@@ -5636,15 +5686,15 @@ class TestForceChangeLockedAmount:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 await share_contract.force_change_locked_account(
-                    data=ForceChangeLockedAccountParams(
+                    tx_params=ForceChangeLockedAccountParams(
                         lock_address=lock_address,
                         before_account_address=issuer_address,
                         after_account_address=other_address,
                         value=5,
                         data=json.dumps({"message": "force_change_locked_account"}),
                     ),
-                    tx_from=issuer_address,
-                    private_key=issuer_pk,
+                    tx_sender=issuer_address,
+                    tx_sender_key=issuer_pk,
                 )
 
         assert exc_info.type(SendTransactionError(TransactionNotFound))
@@ -5680,14 +5730,14 @@ class TestForceChangeLockedAmount:
         ]
         share_contract = IbetShareContract()
         await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=issuer_pk
+            args=arguments, tx_sender=issuer_address, tx_sender_key=issuer_pk
         )
 
         # lock
         await share_contract.lock(
-            data=LockParams(lock_address=lock_address, value=10, data=""),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_params=LockParams(lock_address=lock_address, value=10, data=""),
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # mock
@@ -5701,15 +5751,15 @@ class TestForceChangeLockedAmount:
         # forceChangeLockedAccount
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             await share_contract.force_change_locked_account(
-                data=ForceChangeLockedAccountParams(
+                tx_params=ForceChangeLockedAccountParams(
                     lock_address=lock_address,
                     before_account_address=issuer_address,
                     after_account_address=other_address,
                     value=11,
                     data=json.dumps({"message": "force_change_locked_account"}),
                 ),
-                tx_from=issuer_address,
-                private_key=issuer_pk,
+                tx_sender=issuer_address,
+                tx_sender_key=issuer_pk,
             )
 
         # assertion
