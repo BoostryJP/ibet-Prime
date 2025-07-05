@@ -127,6 +127,84 @@ class IbetWSTTxParamsRejectTrade(TypedDict):
     index: int  # Index of the trade to be rejected
 
 
+class IbetWSTEventLogMint(TypedDict):
+    """Event log for IbetWST Mint event"""
+
+    to_address: str  # Address to which the tokens were minted
+    value: int  # Amount of IbetWST minted
+
+
+class IbetWSTEventLogBurn(TypedDict):
+    """Event log for IbetWST Burn event"""
+
+    from_address: str  # Address from which the tokens were burned
+    value: int  # Amount of IbetWST burned
+
+
+class IbetWSTEventLogAccountWhiteListAdded(TypedDict):
+    """Event log for IbetWST AccountWhiteListAdded event"""
+
+    account_address: str  # Address that was added to the whitelist
+
+
+class IbetWSTEventLogAccountWhiteListDeleted(TypedDict):
+    """Event log for IbetWST AccountWhiteListDeleted event"""
+
+    account_address: str  # Address that was removed from the whitelist
+
+
+class IbetWSTEventLogTradeRequested(TypedDict):
+    """Event log for IbetWST TradeRequested event"""
+
+    index: int  # Index of the trade
+    seller_st_account_address: str  # Seller's IbetWST account address
+    buyer_st_account_address: str  # Buyer's IbetWST account address
+    sc_token_address: str  # StableCoin contract address
+    seller_sc_account_address: str  # Seller's StableCoin account address
+    buyer_sc_account_address: str  # Buyer's StableCoin account address
+    st_value: int  # Amount of IbetWST traded
+    sc_value: int  # Amount of StableCoin traded
+
+
+class IbetWSTEventLogTradeCancelled(TypedDict):
+    """Event log for IbetWST TradeCancelled event"""
+
+    index: int  # Index of the trade
+    seller_st_account_address: str  # Seller's IbetWST account address
+    buyer_st_account_address: str  # Buyer's IbetWST account address
+    sc_token_address: str  # StableCoin contract address
+    seller_sc_account_address: str  # Seller's StableCoin account address
+    buyer_sc_account_address: str  # Buyer's StableCoin account address
+    st_value: int  # Amount of IbetWST traded
+    sc_value: int  # Amount of StableCoin traded
+
+
+class IbetWSTEventLogTradeAccepted(TypedDict):
+    """Event log for IbetWST TradeAccepted event"""
+
+    index: int  # Index of the trade
+    seller_st_account_address: str  # Seller's IbetWST account address
+    buyer_st_account_address: str  # Buyer's IbetWST account address
+    sc_token_address: str  # StableCoin contract address
+    seller_sc_account_address: str  # Seller's StableCoin account address
+    buyer_sc_account_address: str  # Buyer's StableCoin account address
+    st_value: int  # Amount of IbetWST traded
+    sc_value: int  # Amount of StableCoin traded
+
+
+class IbetWSTEventLogTradeRejected(TypedDict):
+    """Event log for IbetWST TradeRejected event"""
+
+    index: int  # Index of the trade
+    seller_st_account_address: str  # Seller's IbetWST account address
+    buyer_st_account_address: str  # Buyer's IbetWST account address
+    sc_token_address: str  # StableCoin contract address
+    seller_sc_account_address: str  # Seller's StableCoin account address
+    buyer_sc_account_address: str  # Buyer's StableCoin account address
+    st_value: int  # Amount of IbetWST traded
+    sc_value: int  # Amount of StableCoin traded
+
+
 class EthIbetWSTTx(Base):
     """Ethereum IbetWST Transaction Management"""
 
@@ -187,6 +265,20 @@ class EthIbetWSTTx(Base):
     # Block finalized
     # - True if the block is finalized, False otherwise
     finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Event log of the transaction
+    # - Set if the transaction emits events and the block is finalized
+    # - Not set if the tx_tye is "DEPLOY"
+    event_log: Mapped[
+        IbetWSTEventLogMint
+        | IbetWSTEventLogBurn
+        | IbetWSTEventLogAccountWhiteListAdded
+        | IbetWSTEventLogAccountWhiteListDeleted
+        | IbetWSTEventLogTradeRequested
+        | IbetWSTEventLogTradeCancelled
+        | IbetWSTEventLogTradeAccepted
+        | IbetWSTEventLogTradeRejected
+        | None
+    ] = mapped_column(JSON, nullable=True, default=None)
 
 
 ############################################################

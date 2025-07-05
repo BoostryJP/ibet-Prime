@@ -233,6 +233,63 @@ class GetIbetWSTBalanceResponse(BaseModel):
     balance: int = Field(..., description="IbetWST balance")
 
 
+class IbetWSTEventLogMint(BaseModel):
+    """IbetWST Mint event log schema"""
+
+    to_address: EthereumAddress = Field(
+        ..., description="Address to which the tokens were minted"
+    )
+    value: int = Field(..., description="Amount of tokens minted")
+
+
+class IbetWSTEventLogBurn(BaseModel):
+    """IbetWST Burn event log schema"""
+
+    from_address: EthereumAddress = Field(
+        ..., description="Address from which the tokens were burned"
+    )
+    value: int = Field(..., description="Amount of tokens burned")
+
+
+class IbetWSTEventLogAccountWhiteListAdded(BaseModel):
+    """IbetWST AccountWhiteListAdded event log schema"""
+
+    account_address: EthereumAddress = Field(
+        ..., description="Address of the account added to the whitelist"
+    )
+
+
+class IbetWSTEventLogAccountWhiteListDeleted(BaseModel):
+    """IbetWST AccountWhiteListDeleted event log schema"""
+
+    account_address: EthereumAddress = Field(
+        ..., description="Address of the account removed from the whitelist"
+    )
+
+
+class IbetWSTEventLogTrade(BaseModel):
+    """IbetWST TradeRequested/TradeCancelled/TradeAccepted/TradeRejected event log schema"""
+
+    index: int = Field(..., description="Trade index")
+    seller_st_account_address: EthereumAddress = Field(
+        ..., description="IbetWST seller account address"
+    )
+    buyer_st_account_address: EthereumAddress = Field(
+        ..., description="IbetWST buyer account address"
+    )
+    sc_token_address: EthereumAddress = Field(
+        ..., description="SC token contract address"
+    )
+    seller_sc_account_address: EthereumAddress = Field(
+        ..., description="SC seller account address"
+    )
+    buyer_sc_account_address: EthereumAddress = Field(
+        ..., description="SC buyer account address"
+    )
+    st_value: int = Field(..., description="Value of IbetWST to trade")
+    sc_value: int = Field(..., description="Value of SC token to trade")
+
+
 class GetIbetWSTTransactionResponse(BaseModel):
     """GetIbetWSTTransaction response schema"""
 
@@ -261,6 +318,13 @@ class GetIbetWSTTransactionResponse(BaseModel):
     finalized: bool = Field(
         description="True if the block is finalized, False otherwise"
     )
+    event_log: Optional[
+        IbetWSTEventLogMint
+        | IbetWSTEventLogBurn
+        | IbetWSTEventLogAccountWhiteListAdded
+        | IbetWSTEventLogAccountWhiteListDeleted
+        | IbetWSTEventLogTrade
+    ] = Field(None, description="Event log for the transaction (if applicable)")
 
 
 class GetIbetWSTWhitelistResponse(BaseModel):
