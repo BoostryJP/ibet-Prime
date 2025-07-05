@@ -13440,6 +13440,16 @@ components:
           type: boolean
           title: Finalized
           description: True if the block is finalized, False otherwise
+        event_log:
+          anyOf:
+            - $ref: '#/components/schemas/IbetWSTEventLogMint'
+            - $ref: '#/components/schemas/IbetWSTEventLogBurn'
+            - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteListAdded'
+            - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteListDeleted'
+            - $ref: '#/components/schemas/IbetWSTEventLogTrade'
+            - type: 'null'
+          title: Event Log
+          description: Event log for the transaction (if applicable)
       type: object
       required:
         - tx_id
@@ -14801,6 +14811,108 @@ components:
         - s
       title: IbetWSTAuthorization
       description: IbetWST Authorization schema
+    IbetWSTEventLogAccountWhiteListAdded:
+      properties:
+        account_address:
+          type: string
+          title: Account Address
+          description: Address of the account added to the whitelist
+      type: object
+      required:
+        - account_address
+      title: IbetWSTEventLogAccountWhiteListAdded
+      description: IbetWST AccountWhiteListAdded event log schema
+    IbetWSTEventLogAccountWhiteListDeleted:
+      properties:
+        account_address:
+          type: string
+          title: Account Address
+          description: Address of the account removed from the whitelist
+      type: object
+      required:
+        - account_address
+      title: IbetWSTEventLogAccountWhiteListDeleted
+      description: IbetWST AccountWhiteListDeleted event log schema
+    IbetWSTEventLogBurn:
+      properties:
+        from_address:
+          type: string
+          title: From Address
+          description: Address from which the tokens were burned
+        value:
+          type: integer
+          title: Value
+          description: Amount of tokens burned
+      type: object
+      required:
+        - from_address
+        - value
+      title: IbetWSTEventLogBurn
+      description: IbetWST Burn event log schema
+    IbetWSTEventLogMint:
+      properties:
+        to_address:
+          type: string
+          title: To Address
+          description: Address to which the tokens were minted
+        value:
+          type: integer
+          title: Value
+          description: Amount of tokens minted
+      type: object
+      required:
+        - to_address
+        - value
+      title: IbetWSTEventLogMint
+      description: IbetWST Mint event log schema
+    IbetWSTEventLogTrade:
+      properties:
+        index:
+          type: integer
+          title: Index
+          description: Trade index
+        seller_st_account_address:
+          type: string
+          title: Seller St Account Address
+          description: IbetWST seller account address
+        buyer_st_account_address:
+          type: string
+          title: Buyer St Account Address
+          description: IbetWST buyer account address
+        sc_token_address:
+          type: string
+          title: Sc Token Address
+          description: SC token contract address
+        seller_sc_account_address:
+          type: string
+          title: Seller Sc Account Address
+          description: SC seller account address
+        buyer_sc_account_address:
+          type: string
+          title: Buyer Sc Account Address
+          description: SC buyer account address
+        st_value:
+          type: integer
+          title: St Value
+          description: Value of IbetWST to trade
+        sc_value:
+          type: integer
+          title: Sc Value
+          description: Value of SC token to trade
+      type: object
+      required:
+        - index
+        - seller_st_account_address
+        - buyer_st_account_address
+        - sc_token_address
+        - seller_sc_account_address
+        - buyer_sc_account_address
+        - st_value
+        - sc_value
+      title: IbetWSTEventLogTrade
+      description: IbetWST 
+        TradeRequested/TradeCancelled/TradeAccepted/TradeRejected event log 
+        schema
     IbetWSTToken:
       properties:
         issuer_address:

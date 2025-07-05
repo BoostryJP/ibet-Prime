@@ -22,6 +22,7 @@ import threading
 from typing import Type, TypeVar
 
 from eth_utils import to_checksum_address
+from hexbytes import HexBytes
 from web3 import AsyncHTTPProvider, AsyncWeb3
 from web3.contract import AsyncContract
 from web3.contract.async_contract import AsyncContractEvents
@@ -261,5 +262,35 @@ class EthAsyncContractUtils:
             )
         except ABIEventNotFound:
             return []
+
+        return result
+
+    @staticmethod
+    async def get_event_log_by_hash(
+        contract: AsyncContract | EthAsyncContractEventsView,
+        event: str,
+        block_number: int,
+        tx_hash: str,
+    ):
+        """Get contract event log by transaction hash
+
+        :param contract: Contract
+        :param event: Event
+        :param block_number: Block number
+        :param tx_hash: Transaction hash
+        """
+        try:
+            _event = getattr(contract.events, event)
+            logs = await _event.get_logs(
+                from_block=block_number,
+                to_block=block_number,
+            )
+            result = None
+            for log in logs:
+                if log["transactionHash"] == HexBytes(tx_hash):
+                    result = log
+                    break
+        except ABIEventNotFound:
+            result = None
 
         return result

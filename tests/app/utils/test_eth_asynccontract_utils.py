@@ -25,6 +25,7 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3.exceptions import Web3Exception
 
+import config
 from app.exceptions import SendTransactionError
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from tests.account_config import default_eth_account
@@ -440,13 +441,9 @@ class TestGetEventLogs:
         assert logs[0]["args"]["to"] == self.issuer["address"]
         assert logs[0]["args"]["value"] == 1000
 
-    ########################################################
-    # Error
-    ########################################################
-
-    # <Error_1>
+    # <Normal_2>
     # Get event logs with non-existent event
-    async def test_error_1(self):
+    async def test_normal_2(self):
         # Deploy contract
         tx_hash = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
@@ -493,3 +490,179 @@ class TestGetEventLogs:
 
         # Assert
         assert logs == []
+
+
+# Test for get_event_log_by_hash
+@pytest.mark.asyncio
+class TestGetEventLogByHash:
+    deployer = default_eth_account("user1")
+    issuer = default_eth_account("user2")
+
+    ########################################################
+    # Normal
+    ########################################################
+
+    # <Normal_1>
+    # Get event log by transaction hash
+    async def test_normal_1(self):
+        # Deploy contract
+        tx_hash = await EthAsyncContractUtils.deploy_contract(
+            contract_name="AuthIbetWST",
+            args=[
+                "Test Token",
+                self.issuer["address"],
+            ],
+            deployer=self.deployer["address"],
+            private_key=bytes.fromhex(self.deployer["private_key"]),
+        )
+
+        # Get transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        contract_address = tx_receipt.get("contractAddress")
+
+        # Get contract
+        contract = EthAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address=contract_address,
+        )
+
+        # Execute a transaction to trigger an event
+        # - Mint tokens to the issuer
+        tx = await contract.functions.mint(
+            self.issuer["address"], 1000
+        ).build_transaction(
+            {
+                "from": self.issuer["address"],
+                "gas": 2000000,
+            }
+        )
+        tx_hash = await EthAsyncContractUtils.send_transaction(
+            transaction=tx,
+            private_key=bytes.fromhex(self.issuer["private_key"]),
+        )
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+
+        # Get event logs
+        log = await EthAsyncContractUtils.get_event_log_by_hash(
+            contract=contract,
+            event="Mint",
+            block_number=tx_receipt["blockNumber"],
+            tx_hash=tx_receipt["transactionHash"],
+        )
+
+        # Assert
+        assert log is not None
+        assert log["event"] == "Mint"
+        assert log["args"]["to"] == self.issuer["address"]
+        assert log["args"]["value"] == 1000
+
+    # <Normal_2>
+    # Get event log by transaction hash
+    # - If event does not exist, return None
+    async def test_normal_2(self):
+        # Deploy contract
+        tx_hash = await EthAsyncContractUtils.deploy_contract(
+            contract_name="AuthIbetWST",
+            args=[
+                "Test Token",
+                self.issuer["address"],
+            ],
+            deployer=self.deployer["address"],
+            private_key=bytes.fromhex(self.deployer["private_key"]),
+        )
+
+        # Get transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        contract_address = tx_receipt.get("contractAddress")
+
+        # Get contract
+        contract = EthAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address=contract_address,
+        )
+
+        # Get event logs
+        block_number = await EthAsyncContractUtils.get_finalized_block_number()
+        log = await EthAsyncContractUtils.get_event_log_by_hash(
+            contract=contract,
+            event="Mint",
+            block_number=block_number,
+            tx_hash="some_nonexistent_hash",  # This hash does not exist
+        )
+
+        # Assert
+        assert log is None
+
+    # <Normal_3>
+    # Get event log by transaction hash
+    # - If contract is not deployed, return None
+    async def test_normal_3(self):
+        # Get contract
+        contract = EthAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address=config.ZERO_ADDRESS,  # Using a zero address to simulate non-deployment
+        )
+
+        # Get event logs
+        block_number = await EthAsyncContractUtils.get_finalized_block_number()
+        log = await EthAsyncContractUtils.get_event_log_by_hash(
+            contract=contract,
+            event="Mint",
+            block_number=block_number,
+            tx_hash="some_nonexistent_hash",  # This hash does not exist
+        )
+
+        # Assert
+        assert log is None
+
+    # <Normal_4>
+    # Get event log by transaction hash
+    # - If event name is not found in ABI, return None
+    async def test_normal_4(self):
+        # Deploy contract
+        tx_hash = await EthAsyncContractUtils.deploy_contract(
+            contract_name="AuthIbetWST",
+            args=[
+                "Test Token",
+                self.issuer["address"],
+            ],
+            deployer=self.deployer["address"],
+            private_key=bytes.fromhex(self.deployer["private_key"]),
+        )
+
+        # Get transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        contract_address = tx_receipt.get("contractAddress")
+
+        # Get contract
+        contract = EthAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address=contract_address,
+        )
+
+        # Execute a transaction to trigger an event
+        # - Mint tokens to the issuer
+        tx = await contract.functions.mint(
+            self.issuer["address"], 1000
+        ).build_transaction(
+            {
+                "from": self.issuer["address"],
+                "gas": 2000000,
+            }
+        )
+        tx_hash = await EthAsyncContractUtils.send_transaction(
+            transaction=tx,
+            private_key=bytes.fromhex(self.issuer["private_key"]),
+        )
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+
+        # Get event logs
+        log = await EthAsyncContractUtils.get_event_log_by_hash(
+            contract=contract,
+            event="SomeNonExistentEvent",  # This event does not exist in the ABI
+            block_number=tx_receipt["blockNumber"],
+            tx_hash=tx_receipt["transactionHash"],
+        )
+
+        # Assert
+        assert log is None
