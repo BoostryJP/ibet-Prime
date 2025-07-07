@@ -164,12 +164,10 @@ async def finalize_tx(
             await db_session.merge(token)
         case IbetWSTTxType.MINT:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="Mint",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = await ibet_wst.contract.events.Mint().process_receipt(
+                txn_receipt=tx_receipt
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogMint(
                     to_address=event["args"]["to"],
@@ -178,12 +176,10 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.BURN:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="Burn",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = await ibet_wst.contract.events.Burn().process_receipt(
+                txn_receipt=tx_receipt
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogBurn(
                     from_address=event["args"]["from"],
@@ -192,12 +188,12 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ADD_WHITELIST:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="AccountWhiteListAdded",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = (
+                await ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
+                    txn_receipt=tx_receipt
+                )
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogAccountWhiteListAdded(
                     account_address=event["args"]["accountAddress"],
@@ -205,12 +201,10 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.DELETE_WHITELIST:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="AccountWhiteListDeleted",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = await ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
+                txn_receipt=tx_receipt
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogAccountWhiteListDeleted(
                     account_address=event["args"]["accountAddress"],
@@ -218,12 +212,10 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REQUEST_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="TradeRequested",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = await ibet_wst.contract.events.TradeRequested().process_receipt(
+                txn_receipt=tx_receipt
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogTradeRequested(
                     index=event["args"]["index"],
@@ -238,12 +230,10 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.CANCEL_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="TradeCanceled",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = await ibet_wst.contract.events.TradeCancelled().process_receipt(
+                txn_receipt=tx_receipt
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogTradeCancelled(
                     index=event["args"]["index"],
@@ -258,12 +248,10 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ACCEPT_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="TradeAccepted",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = await ibet_wst.contract.events.TradeAccepted().process_receipt(
+                txn_receipt=tx_receipt
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogTradeAccepted(
                     index=event["args"]["index"],
@@ -278,12 +266,10 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REJECT_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            event = await EthAsyncContractUtils.get_event_log_by_hash(
-                contract=ibet_wst.contract,
-                event="TradeRejected",
-                block_number=wst_tx.block_number,
-                tx_hash=wst_tx.tx_hash,
+            events = await ibet_wst.contract.events.TradeRejected().process_receipt(
+                txn_receipt=tx_receipt
             )
+            event = events[0] if len(events) > 0 else None
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogTradeRejected(
                     index=event["args"]["index"],

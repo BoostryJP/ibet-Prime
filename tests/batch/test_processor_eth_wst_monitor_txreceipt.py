@@ -352,14 +352,16 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "to": user1["address"],
-                    "value": 1000,
-                },  # Mint event log
-            }
+            return_value=[
+                {
+                    "args": {
+                        "to": user1["address"],
+                        "value": 1000,
+                    },  # Mint event log
+                }
+            ]
         ),
     )
     async def test_normal_4_2_1(self, processor, async_db, caplog):
@@ -439,14 +441,16 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "from": user1["address"],
-                    "value": 1000,
-                },  # Burn event log
-            }
+            return_value=[
+                {
+                    "args": {
+                        "from": user1["address"],
+                        "value": 1000,
+                    },  # Burn event log
+                }
+            ]
         ),
     )
     async def test_normal_4_2_2(self, processor, async_db, caplog):
@@ -526,13 +530,15 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "accountAddress": user1["address"],
-                },
-            }
+            return_value=[
+                {
+                    "args": {
+                        "accountAddress": user1["address"],
+                    },
+                }
+            ]
         ),
     )
     async def test_normal_4_2_3(self, processor, async_db, caplog):
@@ -610,13 +616,15 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "accountAddress": user1["address"],
-                },
-            }
+            return_value=[
+                {
+                    "args": {
+                        "accountAddress": user1["address"],
+                    },
+                }
+            ]
         ),
     )
     async def test_normal_4_2_4(self, processor, async_db, caplog):
@@ -694,20 +702,22 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "index": 1,
-                    "sellerSTAccountAddress": user1["address"],
-                    "buyerSTAccountAddress": user2["address"],
-                    "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
-                    "sellerSCAccountAddress": user1["address"],
-                    "buyerSCAccountAddress": user2["address"],
-                    "STValue": 1000,
-                    "SCValue": 2000,
-                },
-            }
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
         ),
     )
     async def test_normal_4_2_5(self, processor, async_db, caplog):
@@ -799,20 +809,22 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "index": 1,
-                    "sellerSTAccountAddress": user1["address"],
-                    "buyerSTAccountAddress": user2["address"],
-                    "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
-                    "sellerSCAccountAddress": user1["address"],
-                    "buyerSCAccountAddress": user2["address"],
-                    "STValue": 1000,
-                    "SCValue": 2000,
-                },
-            }
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
         ),
     )
     async def test_normal_4_2_6(self, processor, async_db, caplog):
@@ -895,20 +907,22 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "index": 1,
-                    "sellerSTAccountAddress": user1["address"],
-                    "buyerSTAccountAddress": user2["address"],
-                    "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
-                    "sellerSCAccountAddress": user1["address"],
-                    "buyerSCAccountAddress": user2["address"],
-                    "STValue": 1000,
-                    "SCValue": 2000,
-                },
-            }
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
         ),
     )
     async def test_normal_4_2_7(self, processor, async_db, caplog):
@@ -991,20 +1005,22 @@ class TestProcessor:
         AsyncMock(return_value=100),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_event_log_by_hash",
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
         AsyncMock(
-            return_value={
-                "args": {
-                    "index": 1,
-                    "sellerSTAccountAddress": user1["address"],
-                    "buyerSTAccountAddress": user2["address"],
-                    "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
-                    "sellerSCAccountAddress": user1["address"],
-                    "buyerSCAccountAddress": user2["address"],
-                    "STValue": 1000,
-                    "SCValue": 2000,
-                },
-            }
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
         ),
     )
     async def test_normal_4_2_8(self, processor, async_db, caplog):
