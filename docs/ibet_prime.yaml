@@ -9808,6 +9808,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetIbetWSTBalanceResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
@@ -9853,6 +9859,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
@@ -9925,6 +9937,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetIbetWSTWhitelistResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
@@ -9963,6 +9981,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
@@ -10001,6 +10025,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
@@ -10016,6 +10046,8 @@ paths:
         Accept an IbetWST trade
 
         - This endpoint allows a user to send acceptTradeWithAuthorization transaction to the IbetWST contract.
+        - If seller's ST token balance is insufficient, an IbetWSTInsufficientBalanceError will be raised.
+        - If buyer's SC token allowance is insufficient, an ERC20InsufficientAllowanceError will be raised.
       operationId: AcceptIbetWSTTrade
       parameters:
         - name: ibet_wst_address
@@ -10039,12 +10071,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/ERC20InsufficientAllowanceErrorResponse'
+                  - $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
+                title: Response 400 Acceptibetwsttrade
   /ibet_wst/trades/{ibet_wst_address}/reject:
     post:
       tags:
@@ -10077,6 +10125,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
@@ -13003,6 +13057,40 @@ components:
         - send_timestamp
       title: E2EMessagingResponse
       description: E2E Messaging schema (Response)
+    ERC20InsufficientAllowanceErrorCode:
+      type: integer
+      enum:
+        - 14
+      title: ERC20InsufficientAllowanceErrorCode
+    ERC20InsufficientAllowanceErrorMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/ERC20InsufficientAllowanceErrorCode'
+          examples:
+            - 14
+        title:
+          type: string
+          title: Title
+          examples:
+            - ERC20InsufficientAllowanceError
+      type: object
+      required:
+        - code
+        - title
+      title: ERC20InsufficientAllowanceErrorMetainfo
+    ERC20InsufficientAllowanceErrorResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/ERC20InsufficientAllowanceErrorMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: ERC20InsufficientAllowanceErrorResponse
+      description: Insufficient allowance for ERC20 token transfer
     Error400MetaModel:
       properties:
         code:
@@ -14913,6 +15001,40 @@ components:
       description: IbetWST 
         TradeRequested/TradeCancelled/TradeAccepted/TradeRejected event log 
         schema
+    IbetWSTInsufficientBalanceErrorCode:
+      type: integer
+      enum:
+        - 13
+      title: IbetWSTInsufficientBalanceErrorCode
+    IbetWSTInsufficientBalanceErrorMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorCode'
+          examples:
+            - 13
+        title:
+          type: string
+          title: Title
+          examples:
+            - IbetWSTInsufficientBalanceError
+      type: object
+      required:
+        - code
+        - title
+      title: IbetWSTInsufficientBalanceErrorMetainfo
+    IbetWSTInsufficientBalanceErrorResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: IbetWSTInsufficientBalanceErrorResponse
+      description: Insufficient balance for IbetWST token transfer
     IbetWSTToken:
       properties:
         issuer_address:
