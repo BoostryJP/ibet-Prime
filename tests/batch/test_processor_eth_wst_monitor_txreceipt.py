@@ -28,7 +28,14 @@ from web3.exceptions import TimeExhausted
 
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTTxParamsAcceptTrade,
+    IbetWSTTxParamsAddAccountWhiteList,
+    IbetWSTTxParamsBurn,
+    IbetWSTTxParamsCancelTrade,
     IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsMint,
+    IbetWSTTxParamsRejectTrade,
+    IbetWSTTxParamsRequestTrade,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
@@ -58,6 +65,9 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 class TestProcessor:
     eth_master = default_eth_account("user1")
     issuer = default_eth_account("user2")
+    user1 = default_eth_account("user3")
+    user2 = default_eth_account("user4")
+
     tx_hash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
 
     #############################################################
@@ -139,8 +149,8 @@ class TestProcessor:
         ]
 
     # Normal_3_1
-    # - TxReceipt: exists
-    # - Result: success
+    # - TxReceipt: exists(success)
+    # - Not finalized
     @mock.patch(
         "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
@@ -193,8 +203,8 @@ class TestProcessor:
         ]
 
     # Normal_3_2
-    # - TxReceipt: exists
-    # - Result: failure
+    # - TxReceipt: exists(failure)
+    # - Not finalized
     @mock.patch(
         "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
@@ -245,10 +255,10 @@ class TestProcessor:
             f"Transaction failed: id={tx_id}, block_number=100",
         ]
 
-    # Normal_4
-    # - TxReceipt: exists
-    # - Result: success
+    # Normal_4_1
+    # - TxReceipt: exists(success)
     # - Finalized
+    # - TxType: DEPLOY
     @mock.patch(
         "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
@@ -263,7 +273,7 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
-    async def test_normal_4(self, processor, async_db, caplog):
+    async def test_normal_4_1(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -319,6 +329,757 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_1
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: MINT
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "to": user1["address"],
+                        "value": 1000,
+                    },  # Mint event log
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_1(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.MINT
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsMint(
+            to_address=self.user1["address"],
+            value=1000,
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "to_address": self.user1["address"],
+            "value": 1000,
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=mint",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_2
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: BURN
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "from": user1["address"],
+                        "value": 1000,
+                    },  # Burn event log
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_2(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.BURN
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsBurn(
+            from_address=self.user1["address"],
+            value=1000,
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "from_address": self.user1["address"],
+            "value": 1000,
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=burn",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_3
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: ADD_WHITELIST
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "accountAddress": user1["address"],
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_3(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+            account_address=self.user1["address"],
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "account_address": self.user1["address"],
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=add_whitelist",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_4
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: DELETE_WHITELIST
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "accountAddress": user1["address"],
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_4(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+            account_address=self.user1["address"],
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "account_address": self.user1["address"],
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=delete_whitelist",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_5
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: REQUEST_TRADE
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_5(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.REQUEST_TRADE
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
+            seller_st_account_address=self.user1["address"],
+            buyer_st_account_address=self.user2["address"],
+            sc_token_address="0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            seller_sc_account_address=self.user1["address"],
+            buyer_sc_account_address=self.user2["address"],
+            st_value=1000,
+            sc_value=2000,
+            memo="Test trade request",
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "index": 1,
+            "seller_st_account_address": self.user1["address"],
+            "buyer_st_account_address": self.user2["address"],
+            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "seller_sc_account_address": self.user1["address"],
+            "buyer_sc_account_address": self.user2["address"],
+            "st_value": 1000,
+            "sc_value": 2000,
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=request_trade",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_6
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: CANCEL_TRADE
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_6(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.CANCEL_TRADE
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsCancelTrade(index=1)
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "index": 1,
+            "seller_st_account_address": self.user1["address"],
+            "buyer_st_account_address": self.user2["address"],
+            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "seller_sc_account_address": self.user1["address"],
+            "buyer_sc_account_address": self.user2["address"],
+            "st_value": 1000,
+            "sc_value": 2000,
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=cancel_trade",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_7
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: ACCEPT_TRADE
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_7(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.ACCEPT_TRADE
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsAcceptTrade(index=1)
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "index": 1,
+            "seller_st_account_address": self.user1["address"],
+            "buyer_st_account_address": self.user2["address"],
+            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "seller_sc_account_address": self.user1["address"],
+            "buyer_sc_account_address": self.user2["address"],
+            "st_value": 1000,
+            "sc_value": 2000,
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=accept_trade",
+            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction finalized: id={tx_id}, block_number=100",
+        ]
+
+    # Normal_4_2_8
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: REJECT_TRADE
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        AsyncMock(
+            return_value=[
+                {
+                    "args": {
+                        "index": 1,
+                        "sellerSTAccountAddress": user1["address"],
+                        "buyerSTAccountAddress": user2["address"],
+                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "sellerSCAccountAddress": user1["address"],
+                        "buyerSCAccountAddress": user2["address"],
+                        "STValue": 1000,
+                        "SCValue": 2000,
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_8(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.REJECT_TRADE
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsRejectTrade(index=1)
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "index": 1,
+            "seller_st_account_address": self.user1["address"],
+            "buyer_st_account_address": self.user2["address"],
+            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "seller_sc_account_address": self.user1["address"],
+            "buyer_sc_account_address": self.user2["address"],
+            "st_value": 1000,
+            "sc_value": 2000,
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=reject_trade",
             f"Transaction succeeded: id={tx_id}, block_number=100",
             f"Transaction finalized: id={tx_id}, block_number=100",
         ]

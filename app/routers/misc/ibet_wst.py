@@ -277,6 +277,7 @@ async def get_ibet_wst_transaction(
         "tx_hash": wst_tx.tx_hash,
         "block_number": wst_tx.block_number,
         "finalized": wst_tx.finalized,
+        "event_log": wst_tx.event_log,
     }
     return json_response(resp)
 

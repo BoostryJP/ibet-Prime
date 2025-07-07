@@ -29,7 +29,21 @@ from web3.exceptions import TimeExhausted
 from web3.types import TxReceipt
 
 from app.database import BatchAsyncSessionLocal
-from app.model.db import EthIbetWSTTx, IbetWSTTxStatus, IbetWSTTxType, Token
+from app.model.db import (
+    EthIbetWSTTx,
+    IbetWSTEventLogAccountWhiteListAdded,
+    IbetWSTEventLogAccountWhiteListDeleted,
+    IbetWSTEventLogBurn,
+    IbetWSTEventLogMint,
+    IbetWSTEventLogTradeAccepted,
+    IbetWSTEventLogTradeCancelled,
+    IbetWSTEventLogTradeRejected,
+    IbetWSTEventLogTradeRequested,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    Token,
+)
+from app.model.eth import IbetWST
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
@@ -135,18 +149,141 @@ async def finalize_tx(
     """
     Finalize the IbetWST transaction.
     """
-    if wst_tx.tx_type == IbetWSTTxType.DEPLOY:
-        token = (
-            await db_session.scalars(
-                select(Token).where(Token.ibet_wst_tx_id == wst_tx.tx_id).limit(1)
-            )
-        ).first()
-        if token is None:
-            return
+    match wst_tx.tx_type:
+        case IbetWSTTxType.DEPLOY:
+            token = (
+                await db_session.scalars(
+                    select(Token).where(Token.ibet_wst_tx_id == wst_tx.tx_id).limit(1)
+                )
+            ).first()
+            if token is None:
+                return
 
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = tx_receipt.get("contractAddress", None)
-        await db_session.merge(token)
+            token.ibet_wst_deployed = True
+            token.ibet_wst_address = tx_receipt.get("contractAddress", None)
+            await db_session.merge(token)
+        case IbetWSTTxType.MINT:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = await ibet_wst.contract.events.Mint().process_receipt(
+                txn_receipt=tx_receipt
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogMint(
+                    to_address=event["args"]["to"],
+                    value=event["args"]["value"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.BURN:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = await ibet_wst.contract.events.Burn().process_receipt(
+                txn_receipt=tx_receipt
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogBurn(
+                    from_address=event["args"]["from"],
+                    value=event["args"]["value"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.ADD_WHITELIST:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = (
+                await ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
+                    txn_receipt=tx_receipt
+                )
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogAccountWhiteListAdded(
+                    account_address=event["args"]["accountAddress"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.DELETE_WHITELIST:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = await ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
+                txn_receipt=tx_receipt
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogAccountWhiteListDeleted(
+                    account_address=event["args"]["accountAddress"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.REQUEST_TRADE:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = await ibet_wst.contract.events.TradeRequested().process_receipt(
+                txn_receipt=tx_receipt
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogTradeRequested(
+                    index=event["args"]["index"],
+                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
+                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                    sc_token_address=event["args"]["SCTokenAddress"],
+                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
+                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                    st_value=event["args"]["STValue"],
+                    sc_value=event["args"]["SCValue"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.CANCEL_TRADE:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = await ibet_wst.contract.events.TradeCancelled().process_receipt(
+                txn_receipt=tx_receipt
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogTradeCancelled(
+                    index=event["args"]["index"],
+                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
+                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                    sc_token_address=event["args"]["SCTokenAddress"],
+                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
+                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                    st_value=event["args"]["STValue"],
+                    sc_value=event["args"]["SCValue"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.ACCEPT_TRADE:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = await ibet_wst.contract.events.TradeAccepted().process_receipt(
+                txn_receipt=tx_receipt
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogTradeAccepted(
+                    index=event["args"]["index"],
+                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
+                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                    sc_token_address=event["args"]["SCTokenAddress"],
+                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
+                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                    st_value=event["args"]["STValue"],
+                    sc_value=event["args"]["SCValue"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.REJECT_TRADE:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = await ibet_wst.contract.events.TradeRejected().process_receipt(
+                txn_receipt=tx_receipt
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogTradeRejected(
+                    index=event["args"]["index"],
+                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
+                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                    sc_token_address=event["args"]["SCTokenAddress"],
+                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
+                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                    st_value=event["args"]["STValue"],
+                    sc_value=event["args"]["SCValue"],
+                )
+                await db_session.merge(wst_tx)
+        case _:
+            return
 
 
 async def main():

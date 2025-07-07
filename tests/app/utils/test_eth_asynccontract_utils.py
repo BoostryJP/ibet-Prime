@@ -440,13 +440,9 @@ class TestGetEventLogs:
         assert logs[0]["args"]["to"] == self.issuer["address"]
         assert logs[0]["args"]["value"] == 1000
 
-    ########################################################
-    # Error
-    ########################################################
-
-    # <Error_1>
+    # <Normal_2>
     # Get event logs with non-existent event
-    async def test_error_1(self):
+    async def test_normal_2(self):
         # Deploy contract
         tx_hash = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",

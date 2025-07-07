@@ -21,7 +21,14 @@ import uuid
 
 import pytest
 
-from app.model.db import EthIbetWSTTx, IbetWSTTxStatus, IbetWSTTxType, IbetWSTVersion
+from app.model.db import (
+    EthIbetWSTTx,
+    IbetWSTEventLogMint,
+    IbetWSTTxParamsMint,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
+)
 from tests.account_config import default_eth_account
 
 
@@ -32,6 +39,7 @@ class TestGetIbetWSTTransaction:
 
     authorizer = default_eth_account("user1")
     tx_sender = default_eth_account("user2")
+    user1 = default_eth_account("user3")
 
     ###########################################################################
     # Normal
@@ -48,7 +56,10 @@ class TestGetIbetWSTTransaction:
         tx.version = IbetWSTVersion.V_1
         tx.status = IbetWSTTxStatus.SUCCEEDED
         tx.ibet_wst_address = "0x1234567890abcdef1234567890abcdef12345678"
-        tx.tx_params = {}
+        tx.tx_params = IbetWSTTxParamsMint(
+            to_address=self.user1["address"],
+            value=1000,
+        )
         tx.tx_sender = self.tx_sender["address"]
         tx.authorizer = self.authorizer["address"]
         tx.authorization = {}
@@ -57,6 +68,10 @@ class TestGetIbetWSTTransaction:
         )
         tx.block_number = 12345678
         tx.finalized = True
+        tx.event_log = IbetWSTEventLogMint(
+            to_address=self.user1["address"],
+            value=1000,
+        )
         async_db.add(tx)
         await async_db.commit()
 
@@ -76,6 +91,10 @@ class TestGetIbetWSTTransaction:
             "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
             "block_number": 12345678,
             "finalized": True,
+            "event_log": {
+                "to_address": self.user1["address"],
+                "value": 1000,
+            },
         }
 
     ###########################################################################
