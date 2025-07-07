@@ -36,6 +36,7 @@ from app.exceptions import (
     SendTransactionError,
     ServiceUnavailableError,
 )
+from app.model import EthereumAddress
 from app.model.db import TokenAttrUpdate, TokenCache
 from app.model.ibet import IbetExchangeInterface
 from app.model.ibet.tx_params.ibet_security_token import (
@@ -183,30 +184,36 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
     async def forced_transfer(
         self,
-        data: IbetSecurityTokenForcedTransferParams,
-        tx_from: str,
-        private_key: bytes,
+        tx_params: IbetSecurityTokenForcedTransferParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Transfer ownership"""
+        """
+        Transfer ownership
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
-            _from = data.from_address
-            _to = data.to_address
-            _amount = data.amount
+            _from = tx_params.from_address
+            _to = tx_params.to_address
+            _amount = tx_params.amount
             tx = await contract.functions.transferFrom(
                 _from, _to, _amount
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise
@@ -219,16 +226,22 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
     async def bulk_forced_transfer(
         self,
-        data: list[IbetSecurityTokenForcedTransferParams],
-        tx_from: str,
-        private_key: bytes,
+        tx_params: list[IbetSecurityTokenForcedTransferParams],
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Bulk transfer ownership"""
+        """
+        Bulk transfer ownership
+
+        :param tx_params: List of transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         from_list = []
         to_list = []
         amounts = []
 
-        for _d in data:
+        for _d in tx_params:
             from_list.append(_d.from_address)
             to_list.append(_d.to_address)
             amounts.append(_d.amount)
@@ -242,13 +255,13 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise
@@ -261,27 +274,33 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
     async def bulk_transfer(
         self,
-        data: IbetSecurityTokenBulkTransferParams,
-        tx_from: str,
-        private_key: bytes,
+        tx_params: IbetSecurityTokenBulkTransferParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Transfer ownership"""
+        """
+        Transfer ownership
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             tx = await contract.functions.bulkTransfer(
-                data.to_address_list, data.amount_list
+                tx_params.to_address_list, tx_params.amount_list
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise
@@ -294,29 +313,35 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
     async def additional_issue(
         self,
-        data: IbetSecurityTokenAdditionalIssueParams,
-        tx_from: str,
-        private_key: bytes,
+        tx_params: IbetSecurityTokenAdditionalIssueParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Additional issue"""
+        """
+        Additional issue
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
-            _target_address = data.account_address
-            _amount = data.amount
+            _target_address = tx_params.account_address
+            _amount = tx_params.amount
             tx = await contract.functions.issueFrom(
                 _target_address, ZERO_ADDRESS, _amount
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise
@@ -341,16 +366,22 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
     async def bulk_additional_issue(
         self,
-        data: list[IbetSecurityTokenAdditionalIssueParams],
-        tx_from: str,
-        private_key: bytes,
+        tx_params: list[IbetSecurityTokenAdditionalIssueParams],
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Bulk additional issue"""
+        """
+        Bulk additional issue
+
+        :param tx_params: List of transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         target_address_list = []
         lock_address_list = []
         amounts = []
 
-        for _d in data:
+        for _d in tx_params:
             target_address_list.append(_d.account_address)
             lock_address_list.append(ZERO_ADDRESS)
             amounts.append(_d.amount)
@@ -364,13 +395,13 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise
@@ -394,27 +425,36 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
         return tx_hash
 
     async def redeem(
-        self, data: IbetSecurityTokenRedeemParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetSecurityTokenRedeemParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Redeem a token"""
+        """
+        Redeem a token
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
-            _target_address = data.account_address
-            _amount = data.amount
+            _target_address = tx_params.account_address
+            _amount = tx_params.amount
             tx = await contract.functions.redeemFrom(
                 _target_address, ZERO_ADDRESS, _amount
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise
@@ -439,16 +479,22 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
     async def bulk_redeem(
         self,
-        data: list[IbetSecurityTokenRedeemParams],
-        tx_from: str,
-        private_key: bytes,
+        tx_params: list[IbetSecurityTokenRedeemParams],
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Redeem a token"""
+        """
+        Redeem a token
+
+        :param tx_params: List of transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         target_address_list = []
         lock_address_list = []
         amounts = []
 
-        for _d in data:
+        for _d in tx_params:
             target_address_list.append(_d.account_address)
             lock_address_list.append(ZERO_ADDRESS)
             amounts.append(_d.amount)
@@ -462,13 +508,13 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
         except ContractRevertError:
             raise
@@ -492,25 +538,34 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
         return tx_hash
 
     async def approve_transfer(
-        self, data: IbetSecurityTokenApproveTransfer, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetSecurityTokenApproveTransfer,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Approve Transfer"""
+        """
+        Approve Transfer
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             tx = await contract.functions.approveTransfer(
-                data.application_id, data.data
+                tx_params.application_id, tx_params.data
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -521,25 +576,34 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             raise SendTransactionError(err)
 
     async def cancel_transfer(
-        self, data: IbetSecurityTokenCancelTransfer, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetSecurityTokenCancelTransfer,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Cancel Transfer"""
+        """
+        Cancel Transfer
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             tx = await contract.functions.cancelTransfer(
-                data.application_id, data.data
+                tx_params.application_id, tx_params.data
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -550,25 +614,34 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             raise SendTransactionError(err)
 
     async def lock(
-        self, data: IbetSecurityTokenLockParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetSecurityTokenLockParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Lock"""
+        """
+        Lock
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             tx = await contract.functions.lock(
-                data.lock_address, data.value, data.data
+                tx_params.lock_address, tx_params.value, tx_params.data
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -579,28 +652,37 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             raise SendTransactionError(err)
 
     async def force_lock(
-        self, data: IbetSecurityTokenForceLockParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetSecurityTokenForceLockParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Force Lock"""
+        """
+        Force Lock
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             tx = await contract.functions.forceLock(
-                data.lock_address,
-                data.account_address,
-                data.value,
-                data.data,
+                tx_params.lock_address,
+                tx_params.account_address,
+                tx_params.value,
+                tx_params.data,
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -611,29 +693,38 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             raise SendTransactionError(err)
 
     async def force_unlock(
-        self, data: IbetSecurityTokenForceUnlockParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetSecurityTokenForceUnlockParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Force Unlock"""
+        """
+        Force Unlock
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             tx = await contract.functions.forceUnlock(
-                data.lock_address,
-                data.account_address,
-                data.recipient_address,
-                data.value,
-                data.data,
+                tx_params.lock_address,
+                tx_params.account_address,
+                tx_params.recipient_address,
+                tx_params.value,
+                tx_params.data,
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -645,31 +736,37 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
     async def force_change_locked_account(
         self,
-        data: IbetSecurityTokenForceChangeLockedAccountParams,
-        tx_from: str,
-        private_key: bytes,
+        tx_params: IbetSecurityTokenForceChangeLockedAccountParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Force Change Locked Account"""
+        """
+        Force Change Locked Account
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             contract = AsyncContractUtils.get_contract(
                 contract_name=self.contract_name, contract_address=self.token_address
             )
             tx = await contract.functions.forceChangeLockedAccount(
-                data.lock_address,
-                data.before_account_address,
-                data.after_account_address,
-                data.value,
-                data.data,
+                tx_params.lock_address,
+                tx_params.before_account_address,
+                tx_params.after_account_address,
+                tx_params.value,
+                tx_params.data,
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -701,20 +798,23 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
     def __init__(self, contract_address: str = ZERO_ADDRESS):
         super().__init__(contract_address, "IbetStraightBond")
 
-    async def create(self, args: list, tx_from: str, private_key: bytes):
-        """Deploy token
+    async def create(
+        self, args: list, tx_sender: EthereumAddress, tx_sender_key: bytes
+    ):
+        """
+        Deploy token
 
         :param args: deploy arguments
-        :param tx_from: contract deployer
-        :param private_key: deployer's private key
+        :param tx_sender: contract deployer
+        :param tx_sender_key: deployer's private key
         :return: contract address, ABI, transaction hash
         """
         if self.token_address == ZERO_ADDRESS:
             contract_address, abi, tx_hash = await AsyncContractUtils.deploy_contract(
                 contract_name="IbetStraightBond",
                 args=args,
-                deployer=tx_from,
-                private_key=private_key,
+                deployer=tx_sender,
+                private_key=tx_sender_key,
             )
             self.contract_name = "IbetStraightBond"
             self.token_address = contract_address
@@ -888,27 +988,36 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         return AttributeDict(self.__dict__)
 
     async def update(
-        self, data: IbetStraightBondUpdateParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetStraightBondUpdateParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Update token"""
+        """
+        Update token
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         contract = AsyncContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
 
-        if data.face_value is not None:
+        if tx_params.face_value is not None:
             tx = await contract.functions.setFaceValue(
-                data.face_value
+                tx_params.face_value
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -917,20 +1026,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.face_value_currency is not None:
+        if tx_params.face_value_currency is not None:
             tx = await contract.functions.setFaceValueCurrency(
-                data.face_value_currency
+                tx_params.face_value_currency
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -939,18 +1048,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.purpose is not None:
-            tx = await contract.functions.setPurpose(data.purpose).build_transaction(
+        if tx_params.purpose is not None:
+            tx = await contract.functions.setPurpose(
+                tx_params.purpose
+            ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -959,21 +1070,23 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.interest_rate is not None:
-            _interest_rate = int(Decimal(str(data.interest_rate)) * Decimal("10000"))
+        if tx_params.interest_rate is not None:
+            _interest_rate = int(
+                Decimal(str(tx_params.interest_rate)) * Decimal("10000")
+            )
             tx = await contract.functions.setInterestRate(
                 _interest_rate
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -982,9 +1095,9 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.interest_payment_date is not None:
+        if tx_params.interest_payment_date is not None:
             _interest_payment_date = {}
-            for i, item in enumerate(data.interest_payment_date):
+            for i, item in enumerate(tx_params.interest_payment_date):
                 _interest_payment_date[f"interestPaymentDate{i + 1}"] = item
             _interest_payment_date_string = json.dumps(_interest_payment_date)
             tx = await contract.functions.setInterestPaymentDate(
@@ -992,14 +1105,14 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1008,20 +1121,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.interest_payment_currency is not None:
+        if tx_params.interest_payment_currency is not None:
             tx = await contract.functions.setInterestPaymentCurrency(
-                data.interest_payment_currency
+                tx_params.interest_payment_currency
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1030,40 +1143,40 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.redemption_value is not None:
+        if tx_params.redemption_value is not None:
             tx = await contract.functions.setRedemptionValue(
-                data.redemption_value
+                tx_params.redemption_value
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.redemption_value_currency is not None:
+        if tx_params.redemption_value_currency is not None:
             tx = await contract.functions.setRedemptionValueCurrency(
-                data.redemption_value_currency
+                tx_params.redemption_value_currency
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1072,20 +1185,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.redemption_date is not None:
+        if tx_params.redemption_date is not None:
             tx = await contract.functions.setRedemptionDate(
-                data.redemption_date
+                tx_params.redemption_date
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1094,20 +1207,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.base_fx_rate is not None:
+        if tx_params.base_fx_rate is not None:
             tx = await contract.functions.setBaseFXRate(
-                str(data.base_fx_rate)
+                str(tx_params.base_fx_rate)
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1116,20 +1229,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.transferable is not None:
+        if tx_params.transferable is not None:
             tx = await contract.functions.setTransferable(
-                data.transferable
+                tx_params.transferable
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1138,18 +1251,18 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.status is not None:
-            tx = await contract.functions.setStatus(data.status).build_transaction(
+        if tx_params.status is not None:
+            tx = await contract.functions.setStatus(tx_params.status).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1158,20 +1271,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.is_offering is not None:
+        if tx_params.is_offering is not None:
             tx = await contract.functions.changeOfferingStatus(
-                data.is_offering
+                tx_params.is_offering
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1180,18 +1293,18 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.is_redeemed is not None and data.is_redeemed:
+        if tx_params.is_redeemed is not None and tx_params.is_redeemed:
             tx = await contract.functions.changeToRedeemed().build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1200,20 +1313,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.tradable_exchange_contract_address is not None:
+        if tx_params.tradable_exchange_contract_address is not None:
             tx = await contract.functions.setTradableExchange(
-                data.tradable_exchange_contract_address
+                tx_params.tradable_exchange_contract_address
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1222,20 +1335,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.personal_info_contract_address is not None:
+        if tx_params.personal_info_contract_address is not None:
             tx = await contract.functions.setPersonalInfoAddress(
-                data.personal_info_contract_address
+                tx_params.personal_info_contract_address
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1244,20 +1357,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.require_personal_info_registered is not None:
+        if tx_params.require_personal_info_registered is not None:
             tx = await contract.functions.setRequirePersonalInfoRegistered(
-                data.require_personal_info_registered
+                tx_params.require_personal_info_registered
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1266,20 +1379,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.contact_information is not None:
+        if tx_params.contact_information is not None:
             tx = await contract.functions.setContactInformation(
-                data.contact_information
+                tx_params.contact_information
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1288,20 +1401,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.privacy_policy is not None:
+        if tx_params.privacy_policy is not None:
             tx = await contract.functions.setPrivacyPolicy(
-                data.privacy_policy
+                tx_params.privacy_policy
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1310,20 +1423,20 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.transfer_approval_required is not None:
+        if tx_params.transfer_approval_required is not None:
             tx = await contract.functions.setTransferApprovalRequired(
-                data.transfer_approval_required
+                tx_params.transfer_approval_required
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1332,18 +1445,18 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.memo is not None:
-            tx = await contract.functions.setMemo(data.memo).build_transaction(
+        if tx_params.memo is not None:
+            tx = await contract.functions.setMemo(tx_params.memo).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1380,20 +1493,23 @@ class IbetShareContract(IbetSecurityTokenInterface):
     def __init__(self, contract_address: str = ZERO_ADDRESS):
         super().__init__(contract_address, "IbetShare")
 
-    async def create(self, args: list, tx_from: str, private_key: bytes):
-        """Deploy token
+    async def create(
+        self, args: list, tx_sender: EthereumAddress, tx_sender_key: bytes
+    ):
+        """
+        Deploy token
 
         :param args: deploy arguments
-        :param tx_from: contract deployer
-        :param private_key: deployer's private key
+        :param tx_sender: contract deployer
+        :param tx_sender_key: deployer's private key
         :return: contract address, ABI, transaction hash
         """
         if self.token_address == ZERO_ADDRESS:
             contract_address, abi, tx_hash = await AsyncContractUtils.deploy_contract(
                 contract_name="IbetShare",
                 args=args,
-                deployer=tx_from,
-                private_key=private_key,
+                deployer=tx_sender,
+                private_key=tx_sender_key,
             )
             self.contract_name = "IbetShare"
             self.token_address = contract_address
@@ -1526,27 +1642,36 @@ class IbetShareContract(IbetSecurityTokenInterface):
         return AttributeDict(self.__dict__)
 
     async def update(
-        self, data: IbetShareUpdateParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: IbetShareUpdateParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Update token"""
+        """
+        Update token
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         contract = AsyncContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
 
-        if data.tradable_exchange_contract_address is not None:
+        if tx_params.tradable_exchange_contract_address is not None:
             tx = await contract.functions.setTradableExchange(
-                data.tradable_exchange_contract_address
+                tx_params.tradable_exchange_contract_address
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1555,20 +1680,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.personal_info_contract_address is not None:
+        if tx_params.personal_info_contract_address is not None:
             tx = await contract.functions.setPersonalInfoAddress(
-                data.personal_info_contract_address
+                tx_params.personal_info_contract_address
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1577,20 +1702,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.require_personal_info_registered is not None:
+        if tx_params.require_personal_info_registered is not None:
             tx = await contract.functions.setRequirePersonalInfoRegistered(
-                data.require_personal_info_registered
+                tx_params.require_personal_info_registered
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1599,21 +1724,25 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.dividends is not None:
-            _dividends = int(Decimal(str(data.dividends)) * Decimal("10000000000000"))
+        if tx_params.dividends is not None:
+            _dividends = int(
+                Decimal(str(tx_params.dividends)) * Decimal("10000000000000")
+            )
             tx = await contract.functions.setDividendInformation(
-                _dividends, data.dividend_record_date, data.dividend_payment_date
+                _dividends,
+                tx_params.dividend_record_date,
+                tx_params.dividend_payment_date,
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1622,20 +1751,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.cancellation_date is not None:
+        if tx_params.cancellation_date is not None:
             tx = await contract.functions.setCancellationDate(
-                data.cancellation_date
+                tx_params.cancellation_date
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1644,20 +1773,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.contact_information is not None:
+        if tx_params.contact_information is not None:
             tx = await contract.functions.setContactInformation(
-                data.contact_information
+                tx_params.contact_information
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1666,20 +1795,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.privacy_policy is not None:
+        if tx_params.privacy_policy is not None:
             tx = await contract.functions.setPrivacyPolicy(
-                data.privacy_policy
+                tx_params.privacy_policy
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1688,18 +1817,18 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.status is not None:
-            tx = await contract.functions.setStatus(data.status).build_transaction(
+        if tx_params.status is not None:
+            tx = await contract.functions.setStatus(tx_params.status).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1708,20 +1837,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.transferable is not None:
+        if tx_params.transferable is not None:
             tx = await contract.functions.setTransferable(
-                data.transferable
+                tx_params.transferable
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1730,20 +1859,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.is_offering is not None:
+        if tx_params.is_offering is not None:
             tx = await contract.functions.changeOfferingStatus(
-                data.is_offering
+                tx_params.is_offering
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1752,20 +1881,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.transfer_approval_required is not None:
+        if tx_params.transfer_approval_required is not None:
             tx = await contract.functions.setTransferApprovalRequired(
-                data.transfer_approval_required
+                tx_params.transfer_approval_required
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1774,20 +1903,20 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.principal_value is not None:
+        if tx_params.principal_value is not None:
             tx = await contract.functions.setPrincipalValue(
-                data.principal_value
+                tx_params.principal_value
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1796,18 +1925,18 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.is_canceled is not None and data.is_canceled:
+        if tx_params.is_canceled is not None and tx_params.is_canceled:
             tx = await contract.functions.changeToCanceled().build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise
@@ -1816,18 +1945,18 @@ class IbetShareContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.memo is not None:
-            tx = await contract.functions.setMemo(data.memo).build_transaction(
+        if tx_params.memo is not None:
+            tx = await contract.functions.setMemo(tx_params.memo).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             try:
                 await AsyncContractUtils.send_transaction(
-                    transaction=tx, private_key=private_key
+                    transaction=tx, private_key=tx_sender_key
                 )
             except ContractRevertError:
                 raise

@@ -96,15 +96,15 @@ class TestTransferBondTokenOwnership:
 
         # assertion
         IbetStraightBondContract_mock.assert_any_call(
-            data=ForcedTransferParams(
+            tx_params=ForcedTransferParams(
                 **{
                     "from_address": _from_address,
                     "to_address": _to_address,
                     "amount": 10,
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -171,15 +171,15 @@ class TestTransferBondTokenOwnership:
 
         # assertion
         IbetStraightBondContract_mock.assert_any_call(
-            data=ForcedTransferParams(
+            tx_params=ForcedTransferParams(
                 **{
                     "from_address": _from_address,
                     "to_address": _to_address,
                     "amount": 10,
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200

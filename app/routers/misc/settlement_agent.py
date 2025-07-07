@@ -451,9 +451,9 @@ async def update_dvp_agent_delivery(
             try:
                 _data = {"delivery_id": delivery_id}
                 await dvp_contract.finish_delivery(
-                    data=FinishDeliveryParams(**_data),
-                    tx_from=agent_account.account_address,
-                    private_key=private_key,
+                    tx_params=FinishDeliveryParams(**_data),
+                    tx_sender=agent_account.account_address,
+                    tx_sender_key=private_key,
                 )
             except SendTransactionError:
                 raise SendTransactionError("failed to finish delivery")
@@ -494,9 +494,9 @@ async def update_dvp_agent_delivery(
             try:
                 _data = {"delivery_id": delivery_id}
                 await dvp_contract.abort_delivery(
-                    data=AbortDeliveryParams(**_data),
-                    tx_from=agent_account.account_address,
-                    private_key=private_key,
+                    tx_params=AbortDeliveryParams(**_data),
+                    tx_sender=agent_account.account_address,
+                    tx_sender_key=private_key,
                 )
             except SendTransactionError:
                 raise SendTransactionError("failed to abort delivery")

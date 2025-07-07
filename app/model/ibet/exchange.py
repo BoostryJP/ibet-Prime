@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
+from app.model import EthereumAddress
 from app.model.ibet.tx_params.ibet_security_token_dvp import (
     AbortDeliveryParams,
     CancelDeliveryParams,
@@ -82,22 +83,31 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
         )
 
     async def approve_transfer(
-        self, data: ApproveTransferParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: ApproveTransferParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Approve Transfer"""
+        """
+        Approve Transfer
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             tx = await self.exchange_contract.functions.approveTransfer(
-                data.escrow_id, data.data
+                tx_params.escrow_id, tx_params.data
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -117,26 +127,35 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
         )
 
     async def create_delivery(
-        self, data: CreateDeliveryParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: CreateDeliveryParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Create Delivery"""
+        """
+        Create Delivery
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             tx = await self.exchange_contract.functions.createDelivery(
-                data.token_address,
-                data.buyer_address,
-                data.amount,
-                data.agent_address,
-                data.data,
+                tx_params.token_address,
+                tx_params.buyer_address,
+                tx_params.amount,
+                tx_params.agent_address,
+                tx_params.data,
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             latest_delivery_id = await AsyncContractUtils.call_function(
                 contract=self.exchange_contract,
@@ -153,22 +172,31 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
             raise SendTransactionError(err)
 
     async def cancel_delivery(
-        self, data: CancelDeliveryParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: CancelDeliveryParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Cancel Delivery"""
+        """
+        Cancel Delivery
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             tx = await self.exchange_contract.functions.cancelDelivery(
-                data.delivery_id
+                tx_params.delivery_id
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -179,22 +207,25 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
             raise SendTransactionError(err)
 
     async def finish_delivery(
-        self, data: FinishDeliveryParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: FinishDeliveryParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
         """Finish Delivery"""
         try:
             tx = await self.exchange_contract.functions.finishDelivery(
-                data.delivery_id
+                tx_params.delivery_id
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -205,22 +236,31 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
             raise SendTransactionError(err)
 
     async def abort_delivery(
-        self, data: AbortDeliveryParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: AbortDeliveryParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Abort Delivery"""
+        """
+        Abort Delivery
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             tx = await self.exchange_contract.functions.abortDelivery(
-                data.delivery_id
+                tx_params.delivery_id
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -231,22 +271,31 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
             raise SendTransactionError(err)
 
     async def withdraw_partial(
-        self, data: WithdrawPartialParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: WithdrawPartialParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Withdraw Partial"""
+        """
+        Withdraw Partial
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             tx = await self.exchange_contract.functions.withdrawPartial(
-                data.token_address, data.value
+                tx_params.token_address, tx_params.value
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -266,48 +315,66 @@ class IbetSecurityTokenDVPNoWait(IbetExchangeInterface):
         )
 
     async def create_delivery(
-        self, data: CreateDeliveryParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: CreateDeliveryParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Create Delivery (No wait)"""
+        """
+        Create Delivery (No wait)
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             tx = await self.exchange_contract.functions.createDelivery(
-                data.token_address,
-                data.buyer_address,
-                data.amount,
-                data.agent_address,
-                data.data,
+                tx_params.token_address,
+                tx_params.buyer_address,
+                tx_params.amount,
+                tx_params.agent_address,
+                tx_params.data,
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash = await AsyncContractUtils.send_transaction_no_wait(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash
         except Exception as err:
             raise SendTransactionError(err)
 
     async def withdraw_partial(
-        self, data: WithdrawPartialParams, tx_from: str, private_key: bytes
+        self,
+        tx_params: WithdrawPartialParams,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
     ):
-        """Withdraw Partial (No wait)"""
+        """
+        Withdraw Partial (No wait)
+
+        :param tx_params: Transaction parameters
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Transaction sender private key
+        """
         try:
             tx = await self.exchange_contract.functions.withdrawPartial(
-                data.token_address, data.value
+                tx_params.token_address, tx_params.value
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
-                    "from": tx_from,
+                    "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0,
                 }
             )
             tx_hash = await AsyncContractUtils.send_transaction_no_wait(
-                transaction=tx, private_key=private_key
+                transaction=tx, private_key=tx_sender_key
             )
             return tx_hash
         except Exception as err:

@@ -143,7 +143,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetStraightBondContract_bulk_additional_issue.assert_called_with(
-            data=[
+            tx_params=[
                 IbetStraightBondAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
@@ -151,8 +151,8 @@ class TestProcessor:
                     account_address=target_address, amount=target_amount
                 ),
             ],
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB
@@ -272,7 +272,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetStraightBondContract_bulk_redeem.assert_called_with(
-            data=[
+            tx_params=[
                 IbetStraightBondRedeemParams(
                     account_address=target_address, amount=target_amount
                 ),
@@ -280,8 +280,8 @@ class TestProcessor:
                     account_address=target_address, amount=target_amount
                 ),
             ],
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB
@@ -401,7 +401,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_bulk_additional_issue.assert_called_with(
-            data=[
+            tx_params=[
                 IbetShareAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
@@ -409,8 +409,8 @@ class TestProcessor:
                     account_address=target_address, amount=target_amount
                 ),
             ],
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB
@@ -530,7 +530,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_bulk_redeem.assert_called_with(
-            data=[
+            tx_params=[
                 IbetShareRedeemParams(
                     account_address=target_address, amount=target_amount
                 ),
@@ -538,8 +538,8 @@ class TestProcessor:
                     account_address=target_address, amount=target_amount
                 ),
             ],
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB

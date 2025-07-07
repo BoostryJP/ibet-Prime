@@ -141,14 +141,14 @@ class TestIssueShareToken:
                     "20221231",
                     1000,
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             await AsyncContractUtils.get_block_by_transaction_hash(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -275,14 +275,14 @@ class TestIssueShareToken:
             # assertion
             IbetShareContract.create.assert_called_with(
                 args=["name_test1", "", 1000, 10000, 0, "", "", "", 1000],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             await AsyncContractUtils.get_block_by_transaction_hash(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -434,8 +434,8 @@ class TestIssueShareToken:
                     "20221231",
                     1000,
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             TokenListContract.register.assert_not_called()
             AsyncContractUtils.get_block_by_transaction_hash.assert_not_called()
@@ -565,14 +565,14 @@ class TestIssueShareToken:
                     "20221231",
                     1000,
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             await AsyncContractUtils.get_block_by_transaction_hash(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -711,8 +711,8 @@ class TestIssueShareToken:
                     "20221231",
                     1000,
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
 
             assert resp.status_code == 200
@@ -794,8 +794,8 @@ class TestIssueShareToken:
                     "",
                     1000,
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
 
             assert resp.status_code == 200
@@ -884,14 +884,14 @@ class TestIssueShareToken:
                     "20221231",
                     1000,
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             await AsyncContractUtils.get_block_by_transaction_hash(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"

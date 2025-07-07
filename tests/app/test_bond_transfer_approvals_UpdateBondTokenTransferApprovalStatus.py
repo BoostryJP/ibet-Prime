@@ -175,9 +175,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=ApproveTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=ApproveTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
         approval_op_list: list[TransferApprovalHistory] = (
@@ -316,9 +316,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=EscrowApproveTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=EscrowApproveTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
         approval_op_list: list[TransferApprovalHistory] = (
@@ -456,9 +456,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=CancelTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=CancelTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
         cancel_op_list: list[TransferApprovalHistory] = (
@@ -601,9 +601,9 @@ class TestUpdateBondTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=ApproveTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=ApproveTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
     ###########################################################################

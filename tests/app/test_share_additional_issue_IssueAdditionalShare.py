@@ -82,9 +82,9 @@ class TestIssueAdditionalShare:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=AdditionalIssueParams(**req_param),
-            tx_from=_issuer_address,
-            private_key=ANY,
+            tx_params=AdditionalIssueParams(**req_param),
+            tx_sender=_issuer_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -140,9 +140,9 @@ class TestIssueAdditionalShare:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=AdditionalIssueParams(**req_param),
-            tx_from=_issuer_address,
-            private_key=ANY,
+            tx_params=AdditionalIssueParams(**req_param),
+            tx_sender=_issuer_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200

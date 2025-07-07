@@ -210,7 +210,7 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                data=IbetShareUpdateParams(
+                tx_params=IbetShareUpdateParams(
                     cancellation_date=None,
                     dividend_record_date=None,
                     dividend_payment_date=None,
@@ -226,12 +226,12 @@ class TestProcessor:
                     transfer_approval_required=True,
                     is_canceled=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                data=IbetStraightBondUpdateParams(
+                tx_params=IbetStraightBondUpdateParams(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,
@@ -245,8 +245,8 @@ class TestProcessor:
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             TokenListContract_register.assert_has_calls(
@@ -254,14 +254,14 @@ class TestProcessor:
                     call(
                         token_address=_token_address_1,
                         token_template=TokenType.IBET_SHARE,
-                        tx_from=_issuer_address,
-                        private_key=ANY,
+                        tx_sender=_issuer_address,
+                        tx_sender_key=ANY,
                     ),
                     call(
                         token_address=_token_address_2,
                         token_template=TokenType.IBET_STRAIGHT_BOND,
-                        tx_from=_issuer_address,
-                        private_key=ANY,
+                        tx_sender=_issuer_address,
+                        tx_sender_key=ANY,
                     ),
                 ]
             )
@@ -1181,7 +1181,7 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                data=IbetShareUpdateParams(
+                tx_params=IbetShareUpdateParams(
                     cancellation_date=None,
                     dividend_record_date=None,
                     dividend_payment_date=None,
@@ -1196,12 +1196,12 @@ class TestProcessor:
                     transfer_approval_required=True,
                     is_canceled=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                data=IbetStraightBondUpdateParams(
+                tx_params=IbetStraightBondUpdateParams(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,
@@ -1214,8 +1214,8 @@ class TestProcessor:
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             # assertion(DB)

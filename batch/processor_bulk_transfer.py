@@ -471,15 +471,15 @@ class Processor:
         """
         if token_type == TokenType.IBET_SHARE.value:
             await IbetShareContract(token_address).bulk_forced_transfer(
-                data=transfer_data_list,
-                tx_from=tx_from,
-                private_key=tx_from_pk,
+                tx_params=transfer_data_list,
+                tx_sender=tx_from,
+                tx_sender_key=tx_from_pk,
             )
         elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
             await IbetStraightBondContract(token_address).bulk_forced_transfer(
-                data=transfer_data_list,
-                tx_from=tx_from,
-                private_key=tx_from_pk,
+                tx_params=transfer_data_list,
+                tx_sender=tx_from,
+                tx_sender_key=tx_from_pk,
             )
 
     @staticmethod
@@ -495,15 +495,15 @@ class Processor:
         """
         if token_type == TokenType.IBET_SHARE.value:
             await IbetShareContract(token_address).forced_transfer(
-                data=transfer_data,
-                tx_from=tx_from,
-                private_key=tx_from_pk,
+                tx_params=transfer_data,
+                tx_sender=tx_from,
+                tx_sender_key=tx_from_pk,
             )
         elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
             await IbetStraightBondContract(token_address).forced_transfer(
-                data=transfer_data,
-                tx_from=tx_from,
-                private_key=tx_from_pk,
+                tx_params=transfer_data,
+                tx_sender=tx_from,
+                tx_sender_key=tx_from_pk,
             )
 
     @staticmethod

@@ -233,12 +233,12 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).additional_issue(
-                            data=IbetStraightBondAdditionalIssueParams(
+                            tx_params=IbetStraightBondAdditionalIssueParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                     elif (
                         upload.category
@@ -247,12 +247,12 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).redeem(
-                            data=IbetStraightBondRedeemParams(
+                            tx_params=IbetStraightBondRedeemParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                 elif upload.token_type == TokenType.IBET_SHARE.value:
                     if (
@@ -262,24 +262,24 @@ class Processor:
                         tx_hash = await IbetShareContract(
                             upload.token_address
                         ).additional_issue(
-                            data=IbetShareAdditionalIssueParams(
+                            tx_params=IbetShareAdditionalIssueParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                     elif (
                         upload.category
                         == BatchIssueRedeemProcessingCategory.REDEEM.value
                     ):
                         tx_hash = await IbetShareContract(upload.token_address).redeem(
-                            data=IbetShareRedeemParams(
+                            tx_params=IbetShareRedeemParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                 LOG.debug(f"Transaction sent successfully: {tx_hash}")
                 batch_data.status = 1
@@ -340,9 +340,9 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).bulk_additional_issue(
-                            data=tx_data,
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_params=tx_data,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                     elif (
                         upload.category
@@ -358,9 +358,9 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).bulk_redeem(
-                            data=tx_data,
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_params=tx_data,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                 elif upload.token_type == TokenType.IBET_SHARE.value:
                     if (
@@ -377,9 +377,9 @@ class Processor:
                         tx_hash = await IbetShareContract(
                             upload.token_address
                         ).bulk_additional_issue(
-                            data=tx_data,
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_params=tx_data,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                     elif (
                         upload.category
@@ -395,9 +395,9 @@ class Processor:
                         tx_hash = await IbetShareContract(
                             upload.token_address
                         ).bulk_redeem(
-                            data=tx_data,
-                            tx_from=upload.issuer_address,
-                            private_key=issuer_pk,
+                            tx_params=tx_data,
+                            tx_sender=upload.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
 
                 # Update status

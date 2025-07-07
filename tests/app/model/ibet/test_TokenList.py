@@ -86,14 +86,14 @@ class TestRegisterTokenList:
         ]
         share_contract = IbetShareContract()
         share_token_address, _, _ = await share_contract.create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
             token_address=share_token_address,
             token_template=TokenType.IBET_SHARE,
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
 
         # assertion : list length
@@ -118,14 +118,14 @@ class TestRegisterTokenList:
             "発行目的",
         ]
         bond_token_address, _, _ = await IbetStraightBondContract().create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
 
         await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
             token_address=bond_token_address,
             token_template=TokenType.IBET_STRAIGHT_BOND,
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
 
         # assertion
@@ -165,8 +165,8 @@ class TestRegisterTokenList:
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address="dummy_token_address",
                 token_template=TokenType.IBET_SHARE,
-                tx_from=issuer_address,
-                private_key=private_key,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
         assert isinstance(exc_info.value.args[0], MismatchedABI)
 
@@ -184,8 +184,8 @@ class TestRegisterTokenList:
             await TokenListContract("dummy_token_list_address").register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_STRAIGHT_BOND,
-                tx_from=issuer_address,
-                private_key=private_key,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
         assert isinstance(exc_info.value.args[0], ValueError)
 
@@ -203,8 +203,8 @@ class TestRegisterTokenList:
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE,
-                tx_from=issuer_address[:-1],
-                private_key=private_key,
+                tx_sender=issuer_address[:-1],
+                tx_sender_key=private_key,
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
 
@@ -218,8 +218,8 @@ class TestRegisterTokenList:
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE,
-                tx_from=issuer_address,
-                private_key="not private key",
+                tx_sender=issuer_address,
+                tx_sender_key="not private key",
             )
         assert isinstance(exc_info.value.args[0], Error)
 
@@ -245,8 +245,8 @@ class TestRegisterTokenList:
                 await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                     token_address=ZERO_ADDRESS,
                     token_template=TokenType.IBET_SHARE,
-                    tx_from=issuer_address,
-                    private_key=private_key,
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
 
     # <Error_6> Transaction REVERT(token address is zero)
@@ -272,8 +272,8 @@ class TestRegisterTokenList:
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE,
-                tx_from=issuer_address,
-                private_key=private_key,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
 
         # assertion

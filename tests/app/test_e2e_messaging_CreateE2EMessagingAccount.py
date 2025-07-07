@@ -96,8 +96,8 @@ class TestCreateE2EMessagingAccount:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=resp.json()["account_address"],
-                private_key=ANY,
+                tx_sender=resp.json()["account_address"],
+                tx_sender_key=ANY,
             )
             AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -214,8 +214,8 @@ class TestCreateE2EMessagingAccount:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=resp.json()["account_address"],
-                private_key=ANY,
+                tx_sender=resp.json()["account_address"],
+                tx_sender_key=ANY,
             )
             AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",

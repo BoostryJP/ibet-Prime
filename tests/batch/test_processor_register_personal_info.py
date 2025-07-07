@@ -125,14 +125,14 @@ class TestProcessor:
             arguments, address, private_key
         )
         await share_contract.update(
-            data=IbetShareUpdateParams(
+            tx_params=IbetShareUpdateParams(
                 transferable=True,
                 personal_info_contract_address=personal_info_contract_address,
                 tradable_exchange_contract_address=tradable_exchange_contract_address,
                 transfer_approval_required=transfer_approval_required,
             ),
-            tx_from=address,
-            private_key=private_key,
+            tx_sender=address,
+            tx_sender_key=private_key,
         )
 
         return ContractUtils.get_contract("IbetShare", token_address)
