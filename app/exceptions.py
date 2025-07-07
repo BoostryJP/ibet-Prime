@@ -124,6 +124,22 @@ class BatchPersonalInfoRegistrationValidationError(BadRequestError):
         super().__init__(detail)
 
 
+class IbetWSTInsufficientBalanceError(BadRequestError):
+    """
+    Insufficient balance for IbetWST token transfer
+    """
+
+    code = 13
+
+
+class ERC20InsufficientAllowanceError(BadRequestError):
+    """
+    Insufficient allowance for ERC20 token transfer
+    """
+
+    code = 14
+
+
 class OperationNotAllowedStateError(BadRequestError):
     """
     Error returned when server-side data is not ready to process the request

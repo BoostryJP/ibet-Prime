@@ -27,6 +27,10 @@ from sqlalchemy import and_, asc, desc, func, select
 
 import config
 from app.database import DBAsyncSession
+from app.exceptions import (
+    ERC20InsufficientAllowanceError,
+    IbetWSTInsufficientBalanceError,
+)
 from app.model import EthereumAddress
 from app.model.db import (
     EthIbetWSTTx,
@@ -43,7 +47,7 @@ from app.model.db import (
     Token,
     TokenType,
 )
-from app.model.eth import IbetWST
+from app.model.eth import ERC20, IbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     AcceptIbetWSTTradeRequest,
@@ -175,9 +179,10 @@ async def list_all_ibet_wst_tokens(
     "/balances/{account_address}/{ibet_wst_address}",
     operation_id="GetIbetWSTBalance",
     response_model=GetIbetWSTBalanceResponse,
-    responses=get_routers_responses(422),
+    responses=get_routers_responses(404, 422),
 )
 async def get_ibet_wst_balance(
+    db: DBAsyncSession,
     account_address: Annotated[EthereumAddress, Path(description="Account address")],
     ibet_wst_address: Annotated[
         EthereumAddress, Path(description="IbetWST contract address")
@@ -188,7 +193,16 @@ async def get_ibet_wst_balance(
 
     - This endpoint retrieves the IbetWST balance for the specified account address.
     """
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
 
+    # Get balance amount
     wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
     balance = await wst_contract.balance_of(to_checksum_address(account_address))
 
@@ -200,7 +214,7 @@ async def get_ibet_wst_balance(
     "/balances/{account_address}/{ibet_wst_address}/burn",
     operation_id="BurnIbetWSTBalance",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(422),
+    responses=get_routers_responses(404, 422),
 )
 async def burn_ibet_wst_balance(
     db: DBAsyncSession,
@@ -214,6 +228,15 @@ async def burn_ibet_wst_balance(
     Burn IbetWST balance
     - This endpoint allows a user to send burnWithAuthorization transaction to the IbetWST contract.
     """
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
+
     # Insert transaction record
     tx_id = str(uuid.uuid4())
     wst_tx = EthIbetWSTTx()
@@ -287,9 +310,10 @@ async def get_ibet_wst_transaction(
     "/whitelists/{ibet_wst_address}/{account_address}",
     operation_id="GetIbetWSTWhitelist",
     response_model=GetIbetWSTWhitelistResponse,
-    responses=get_routers_responses(422),
+    responses=get_routers_responses(404, 422),
 )
 async def get_ibet_wst_whitelist(
+    db: DBAsyncSession,
     ibet_wst_address: Annotated[
         EthereumAddress, Path(description="IbetWST contract address")
     ],
@@ -300,6 +324,16 @@ async def get_ibet_wst_whitelist(
 
     - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
     """
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
+
+    # Get whitelist status
     wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
     is_whitelisted = await wst_contract.account_white_list(
         to_checksum_address(account_address)
@@ -313,7 +347,7 @@ async def get_ibet_wst_whitelist(
     "/trades/{ibet_wst_address}/request",
     operation_id="RequestIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(422),
+    responses=get_routers_responses(404, 422),
 )
 async def request_ibet_wst_trade(
     db: DBAsyncSession,
@@ -327,6 +361,15 @@ async def request_ibet_wst_trade(
 
     - This endpoint allows a user to send requestTradeWithAuthorization transaction to the IbetWST contract.
     """
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
+
     # Insert transaction record
     tx_id = str(uuid.uuid4())
     wst_tx = EthIbetWSTTx()
@@ -364,7 +407,7 @@ async def request_ibet_wst_trade(
     "/trades/{ibet_wst_address}/cancel",
     operation_id="CancelIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(422),
+    responses=get_routers_responses(404, 422),
 )
 async def cancel_ibet_wst_trade(
     db: DBAsyncSession,
@@ -378,6 +421,16 @@ async def cancel_ibet_wst_trade(
 
     - This endpoint allows a user to send cancelTradeWithAuthorization transaction to the IbetWST contract.
     """
+
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
+
     # Insert transaction record
     tx_id = str(uuid.uuid4())
     wst_tx = EthIbetWSTTx()
@@ -406,7 +459,9 @@ async def cancel_ibet_wst_trade(
     "/trades/{ibet_wst_address}/accept",
     operation_id="AcceptIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(422),
+    responses=get_routers_responses(
+        404, 422, IbetWSTInsufficientBalanceError, ERC20InsufficientAllowanceError
+    ),
 )
 async def accept_ibet_wst_trade(
     db: DBAsyncSession,
@@ -419,7 +474,39 @@ async def accept_ibet_wst_trade(
     Accept an IbetWST trade
 
     - This endpoint allows a user to send acceptTradeWithAuthorization transaction to the IbetWST contract.
+    - If seller's ST token balance is insufficient, an IbetWSTInsufficientBalanceError will be raised.
+    - If buyer's SC token allowance is insufficient, an ERC20InsufficientAllowanceError will be raised.
     """
+
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
+
+    # Retrieve trade details
+    wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
+    trade = await wst_contract.get_trade(req_params.index)
+
+    # Pre-transaction check: Ensure ST token balance is sufficient
+    wst_balance = await wst_contract.balance_of(
+        to_checksum_address(trade.seller_st_account)
+    )
+    if wst_balance < trade.st_value:
+        raise IbetWSTInsufficientBalanceError
+
+    # Pre-transaction check: Ensure SC token allowance is sufficient
+    sc_contract = ERC20(trade.sc_token_address)
+    allowance = await sc_contract.allowance(
+        account=to_checksum_address(trade.buyer_sc_account),
+        spender=to_checksum_address(ibet_wst_address),
+    )
+    if allowance < trade.sc_value:
+        raise ERC20InsufficientAllowanceError
+
     # Insert transaction record
     tx_id = str(uuid.uuid4())
     wst_tx = EthIbetWSTTx()
@@ -448,7 +535,7 @@ async def accept_ibet_wst_trade(
     "/trades/{ibet_wst_address}/reject",
     operation_id="RejectIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(422),
+    responses=get_routers_responses(404, 422),
 )
 async def reject_ibet_wst_trade(
     db: DBAsyncSession,
@@ -462,6 +549,16 @@ async def reject_ibet_wst_trade(
 
     - This endpoint allows a user to send rejectTradeWithAuthorization transaction to the IbetWST contract.
     """
+
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
+
     # Insert transaction record
     tx_id = str(uuid.uuid4())
     wst_tx = EthIbetWSTTx()
