@@ -158,6 +158,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -199,7 +200,7 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_3_2
@@ -211,6 +212,7 @@ class TestProcessor:
             return_value={
                 "status": 0,
                 "blockNumber": 100,
+                "gasUsed": 21000,
             }
         ),
     )
@@ -252,7 +254,7 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
-            f"Transaction failed: id={tx_id}, block_number=100",
+            f"Transaction failed: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_1
@@ -266,6 +268,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -329,8 +332,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_1
@@ -344,6 +347,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -418,8 +422,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=mint",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_2
@@ -433,6 +437,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -507,8 +512,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=burn",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_3
@@ -522,6 +527,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -593,8 +599,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=add_whitelist",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_4
@@ -608,6 +614,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -679,8 +686,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=delete_whitelist",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_5
@@ -694,6 +701,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -786,8 +794,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=request_trade",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_6
@@ -801,6 +809,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -884,8 +893,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=cancel_trade",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_7
@@ -899,6 +908,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -982,8 +992,8 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=accept_trade",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
 
     # Normal_4_2_8
@@ -997,6 +1007,7 @@ class TestProcessor:
                 "status": 1,
                 "blockNumber": 100,
                 "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
             }
         ),
     )
@@ -1080,6 +1091,6 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=reject_trade",
-            f"Transaction succeeded: id={tx_id}, block_number=100",
-            f"Transaction finalized: id={tx_id}, block_number=100",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]

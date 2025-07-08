@@ -273,6 +273,30 @@ async def erc20_approve_token(
 
 
 @pytest.mark.asyncio
+class TestDeploy:
+    """
+    Test cases for the deployment of the AuthIbetWST contract.
+    """
+
+    deployer = default_eth_account("user1")
+    owner = default_eth_account("user2")
+
+    #################################################################
+    # Normal
+    #################################################################
+
+    # Normal_1
+    # - Test that the contract can be deployed successfully.
+    async def test_normal_1(self):
+        # Deploy contract
+        # - Maximum length of the name is 200 characters
+        contract_address = await deploy_wst_token("T" * 200, self.deployer, self.owner)
+
+        # Assert that the contract address is not None
+        assert contract_address is not None
+
+
+@pytest.mark.asyncio
 class TestAccountWhitelist:
     """
     Test cases for the account_white_list function of the AuthIbetWST contract.
@@ -385,6 +409,7 @@ class TestAddAccountWhiteListWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check if the account is whitelisted
@@ -514,6 +539,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check if the account is deleted from the whitelist
@@ -643,6 +669,7 @@ class TestMintWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check the balance of the user
@@ -775,6 +802,7 @@ class TestBurnWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check the balance of the user
@@ -1031,6 +1059,7 @@ class TestRequestTradeWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check the trade information
@@ -1228,6 +1257,7 @@ class TestCancelTradeWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check the trade information
@@ -1436,6 +1466,7 @@ class TestAcceptTradeWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check the trade information
@@ -1644,6 +1675,7 @@ class TestRejectTradeWithAuthorization:
 
         # Wait for transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check the trade information

@@ -114,14 +114,14 @@ class ProcessorEthWSTMonitorTxReceipt:
                     wst_tx.status = IbetWSTTxStatus.SUCCEEDED
                     wst_tx.block_number = block_number
                     LOG.info(
-                        f"Transaction succeeded: id={wst_tx.tx_id}, block_number={block_number}"
+                        f"Transaction succeeded: id={wst_tx.tx_id}, block_number={block_number}, gas_used={tx_receipt.get('gasUsed')}"
                     )
                 else:
                     # Transaction failed
                     wst_tx.status = IbetWSTTxStatus.FAILED
                     wst_tx.block_number = block_number
                     LOG.info(
-                        f"Transaction failed: id={wst_tx.tx_id}, block_number={block_number}"
+                        f"Transaction failed: id={wst_tx.tx_id}, block_number={block_number}, gas_used={tx_receipt.get('gasUsed')}"
                     )
 
                 # If the block number is less than or equal to the latest finalized block number,
@@ -134,7 +134,7 @@ class ProcessorEthWSTMonitorTxReceipt:
                     # Finalize the transaction
                     await finalize_tx(db_session, wst_tx, tx_receipt)
                     LOG.info(
-                        f"Transaction finalized: id={wst_tx.tx_id}, block_number={block_number}"
+                        f"Transaction finalized: id={wst_tx.tx_id}, block_number={block_number}, gas_used={tx_receipt.get('gasUsed')}"
                     )
 
                 await db_session.commit()
