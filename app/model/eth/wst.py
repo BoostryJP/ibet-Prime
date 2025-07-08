@@ -29,7 +29,7 @@ from app.exceptions import SendTransactionError
 from app.model import EthereumAddress
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from config import ZERO_ADDRESS
-from eth_config import ETH_CHAIN_ID, ETH_TX_GAS_LIMIT
+from eth_config import ETH_CHAIN_ID
 
 
 class ERC20:
@@ -765,7 +765,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 95000,
                 }
             )
             # Send the transaction
@@ -801,7 +801,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 70000,
                 }
             )
             # Send the transaction
@@ -840,7 +840,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 125000,
                 }
             )
             # Send the transaction
@@ -879,7 +879,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 85000,
                 }
             )
             # Send the transaction
@@ -958,7 +958,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 325000,
                 }
             )
             # Send the transaction
@@ -994,7 +994,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 115000,
                 }
             )
             # Send the transaction
@@ -1030,7 +1030,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 180000,
                 }
             )
             # Send the transaction
@@ -1066,7 +1066,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 115000,
                 }
             )
             # Send the transaction

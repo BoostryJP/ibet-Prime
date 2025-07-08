@@ -36,7 +36,10 @@ from web3.types import TxReceipt
 
 from app.exceptions import SendTransactionError
 from app.model import EthereumAddress
-from eth_config import ETH_CHAIN_ID, ETH_TX_GAS_LIMIT, ETH_WEB3_HTTP_PROVIDER
+from eth_config import (
+    ETH_CHAIN_ID,
+    ETH_WEB3_HTTP_PROVIDER,
+)
 
 thread_local = threading.local()
 
@@ -110,7 +113,7 @@ class EthAsyncContractUtils:
                 transaction={
                     "chainId": ETH_CHAIN_ID,
                     "from": deployer,
-                    "gas": ETH_TX_GAS_LIMIT,
+                    "gas": 3000000,
                 }
             )
             # Send transaction
