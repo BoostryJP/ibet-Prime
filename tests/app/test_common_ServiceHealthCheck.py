@@ -23,7 +23,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.model.db import Node
+from app.model.db import EthereumNode, Node
 
 
 class TestServiceHealthCheck:
@@ -44,6 +44,18 @@ class TestServiceHealthCheck:
         async_db.add(_node)
 
         _node = Node()
+        _node.endpoint_uri = "http://test2"
+        _node.priority = 1
+        _node.is_synced = True
+        async_db.add(_node)
+
+        _node = EthereumNode()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = False
+        async_db.add(_node)
+
+        _node = EthereumNode()
         _node.endpoint_uri = "http://test2"
         _node.priority = 1
         _node.is_synced = True
@@ -91,6 +103,18 @@ class TestServiceHealthCheck:
         _node.is_synced = False
         async_db.add(_node)
 
+        _node = EthereumNode()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = False
+        async_db.add(_node)
+
+        _node = EthereumNode()
+        _node.endpoint_uri = "http://test2"
+        _node.priority = 1
+        _node.is_synced = False
+        async_db.add(_node)
+
         await async_db.commit()
 
         # request target api
@@ -101,7 +125,8 @@ class TestServiceHealthCheck:
         assert resp.json() == {
             "meta": {"code": 1, "title": "ServiceUnavailableError"},
             "detail": [
-                "Ethereum node's block synchronization is down",
+                "ibet node is down",
+                "ethereum node is down",
                 "Setting E2EE key is invalid",
             ],
         }

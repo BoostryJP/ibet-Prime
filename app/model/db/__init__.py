@@ -126,7 +126,7 @@ from .ledger import (
     LedgerDetailsTemplate,
     LedgerTemplate,
 )
-from .node import Node
+from .node import EthereumNode, Node
 from .notification import Notification, NotificationType
 from .scheduled_events import ScheduledEvents, ScheduledEventType
 from .token import (

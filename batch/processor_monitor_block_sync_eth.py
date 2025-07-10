@@ -25,31 +25,29 @@ import uvloop
 from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import AsyncHTTPProvider, AsyncWeb3
-from web3.middleware import ExtraDataToPOAMiddleware
+from web3 import HTTPProvider, Web3
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.db import Node
+from app.model.db import EthereumNode
 from batch import free_malloc
 from batch.utils import batch_log
-from config import (
+from eth_config import (
     BLOCK_GENERATION_SPEED_THRESHOLD,
     BLOCK_SYNC_REMAINING_THRESHOLD,
     BLOCK_SYNC_STATUS_CALC_PERIOD,
-    BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
-    EXPECTED_BLOCKS_PER_SEC,
-    WEB3_HTTP_PROVIDER,
-    WEB3_HTTP_PROVIDER_STANDBY,
+    ETH_WEB3_HTTP_PROVIDER,
+    ETH_WEB3_HTTP_PROVIDER_STANDBY,
+    EXPECTED_BLOCK_GENERATION_PER_MIN,
 )
 
 """
-[PROCESSOR-Monitor-Block-Sync]
+[PROCESSOR-Monitor-Block-Sync-Ethereum]
 
-Processor for block synchronization monitoring
+Processor for block synchronization monitoring for Ethereum node.
 """
 
-process_name = "PROCESSOR-Monitor-Block-Sync"
+process_name = "PROCESSOR-Monitor-Block-Sync-Ethereum"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
@@ -59,10 +57,16 @@ class RingBuffer:
         self._buffer = [default] * size
 
     def append(self, data):
+        """
+        Append data to the ring buffer, overwriting the oldest data if full.
+        """
         self._buffer[self._next] = data
         self._next = (self._next + 1) % len(self._buffer)
 
     def peek_oldest(self):
+        """
+        Get the oldest data in the ring buffer.
+        """
         return self._buffer[self._next]
 
 
@@ -74,12 +78,15 @@ class Processor:
         self.valid_endpoint_uri_list = []
 
     async def initial_setup(self):
-        self.main_web3_provider = WEB3_HTTP_PROVIDER
-        self.standby_web3_provider_list = WEB3_HTTP_PROVIDER_STANDBY
+        """
+        Initial setup for the processor.
+        """
+        self.main_web3_provider = ETH_WEB3_HTTP_PROVIDER
+        self.standby_web3_provider_list = ETH_WEB3_HTTP_PROVIDER_STANDBY
         self.valid_endpoint_uri_list = (
-            list(WEB3_HTTP_PROVIDER) + WEB3_HTTP_PROVIDER_STANDBY
+            list(ETH_WEB3_HTTP_PROVIDER) + ETH_WEB3_HTTP_PROVIDER_STANDBY
         )
-        db_session = self.__get_db_session()
+        db_session = BatchAsyncSessionLocal()
         try:
             # Delete old node data
             await self.__delete_old_node(
@@ -99,7 +106,10 @@ class Processor:
             await db_session.close()
 
     async def process(self):
-        db_session = self.__get_db_session()
+        """
+        Process the block synchronization monitoring for Ethereum nodes.
+        """
+        db_session = BatchAsyncSessionLocal()
         try:
             for endpoint_uri in self.node_info.keys():
                 try:
@@ -114,77 +124,109 @@ class Processor:
         finally:
             await db_session.close()
 
+    @staticmethod
+    async def __delete_old_node(
+        db_session: AsyncSession, valid_endpoint_uri_list: list[str]
+    ):
+        """
+        Delete old node data that is not in the valid endpoint URI list.
+        """
+        await db_session.execute(
+            delete(EthereumNode).where(
+                EthereumNode.endpoint_uri.not_in(valid_endpoint_uri_list)
+            )
+        )
+
     async def __set_node_info(
         self, db_session: AsyncSession, endpoint_uri: str, priority: int
     ):
-        self.node_info[endpoint_uri] = {"priority": priority}
+        """
+        Set the node information for block synchronization monitoring.
+        """
+        self.node_info[endpoint_uri] = {}
 
-        web3 = AsyncWeb3(
-            AsyncHTTPProvider(
+        # Set node priority
+        self.node_info[endpoint_uri]["priority"] = priority
+
+        # Set web3 instance for the node
+        # - Diable retry logic explicitly to avoid retrying on connection errors,
+        web3 = Web3(
+            HTTPProvider(
                 endpoint_uri,
-                # Disabled retry logic explicitly
                 exception_retry_configuration=None,
             )
         )
-        web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         self.node_info[endpoint_uri]["web3"] = web3
 
-        # Get block number
+        # Get starting point for block monitoring
         try:
-            # NOTE: Immediately after the processing, the monitoring data is not retained,
-            #       so the past block number is acquired.
-            block = await web3.eth.get_block(
-                max((await web3.eth.block_number) - BLOCK_SYNC_STATUS_CALC_PERIOD, 0)
+            # NOTE:
+            #   Since monitoring data is not retained immediately after processing,
+            #   the previous block number is retrieved.
+            latest_block_number = web3.eth.block_number
+            block = web3.eth.get_block(
+                max(latest_block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0)
             )
         except Exception:
             await self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
             LOG.error(f"Node connection failed: {endpoint_uri}")
             block = {"timestamp": time.time(), "number": 0}
 
-        data = {"time": block["timestamp"], "block_number": block["number"]}
-        history = RingBuffer(BLOCK_SYNC_STATUS_CALC_PERIOD, data)
+        # Initialize history for block synchronization status
+        history = RingBuffer(
+            BLOCK_SYNC_STATUS_CALC_PERIOD,
+            {"time": block["timestamp"], "block_number": block["number"]},
+        )
         self.node_info[endpoint_uri]["history"] = history
 
     async def __process(self, db_session: AsyncSession, endpoint_uri: str):
         is_synced = True
         errors = []
         priority: int = self.node_info[endpoint_uri]["priority"]
-        web3: AsyncWeb3 = self.node_info[endpoint_uri]["web3"]
+        web3: Web3 = self.node_info[endpoint_uri]["web3"]
         history: RingBuffer = self.node_info[endpoint_uri]["history"]
 
-        # Check sync to other node
-        syncing = await web3.eth.syncing
+        # Check block synchronization status
+        syncing = web3.eth.syncing
         if syncing:
             remaining_blocks = syncing["highestBlock"] - syncing["currentBlock"]
             if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
+                # If the remaining blocks are more than the threshold(2 blocks), mark as not synced
                 is_synced = False
                 errors.append(
                     f"highestBlock={syncing['highestBlock']}, currentBlock={syncing['currentBlock']}"
                 )
 
-        # Check increased block number
-        data = {"time": time.time(), "block_number": (await web3.eth.block_number)}
-        old_data = history.peek_oldest()
-        elapsed_time = data["time"] - old_data["time"]
-        generated_block_count = data["block_number"] - old_data["block_number"]
-        generated_block_count_threshold = (elapsed_time * EXPECTED_BLOCKS_PER_SEC) * (
-            BLOCK_GENERATION_SPEED_THRESHOLD / 100
-        )  # count of block generation theoretical value
-        if generated_block_count < generated_block_count_threshold:
-            is_synced = False
-            errors.append(f"{generated_block_count} blocks in {int(elapsed_time)} sec")
-        history.append(data)
+        # Check block generation speed
+        latest_block_number = web3.eth.block_number
+        latest_data = {"time": time.time(), "block_number": latest_block_number}
 
-        # Update database
-        _node: Node | None = (
+        oldest_data = history.peek_oldest()
+        elapsed_time = latest_data["time"] - oldest_data["time"]
+        generated_count = latest_data["block_number"] - oldest_data["block_number"]
+
+        threshold = (
+            elapsed_time / 60 * EXPECTED_BLOCK_GENERATION_PER_MIN
+        ) * BLOCK_GENERATION_SPEED_THRESHOLD
+        if generated_count < threshold:
+            # If the generated block count is less than the threshold, mark as not synced
+            is_synced = False
+            errors.append(f"{generated_count} blocks in {int(elapsed_time)} sec")
+
+        history.append(latest_data)
+
+        # Update node status in the database
+        _node: EthereumNode | None = (
             await db_session.scalars(
-                select(Node).where(Node.endpoint_uri == endpoint_uri).limit(1)
+                select(EthereumNode)
+                .where(EthereumNode.endpoint_uri == endpoint_uri)
+                .limit(1)
             )
         ).first()
         status_changed = (
             False if _node is not None and _node.is_synced == is_synced else True
         )
-        await self.__sink_on_node(
+        await self.__update_node_status(
             db_session=db_session,
             endpoint_uri=endpoint_uri,
             priority=priority,
@@ -207,7 +249,7 @@ class Processor:
     async def __web3_errors(self, db_session: AsyncSession, endpoint_uri: str):
         try:
             priority = self.node_info[endpoint_uri]["priority"]
-            await self.__sink_on_node(
+            await self.__update_node_status(
                 db_session=db_session,
                 endpoint_uri=endpoint_uri,
                 priority=priority,
@@ -219,31 +261,21 @@ class Processor:
             LOG.exception(ex)
 
     @staticmethod
-    def __get_db_session():
-        return BatchAsyncSessionLocal()
-
-    @staticmethod
-    async def __delete_old_node(
-        db_session: AsyncSession, valid_endpoint_uri_list: list[str]
-    ):
-        await db_session.execute(
-            delete(Node).where(Node.endpoint_uri.not_in(valid_endpoint_uri_list))
-        )
-
-    @staticmethod
-    async def __sink_on_node(
+    async def __update_node_status(
         db_session: AsyncSession, endpoint_uri: str, priority: int, is_synced: bool
     ):
-        _node: Node | None = (
+        _node: EthereumNode | None = (
             await db_session.scalars(
-                select(Node).where(Node.endpoint_uri == endpoint_uri).limit(1)
+                select(EthereumNode)
+                .where(EthereumNode.endpoint_uri == endpoint_uri)
+                .limit(1)
             )
         ).first()
         if _node is not None:
             _node.is_synced = is_synced
             await db_session.merge(_node)
         else:
-            _node = Node()
+            _node = EthereumNode()
             _node.endpoint_uri = endpoint_uri
             _node.priority = priority
             _node.is_synced = is_synced
@@ -264,10 +296,9 @@ async def main():
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:
-            # Unexpected errors(DB error, etc)
             LOG.exception(ex)
 
-        await asyncio.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
+        await asyncio.sleep(60)  # Sleep for a minute before the next processing
         free_malloc()
 
 
