@@ -121,7 +121,6 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                 return await super().make_request(method, params)
         finally:
             await db_session.close()
-            await self.disconnect()
 
 
 try:

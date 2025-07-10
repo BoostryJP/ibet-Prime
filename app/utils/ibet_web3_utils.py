@@ -235,7 +235,6 @@ class AsyncFailOverHTTPProvider(AsyncHTTPProvider):
                 return await super().make_request(method, params)
         finally:
             await db_session.close()
-            await self.disconnect()
 
     @staticmethod
     def set_fail_over_mode(use_fail_over: bool):
