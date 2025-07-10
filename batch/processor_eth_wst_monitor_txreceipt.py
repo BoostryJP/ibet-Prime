@@ -26,6 +26,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
+from web3.logs import DISCARD
 from web3.types import TxReceipt
 
 from app.database import BatchAsyncSessionLocal
@@ -165,7 +166,7 @@ async def finalize_tx(
         case IbetWSTTxType.MINT:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Mint().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -177,7 +178,7 @@ async def finalize_tx(
         case IbetWSTTxType.BURN:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Burn().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -189,7 +190,7 @@ async def finalize_tx(
         case IbetWSTTxType.ADD_WHITELIST:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -200,7 +201,7 @@ async def finalize_tx(
         case IbetWSTTxType.DELETE_WHITELIST:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -211,7 +212,7 @@ async def finalize_tx(
         case IbetWSTTxType.REQUEST_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRequested().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -229,7 +230,7 @@ async def finalize_tx(
         case IbetWSTTxType.CANCEL_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeCancelled().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -247,7 +248,7 @@ async def finalize_tx(
         case IbetWSTTxType.ACCEPT_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeAccepted().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -265,7 +266,7 @@ async def finalize_tx(
         case IbetWSTTxType.REJECT_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRejected().process_receipt(
-                txn_receipt=tx_receipt
+                txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
