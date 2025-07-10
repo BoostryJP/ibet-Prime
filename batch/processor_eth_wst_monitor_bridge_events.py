@@ -101,7 +101,7 @@ class BridgeEventViewer:
         ibet_token_contract = IbetWeb3.eth.contract(
             address=token.token_address, abi=token.abi
         )
-        self.ibet_event_view: AsyncContractEventsView(
+        self.ibet_event_view = AsyncContractEventsView(
             address=token.token_address, contract_events=ibet_token_contract.events
         )
 
@@ -109,7 +109,7 @@ class BridgeEventViewer:
         wst_contract = EthAsyncContractUtils.get_contract(
             contract_name="AuthIbetWST", contract_address=token.ibet_wst_address
         )
-        self.wst_event_view: EthAsyncContractEventsView(
+        self.wst_event_view = EthAsyncContractEventsView(
             address=token.ibet_wst_address, contract_events=wst_contract.events
         )
 
