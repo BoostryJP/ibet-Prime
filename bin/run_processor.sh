@@ -39,7 +39,7 @@ if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
 fi
 
 if [[ $IBET_WST_FEATURE_ENABLED = 1 ]]; then
-  python batch/processor_monitor_block_sync_ethereum.py &
+  python batch/processor_monitor_block_sync_eth.py &
   python batch/processor_eth_wst_bridge_to_ibet.py &
   python batch/processor_eth_wst_monitor_bridge_events.py &
   python batch/processor_eth_wst_monitor_txreceipt.py &
