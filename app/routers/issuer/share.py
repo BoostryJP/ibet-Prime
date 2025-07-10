@@ -420,15 +420,24 @@ async def list_all_share_tokens(
 
     share_tokens = []
     for token in tokens:
-        # Get contract data
+        # Get response data from contract
         share_token = (await IbetShareContract(token.token_address).get()).__dict__
-        issue_datetime_utc = pytz.timezone("UTC").localize(token.created)
-        share_token["issue_datetime"] = issue_datetime_utc.astimezone(
-            local_tz
-        ).isoformat()
+        share_token.pop("contract_name")
+
+        # Set other response items
+        share_token["issue_datetime"] = (
+            pytz.timezone("UTC")
+            .localize(token.created)
+            .astimezone(local_tz)
+            .isoformat()
+        )
         share_token["token_status"] = token.token_status
         share_token["contract_version"] = token.version
-        share_token.pop("contract_name")
+        share_token["ibet_wst_activated"] = True if token.ibet_wst_activated else False
+        share_token["ibet_wst_version"] = token.ibet_wst_version
+        share_token["ibet_wst_deployed"] = True if token.ibet_wst_deployed else False
+        share_token["ibet_wst_address"] = token.ibet_wst_address
+
         share_tokens.append(share_token)
 
     return json_response(share_tokens)
@@ -464,13 +473,20 @@ async def retrieve_share_token(
     if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    # Get contract data
+    # Get response data from contract
     share_token = (await IbetShareContract(token_address).get()).__dict__
-    issue_datetime_utc = pytz.timezone("UTC").localize(_token.created)
-    share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
+    share_token.pop("contract_name")
+
+    # Set other response items
+    share_token["issue_datetime"] = (
+        pytz.timezone("UTC").localize(_token.created).astimezone(local_tz).isoformat()
+    )
     share_token["token_status"] = _token.token_status
     share_token["contract_version"] = _token.version
-    share_token.pop("contract_name")
+    share_token["ibet_wst_activated"] = True if _token.ibet_wst_activated else False
+    share_token["ibet_wst_version"] = _token.ibet_wst_version
+    share_token["ibet_wst_deployed"] = True if _token.ibet_wst_deployed else False
+    share_token["ibet_wst_address"] = _token.ibet_wst_address
 
     return json_response(share_token)
 
