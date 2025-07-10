@@ -164,7 +164,7 @@ async def finalize_tx(
             await db_session.merge(token)
         case IbetWSTTxType.MINT:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = await ibet_wst.contract.events.Mint().process_receipt(
+            events = ibet_wst.contract.events.Mint().process_receipt(
                 txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
@@ -176,7 +176,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.BURN:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = await ibet_wst.contract.events.Burn().process_receipt(
+            events = ibet_wst.contract.events.Burn().process_receipt(
                 txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
@@ -188,10 +188,8 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ADD_WHITELIST:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = (
-                await ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
-                    txn_receipt=tx_receipt
-                )
+            events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
+                txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
@@ -201,7 +199,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.DELETE_WHITELIST:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = await ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
+            events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
                 txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
@@ -212,7 +210,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REQUEST_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = await ibet_wst.contract.events.TradeRequested().process_receipt(
+            events = ibet_wst.contract.events.TradeRequested().process_receipt(
                 txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
@@ -230,7 +228,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.CANCEL_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = await ibet_wst.contract.events.TradeCancelled().process_receipt(
+            events = ibet_wst.contract.events.TradeCancelled().process_receipt(
                 txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
@@ -248,7 +246,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ACCEPT_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = await ibet_wst.contract.events.TradeAccepted().process_receipt(
+            events = ibet_wst.contract.events.TradeAccepted().process_receipt(
                 txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
@@ -266,7 +264,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REJECT_TRADE:
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = await ibet_wst.contract.events.TradeRejected().process_receipt(
+            events = ibet_wst.contract.events.TradeRejected().process_receipt(
                 txn_receipt=tx_receipt
             )
             event = events[0] if len(events) > 0 else None
