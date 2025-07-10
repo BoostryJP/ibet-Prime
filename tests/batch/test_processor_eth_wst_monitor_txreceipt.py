@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import logging
 import uuid
 from unittest import mock
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import select
@@ -357,7 +357,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
@@ -447,7 +447,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
@@ -537,7 +537,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
@@ -624,7 +624,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
@@ -711,7 +711,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
@@ -819,7 +819,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
@@ -918,7 +918,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
@@ -1017,7 +1017,7 @@ class TestProcessor:
     )
     @mock.patch(
         "web3.contract.base_contract.BaseContractEvent.process_receipt",
-        AsyncMock(
+        MagicMock(
             return_value=[
                 {
                     "args": {
