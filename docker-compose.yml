@@ -27,6 +27,7 @@ services:
       - TEST_DATABASE_URL=postgresql://apluser:apluserpass@postgres/apldb
       - WEB3_HTTP_PROVIDER=http://ibet:8545
       - ETH_WEB3_HTTP_PROVIDER=http://eth:8545
+      - ETH_CHAIN_ID=2025
       - RESPONSE_VALIDATION_MODE=1
       - IBET_WST_FEATURE_ENABLED=1
       - BC_EXPLORER_ENABLED=1
