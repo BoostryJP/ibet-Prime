@@ -354,6 +354,7 @@ async def issue_share_token(
         # Activate IbetWST
         _token.ibet_wst_activated = True
         _token.ibet_wst_version = IbetWSTVersion.V_1
+        _token.ibet_wst_tx_id = tx_id
         # Register IbetWST transaction
         _ibet_wst_tx = EthIbetWSTTx()
         _ibet_wst_tx.tx_id = tx_id

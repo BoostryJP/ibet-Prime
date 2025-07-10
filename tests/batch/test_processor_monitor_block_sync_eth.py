@@ -18,19 +18,17 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from unittest import mock
-from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import select
 from web3 import Web3
-from web3.middleware import ExtraDataToPOAMiddleware
 
-from app.model.db import Node
-from batch.processor_monitor_block_sync import Processor
-from config import WEB3_HTTP_PROVIDER
+from app.model.db import EthereumNode
+from batch.processor_monitor_block_sync_eth import Processor
+from eth_config import ETH_WEB3_HTTP_PROVIDER
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+web3 = Web3(Web3.HTTPProvider(ETH_WEB3_HTTP_PROVIDER))
 
 
 @pytest.fixture(scope="function")
@@ -44,14 +42,14 @@ class TestProcessor:
     ###########################################################################
 
     # <Normal_1>
-    # Run 1st: Normal state
-    # Run 2nd: Abnormal state - Setting BLOCK_GENERATION_SPEED_THRESHOLD to 100% will trigger an error.
-    # Run 3rd: Return to normal state
-    # Run 4th: Abnormal state - An error occurs when the difference between highestBlock and currentBlock exceeds a threshold.
-    # Run 5th: Return to normal state - Since the difference between highestBlock and currentBlock is within the threshold, no error occurs.
+    # 1st run: Normal state
+    # 2nd run: Abnormal state - Setting BLOCK_GENERATION_SPEED_THRESHOLD to 100% triggers an error.
+    # 3rd run: Returns to normal state
+    # 4th run: Abnormal state - An error occurs when the difference between highestBlock and currentBlock exceeds the threshold.
+    # 5th run: Returns to normal state - No error occurs since the difference between highestBlock and currentBlock is within the threshold.
     @mock.patch(
-        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER",
-        WEB3_HTTP_PROVIDER,
+        "batch.processor_monitor_block_sync_eth.ETH_WEB3_HTTP_PROVIDER",
+        ETH_WEB3_HTTP_PROVIDER,
     )
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db):
@@ -62,22 +60,23 @@ class TestProcessor:
         async_db.expire_all()
 
         await async_db.rollback()
-        _node = (await async_db.scalars(select(Node).limit(1))).first()
+        _node = (await async_db.scalars(select(EthereumNode).limit(1))).first()
         assert _node.id == 1
-        assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert _node.endpoint_uri == ETH_WEB3_HTTP_PROVIDER
         assert _node.priority == 0
         assert _node.is_synced == True
 
         # Run 2nd: Abnormal state
         # - Setting BLOCK_GENERATION_SPEED_THRESHOLD to 100% will trigger an error.
         with mock.patch(
-            "batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100
+            "batch.processor_monitor_block_sync_eth.BLOCK_GENERATION_SPEED_THRESHOLD",
+            100,
         ):
             await processor.process()
             await async_db.rollback()
             async_db.expire_all()
 
-        _node = (await async_db.scalars(select(Node).limit(1))).first()
+        _node = (await async_db.scalars(select(EthereumNode).limit(1))).first()
         assert _node.is_synced == False
 
         # Run 3rd: Return to normal state
@@ -85,45 +84,45 @@ class TestProcessor:
         await async_db.rollback()
         async_db.expire_all()
 
-        _node = (await async_db.scalars(select(Node).limit(1))).first()
+        _node = (await async_db.scalars(select(EthereumNode).limit(1))).first()
         assert _node.is_synced == True
 
         # Run 4th: Abnormal state
         # - An error occurs when the difference between highestBlock and currentBlock exceeds a threshold.
         block_number = web3.eth.block_number
-        is_syncing_mock = AsyncMock()
+        is_syncing_mock = MagicMock()
         is_syncing_mock.return_value = {
             "highestBlock": block_number,
             "currentBlock": block_number - 3,
         }
-        with mock.patch("web3.eth.async_eth.AsyncEth.syncing", is_syncing_mock()):
+        with mock.patch("web3.eth.Eth.syncing", is_syncing_mock()):
             await processor.process()
             await async_db.rollback()
             async_db.expire_all()
 
-        _node = (await async_db.scalars(select(Node).limit(1))).first()
+        _node = (await async_db.scalars(select(EthereumNode).limit(1))).first()
         assert _node.is_synced == False
 
         # Run 5th: Return to normal state
         # - Since the difference between highestBlock and currentBlock is within the threshold, no error occurs.
         block_number = web3.eth.block_number
-        is_syncing_mock = AsyncMock()
+        is_syncing_mock = MagicMock()
         is_syncing_mock.return_value = {
             "highestBlock": block_number,
             "currentBlock": block_number - 2,
         }
-        with mock.patch("web3.eth.async_eth.AsyncEth.syncing", is_syncing_mock()):
+        with mock.patch("web3.eth.Eth.syncing", is_syncing_mock()):
             await processor.process()
             await async_db.rollback()
             async_db.expire_all()
 
-        _node = (await async_db.scalars(select(Node).limit(1))).first()
+        _node = (await async_db.scalars(select(EthereumNode).limit(1))).first()
         assert _node.is_synced == True
 
     # <Normal_2>
     # Node stopped → started
     @mock.patch(
-        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY",
+        "batch.processor_monitor_block_sync_eth.ETH_WEB3_HTTP_PROVIDER_STANDBY",
         ["http://localhost:1000"],
     )
     @pytest.mark.asyncio
@@ -132,7 +131,7 @@ class TestProcessor:
         await async_db.rollback()
 
         # pre assertion
-        _node = (await async_db.scalars(select(Node).limit(1))).first()
+        _node = (await async_db.scalars(select(EthereumNode).limit(1))).first()
         assert _node.id == 1
         assert _node.endpoint_uri == "http://localhost:1000"
         assert _node.priority == 1
@@ -145,7 +144,7 @@ class TestProcessor:
         processor.node_info["http://localhost:1000"][
             "web3"
         ].manager.provider.endpoint_uri = (
-            WEB3_HTTP_PROVIDER  # Temporarily replace setting values
+            ETH_WEB3_HTTP_PROVIDER  # Temporarily replace setting values
         )
         await processor.process()
         await async_db.rollback()
@@ -158,8 +157,8 @@ class TestProcessor:
         # assertion
         _node = (
             await async_db.scalars(
-                select(Node)
-                .where(Node.endpoint_uri == "http://localhost:1000")
+                select(EthereumNode)
+                .where(EthereumNode.endpoint_uri == "http://localhost:1000")
                 .limit(1)
             )
         ).first()
@@ -169,7 +168,7 @@ class TestProcessor:
     # Delete old node data
     @pytest.mark.asyncio
     async def test_normal_3(self, processor, async_db):
-        node = Node()
+        node = EthereumNode()
         node.id = 1
         node.endpoint_uri = "old_node"
         node.priority = 1
@@ -180,7 +179,7 @@ class TestProcessor:
         await processor.initial_setup()
 
         # assertion-1
-        old_node = (await async_db.scalars(select(Node))).all()
+        old_node = (await async_db.scalars(select(EthereumNode))).all()
         assert len(old_node) == 0
 
         # process
@@ -189,9 +188,9 @@ class TestProcessor:
         async_db.expire_all()
 
         # assertion-2
-        new_node = (await async_db.scalars(select(Node).limit(1))).first()
+        new_node = (await async_db.scalars(select(EthereumNode).limit(1))).first()
         assert new_node.id == 1
-        assert new_node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert new_node.endpoint_uri == ETH_WEB3_HTTP_PROVIDER
         assert new_node.priority == 0
         assert new_node.is_synced == True
 
@@ -202,11 +201,11 @@ class TestProcessor:
     # <Error_1>
     # Node down (At initialization)
     @mock.patch(
-        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER",
-        WEB3_HTTP_PROVIDER,
+        "batch.processor_monitor_block_sync_eth.ETH_WEB3_HTTP_PROVIDER",
+        ETH_WEB3_HTTP_PROVIDER,
     )
     @mock.patch(
-        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY",
+        "batch.processor_monitor_block_sync_eth.ETH_WEB3_HTTP_PROVIDER_STANDBY",
         ["http://localhost:1000", "http://localhost:2000"],
     )
     @pytest.mark.asyncio
@@ -215,7 +214,9 @@ class TestProcessor:
         await async_db.rollback()
 
         # assertion
-        _node_list = (await async_db.scalars(select(Node).order_by(Node.id))).all()
+        _node_list = (
+            await async_db.scalars(select(EthereumNode).order_by(EthereumNode.id))
+        ).all()
         assert len(_node_list) == 2
 
         _node = _node_list[0]
@@ -233,11 +234,11 @@ class TestProcessor:
     # <Error_2>
     # Node down (After processed)
     @mock.patch(
-        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER",
-        WEB3_HTTP_PROVIDER,
+        "batch.processor_monitor_block_sync_eth.ETH_WEB3_HTTP_PROVIDER",
+        ETH_WEB3_HTTP_PROVIDER,
     )
     @mock.patch(
-        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY",
+        "batch.processor_monitor_block_sync_eth.ETH_WEB3_HTTP_PROVIDER_STANDBY",
         ["http://localhost:1000", "http://localhost:2000"],
     )
     @pytest.mark.asyncio
@@ -248,7 +249,9 @@ class TestProcessor:
         async_db.expire_all()
 
         # assertion
-        _node_list = (await async_db.scalars(select(Node).order_by(Node.id))).all()
+        _node_list = (
+            await async_db.scalars(select(EthereumNode).order_by(EthereumNode.id))
+        ).all()
         assert len(_node_list) == 3
 
         _node = _node_list[0]
@@ -265,6 +268,6 @@ class TestProcessor:
 
         _node = _node_list[2]
         assert _node.id == 3
-        assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert _node.endpoint_uri == ETH_WEB3_HTTP_PROVIDER
         assert _node.priority == 0
         assert _node.is_synced == True

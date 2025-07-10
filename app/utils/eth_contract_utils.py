@@ -17,11 +17,18 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import json
+import sys
 import threading
-from typing import Type, TypeVar
+from json import JSONDecodeError
+from typing import Any, Type, TypeVar
 
+from aiohttp import ClientError
+from eth_typing import URI
 from eth_utils import to_checksum_address
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncHTTPProvider, AsyncWeb3
 from web3.contract import AsyncContract
 from web3.contract.async_contract import AsyncContractEvents
@@ -32,19 +39,98 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
-from web3.types import TxReceipt
+from web3.types import RPCEndpoint, RPCResponse, TxReceipt
 
-from app.exceptions import SendTransactionError
+from app import log
+from app.database import async_engine
+from app.exceptions import SendTransactionError, ServiceUnavailableError
 from app.model import EthereumAddress
+from app.model.db import EthereumNode
 from eth_config import (
     ETH_CHAIN_ID,
     ETH_WEB3_HTTP_PROVIDER,
+    ETH_WEB3_REQUEST_RETRY_COUNT,
+    ETH_WEB3_REQUEST_WAIT_TIME,
 )
 
 thread_local = threading.local()
+LOG = log.get_logger()
 
 
-EthWeb3 = AsyncWeb3(AsyncHTTPProvider(endpoint_uri=ETH_WEB3_HTTP_PROVIDER))
+class EthFailOverHTTPProvider(AsyncHTTPProvider):
+    def __init__(self, fail_over_mode: bool = False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fail_over_mode = fail_over_mode
+        self.endpoint_uri = None
+
+    async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
+        """Make an HTTP request to the Ethereum node."""
+
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
+        try:
+            if self.fail_over_mode:
+                # If the block synchronization monitoring process has not started yet, connect to the primary node.
+                node = (await db_session.scalars(select(EthereumNode).limit(1))).first()
+                if node is None:
+                    self.endpoint_uri = URI(ETH_WEB3_HTTP_PROVIDER)
+                    return await super().make_request(method, params)
+
+                counter = 0
+                while counter <= ETH_WEB3_REQUEST_RETRY_COUNT:
+                    # Switch to an available node
+                    node: EthereumNode | None = (
+                        await db_session.scalars(
+                            select(EthereumNode)
+                            .where(EthereumNode.is_synced.is_(True))
+                            .order_by(EthereumNode.priority, EthereumNode.id)
+                            .limit(1)
+                        )
+                    ).first()
+                    if node is None:
+                        counter += 1
+                        # If the number of retries is within the limit, retry.
+                        if counter <= ETH_WEB3_REQUEST_RETRY_COUNT:
+                            await asyncio.sleep(ETH_WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        # If no available node is found within the retry limit, raise an exception.
+                        raise ServiceUnavailableError(
+                            "Cannot connect to any Ethereum node"
+                        )
+
+                    self.endpoint_uri = URI(node.endpoint_uri)
+                    try:
+                        # Send request
+                        return await super().make_request(method, params)
+                    except (ClientError, JSONDecodeError):
+                        # JSONDecodeError may occur when sending a request during geth shutdown, etc.
+                        LOG.info(
+                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        )
+                        counter += 1
+                        # If the number of retries is within the limit, retry.
+                        if counter <= ETH_WEB3_REQUEST_RETRY_COUNT:
+                            await asyncio.sleep(ETH_WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        # If connection cannot be established within the retry limit, raise an exception.
+                        raise ServiceUnavailableError(
+                            "Cannot connect to any Ethereum node"
+                        )
+            else:
+                # If fail_over_mode is False, connect to the primary node.
+                self.endpoint_uri = URI(ETH_WEB3_HTTP_PROVIDER)
+                return await super().make_request(method, params)
+        finally:
+            await db_session.close()
+
+
+try:
+    EthWeb3 = thread_local.EthWeb3
+except AttributeError:
+    if "pytest" in sys.modules:  # For unit tests
+        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=False))
+    else:
+        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=True))
+    thread_local.EthWeb3 = EthWeb3
 
 
 class EthAsyncContractEventsView:
@@ -189,7 +275,9 @@ class EthAsyncContractUtils:
         _tx_from = transaction["from"]
 
         # Get nonce
-        nonce = await EthWeb3.eth.get_transaction_count(_tx_from)
+        nonce = await EthWeb3.eth.get_transaction_count(
+            _tx_from, block_identifier="pending"
+        )
         transaction["nonce"] = nonce
         signed_tx = EthWeb3.eth.account.sign_transaction(
             transaction_dict=transaction, private_key=private_key

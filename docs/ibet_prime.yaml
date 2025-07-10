@@ -32,7 +32,14 @@ paths:
       tags:
         - common
       summary: Service Health Check
-      description: Service health check
+      description: |-
+        Service health check
+
+        Check following services are available:
+        - Database
+        - ibet Node
+        - Ethereum Node (if IbetWST feature is enabled)
+        - E2EE Setting
       operationId: ServiceHealthCheck
       responses:
         '200':

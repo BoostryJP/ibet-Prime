@@ -92,7 +92,7 @@ ACCESS_LOGFILE = os.environ.get("ACCESS_LOGFILE") or "/dev/stdout"
 
 
 ####################################################
-# Blockchain monitoring settings
+# Blockchain monitoring settings (ibet network)
 ####################################################
 # Block synchronization monitoring interval [sec]
 BLOCK_SYNC_STATUS_SLEEP_INTERVAL = (
@@ -127,12 +127,6 @@ else:
 # Average block generation interval
 EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 0.1))
 
-# Maximum message size for name registration for ibet PersonalInfo contract:
-#   ( key bit length / 8 ) - ( 2 * hash function output length + 2 ) = 1238
-#   key bit length: 10240
-#   hash function output length: 20
-PERSONAL_INFO_MESSAGE_SIZE_LIMIT = int((10240 / 8) - (2 * 20 + 2))
-
 
 ####################################################
 # Web3 settings
@@ -161,8 +155,8 @@ WEB3_REQUEST_RETRY_COUNT = (
 WEB3_REQUEST_WAIT_TIME = (
     int(os.environ.get("WEB3_REQUEST_WAIT_TIME"))
     if os.environ.get("WEB3_REQUEST_WAIT_TIME")
-    else BLOCK_SYNC_STATUS_SLEEP_INTERVAL
-)  # Same batch interval
+    else 3
+)
 
 
 ####################################################
@@ -431,6 +425,12 @@ AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
 AWS_KMS_GENERATE_RANDOM_ENABLED = (
     True if os.environ.get("AWS_KMS_GENERATE_RANDOM_ENABLED") == "1" else False
 )
+
+# Maximum message size for name registration for ibet PersonalInfo contract:
+#   ( key bit length / 8 ) - ( 2 * hash function output length + 2 ) = 1238
+#   key bit length: 10240
+#   hash function output length: 20
+PERSONAL_INFO_MESSAGE_SIZE_LIMIT = int((10240 / 8) - (2 * 20 + 2))
 
 # File Upload
 # NOTE: (Reference information) WSGI server and app used by ibet-Prime has no request body size limit.
