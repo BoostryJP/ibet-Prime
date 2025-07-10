@@ -26,6 +26,7 @@ from typing import List, TypeVar
 from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.exc import StaleDataError
 from web3.datastructures import AttributeDict
 from web3.exceptions import TimeExhausted
 
@@ -980,7 +981,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 try:
                     await self.create_cache(db_session)
                     await db_session.commit()
-                except SAIntegrityError:
+                except (SAIntegrityError, StaleDataError):
                     await db_session.rollback()
         finally:
             await db_session.close()
@@ -1634,7 +1635,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 try:
                     await self.create_cache(db_session)
                     await db_session.commit()
-                except SAIntegrityError:
+                except (SAIntegrityError, StaleDataError):
                     await db_session.rollback()
         finally:
             await db_session.close()
