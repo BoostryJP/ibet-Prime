@@ -529,17 +529,29 @@ class TokenAddressResponse(BaseModel):
 class IbetStraightBondResponse(IbetStraightBond):
     """ibet Straight Bond schema (Response)"""
 
-    issue_datetime: str
-    token_status: Optional[TokenStatus]
-    contract_version: IbetStraightBondContractVersion
+    issue_datetime: str = Field(..., description="Issue datetime (ISO 8601 format)")
+    token_status: Optional[TokenStatus] = Field(..., description="Token deploy status")
+    contract_version: IbetStraightBondContractVersion = Field(
+        ..., description="Contract version"
+    )
+    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
+    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
+    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
 
 
 class IbetShareResponse(IbetShare):
     """ibet Share schema (Response)"""
 
-    issue_datetime: str
-    token_status: Optional[TokenStatus]
-    contract_version: IbetShareContractVersion
+    issue_datetime: str = Field(..., description="Issue datetime (ISO 8601 format)")
+    token_status: Optional[TokenStatus] = Field(..., description="Token deploy status")
+    contract_version: IbetShareContractVersion = Field(
+        ..., description="Contract version"
+    )
+    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
+    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
+    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
 
 
 class TokenOperationLogResponse(BaseModel):

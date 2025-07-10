@@ -22,7 +22,7 @@ from unittest import mock
 import pytest
 from pytz import timezone
 
-from app.model.db import Token, TokenType, TokenVersion
+from app.model.db import IbetWSTVersion, Token, TokenType, TokenVersion
 from app.model.ibet import IbetShareContract
 from config import TZ
 
@@ -49,6 +49,11 @@ class TestRetrieveShareToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = "eth_token_address_test1"
         async_db.add(token)
         await async_db.commit()
 
@@ -118,6 +123,10 @@ class TestRetrieveShareToken:
             "token_status": 1,
             "memo": "memo_test1",
             "contract_version": TokenVersion.V_25_06,
+            "ibet_wst_activated": True,
+            "ibet_wst_version": IbetWSTVersion.V_1,
+            "ibet_wst_deployed": True,
+            "ibet_wst_address": "eth_token_address_test1",
         }
 
         assert resp.status_code == 200
@@ -136,6 +145,10 @@ class TestRetrieveShareToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = "eth_token_address_test1"
         async_db.add(token)
         await async_db.commit()
 
@@ -205,6 +218,10 @@ class TestRetrieveShareToken:
             "token_status": 1,
             "memo": "memo_test1",
             "contract_version": TokenVersion.V_25_06,
+            "ibet_wst_activated": True,
+            "ibet_wst_version": IbetWSTVersion.V_1,
+            "ibet_wst_deployed": True,
+            "ibet_wst_address": "eth_token_address_test1",
         }
 
         assert resp.status_code == 200

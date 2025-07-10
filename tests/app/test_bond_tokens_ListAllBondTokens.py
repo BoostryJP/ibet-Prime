@@ -23,7 +23,7 @@ import pytest
 import pytz
 from web3.datastructures import AttributeDict
 
-from app.model.db import Token, TokenType, TokenVersion
+from app.model.db import IbetWSTVersion, Token, TokenType, TokenVersion
 from app.model.ibet import IbetStraightBondContract
 from config import TZ
 from tests.account_config import default_eth_account
@@ -62,6 +62,10 @@ class TestListAllBondTokens:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_06
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = "eth_token_address_test1"
         async_db.add(token)
         await async_db.commit()
         _issue_datetime = (
@@ -168,6 +172,10 @@ class TestListAllBondTokens:
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
                 "contract_version": TokenVersion.V_25_06,
+                "ibet_wst_activated": True,
+                "ibet_wst_version": IbetWSTVersion.V_1,
+                "ibet_wst_deployed": True,
+                "ibet_wst_address": "eth_token_address_test1",
             }
         ]
 
@@ -192,6 +200,10 @@ class TestListAllBondTokens:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         token_1.version = TokenVersion.V_25_06
+        token_1.ibet_wst_activated = True
+        token_1.ibet_wst_version = IbetWSTVersion.V_1
+        token_1.ibet_wst_deployed = True
+        token_1.ibet_wst_address = "eth_token_address_test1"
         async_db.add(token_1)
         await async_db.commit()
         _issue_datetime_1 = (
@@ -366,6 +378,10 @@ class TestListAllBondTokens:
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
                 "contract_version": TokenVersion.V_25_06,
+                "ibet_wst_activated": True,
+                "ibet_wst_version": IbetWSTVersion.V_1,
+                "ibet_wst_deployed": True,
+                "ibet_wst_address": "eth_token_address_test1",
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -412,6 +428,10 @@ class TestListAllBondTokens:
                 "transfer_approval_required": False,
                 "memo": "memo_test2",
                 "contract_version": TokenVersion.V_25_06,
+                "ibet_wst_activated": False,
+                "ibet_wst_version": None,
+                "ibet_wst_deployed": False,
+                "ibet_wst_address": None,
             },
         ]
 
@@ -579,6 +599,10 @@ class TestListAllBondTokens:
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
                 "contract_version": TokenVersion.V_25_06,
+                "ibet_wst_activated": False,
+                "ibet_wst_version": None,
+                "ibet_wst_deployed": False,
+                "ibet_wst_address": None,
             }
         ]
 
@@ -789,6 +813,10 @@ class TestListAllBondTokens:
                 "transfer_approval_required": True,
                 "memo": "memo_test1",
                 "contract_version": TokenVersion.V_25_06,
+                "ibet_wst_activated": False,
+                "ibet_wst_version": None,
+                "ibet_wst_deployed": False,
+                "ibet_wst_address": None,
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -835,6 +863,10 @@ class TestListAllBondTokens:
                 "transfer_approval_required": False,
                 "memo": "memo_test2",
                 "contract_version": TokenVersion.V_25_06,
+                "ibet_wst_activated": False,
+                "ibet_wst_version": None,
+                "ibet_wst_deployed": False,
+                "ibet_wst_address": None,
             },
         ]
 
