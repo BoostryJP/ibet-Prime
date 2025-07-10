@@ -276,7 +276,9 @@ class EthAsyncContractUtils:
         _tx_from = transaction["from"]
 
         # Get nonce
-        nonce = await EthWeb3.eth.get_transaction_count(_tx_from)
+        nonce = await EthWeb3.eth.get_transaction_count(
+            _tx_from, block_identifier="pending"
+        )
         transaction["nonce"] = nonce
         signed_tx = EthWeb3.eth.account.sign_transaction(
             transaction_dict=transaction, private_key=private_key
