@@ -609,6 +609,153 @@ class TestDeleteAccountWhiteListWithAuthorization:
 
 
 @pytest.mark.asyncio
+class TestTransferWithAuthorization:
+    """
+    Test cases for the transfer_with_authorization function of the AuthIbetWST contract.
+    """
+
+    deployer = default_eth_account("user1")
+    relayer = deployer
+    owner = default_eth_account("user2")
+    user1 = default_eth_account("user3")
+    user2 = default_eth_account("user4")
+
+    #################################################################
+    # Normal
+    #################################################################
+
+    # Normal_1
+    # - Test that tokens can be transferred with authorization.
+    async def test_normal_1(self):
+        # Deploy contract
+        contract_address = await deploy_wst_token(
+            "Test Token", self.deployer, self.owner
+        )
+
+        # Mint tokens to user1
+        await mint_wst_token(
+            contract_address=contract_address,
+            to=self.user1["address"],
+            value=1000,
+            tx_from=self.owner,
+        )
+
+        # Generate contract instance
+        contract = IbetWST(contract_address)
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_transfer_digest(
+            domain_separator=domain_separator,
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=500,
+            valid_after=0,
+            valid_before=2**256 - 1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
+        # Attempt to transfer tokens with valid authorization
+        tx_hash = await contract.transfer_with_authorization(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=500,
+            valid_after=0,
+            valid_before=2**256 - 1,
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.relayer["address"],
+            tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
+        assert tx_receipt["status"] == 1
+
+    #################################################################
+    # Error
+    #################################################################
+
+    # Error_1
+    # - Test that an error is raised when trying to transfer tokens with invalid authorization.
+    async def test_error_1(self):
+        # Deploy contract
+        contract_address = await deploy_wst_token(
+            "Test Token", self.deployer, self.owner
+        )
+
+        # Mint tokens to user1
+        await mint_wst_token(
+            contract_address=contract_address,
+            to=self.user1["address"],
+            value=1000,
+            tx_from=self.owner,
+        )
+
+        # Generate contract instance
+        contract = IbetWST(contract_address)
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_transfer_digest(
+            domain_separator=domain_separator,
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=500,
+            valid_after=0,
+            valid_before=2**256 - 1,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.user2["private_key"]),  # Invalid authorizer key
+        )
+
+        # Attempt to transfer tokens with valid authorization
+        tx_hash = await contract.transfer_with_authorization(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=500,
+            valid_after=0,
+            valid_before=2**256 - 1,
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.relayer["address"],
+            tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        assert tx_receipt["status"] == 0  # Transaction failed
+
+
+@pytest.mark.asyncio
 class TestMintWithAuthorization:
     """
     Test cases for the mint_with_authorization function of the AuthIbetWST contract.

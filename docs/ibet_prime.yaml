@@ -9956,6 +9956,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/transfers/{ibet_wst_address}:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Transfer Ibet Wst
+      description: |-
+        Transfer IbetWST tokens
+
+        - This endpoint allows a user to send transferWithAuthorization transaction to the IbetWST contract.
+      operationId: TransferIbetWST
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferIbetWSTRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /ibet_wst/trades/{ibet_wst_address}/request:
     post:
       tags:
@@ -18310,6 +18354,54 @@ components:
         - transfer_history
       title: TransferHistoryResponse
       description: transfer history
+    TransferIbetWSTRequest:
+      properties:
+        from_address:
+          type: string
+          title: From Address
+          description: Sender address
+        to_address:
+          type: string
+          title: To Address
+          description: Recipient address
+        value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Value
+          description: Amount of IbetWST to transfer
+        valid_after:
+          anyOf:
+            - type: integer
+              exclusiveMinimum: 0.0
+            - type: 'null'
+          title: Valid After
+          description: Valid after timestamp (Unix time)
+          default: 1
+        valid_before:
+          anyOf:
+            - type: integer
+              maximum: 1.8446744073709552e+19
+              exclusiveMinimum: 0.0
+            - type: 'null'
+          title: Valid Before
+          description: Valid before timestamp (Unix time)
+          default: 18446744073709551615
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - from_address
+        - to_address
+        - value
+        - authorizer
+        - authorization
+      title: TransferIbetWSTRequest
+      description: TransferIbetWST request schema
     TransferSourceEventType:
       type: string
       enum:

@@ -41,6 +41,7 @@ from app.model.db import (
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRejectTrade,
     IbetWSTTxParamsRequestTrade,
+    IbetWSTTxParamsTransfer,
     IbetWSTTxStatus,
     IbetWSTTxType,
 )
@@ -118,6 +119,11 @@ class ProcessorEthWSTSendTx:
                     elif wst_tx.tx_type == IbetWSTTxType.DELETE_WHITELIST:
                         # Send delete whitelist transaction
                         tx_hash = await send_delete_whitelist_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.TRANSFER:
+                        # Send transfer transaction
+                        tx_hash = await send_transfer_transaction(
                             wst_tx, tx_sender_account
                         )
                     elif wst_tx.tx_type == IbetWSTTxType.MINT:
@@ -259,6 +265,33 @@ async def send_delete_whitelist_transaction(
     tx_params: IbetWSTTxParamsDeleteAccountWhiteList = wst_tx.tx_params
     tx_hash = await wst_contract.delete_account_white_list_with_authorization(
         account=tx_params["account_address"],
+        authorization=IbetWSTAuthorization(
+            nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
+            v=wst_tx.authorization["v"],
+            r=bytes(32).fromhex(wst_tx.authorization["r"]),
+            s=bytes(32).fromhex(wst_tx.authorization["s"]),
+        ),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash
+
+
+async def send_transfer_transaction(
+    wst_tx: EthIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> str:
+    """
+    Send a transaction to transfer IbetWST tokens.
+    """
+    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    tx_params: IbetWSTTxParamsTransfer = wst_tx.tx_params
+    tx_hash = await wst_contract.transfer_with_authorization(
+        from_address=tx_params["from_address"],
+        to_address=tx_params["to_address"],
+        value=wst_tx.tx_params["value"],
+        valid_after=wst_tx.tx_params["valid_after"],
+        valid_before=wst_tx.tx_params["valid_before"],
         authorization=IbetWSTAuthorization(
             nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
             v=wst_tx.authorization["v"],

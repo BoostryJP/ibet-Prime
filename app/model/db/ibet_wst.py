@@ -41,6 +41,7 @@ class IbetWSTTxType(StrEnum):
     BURN = "burn"
     ADD_WHITELIST = "add_whitelist"
     DELETE_WHITELIST = "delete_whitelist"
+    TRANSFER = "transfer"
     REQUEST_TRADE = "request_trade"
     CANCEL_TRADE = "cancel_trade"
     ACCEPT_TRADE = "accept_trade"
@@ -80,6 +81,16 @@ class IbetWSTTxParamsDeleteAccountWhiteList(TypedDict):
     """Parameters for IbetWST deleteAccountWhiteListWithAuthorization Transaction"""
 
     account_address: str  # Address to be removed from the whitelist
+
+
+class IbetWSTTxParamsTransfer(TypedDict):
+    """Parameters for IbetWST transferWithAuthorization Transaction"""
+
+    from_address: str  # Address from which the tokens will be transferred
+    to_address: str  # Address to which the tokens will be transferred
+    value: int  # Amount of IbetWST to be transferred
+    valid_after: int  # Timestamp after which the transaction is valid
+    valid_before: int  # Timestamp before which the transaction is valid
 
 
 class IbetWSTTxParamsMint(TypedDict):
@@ -151,6 +162,14 @@ class IbetWSTEventLogAccountWhiteListDeleted(TypedDict):
     """Event log for IbetWST AccountWhiteListDeleted event"""
 
     account_address: str  # Address that was removed from the whitelist
+
+
+class IbetWSTEventLogTransfer(TypedDict):
+    """Event log for IbetWST Transfer event"""
+
+    from_address: str  # Address from which the tokens were transferred
+    to_address: str  # Address to which the tokens were transferred
+    value: int  # Amount of IbetWST transferred
 
 
 class IbetWSTEventLogTradeRequested(TypedDict):
@@ -235,6 +254,7 @@ class EthIbetWSTTx(Base):
         IbetWSTTxParamsDeploy
         | IbetWSTTxParamsAddAccountWhiteList
         | IbetWSTTxParamsDeleteAccountWhiteList
+        | IbetWSTTxParamsTransfer
         | IbetWSTTxParamsMint
         | IbetWSTTxParamsBurn
         | IbetWSTTxParamsRequestTrade
@@ -273,6 +293,7 @@ class EthIbetWSTTx(Base):
         | IbetWSTEventLogBurn
         | IbetWSTEventLogAccountWhiteListAdded
         | IbetWSTEventLogAccountWhiteListDeleted
+        | IbetWSTEventLogTransfer
         | IbetWSTEventLogTradeRequested
         | IbetWSTEventLogTradeCancelled
         | IbetWSTEventLogTradeAccepted

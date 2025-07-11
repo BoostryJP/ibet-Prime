@@ -47,6 +47,7 @@ from app.model.db import (
     Token,
     TokenType,
 )
+from app.model.db.ibet_wst import IbetWSTTxParamsTransfer
 from app.model.eth import ERC20, IbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
@@ -65,6 +66,7 @@ from app.model.schema import (
     ListIbetWSTTradesResponse,
     RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
+    TransferIbetWSTRequest,
 )
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
@@ -340,6 +342,63 @@ async def get_ibet_wst_whitelist(
     )
 
     return json_response({"whitelisted": is_whitelisted})
+
+
+# POST: /ibet_wst/transfers/{ibet_wst_address}
+@router.post(
+    "/transfers/{ibet_wst_address}",
+    operation_id="TransferIbetWST",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(404, 422),
+)
+async def transfer_ibet_wst(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+    req_params: TransferIbetWSTRequest,
+):
+    """
+    Transfer IbetWST tokens
+
+    - This endpoint allows a user to send transferWithAuthorization transaction to the IbetWST contract.
+    """
+    # Check if ibet-WST exists
+    _token = (
+        await db.scalars(
+            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+        )
+    ).first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="IbetWST token not found")
+
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.TRANSFER
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsTransfer(
+        from_address=req_params.from_address,
+        to_address=req_params.to_address,
+        value=req_params.value,
+        valid_after=req_params.valid_after,
+        valid_before=req_params.valid_before,
+    )
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
 
 
 # POST: /ibet_wst/trades/{ibet_wst_address}/request

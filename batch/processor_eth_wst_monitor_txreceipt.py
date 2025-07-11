@@ -40,6 +40,7 @@ from app.model.db import (
     IbetWSTEventLogTradeCancelled,
     IbetWSTEventLogTradeRejected,
     IbetWSTEventLogTradeRequested,
+    IbetWSTEventLogTransfer,
     IbetWSTTxStatus,
     IbetWSTTxType,
     Token,
@@ -207,6 +208,19 @@ async def finalize_tx(
             if event is not None:
                 wst_tx.event_log = IbetWSTEventLogAccountWhiteListDeleted(
                     account_address=event["args"]["accountAddress"],
+                )
+                await db_session.merge(wst_tx)
+        case IbetWSTTxType.TRANSFER:
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = ibet_wst.contract.events.Transfer().process_receipt(
+                txn_receipt=tx_receipt, errors=DISCARD
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogTransfer(
+                    from_address=event["args"]["from"],
+                    to_address=event["args"]["to"],
+                    value=event["args"]["value"],
                 )
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REQUEST_TRADE:
