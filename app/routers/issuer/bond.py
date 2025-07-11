@@ -434,17 +434,26 @@ async def list_all_bond_tokens(
 
     bond_tokens = []
     for token in tokens:
-        # Get contract data
+        # Get response data from contract
         bond_token = (
             await IbetStraightBondContract(token.token_address).get()
         ).__dict__
-        issue_datetime_utc = pytz.timezone("UTC").localize(token.created)
-        bond_token["issue_datetime"] = issue_datetime_utc.astimezone(
-            local_tz
-        ).isoformat()
+        bond_token.pop("contract_name")
+
+        # Set other response items
+        bond_token["issue_datetime"] = (
+            pytz.timezone("UTC")
+            .localize(token.created)
+            .astimezone(local_tz)
+            .isoformat()
+        )
         bond_token["token_status"] = token.token_status
         bond_token["contract_version"] = token.version
-        bond_token.pop("contract_name")
+        bond_token["ibet_wst_activated"] = True if token.ibet_wst_activated else False
+        bond_token["ibet_wst_version"] = token.ibet_wst_version
+        bond_token["ibet_wst_deployed"] = True if token.ibet_wst_deployed else False
+        bond_token["ibet_wst_address"] = token.ibet_wst_address
+
         bond_tokens.append(bond_token)
 
     return json_response(bond_tokens)
@@ -480,13 +489,20 @@ async def retrieve_bond_token(
     if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    # Get contract data
+    # Get response data from contract
     bond_token = (await IbetStraightBondContract(token_address).get()).__dict__
-    issue_datetime_utc = pytz.timezone("UTC").localize(_token.created)
-    bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
+    bond_token.pop("contract_name")
+
+    # Set other response items
+    bond_token["issue_datetime"] = (
+        pytz.timezone("UTC").localize(_token.created).astimezone(local_tz).isoformat()
+    )
     bond_token["token_status"] = _token.token_status
     bond_token["contract_version"] = _token.version
-    bond_token.pop("contract_name")
+    bond_token["ibet_wst_activated"] = True if _token.ibet_wst_activated else False
+    bond_token["ibet_wst_version"] = _token.ibet_wst_version
+    bond_token["ibet_wst_deployed"] = True if _token.ibet_wst_deployed else False
+    bond_token["ibet_wst_address"] = _token.ibet_wst_address
 
     return json_response(bond_token)
 

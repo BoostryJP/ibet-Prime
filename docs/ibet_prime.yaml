@@ -14044,12 +14044,35 @@ components:
         issue_datetime:
           type: string
           title: Issue Datetime
+          description: Issue datetime (ISO 8601 format)
         token_status:
           anyOf:
             - $ref: '#/components/schemas/TokenStatus'
             - type: 'null'
+          description: Token deploy status
         contract_version:
           $ref: '#/components/schemas/IbetShareContractVersion'
+          description: Contract version
+        ibet_wst_activated:
+          type: boolean
+          title: Ibet Wst Activated
+          description: IbetWST activated
+        ibet_wst_version:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Version
+          description: IbetWST version
+        ibet_wst_deployed:
+          type: boolean
+          title: Ibet Wst Deployed
+          description: IbetWST deployed
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: IbetWST contract address
       type: object
       required:
         - issuer_address
@@ -14077,6 +14100,10 @@ components:
         - issue_datetime
         - token_status
         - contract_version
+        - ibet_wst_activated
+        - ibet_wst_version
+        - ibet_wst_deployed
+        - ibet_wst_address
       title: IbetShareResponse
       description: ibet Share schema (Response)
     IbetShareScheduledUpdate:
@@ -14658,12 +14685,35 @@ components:
         issue_datetime:
           type: string
           title: Issue Datetime
+          description: Issue datetime (ISO 8601 format)
         token_status:
           anyOf:
             - $ref: '#/components/schemas/TokenStatus'
             - type: 'null'
+          description: Token deploy status
         contract_version:
           $ref: '#/components/schemas/IbetStraightBondContractVersion'
+          description: Contract version
+        ibet_wst_activated:
+          type: boolean
+          title: Ibet Wst Activated
+          description: IbetWST activated
+        ibet_wst_version:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Version
+          description: IbetWST version
+        ibet_wst_deployed:
+          type: boolean
+          title: Ibet Wst Deployed
+          description: IbetWST deployed
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: IbetWST contract address
       type: object
       required:
         - issuer_address
@@ -14697,6 +14747,10 @@ components:
         - issue_datetime
         - token_status
         - contract_version
+        - ibet_wst_activated
+        - ibet_wst_version
+        - ibet_wst_deployed
+        - ibet_wst_address
       title: IbetStraightBondResponse
       description: ibet Straight Bond schema (Response)
     IbetStraightBondScheduledUpdate:
