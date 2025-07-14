@@ -133,6 +133,26 @@ class BurnIbetWSTRequest(BaseModel):
     )
 
 
+class TransferIbetWSTRequest(BaseModel):
+    """TransferIbetWST request schema"""
+
+    from_address: EthereumAddress = Field(description="Sender address")
+    to_address: EthereumAddress = Field(description="Recipient address")
+    value: PositiveInt = Field(description="Amount of IbetWST to transfer")
+    valid_after: Optional[PositiveInt] = Field(
+        default=1, description="Valid after timestamp (Unix time)"
+    )
+    valid_before: Optional[PositiveInt] = Field(
+        default=2**64 - 1,
+        description="Valid before timestamp (Unix time)",
+        le=2**64 - 1,
+    )
+    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorization: IbetWSTAuthorization = Field(
+        description="Authorization for the transaction"
+    )
+
+
 class RequestIbetWSTTradeRequest(BaseModel):
     """RequestIbetWSTTrade request schema"""
 

@@ -236,6 +236,7 @@ class TestAddIbetWSTWhitelist:
         }
 
     # <Error_2>
+    # IbetWST token not found
     async def test_error_2(self, async_db, async_client):
         # Generate nonce
         nonce = secrets.token_bytes(32)

@@ -331,19 +331,19 @@ class IbetWSTDigestHelper:
     @staticmethod
     def generate_transfer_digest(
         domain_separator: bytes,
-        _from: str,
-        _to: str,
+        from_address: str,
+        to_address: str,
         value: int,
-        valid_after: int,
-        valid_before: int,
         nonce: bytes,
+        valid_after: int = 1,
+        valid_before: int = 2**64 - 1,
     ) -> bytes:
         """
         Generate the EIP-712 digest for transfer with authorization.
 
         :param domain_separator: EIP-712 DOMAIN_SEPARATOR
-        :param _from: from address
-        :param _to: to address
+        :param from_address: from address
+        :param to_address: to address
         :param value: value to transfer
         :param valid_after: block timestamp after which the transfer is valid
         :param valid_before: block timestamp before which the transfer is valid
@@ -368,8 +368,8 @@ class IbetWSTDigestHelper:
                 ],
                 [
                     type_hash,
-                    to_checksum_address(_from),
-                    to_checksum_address(_to),
+                    to_checksum_address(from_address),
+                    to_checksum_address(to_address),
                     value,
                     valid_after,
                     valid_before,
@@ -396,8 +396,8 @@ class IbetWSTDigestHelper:
     @staticmethod
     def generate_receive_digest(
         domain_separator: bytes,
-        _from: str,
-        _to: str,
+        from_address: str,
+        to_address: str,
         value: int,
         valid_after: int,
         valid_before: int,
@@ -407,8 +407,8 @@ class IbetWSTDigestHelper:
         Generate the EIP-712 digest for receive with authorization.
 
         :param domain_separator: EIP-712 DOMAIN_SEPARATOR
-        :param _from: from address
-        :param _to: to address
+        :param from_address: from address
+        :param to_address: to address
         :param value: value to transfer
         :param valid_after: block timestamp after which the transfer is valid
         :param valid_before: block timestamp before which the transfer is valid
@@ -433,8 +433,8 @@ class IbetWSTDigestHelper:
                 ],
                 [
                     type_hash,
-                    to_checksum_address(_from),
-                    to_checksum_address(_to),
+                    to_checksum_address(from_address),
+                    to_checksum_address(to_address),
                     value,
                     valid_after,
                     valid_before,
@@ -880,6 +880,102 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": tx_sender,
                     "gas": 85000,
+                }
+            )
+            # Send the transaction
+            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def transfer_with_authorization(
+        self,
+        from_address: EthereumAddress,
+        to_address: EthereumAddress,
+        value: int,
+        valid_after: int,
+        valid_before: int,
+        authorization: IbetWSTAuthorization,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
+    ) -> str:
+        """
+        Transfer tokens with authorization
+
+        :param from_address: Address to transfer tokens from
+        :param to_address: Address to transfer tokens to
+        :param value: Value of tokens to transfer
+        :param valid_after: Block timestamp after which the transfer is valid
+        :param valid_before: Block timestamp before which the transfer is valid
+        :param authorization: Authorization data containing nonce, v, r, s
+        :param tx_sender: Address of the transaction sender
+        :param tx_sender_key: Private key of the transaction sender
+        :return: Transaction hash
+        """
+        try:
+            # Build the transaction to transfer tokens
+            tx = await self.contract.functions.transferWithAuthorization(
+                from_address,
+                to_address,
+                value,
+                valid_after,
+                valid_before,
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
+            ).build_transaction(
+                {
+                    "chainId": ETH_CHAIN_ID,
+                    "from": tx_sender,
+                    "gas": 105000,
+                }
+            )
+            # Send the transaction
+            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def receive_with_authorization(
+        self,
+        from_address: EthereumAddress,
+        to_address: EthereumAddress,
+        value: int,
+        valid_after: int,
+        valid_before: int,
+        authorization: IbetWSTAuthorization,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
+    ) -> str:
+        """
+        Receive tokens with authorization
+
+        :param from_address: Address to receive tokens from
+        :param to_address: Address to receive tokens to
+        :param value: Value of tokens to receive
+        :param valid_after: Block timestamp after which the receive is valid
+        :param valid_before: Block timestamp before which the receive is valid
+        :param authorization: Authorization data containing nonce, v, r, s
+        :param tx_sender: Address of the transaction sender
+        :param tx_sender_key: Private key of the transaction sender
+        :return: Transaction hash
+        """
+        try:
+            # Build the transaction to receive tokens
+            tx = await self.contract.functions.receiveWithAuthorization(
+                from_address,
+                to_address,
+                value,
+                valid_after,
+                valid_before,
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
+            ).build_transaction(
+                {
+                    "chainId": ETH_CHAIN_ID,
+                    "from": tx_sender,
+                    "gas": 500000,
                 }
             )
             # Send the transaction

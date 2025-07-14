@@ -113,6 +113,7 @@ from .ibet_wst import (
     ListIbetWSTTradesResponse,
     RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
+    TransferIbetWSTRequest,
 )
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
