@@ -115,6 +115,7 @@ class ProcessorEthWSTMonitorTxReceipt:
                     # Transaction succeeded
                     wst_tx.status = IbetWSTTxStatus.SUCCEEDED
                     wst_tx.block_number = block_number
+                    wst_tx.gas_used = tx_receipt.get("gasUsed")
                     LOG.info(
                         f"Transaction succeeded: id={wst_tx.tx_id}, block_number={block_number}, gas_used={tx_receipt.get('gasUsed')}"
                     )
@@ -122,6 +123,7 @@ class ProcessorEthWSTMonitorTxReceipt:
                     # Transaction failed
                     wst_tx.status = IbetWSTTxStatus.FAILED
                     wst_tx.block_number = block_number
+                    wst_tx.gas_used = tx_receipt.get("gasUsed")
                     LOG.info(
                         f"Transaction failed: id={wst_tx.tx_id}, block_number={block_number}, gas_used={tx_receipt.get('gasUsed')}"
                     )

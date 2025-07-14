@@ -197,6 +197,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is False
 
         assert caplog.messages == [
@@ -251,6 +252,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.FAILED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is False
 
         assert caplog.messages == [
@@ -321,6 +323,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
 
         token_af = (
@@ -415,6 +418,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "to_address": self.user1["address"],
@@ -505,6 +509,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "from_address": self.user1["address"],
@@ -593,6 +598,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "account_address": self.user1["address"],
@@ -680,6 +686,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "account_address": self.user1["address"],
@@ -781,6 +788,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "index": 1,
@@ -880,6 +888,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "index": 1,
@@ -979,6 +988,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "index": 1,
@@ -1078,6 +1088,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "index": 1,
@@ -1178,6 +1189,7 @@ class TestProcessor:
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
         assert wst_tx_af.event_log == {
             "from_address": self.user1["address"],

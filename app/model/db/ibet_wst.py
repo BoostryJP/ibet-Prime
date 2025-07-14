@@ -286,6 +286,8 @@ class EthIbetWSTTx(Base):
     # Block number
     # - Block number when the transaction was mined
     block_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Gas used
+    gas_used: Mapped[int | None] = mapped_column(BigInteger)
     # Block finalized
     # - True if the block is finalized, False otherwise
     finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
