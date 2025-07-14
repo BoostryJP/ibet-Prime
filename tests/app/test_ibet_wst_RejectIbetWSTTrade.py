@@ -129,6 +129,7 @@ class TestRejectIbetWSTTrade:
             "r": signature.r.to_bytes(32).hex(),
             "s": signature.s.to_bytes(32).hex(),
         }
+        assert wst_tx.client_ip == "127.0.0.1"
 
     ###########################################################################
     # Error

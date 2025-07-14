@@ -22,7 +22,7 @@ from typing import Annotated, Sequence
 
 import pytz
 from eth_utils import to_checksum_address
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, HTTPException, Path, Query, Request
 from sqlalchemy import and_, asc, desc, func, select
 
 import config
@@ -219,6 +219,7 @@ async def get_ibet_wst_balance(
     responses=get_routers_responses(404, 422),
 )
 async def burn_ibet_wst_balance(
+    request: Request,
     db: DBAsyncSession,
     account_address: Annotated[EthereumAddress, Path(description="Account address")],
     ibet_wst_address: Annotated[
@@ -259,6 +260,7 @@ async def burn_ibet_wst_balance(
         r=req_params.authorization.r,
         s=req_params.authorization.s,
     )
+    wst_tx.client_ip = get_client_ip(request)
     db.add(wst_tx)
     await db.commit()
 
@@ -352,6 +354,7 @@ async def get_ibet_wst_whitelist(
     responses=get_routers_responses(404, 422),
 )
 async def transfer_ibet_wst(
+    request: Request,
     db: DBAsyncSession,
     ibet_wst_address: Annotated[
         EthereumAddress, Path(description="IbetWST contract address")
@@ -395,6 +398,7 @@ async def transfer_ibet_wst(
         r=req_params.authorization.r,
         s=req_params.authorization.s,
     )
+    wst_tx.client_ip = get_client_ip(request)
     db.add(wst_tx)
     await db.commit()
 
@@ -409,6 +413,7 @@ async def transfer_ibet_wst(
     responses=get_routers_responses(404, 422),
 )
 async def request_ibet_wst_trade(
+    request: Request,
     db: DBAsyncSession,
     ibet_wst_address: Annotated[
         EthereumAddress, Path(description="IbetWST contract address")
@@ -455,6 +460,7 @@ async def request_ibet_wst_trade(
         r=req_params.authorization.r,
         s=req_params.authorization.s,
     )
+    wst_tx.client_ip = get_client_ip(request)
     db.add(wst_tx)
     await db.commit()
 
@@ -469,6 +475,7 @@ async def request_ibet_wst_trade(
     responses=get_routers_responses(404, 422),
 )
 async def cancel_ibet_wst_trade(
+    request: Request,
     db: DBAsyncSession,
     ibet_wst_address: Annotated[
         EthereumAddress, Path(description="IbetWST contract address")
@@ -507,6 +514,7 @@ async def cancel_ibet_wst_trade(
         r=req_params.authorization.r,
         s=req_params.authorization.s,
     )
+    wst_tx.client_ip = get_client_ip(request)
     db.add(wst_tx)
     await db.commit()
 
@@ -523,6 +531,7 @@ async def cancel_ibet_wst_trade(
     ),
 )
 async def accept_ibet_wst_trade(
+    request: Request,
     db: DBAsyncSession,
     ibet_wst_address: Annotated[
         EthereumAddress, Path(description="IbetWST contract address")
@@ -583,6 +592,7 @@ async def accept_ibet_wst_trade(
         r=req_params.authorization.r,
         s=req_params.authorization.s,
     )
+    wst_tx.client_ip = get_client_ip(request)
     db.add(wst_tx)
     await db.commit()
 
@@ -597,6 +607,7 @@ async def accept_ibet_wst_trade(
     responses=get_routers_responses(404, 422),
 )
 async def reject_ibet_wst_trade(
+    request: Request,
     db: DBAsyncSession,
     ibet_wst_address: Annotated[
         EthereumAddress, Path(description="IbetWST contract address")
@@ -635,6 +646,7 @@ async def reject_ibet_wst_trade(
         r=req_params.authorization.r,
         s=req_params.authorization.s,
     )
+    wst_tx.client_ip = get_client_ip(request)
     db.add(wst_tx)
     await db.commit()
 
@@ -790,3 +802,18 @@ async def get_ibet_wst_trade(
         "memo": trade.memo,
     }
     return json_response(resp)
+
+
+###################################################################
+# Utility Functions
+###################################################################
+
+
+def get_client_ip(request: Request):
+    x_forwarded_for = request.headers.get("X-Forwarded-For")
+    if x_forwarded_for:
+        # If there are multiple, the first one is the client IP
+        client_ip = x_forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host
+    return client_ip

@@ -275,6 +275,10 @@ class EthIbetWSTTx(Base):
     authorization: Mapped[IbetWSTAuthorization | None] = mapped_column(
         JSON, nullable=True, default=None
     )
+    # Client IP address
+    # - IP address of the client who initiated the transaction
+    # - This field is set when the transaction is executed directly via API call.
+    client_ip: Mapped[str | None] = mapped_column(String(40))
     # Transaction hash
     # - Hash of the transaction on the Ethereum network
     # - Set to None if the transaction is not yet sent
