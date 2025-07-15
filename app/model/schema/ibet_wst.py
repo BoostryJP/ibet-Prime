@@ -22,7 +22,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, PositiveInt, RootModel
 
-from app.model import EthereumAddress
+from app.model import ChecksumEthereumAddress
 from app.model.schema.base import (
     BasePaginationQuery,
     IbetShare,
@@ -92,13 +92,13 @@ class ListAllIbetWSTTokensSortItem(StrEnum):
 class ListAllIbetWSTTokensQuery(BasePaginationQuery):
     """ListAllIbetWSTTokens request query schema"""
 
-    issuer_address: Optional[EthereumAddress] = Field(
+    issuer_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="Issuer address (**This affects total number**)"
     )
-    ibet_wst_address: Optional[EthereumAddress] = Field(
+    ibet_wst_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="IbetWST contract address"
     )
-    ibet_token_address: Optional[EthereumAddress] = Field(
+    ibet_token_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="ibet token contract address"
     )
     token_type: Optional[TokenType] = Field(None, description="Token type")
@@ -114,20 +114,24 @@ class ListAllIbetWSTTokensQuery(BasePaginationQuery):
 class AddIbetWSTWhitelistRequest(BaseModel):
     """AddIbetWSTWhitelist request schema"""
 
-    account_address: EthereumAddress = Field(description="Account address to whitelist")
+    account_address: ChecksumEthereumAddress = Field(
+        description="Account address to whitelist"
+    )
 
 
 class DeleteIbetWSTWhitelistRequest(BaseModel):
     """DeleteIbetWSTWhitelist request schema"""
 
-    account_address: EthereumAddress = Field(description="Account address to whitelist")
+    account_address: ChecksumEthereumAddress = Field(
+        description="Account address to whitelist"
+    )
 
 
 class BurnIbetWSTRequest(BaseModel):
     """BurnIbetWST request schema"""
 
     value: PositiveInt = Field(description="Amount of IbetWST to burn")
-    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
     )
@@ -136,8 +140,8 @@ class BurnIbetWSTRequest(BaseModel):
 class TransferIbetWSTRequest(BaseModel):
     """TransferIbetWST request schema"""
 
-    from_address: EthereumAddress = Field(description="Sender address")
-    to_address: EthereumAddress = Field(description="Recipient address")
+    from_address: ChecksumEthereumAddress = Field(description="Sender address")
+    to_address: ChecksumEthereumAddress = Field(description="Recipient address")
     value: PositiveInt = Field(description="Amount of IbetWST to transfer")
     valid_after: Optional[PositiveInt] = Field(
         default=1, description="Valid after timestamp (Unix time)"
@@ -147,7 +151,7 @@ class TransferIbetWSTRequest(BaseModel):
         description="Valid before timestamp (Unix time)",
         le=2**64 - 1,
     )
-    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
     )
@@ -156,23 +160,25 @@ class TransferIbetWSTRequest(BaseModel):
 class RequestIbetWSTTradeRequest(BaseModel):
     """RequestIbetWSTTrade request schema"""
 
-    seller_st_account_address: EthereumAddress = Field(
+    seller_st_account_address: ChecksumEthereumAddress = Field(
         description="IbetWST seller account address"
     )
-    buyer_st_account_address: EthereumAddress = Field(
+    buyer_st_account_address: ChecksumEthereumAddress = Field(
         description="IbetWST buyer account address"
     )
-    sc_token_address: EthereumAddress = Field(description="SC token contract address")
-    seller_sc_account_address: EthereumAddress = Field(
+    sc_token_address: ChecksumEthereumAddress = Field(
+        description="SC token contract address"
+    )
+    seller_sc_account_address: ChecksumEthereumAddress = Field(
         description="SC seller account address"
     )
-    buyer_sc_account_address: EthereumAddress = Field(
+    buyer_sc_account_address: ChecksumEthereumAddress = Field(
         description="SC buyer account address"
     )
     st_value: PositiveInt = Field(description="Value of IbetWST to trade")
     sc_value: PositiveInt = Field(description="Value of SC token to trade")
     memo: str = Field(description="Memo for the trade")
-    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
     )
@@ -182,7 +188,7 @@ class CancelIbetWSTTradeRequest(BaseModel):
     """CancelIbetWSTTrade request schema"""
 
     index: PositiveInt = Field(description="Trade index")
-    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
     )
@@ -192,7 +198,7 @@ class AcceptIbetWSTTradeRequest(BaseModel):
     """AcceptIbetWSTTrade request schema"""
 
     index: PositiveInt = Field(description="Trade index")
-    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
     )
@@ -202,7 +208,7 @@ class RejectIbetWSTTradeRequest(BaseModel):
     """RejectIbetWSTTrade request schema"""
 
     index: PositiveInt = Field(description="Trade index")
-    authorizer: EthereumAddress = Field(description="Authorizer address")
+    authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
     )
@@ -211,19 +217,19 @@ class RejectIbetWSTTradeRequest(BaseModel):
 class ListIbetWSTTradesQuery(BasePaginationQuery):
     """ListIbetWSTTrades request query schema"""
 
-    seller_st_account_address: Optional[EthereumAddress] = Field(
+    seller_st_account_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="IbetWST seller account address"
     )
-    buyer_st_account_address: Optional[EthereumAddress] = Field(
+    buyer_st_account_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="IbetWST buyer account address"
     )
-    sc_token_address: Optional[EthereumAddress] = Field(
+    sc_token_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="SC token contract address"
     )
-    seller_sc_account_address: Optional[EthereumAddress] = Field(
+    seller_sc_account_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="SC seller account address"
     )
-    buyer_sc_account_address: Optional[EthereumAddress] = Field(
+    buyer_sc_account_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="SC buyer account address"
     )
     state: Optional[Literal["Pending", "Executed", "Cancelled"]] = Field(
@@ -256,7 +262,7 @@ class GetIbetWSTBalanceResponse(BaseModel):
 class IbetWSTEventLogMint(BaseModel):
     """IbetWST Mint event log schema"""
 
-    to_address: EthereumAddress = Field(
+    to_address: ChecksumEthereumAddress = Field(
         ..., description="Address to which the tokens were minted"
     )
     value: int = Field(..., description="Amount of tokens minted")
@@ -265,7 +271,7 @@ class IbetWSTEventLogMint(BaseModel):
 class IbetWSTEventLogBurn(BaseModel):
     """IbetWST Burn event log schema"""
 
-    from_address: EthereumAddress = Field(
+    from_address: ChecksumEthereumAddress = Field(
         ..., description="Address from which the tokens were burned"
     )
     value: int = Field(..., description="Amount of tokens burned")
@@ -274,7 +280,7 @@ class IbetWSTEventLogBurn(BaseModel):
 class IbetWSTEventLogAccountWhiteListAdded(BaseModel):
     """IbetWST AccountWhiteListAdded event log schema"""
 
-    account_address: EthereumAddress = Field(
+    account_address: ChecksumEthereumAddress = Field(
         ..., description="Address of the account added to the whitelist"
     )
 
@@ -282,7 +288,7 @@ class IbetWSTEventLogAccountWhiteListAdded(BaseModel):
 class IbetWSTEventLogAccountWhiteListDeleted(BaseModel):
     """IbetWST AccountWhiteListDeleted event log schema"""
 
-    account_address: EthereumAddress = Field(
+    account_address: ChecksumEthereumAddress = Field(
         ..., description="Address of the account removed from the whitelist"
     )
 
@@ -291,19 +297,19 @@ class IbetWSTEventLogTrade(BaseModel):
     """IbetWST TradeRequested/TradeCancelled/TradeAccepted/TradeRejected event log schema"""
 
     index: int = Field(..., description="Trade index")
-    seller_st_account_address: EthereumAddress = Field(
+    seller_st_account_address: ChecksumEthereumAddress = Field(
         ..., description="IbetWST seller account address"
     )
-    buyer_st_account_address: EthereumAddress = Field(
+    buyer_st_account_address: ChecksumEthereumAddress = Field(
         ..., description="IbetWST buyer account address"
     )
-    sc_token_address: EthereumAddress = Field(
+    sc_token_address: ChecksumEthereumAddress = Field(
         ..., description="SC token contract address"
     )
-    seller_sc_account_address: EthereumAddress = Field(
+    seller_sc_account_address: ChecksumEthereumAddress = Field(
         ..., description="SC seller account address"
     )
-    buyer_sc_account_address: EthereumAddress = Field(
+    buyer_sc_account_address: ChecksumEthereumAddress = Field(
         ..., description="SC buyer account address"
     )
     st_value: int = Field(..., description="Value of IbetWST to trade")

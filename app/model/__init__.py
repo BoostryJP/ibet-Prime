@@ -40,6 +40,25 @@ def ethereum_address_validator(
 EthereumAddress = Annotated[str, WrapValidator(ethereum_address_validator)]
 
 
+def checksum_ethereum_address_validator(
+    value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
+):
+    """Validator for ethereum address in checksum format"""
+    if value is not None:
+        if not isinstance(value, str):
+            raise ValueError("value must be of string")
+        if not Web3.is_address(value):
+            raise ValueError("invalid ethereum address")
+        if not Web3.to_checksum_address(value) == value:
+            raise ValueError("ethereum address must be in checksum format")
+    return value
+
+
+ChecksumEthereumAddress = Annotated[
+    str, WrapValidator(checksum_ethereum_address_validator)
+]
+
+
 def datetime_string_validator(
     value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
 ):
