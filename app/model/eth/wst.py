@@ -68,7 +68,7 @@ class ERC20:
         return await EthAsyncContractUtils.call_function(
             contract=self.contract,
             function_name="balanceOf",
-            args=(account,),
+            args=(to_checksum_address(account),),
             default_returns=0,
         )
 
@@ -85,7 +85,7 @@ class ERC20:
         return await EthAsyncContractUtils.call_function(
             contract=self.contract,
             function_name="allowance",
-            args=(account, spender),
+            args=(to_checksum_address(account), to_checksum_address(spender)),
             default_returns=0,
         )
 
@@ -733,7 +733,7 @@ class IbetWST(ERC20):
         return await EthAsyncContractUtils.call_function(
             contract=self.contract,
             function_name="accountWhiteList",
-            args=(account,),
+            args=(to_checksum_address(account),),
             default_returns=False,
         )
 
@@ -756,7 +756,7 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to add the account to the whitelist
             tx = await self.contract.functions.addAccountWhiteListWithAuthorization(
-                account,
+                to_checksum_address(account),
                 authorization.nonce,
                 authorization.v,
                 authorization.r,
@@ -764,7 +764,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 95000,
                 }
             )
@@ -792,7 +792,7 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to delete the account from the whitelist
             tx = await self.contract.functions.deleteAccountWhiteListWithAuthorization(
-                account,
+                to_checksum_address(account),
                 authorization.nonce,
                 authorization.v,
                 authorization.r,
@@ -800,7 +800,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 70000,
                 }
             )
@@ -830,7 +830,7 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to mint tokens
             tx = await self.contract.functions.mintWithAuthorization(
-                to_address,
+                to_checksum_address(to_address),
                 value,
                 authorization.nonce,
                 authorization.v,
@@ -839,7 +839,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 125000,
                 }
             )
@@ -869,7 +869,7 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to burn tokens
             tx = await self.contract.functions.burnWithAuthorization(
-                from_address,
+                to_checksum_address(from_address),
                 value,
                 authorization.nonce,
                 authorization.v,
@@ -878,7 +878,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 85000,
                 }
             )
@@ -914,8 +914,8 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to transfer tokens
             tx = await self.contract.functions.transferWithAuthorization(
-                from_address,
-                to_address,
+                to_checksum_address(from_address),
+                to_checksum_address(to_address),
                 value,
                 valid_after,
                 valid_before,
@@ -926,7 +926,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 105000,
                 }
             )
@@ -962,8 +962,8 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to receive tokens
             tx = await self.contract.functions.receiveWithAuthorization(
-                from_address,
-                to_address,
+                to_checksum_address(from_address),
+                to_checksum_address(to_address),
                 value,
                 valid_after,
                 valid_before,
@@ -974,7 +974,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 500000,
                 }
             )
@@ -1038,11 +1038,11 @@ class IbetWST(ERC20):
         try:
             # Build the transaction
             tx = await self.contract.functions.requestTradeWithAuthorization(
-                trade.seller_st_account,
-                trade.buyer_st_account,
-                trade.sc_token_address,
-                trade.seller_sc_account,
-                trade.buyer_sc_account,
+                to_checksum_address(trade.seller_st_account),
+                to_checksum_address(trade.buyer_st_account),
+                to_checksum_address(trade.sc_token_address),
+                to_checksum_address(trade.seller_sc_account),
+                to_checksum_address(trade.buyer_sc_account),
                 trade.st_value,
                 trade.sc_value,
                 trade.memo,
@@ -1053,7 +1053,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 325000,
                 }
             )
@@ -1089,7 +1089,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 115000,
                 }
             )
@@ -1125,7 +1125,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 180000,
                 }
             )
@@ -1161,7 +1161,7 @@ class IbetWST(ERC20):
             ).build_transaction(
                 {
                     "chainId": ETH_CHAIN_ID,
-                    "from": tx_sender,
+                    "from": to_checksum_address(tx_sender),
                     "gas": 115000,
                 }
             )
