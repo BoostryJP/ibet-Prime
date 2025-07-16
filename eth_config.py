@@ -19,7 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 
 import os
 
-from config import APP_ENV
+import boto3
+
+from config import APP_ENV, AWS_REGION_NAME
 
 ####################################################
 # Basic settings
@@ -28,8 +30,24 @@ from config import APP_ENV
 # Master account address for Ethereum transactions
 ETH_MASTER_ACCOUNT_ADDRESS = os.environ.get("ETH_MASTER_ACCOUNT_ADDRESS")
 
+# Resource type for the master account's private key
+# - "os_environ": Environment variable
+# - "aws_secrets_manager": AWS Secrets Manager
+ETH_MASTER_PRIVATE_KEY_RESOURCE = os.environ.get(
+    "ETH_MASTER_PRIVATE_KEY_RESOURCE", "os_environ"
+)
+
 # Hex encoded private key of the master account
-ETH_MASTER_PRIVATE_KEY = os.environ.get("ETH_MASTER_PRIVATE_KEY")
+if ETH_MASTER_PRIVATE_KEY_RESOURCE == "aws_secrets_manager":
+    # If using AWS Secrets Manager, retrieve the private key from the specified resource
+    ETH_MASTER_PRIVATE_KEY = (
+        boto3.client("secretsmanager", region_name=AWS_REGION_NAME)
+        .get_secret_value(SecretId=os.environ.get("ETH_MASTER_PRIVATE_KEY"))
+        .get("SecretString")
+    )
+else:
+    # If using environment variable, retrieve the private key from the specified environment variable
+    ETH_MASTER_PRIVATE_KEY = os.environ.get("ETH_MASTER_PRIVATE_KEY")
 
 # Ethereum configuration settings for a blockchain application
 ETH_CHAIN_ID = (
