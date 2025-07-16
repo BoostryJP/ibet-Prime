@@ -322,29 +322,18 @@ EOA_PASSWORD_CHECK_ENABLED = (
     False if os.environ.get("EOA_PASSWORD_CHECK_ENABLED") == "0" else True
 )
 
-# End-to-End Encryption (RSA)
-# NOTE:
-# about E2EE_RSA_RESOURCE_MODE
-# - 0:File, Set the file path to E2EE_RSA_RESOURCE.
-# - 1:AWS SecretsManager, Set the SecretsManagerARN to E2EE_RSA_RESOURCE.
-if "pytest" in sys.modules:  # for unit test
-    E2EE_RSA_RESOURCE_MODE = (
-        int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
-        if os.environ.get("E2EE_RSA_RESOURCE_MODE")
-        else 0
-    )
-    E2EE_RSA_RESOURCE = (
-        os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
-    )
-    E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE") or "password"
-elif (
-    "alembic" in sys.modules or "manage.py" in sys.argv[0] or APP_ENV == "local"
-):  # for migration or local
-    E2EE_RSA_RESOURCE_MODE = (
-        int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
-        if os.environ.get("E2EE_RSA_RESOURCE_MODE")
-        else 0
-    )
+# End-to-End Encryption (E2EE) settings
+#   E2EE_RSA_RESOURCE_MODE:
+#   - 0: File. Set the file path to E2EE_RSA_RESOURCE.
+#   - 1: AWS Secrets Manager. Set the Secrets Manager ARN to E2EE_RSA_RESOURCE.
+if (
+    "pytest" in sys.modules
+    or "alembic" in sys.modules
+    or "manage.py" in sys.argv[0]
+    or APP_ENV == "local"
+):
+    # For unit test / migration / local development
+    E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE", 0))
     E2EE_RSA_RESOURCE = (
         os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
     )
