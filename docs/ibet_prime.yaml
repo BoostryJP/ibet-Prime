@@ -18370,19 +18370,15 @@ components:
           title: Value
           description: Amount of IbetWST to transfer
         valid_after:
-          anyOf:
-            - type: integer
-              exclusiveMinimum: 0.0
-            - type: 'null'
+          type: integer
+          exclusiveMinimum: 0.0
           title: Valid After
           description: Valid after timestamp (Unix time)
           default: 1
         valid_before:
-          anyOf:
-            - type: integer
-              maximum: 1.8446744073709552e+19
-              exclusiveMinimum: 0.0
-            - type: 'null'
+          type: integer
+          maximum: 1.8446744073709552e+19
+          exclusiveMinimum: 0.0
           title: Valid Before
           description: Valid before timestamp (Unix time)
           default: 18446744073709551615
