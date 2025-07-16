@@ -242,14 +242,14 @@ class WSTBridgeMonitoringProcessor:
             if latest_block > _block_to:
                 # If the range exceeds the latest block, process in chunks
                 while _block_to < latest_block:
-                    await self.__process_mint(db_session, _block_from, _block_to)
+                    await self.__process_mint(db_session, _block_from + 1, _block_to)
                     _block_to += IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE
                     _block_from += IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE
                 # Process the remaining blocks
-                await self.__process_mint(db_session, _block_from, latest_block)
+                await self.__process_mint(db_session, _block_from + 1, latest_block)
             else:
                 # If the range does not exceed the latest block, process all at once
-                await self.__process_mint(db_session, _block_from, latest_block)
+                await self.__process_mint(db_session, _block_from + 1, latest_block)
 
             # Update the latest synchronized block number
             await self.set_synced_block_number(
@@ -285,17 +285,19 @@ class WSTBridgeMonitoringProcessor:
             if latest_block > _block_to:
                 # If the range exceeds the latest block, process in chunks
                 while _block_to < latest_block:
-                    await self.__process_burn(db_session, _block_from, _block_to)
-                    await self.__process_transfer(db_session, _block_from, _block_to)
+                    await self.__process_burn(db_session, _block_from + 1, _block_to)
+                    await self.__process_transfer(
+                        db_session, _block_from + 1, _block_to
+                    )
                     _block_to += IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE
                     _block_from += IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE
                 # Process the remaining blocks
-                await self.__process_burn(db_session, _block_from, latest_block)
-                await self.__process_transfer(db_session, _block_from, latest_block)
+                await self.__process_burn(db_session, _block_from + 1, latest_block)
+                await self.__process_transfer(db_session, _block_from + 1, latest_block)
             else:
                 # If the range does not exceed the latest block, process all at once
-                await self.__process_burn(db_session, _block_from, latest_block)
-                await self.__process_transfer(db_session, _block_from, latest_block)
+                await self.__process_burn(db_session, _block_from + 1, latest_block)
+                await self.__process_transfer(db_session, _block_from + 1, latest_block)
 
             # Update the latest synchronized block number
             await self.set_synced_block_number(
