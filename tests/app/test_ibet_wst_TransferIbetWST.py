@@ -58,6 +58,7 @@ class TestTransferIbetWST:
     ###########################################################################
 
     # <Normal_1>
+    # Test normal transfer of IbetWST token
     @mock.patch(
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
@@ -145,6 +146,7 @@ class TestTransferIbetWST:
         }
 
     # <Normal_2>
+    # Test not setting `valid_after` and `valid_before`
     @mock.patch(
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
@@ -278,8 +280,11 @@ class TestTransferIbetWST:
             ],
         }
 
-    # <Error_2>
-    async def test_error_2(self, async_db, async_client):
+    # <Error_2_1>
+    # Invalid `valid_after` and `valid_before` values
+    # - `valid_after` should be greater than 0
+    # - `valid_before` should be less than 2**64
+    async def test_error_2_1(self, async_db, async_client):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -353,6 +358,84 @@ class TestTransferIbetWST:
                     "msg": "Input should be less than or equal to 18446744073709551615",
                     "input": 18446744073709551616,
                     "ctx": {"le": 18446744073709551615},
+                },
+            ],
+        }
+
+    # <Error_2_2>
+    # Invalid `valid_after` and `valid_before` values
+    # - `valid_after` should be an integer if provided
+    # - `valid_before` should be an integer if provided
+    async def test_error_2_2(self, async_db, async_client):
+        # Prepare data: Token
+        token = Token()
+        token.token_address = self.ibet_token_address
+        token.issuer_address = self.issuer["address"]
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_06
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = self.ibet_wst_address
+        async_db.add(token)
+        await async_db.commit()
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        token_st = IbetWST(self.ibet_wst_address)
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_transfer_digest(
+            domain_separator=domain_separator,
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(ibet_wst_address=self.ibet_wst_address),
+            json={
+                "from_address": self.user1["address"],
+                "to_address": self.user2["address"],
+                "value": 1000,
+                "valid_after": None,
+                "valid_before": None,
+                "authorizer": self.user1["address"],
+                "authorization": {
+                    "nonce": nonce.hex(),
+                    "v": signature.v,
+                    "r": signature.r.to_bytes(32).hex(),
+                    "s": signature.s.to_bytes(32).hex(),
+                },
+            },
+        )
+
+        # Check response status code and content
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "int_type",
+                    "loc": ["body", "valid_after"],
+                    "msg": "Input should be a valid integer",
+                    "input": None,
+                },
+                {
+                    "type": "int_type",
+                    "loc": ["body", "valid_before"],
+                    "msg": "Input should be a valid integer",
+                    "input": None,
                 },
             ],
         }

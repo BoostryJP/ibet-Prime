@@ -143,10 +143,10 @@ class TransferIbetWSTRequest(BaseModel):
     from_address: ChecksumEthereumAddress = Field(description="Sender address")
     to_address: ChecksumEthereumAddress = Field(description="Recipient address")
     value: PositiveInt = Field(description="Amount of IbetWST to transfer")
-    valid_after: Optional[PositiveInt] = Field(
+    valid_after: PositiveInt = Field(
         default=1, description="Valid after timestamp (Unix time)"
     )
-    valid_before: Optional[PositiveInt] = Field(
+    valid_before: PositiveInt = Field(
         default=2**64 - 1,
         description="Valid before timestamp (Unix time)",
         le=2**64 - 1,
