@@ -18004,7 +18004,9 @@ components:
           title: Block Timestamp
         source_event:
           type: string
-          const: Transfer
+          enum:
+            - Transfer
+            - Reallocation
           title: Source Event
           description: Source Event
         data:
@@ -18024,6 +18026,10 @@ components:
         - source_event
         - data
       title: Transfer
+      description: |-
+        Transfer data for Transfer, Reallocation events
+
+        - Source Event: Transfer, Reallocation
     TransferApprovalHistoryResponse:
       properties:
         result_set:
@@ -18337,6 +18343,20 @@ components:
         - transfer_approvals
       title: TransferApprovalsResponse
       description: transfer approvals
+    TransferDataMessage:
+      properties:
+        message:
+          type: string
+          enum:
+            - garnishment
+            - inheritance
+            - force_unlock
+            - ibet_wst_bridge
+          title: Message
+      type: object
+      required:
+        - message
+      title: TransferDataMessage
     TransferHistoryResponse:
       properties:
         result_set:
@@ -18345,7 +18365,7 @@ components:
           items:
             anyOf:
               - $ref: '#/components/schemas/Transfer'
-              - $ref: '#/components/schemas/UnlockTransfer'
+              - $ref: '#/components/schemas/TransferWithMessage'
           type: array
           title: Transfer History
       type: object
@@ -18404,7 +18424,69 @@ components:
         - Transfer
         - Unlock
         - ForceUnlock
+        - ForceChangeLockedAccount
+        - Reallocation
       title: TransferSourceEventType
+    TransferWithMessage:
+      properties:
+        transaction_hash:
+          type: string
+          title: Transaction Hash
+        token_address:
+          type: string
+          title: Token Address
+        from_address:
+          type: string
+          title: From Address
+        from_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        to_address:
+          type: string
+          title: To Address
+        to_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        amount:
+          type: integer
+          title: Amount
+        block_timestamp:
+          type: string
+          title: Block Timestamp
+        source_event:
+          type: string
+          enum:
+            - Unlock
+            - ForceUnlock
+            - ForceChangeLockedAccount
+          title: Source Event
+          description: Source Event
+        data:
+          anyOf:
+            - $ref: '#/components/schemas/TransferDataMessage'
+            - additionalProperties: true
+              type: object
+          title: Data
+          description: Event data
+      type: object
+      required:
+        - transaction_hash
+        - token_address
+        - from_address
+        - from_address_personal_information
+        - to_address
+        - to_address_personal_information
+        - amount
+        - block_timestamp
+        - source_event
+        - data
+      title: TransferWithMessage
+      description: |-
+        Transfer data for Unlock, ForceUnlock, ForceChangeLockedAccount events
+
+        - Source Event: Unlock, ForceUnlock, ForceChangeLockedAccount
     TxData:
       properties:
         hash:
@@ -18618,75 +18700,6 @@ components:
         - force_unlock
         - ibet_wst_bridge
       title: UnlockMessage
-    UnlockTransfer:
-      properties:
-        transaction_hash:
-          type: string
-          title: Transaction Hash
-        token_address:
-          type: string
-          title: Token Address
-        from_address:
-          type: string
-          title: From Address
-        from_address_personal_information:
-          anyOf:
-            - $ref: '#/components/schemas/PersonalInfo'
-            - type: 'null'
-        to_address:
-          type: string
-          title: To Address
-        to_address_personal_information:
-          anyOf:
-            - $ref: '#/components/schemas/PersonalInfo'
-            - type: 'null'
-        amount:
-          type: integer
-          title: Amount
-        block_timestamp:
-          type: string
-          title: Block Timestamp
-        source_event:
-          type: string
-          enum:
-            - Unlock
-            - ForceUnlock
-          title: Source Event
-          description: Source Event
-        data:
-          anyOf:
-            - $ref: '#/components/schemas/UnlockTransferDataMessage'
-            - additionalProperties: true
-              type: object
-          title: Data
-          description: Event data
-      type: object
-      required:
-        - transaction_hash
-        - token_address
-        - from_address
-        - from_address_personal_information
-        - to_address
-        - to_address_personal_information
-        - amount
-        - block_timestamp
-        - source_event
-        - data
-      title: UnlockTransfer
-    UnlockTransferDataMessage:
-      properties:
-        message:
-          type: string
-          enum:
-            - garnishment
-            - inheritance
-            - force_unlock
-            - ibet_wst_bridge
-          title: Message
-      type: object
-      required:
-        - message
-      title: UnlockTransferDataMessage
     UpdateFreezeLogRequest:
       properties:
         account_address:

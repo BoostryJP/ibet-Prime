@@ -110,6 +110,7 @@ async def deploy_bond_token_contract(
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
+            require_personal_info_registered=False,
         ),
         tx_sender=address,
         tx_sender_key=private_key,
@@ -144,6 +145,7 @@ async def deploy_share_token_contract(
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
+            require_personal_info_registered=False,
         ),
         tx_sender=address,
         tx_sender_key=private_key,
@@ -259,6 +261,7 @@ class TestProcessor:
     # - Unlock
     # - ForceUnlock
     # - ForceChangeLockedAccount
+    # - Reallocation
     @pytest.mark.asyncio
     async def test_normal_2_1(self, processor, async_db, ibet_personal_info_contract):
         user_1 = default_eth_account("user1")
@@ -311,8 +314,8 @@ class TestProcessor:
         await async_db.commit()
 
         # Emit Transfer events
-        tx_1 = token_contract_1.functions.transferFrom(
-            issuer_address, user_address_1, 40
+        tx_1 = token_contract_1.functions.transfer(
+            user_address_1, 40
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -438,6 +441,28 @@ class TestProcessor:
             tx_3_2, issuer_private_key
         )
 
+        # Emit Transfer events
+        # - Transfer with annotation data
+        tx_4 = token_contract_1.functions.transfer(
+            user_address_1, 10
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        marker = b"\xc0\xff\xee\x00"
+        annotation_data = json.dumps(
+            {"purpose": "Reallocation"}, separators=(",", ":")
+        ).encode("utf-8")
+        tx_4["data"] += marker.hex() + annotation_data.hex()
+
+        tx_hash_7, tx_receipt_7 = ContractUtils.send_transaction(
+            tx_4, issuer_private_key
+        )
+
         # Run target process
         block_number = web3.eth.block_number
         await processor.sync_new_logs()
@@ -445,7 +470,7 @@ class TestProcessor:
 
         # Assertion
         _transfer_list = (await async_db.scalars(select(IDXTransfer))).all()
-        assert len(_transfer_list) == 5
+        assert len(_transfer_list) == 6
 
         _transfer = _transfer_list[0]
         assert _transfer.id == 1
@@ -463,6 +488,20 @@ class TestProcessor:
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
+        assert _transfer.transaction_hash == tx_hash_7
+        assert _transfer.token_address == token_address_1
+        assert _transfer.from_address == issuer_address
+        assert _transfer.to_address == user_address_1
+        assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.REALLOCATION.value
+        assert _transfer.data is None
+        block = web3.eth.get_block(tx_receipt_7["blockNumber"])
+        assert _transfer.block_timestamp == datetime.fromtimestamp(
+            block["timestamp"], UTC
+        ).replace(tzinfo=None)
+
+        _transfer = _transfer_list[2]
+        assert _transfer.id == 3
         assert _transfer.transaction_hash == tx_hash_3
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
@@ -476,8 +515,8 @@ class TestProcessor:
             block["timestamp"], UTC
         ).replace(tzinfo=None)
 
-        _transfer = _transfer_list[2]
-        assert _transfer.id == 3
+        _transfer = _transfer_list[3]
+        assert _transfer.id == 4
         assert _transfer.transaction_hash == tx_hash_4
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
@@ -491,8 +530,8 @@ class TestProcessor:
             block["timestamp"], UTC
         ).replace(tzinfo=None)
 
-        _transfer = _transfer_list[3]
-        assert _transfer.id == 4
+        _transfer = _transfer_list[4]
+        assert _transfer.id == 5
         assert _transfer.transaction_hash == tx_hash_5
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
@@ -506,8 +545,8 @@ class TestProcessor:
             block["timestamp"], UTC
         ).replace(tzinfo=None)
 
-        _transfer = _transfer_list[4]
-        assert _transfer.id == 5
+        _transfer = _transfer_list[5]
+        assert _transfer.id == 6
         assert _transfer.transaction_hash == tx_hash_6
         assert _transfer.token_address == token_address_1
         assert _transfer.from_address == issuer_address
@@ -851,6 +890,7 @@ class TestProcessor:
     # - Transfer(twice)
     # - Unlock(twice)
     # - ForceUnlock(twice)
+    # - ForceChangeLockedAccount(twice)
     @pytest.mark.asyncio
     async def test_normal_3_1(self, processor, async_db, ibet_personal_info_contract):
         user_1 = default_eth_account("user1")
