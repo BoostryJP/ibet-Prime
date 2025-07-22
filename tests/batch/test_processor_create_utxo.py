@@ -1959,7 +1959,7 @@ class TestProcessor:
         )
         utxo_1.account_address = issuer["address"]
         utxo_1.token_address = token_address_1
-        utxo_1.amount = 20
+        utxo_1.amount = 30
         utxo_1.block_number = 123456
         utxo_1.block_timestamp = datetime.datetime(2025, 1, 18, 12, 34, 56, tzinfo=None)
         async_db.add(utxo_1)
@@ -1970,7 +1970,7 @@ class TestProcessor:
         )
         utxo_2.account_address = issuer["address"]
         utxo_2.token_address = token_address_1
-        utxo_2.amount = 80
+        utxo_2.amount = 70
         utxo_2.block_number = 234567
         utxo_2.block_timestamp = datetime.datetime(2025, 7, 18, 23, 45, 6, tzinfo=None)
         async_db.add(utxo_2)
@@ -1978,8 +1978,12 @@ class TestProcessor:
         await async_db.commit()
 
         # Build transfer transaction with annotation data
+        # - Execute three transfers of 20 units each
+        # - Expected result:
+        #     Before transfer: issuer's UTXOs are 30, 70
+        #     After transfer: issuer's UTXOs are 0, 40 / user's UTXOs are 30, 30
         contract = AsyncContractUtils.get_contract("IbetStraightBond", token_address_1)
-        tx = await contract.functions.transfer(user["address"], 50).build_transaction(
+        tx = await contract.functions.transfer(user["address"], 20).build_transaction(
             {
                 "chainId": CHAIN_ID,
                 "from": issuer["address"],
@@ -1993,8 +1997,18 @@ class TestProcessor:
         ).encode("utf-8")
         tx["data"] += marker.hex() + annotation_data.hex()
 
-        # Send transaction
-        tx_hash, _ = await AsyncContractUtils.send_transaction(
+        # Send transaction (1st transfer)
+        tx_hash_1, _ = await AsyncContractUtils.send_transaction(
+            transaction=tx, private_key=issuer_pk
+        )
+
+        # Send transaction (2nd transfer)
+        tx_hash_2, _ = await AsyncContractUtils.send_transaction(
+            transaction=tx, private_key=issuer_pk
+        )
+
+        # Send transaction (3rd transfer)
+        tx_hash_3, _ = await AsyncContractUtils.send_transaction(
             transaction=tx, private_key=issuer_pk
         )
 
@@ -2013,7 +2027,7 @@ class TestProcessor:
         )
         assert utxo_issuer_1.account_address == issuer["address"]
         assert utxo_issuer_1.token_address == token_address_1
-        assert utxo_issuer_1.amount == 0
+        assert utxo_issuer_1.amount == 0  # 30 - 20 (1st transfer) - 10 (2nd transfer)
         assert utxo_issuer_1.block_number == 123456
         assert utxo_issuer_1.block_timestamp == datetime.datetime(
             2025, 1, 18, 12, 34, 56
@@ -2026,7 +2040,7 @@ class TestProcessor:
         )
         assert utxo_issuer_2.account_address == issuer["address"]
         assert utxo_issuer_2.token_address == token_address_1
-        assert utxo_issuer_2.amount == 50  # 80 - 30
+        assert utxo_issuer_2.amount == 40  # 70 - 10 (2nd transfer) - 20 (3rd transfer)
         assert utxo_issuer_2.block_number == 234567
         assert utxo_issuer_2.block_timestamp == datetime.datetime(
             2025, 7, 18, 23, 45, 6
@@ -2039,7 +2053,7 @@ class TestProcessor:
         )
         assert utxo_user_1.account_address == user["address"]
         assert utxo_user_1.token_address == token_address_1
-        assert utxo_user_1.amount == 20  # Reallocation amount #1
+        assert utxo_user_1.amount == 30  # Reallocation amount #1
         assert utxo_user_1.block_number == 123456
         assert utxo_user_1.block_timestamp == datetime.datetime(
             2025, 1, 18, 12, 34, 56, tzinfo=None
