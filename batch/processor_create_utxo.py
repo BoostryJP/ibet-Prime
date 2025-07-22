@@ -591,44 +591,78 @@ class Processor:
                 ).all()
                 remaining = amount
                 for _source_utxo in _source_utxo_list:
+                    _reallocation_utxo: UTXO | None = (
+                        await db_session.scalars(
+                            select(UTXO)
+                            .where(
+                                and_(
+                                    UTXO.transaction_hash
+                                    == _source_utxo.transaction_hash,
+                                    UTXO.account_address
+                                    == account_address,  # New holder address
+                                )
+                            )
+                            .limit(1)
+                        )
+                    ).first()
                     if remaining <= 0:
                         # If the remaining amount is less than or equal to 0, break the loop.
                         break
                     elif _source_utxo.amount <= remaining:
                         # If the source UTXO amount is less than or equal to the reallocation amount,
-                        # create a new UTXO from the source UTXO.
-                        _reallocation_utxo = UTXO()
-                        _reallocation_utxo.transaction_hash = (
-                            _source_utxo.transaction_hash
-                        )
-                        _reallocation_utxo.account_address = (
-                            account_address  # New holder address
-                        )
-                        _reallocation_utxo.token_address = _source_utxo.token_address
-                        _reallocation_utxo.amount = _source_utxo.amount
-                        _reallocation_utxo.block_number = _source_utxo.block_number
-                        _reallocation_utxo.block_timestamp = (
-                            _source_utxo.block_timestamp
-                        )
-                        db_session.add(_reallocation_utxo)
+                        # create or update a UTXO from the source UTXO.
+                        if _reallocation_utxo is not None:
+                            # If the UTXO already exists, update the amount
+                            _reallocation_utxo.amount = (
+                                _reallocation_utxo.amount + _source_utxo.amount
+                            )
+                            await db_session.merge(_reallocation_utxo)
+                        else:
+                            # If the UTXO does not exist, create a new UTXO
+                            _reallocation_utxo = UTXO()
+                            _reallocation_utxo.transaction_hash = (
+                                _source_utxo.transaction_hash
+                            )
+                            _reallocation_utxo.account_address = (
+                                account_address  # New holder address
+                            )
+                            _reallocation_utxo.token_address = (
+                                _source_utxo.token_address
+                            )
+                            _reallocation_utxo.amount = _source_utxo.amount
+                            _reallocation_utxo.block_number = _source_utxo.block_number
+                            _reallocation_utxo.block_timestamp = (
+                                _source_utxo.block_timestamp
+                            )
+                            db_session.add(_reallocation_utxo)
                         remaining = remaining - _source_utxo.amount
                     else:
                         # If the source UTXO amount is greater than the reallocation amount,
-                        # create a new UTXO with the remaining amount.
-                        _reallocation_utxo = UTXO()
-                        _reallocation_utxo.transaction_hash = (
-                            _source_utxo.transaction_hash
-                        )
-                        _reallocation_utxo.account_address = (
-                            account_address  # New holder address
-                        )
-                        _reallocation_utxo.token_address = _source_utxo.token_address
-                        _reallocation_utxo.amount = remaining
-                        _reallocation_utxo.block_number = _source_utxo.block_number
-                        _reallocation_utxo.block_timestamp = (
-                            _source_utxo.block_timestamp
-                        )
-                        db_session.add(_reallocation_utxo)
+                        # create or update a new UTXO with the remaining amount.
+                        if _reallocation_utxo is not None:
+                            # If the UTXO already exists, update the amount
+                            _reallocation_utxo.amount = (
+                                _reallocation_utxo.amount + remaining
+                            )
+                            await db_session.merge(_reallocation_utxo)
+                        else:
+                            # If the UTXO does not exist, create a new UTXO
+                            _reallocation_utxo = UTXO()
+                            _reallocation_utxo.transaction_hash = (
+                                _source_utxo.transaction_hash
+                            )
+                            _reallocation_utxo.account_address = (
+                                account_address  # New holder address
+                            )
+                            _reallocation_utxo.token_address = (
+                                _source_utxo.token_address
+                            )
+                            _reallocation_utxo.amount = remaining
+                            _reallocation_utxo.block_number = _source_utxo.block_number
+                            _reallocation_utxo.block_timestamp = (
+                                _source_utxo.block_timestamp
+                            )
+                            db_session.add(_reallocation_utxo)
                         remaining = 0
         else:
             _utxo_list: Sequence[UTXO] = (
