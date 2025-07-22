@@ -18,12 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+import json
 import sys
 import time
 from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
+from hexbytes import HexBytes
 from sqlalchemy import and_, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -326,11 +328,15 @@ class Processor:
         event_triggered = False
         for event in events:
             args = event["args"]
-            if event["event"] in ["Unlock", "ForceUnlock"]:
+            transaction_hash = event["transaction_hash"]
+            block_number = event["block_number"]
+            event_type = event["event"]
+
+            if event_type in ["Unlock", "ForceUnlock"]:
                 from_account = args.get("accountAddress", ZERO_ADDRESS)
                 to_account = args.get("recipientAddress", ZERO_ADDRESS)
                 amount = args.get("value")
-            elif event["event"] == "ForceChangeLockedAccount":
+            elif event_type == "ForceChangeLockedAccount":
                 from_account = args.get("beforeAccountAddress", ZERO_ADDRESS)
                 to_account = args.get("afterAccountAddress", ZERO_ADDRESS)
                 amount = args.get("value")
@@ -339,33 +345,42 @@ class Processor:
                 to_account = args.get("to", ZERO_ADDRESS)
                 amount = int(args.get("value"))
 
-            # Skip sinking in case of deposit to exchange or withdrawal from exchange
-            if (await web3.eth.get_code(from_account)).to_0x_hex() != "0x" or (
-                await web3.eth.get_code(to_account)
-            ).to_0x_hex() != "0x":
+            # Skip create UTXO if met the following conditions:
+            # - If the from_account or to_account is a contract, it is considered a deposit or withdrawal to/from the exchange.
+            # - If the from_account and to_account are the same, it is considered a self-transfer.
+            if (await web3.eth.get_code(from_account)).to_0x_hex() != "0x":
+                # If the from_account is a contract, it is considered a deposit to the exchange.
+                continue
+            elif (await web3.eth.get_code(to_account)).to_0x_hex() != "0x":
+                # If the to_account is a contract, it is considered a withdrawal from the exchange.
+                continue
+            elif from_account == to_account:
+                # If the from_account and to_account are the same, it is considered a self-transfer.
                 continue
 
-            transaction_hash = event["transaction_hash"]
-            block_number = event["block_number"]
+            # Judge whether the transfer is a reallocation
+            reallocation_from = None
+            if event_type == "Transfer":
+                tx = await AsyncContractUtils.get_transaction(transaction_hash)
+                tx_data: HexBytes | None = tx.get("input")
+                # Check if the transaction data contains the reallocation marker("c0ffee00")
+                if "c0ffee00" in tx_data.hex():
+                    # Attempt to parse the call data as JSON
+                    try:
+                        raw_call_data = tx_data.hex().split("c0ffee00", 1)[1]
+                        call_data = json.loads(bytes.fromhex(raw_call_data))
+                        if call_data.get("purpose") == "Reallocation":
+                            reallocation_from = from_account
+                    except (ValueError, json.JSONDecodeError):
+                        pass
+
+            # Retrieve block timestamp
             block_timestamp = datetime.fromtimestamp(
                 (await web3.eth.get_block(block_number))["timestamp"], UTC
             ).replace(tzinfo=None)  # UTC
 
             if amount is not None and amount <= sys.maxsize:
                 event_triggered = True
-
-                # Update UTXO（from account）
-                await self.__sink_on_utxo(
-                    db_session=db_session,
-                    spent=True,
-                    transaction_hash=transaction_hash,
-                    token_address=token_contract.address,
-                    account_address=from_account,
-                    amount=amount,
-                    block_number=block_number,
-                    block_timestamp=block_timestamp,
-                )
-
                 # Update UTXO（to account）
                 await self.__sink_on_utxo(
                     db_session=db_session,
@@ -373,6 +388,18 @@ class Processor:
                     transaction_hash=transaction_hash,
                     token_address=token_contract.address,
                     account_address=to_account,
+                    amount=amount,
+                    block_number=block_number,
+                    block_timestamp=block_timestamp,
+                    reallocation_from=reallocation_from,
+                )
+                # Update UTXO（from account）
+                await self.__sink_on_utxo(
+                    db_session=db_session,
+                    spent=True,
+                    transaction_hash=transaction_hash,
+                    token_address=token_contract.address,
+                    account_address=from_account,
                     amount=amount,
                     block_number=block_number,
                     block_timestamp=block_timestamp,
@@ -502,33 +529,107 @@ class Processor:
         amount: int,
         block_number: int,
         block_timestamp: datetime,
+        reallocation_from: str | None = None,
     ):
+        """Sink UTXO data
+
+        :param db_session: database session
+        :param spent: Whether the UTXO is spent or not
+        :param transaction_hash: Transaction hash
+        :param account_address: Account address
+        :param token_address: Token address
+        :param amount: Amount of the token
+        :param block_number: Block number
+        :param block_timestamp: Block timestamp
+        :param reallocation_from: Source address of reallocation (Set when UTXOs are reallocated)
+        """
         if not spent:
-            _utxo: UTXO | None = (
-                await db_session.scalars(
-                    select(UTXO)
-                    .where(
-                        and_(
-                            UTXO.transaction_hash == transaction_hash,
-                            UTXO.account_address == account_address,
+            if reallocation_from is None:
+                # Create a new UTXO record of the new holder address
+                _utxo: UTXO | None = (
+                    await db_session.scalars(
+                        select(UTXO)
+                        .where(
+                            and_(
+                                UTXO.transaction_hash == transaction_hash,
+                                UTXO.account_address == account_address,
+                            )
                         )
+                        .limit(1)
                     )
-                    .limit(1)
-                )
-            ).first()
-            if _utxo is None:
-                _utxo = UTXO()
-                _utxo.transaction_hash = transaction_hash
-                _utxo.account_address = account_address
-                _utxo.token_address = token_address
-                _utxo.amount = amount
-                _utxo.block_number = block_number
-                _utxo.block_timestamp = block_timestamp
-                db_session.add(_utxo)
+                ).first()
+                if _utxo is None:
+                    # Create new UTXO
+                    _utxo = UTXO()
+                    _utxo.transaction_hash = transaction_hash
+                    _utxo.account_address = account_address
+                    _utxo.token_address = token_address
+                    _utxo.amount = amount
+                    _utxo.block_number = block_number
+                    _utxo.block_timestamp = block_timestamp
+                    db_session.add(_utxo)
+                else:
+                    # Update existing UTXO
+                    utxo_amount = _utxo.amount
+                    _utxo.amount = utxo_amount + amount
+                    await db_session.merge(_utxo)
             else:
-                utxo_amount = _utxo.amount
-                _utxo.amount = utxo_amount + amount
-                await db_session.merge(_utxo)
+                # Reallocation
+                # - Replace UTXOs of the source address with the new holder address
+                _source_utxo_list: Sequence[UTXO] = (
+                    await db_session.scalars(
+                        select(UTXO)
+                        .where(
+                            and_(
+                                UTXO.account_address == reallocation_from,
+                                UTXO.token_address == token_address,
+                                UTXO.amount > 0,
+                            )
+                        )
+                        .order_by(UTXO.block_timestamp)
+                    )
+                ).all()
+                remaining = amount
+                for _source_utxo in _source_utxo_list:
+                    if remaining <= 0:
+                        # If the remaining amount is less than or equal to 0, break the loop.
+                        break
+                    elif _source_utxo.amount <= remaining:
+                        # If the source UTXO amount is less than or equal to the reallocation amount,
+                        # create a new UTXO from the source UTXO.
+                        _reallocation_utxo = UTXO()
+                        _reallocation_utxo.transaction_hash = (
+                            _source_utxo.transaction_hash
+                        )
+                        _reallocation_utxo.account_address = (
+                            account_address  # New holder address
+                        )
+                        _reallocation_utxo.token_address = _source_utxo.token_address
+                        _reallocation_utxo.amount = _source_utxo.amount
+                        _reallocation_utxo.block_number = _source_utxo.block_number
+                        _reallocation_utxo.block_timestamp = (
+                            _source_utxo.block_timestamp
+                        )
+                        db_session.add(_reallocation_utxo)
+                        remaining = remaining - _source_utxo.amount
+                    else:
+                        # If the source UTXO amount is greater than the reallocation amount,
+                        # create a new UTXO with the remaining amount.
+                        _reallocation_utxo = UTXO()
+                        _reallocation_utxo.transaction_hash = (
+                            _source_utxo.transaction_hash
+                        )
+                        _reallocation_utxo.account_address = (
+                            account_address  # New holder address
+                        )
+                        _reallocation_utxo.token_address = _source_utxo.token_address
+                        _reallocation_utxo.amount = remaining
+                        _reallocation_utxo.block_number = _source_utxo.block_number
+                        _reallocation_utxo.block_timestamp = (
+                            _source_utxo.block_timestamp
+                        )
+                        db_session.add(_reallocation_utxo)
+                        remaining = 0
         else:
             _utxo_list: Sequence[UTXO] = (
                 await db_session.scalars(
@@ -543,18 +644,23 @@ class Processor:
                     .order_by(UTXO.block_timestamp)
                 )
             ).all()
-            spend_amount = amount
+            remaining = amount
             for _utxo in _utxo_list:
                 utxo_amount = _utxo.amount
-                if spend_amount <= 0:
+                if remaining <= 0:
+                    # If the remaining amount is less than or equal to 0, break the loop.
                     break
-                elif _utxo.amount <= spend_amount:
+                elif _utxo.amount <= remaining:
+                    # If the UTXO amount is less than or equal to the spent amount,
+                    # set the UTXO amount to 0 and update the remaining amount.
                     _utxo.amount = 0
-                    spend_amount = spend_amount - utxo_amount
+                    remaining = remaining - utxo_amount
                     await db_session.merge(_utxo)
                 else:
-                    _utxo.amount = utxo_amount - spend_amount
-                    spend_amount = 0
+                    # If the UTXO amount is greater than the spent amount,
+                    # update the UTXO amount and set the remaining amount to 0.
+                    _utxo.amount = utxo_amount - remaining
+                    remaining = 0
                     await db_session.merge(_utxo)
 
 

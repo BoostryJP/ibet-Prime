@@ -25,6 +25,7 @@ from typing import Sequence
 
 import uvloop
 from eth_utils import to_checksum_address
+from hexbytes import HexBytes
 from pydantic import ValidationError
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -208,25 +209,55 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].to_0x_hex()
-                    block_timestamp = datetime.fromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
-                        UTC,
-                    ).replace(tzinfo=None)
                     if args["value"] > sys.maxsize:
+                        # If the value is larger than sys.maxsize, skip processing
                         pass
                     else:
-                        await self.__sink_on_transfer(
-                            db_session=db_session,
-                            transaction_hash=transaction_hash,
-                            token_address=to_checksum_address(token.address),
-                            from_address=args["from"],
-                            to_address=args["to"],
-                            amount=args["value"],
-                            source_event=IDXTransferSourceEventType.TRANSFER,
-                            data_str=None,
-                            block_timestamp=block_timestamp,
-                        )
+                        transaction_hash = event["transactionHash"].to_0x_hex()
+                        block_timestamp = datetime.fromtimestamp(
+                            (await web3.eth.get_block(event["blockNumber"]))[
+                                "timestamp"
+                            ],
+                            UTC,
+                        ).replace(tzinfo=None)
+
+                        # Judge whether the transfer is a reallocation
+                        is_reallocation = False
+                        tx = await AsyncContractUtils.get_transaction(transaction_hash)
+                        tx_data: HexBytes | None = tx.get("input")
+                        # Check if the transaction data contains the reallocation marker("c0ffee00")
+                        if "c0ffee00" in tx_data.hex():
+                            try:
+                                raw_call_data = tx_data.hex().split("c0ffee00", 1)[1]
+                                call_data = json.loads(bytes.fromhex(raw_call_data))
+                                if call_data.get("purpose") == "Reallocation":
+                                    is_reallocation = True
+                            except (ValueError, json.JSONDecodeError):
+                                pass
+                        if is_reallocation:
+                            await self.__sink_on_transfer(
+                                db_session=db_session,
+                                transaction_hash=transaction_hash,
+                                token_address=to_checksum_address(token.address),
+                                from_address=args["from"],
+                                to_address=args["to"],
+                                amount=args["value"],
+                                source_event=IDXTransferSourceEventType.REALLOCATION,
+                                data_str=None,
+                                block_timestamp=block_timestamp,
+                            )
+                        else:
+                            await self.__sink_on_transfer(
+                                db_session=db_session,
+                                transaction_hash=transaction_hash,
+                                token_address=to_checksum_address(token.address),
+                                from_address=args["from"],
+                                to_address=args["to"],
+                                amount=args["value"],
+                                source_event=IDXTransferSourceEventType.TRANSFER,
+                                data_str=None,
+                                block_timestamp=block_timestamp,
+                            )
             except Exception:
                 raise
 

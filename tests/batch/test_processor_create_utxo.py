@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import datetime
 import json
 import time
 from unittest import mock
@@ -60,7 +61,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
@@ -105,6 +106,7 @@ async def deploy_bond_token_contract(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
+            require_personal_info_registered=False,
         ),
         address,
         private_key,
@@ -130,7 +132,12 @@ async def deploy_share_token_contract(address, private_key):
         arguments, address, private_key
     )
     await share_contract.update(
-        IbetShareUpdateParams(transferable=True), address, private_key
+        IbetShareUpdateParams(
+            transferable=True,
+            require_personal_info_registered=False,
+        ),
+        address,
+        private_key,
     )
 
     return contract_address
@@ -1915,6 +1922,246 @@ class TestProcessor:
             await async_db.scalars(select(UTXOBlockNumber).limit(1))
         ).first()
         assert _utxo_block_number.latest_block_number == latest_block
+
+    # <Normal_11_1>
+    # Transfer with Annotation data
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
+    async def test_normal_11_1(self, mock_func, processor, async_db):
+        issuer = default_eth_account("user1")
+        user = default_eth_account("user2")
+
+        issuer_pk = decode_keyfile_json(
+            issuer["keyfile_json"], "password".encode("utf-8")
+        )
+
+        # Deploy Bond Token Contract
+        token_address_1 = await deploy_bond_token_contract(issuer["address"], issuer_pk)
+
+        # Prepare data
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.tx_hash = ""
+        token_1.issuer_address = issuer["address"]
+        token_1.token_address = token_address_1
+        token_1.abi = {}
+        token_1.version = TokenVersion.V_25_06
+        async_db.add(token_1)
+
+        account = Account()
+        account.issuer_address = issuer["address"]
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        utxo_1 = UTXO()
+        utxo_1.transaction_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        utxo_1.account_address = issuer["address"]
+        utxo_1.token_address = token_address_1
+        utxo_1.amount = 20
+        utxo_1.block_number = 123456
+        utxo_1.block_timestamp = datetime.datetime(2025, 1, 18, 12, 34, 56, tzinfo=None)
+        async_db.add(utxo_1)
+
+        utxo_2 = UTXO()
+        utxo_2.transaction_hash = (
+            "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        )
+        utxo_2.account_address = issuer["address"]
+        utxo_2.token_address = token_address_1
+        utxo_2.amount = 80
+        utxo_2.block_number = 234567
+        utxo_2.block_timestamp = datetime.datetime(2025, 7, 18, 23, 45, 6, tzinfo=None)
+        async_db.add(utxo_2)
+
+        await async_db.commit()
+
+        # Build transfer transaction with annotation data
+        contract = AsyncContractUtils.get_contract("IbetStraightBond", token_address_1)
+        tx = await contract.functions.transfer(user["address"], 50).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        marker = b"\xc0\xff\xee\x00"
+        annotation_data = json.dumps(
+            {"purpose": "Reallocation"}, separators=(",", ":")
+        ).encode("utf-8")
+        tx["data"] += marker.hex() + annotation_data.hex()
+
+        # Send transaction
+        tx_hash, _ = await AsyncContractUtils.send_transaction(
+            transaction=tx, private_key=issuer_pk
+        )
+
+        # Execute batch
+        await processor.process()
+        async_db.expire_all()
+
+        # assertion
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
+        assert len(_utxo_list) == 4
+
+        utxo_issuer_1 = _utxo_list[0]
+        assert (
+            utxo_issuer_1.transaction_hash
+            == "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        assert utxo_issuer_1.account_address == issuer["address"]
+        assert utxo_issuer_1.token_address == token_address_1
+        assert utxo_issuer_1.amount == 0
+        assert utxo_issuer_1.block_number == 123456
+        assert utxo_issuer_1.block_timestamp == datetime.datetime(
+            2025, 1, 18, 12, 34, 56
+        )
+
+        utxo_issuer_2 = _utxo_list[1]
+        assert (
+            utxo_issuer_2.transaction_hash
+            == "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        )
+        assert utxo_issuer_2.account_address == issuer["address"]
+        assert utxo_issuer_2.token_address == token_address_1
+        assert utxo_issuer_2.amount == 50  # 80 - 30
+        assert utxo_issuer_2.block_number == 234567
+        assert utxo_issuer_2.block_timestamp == datetime.datetime(
+            2025, 7, 18, 23, 45, 6
+        )
+
+        utxo_user_1 = _utxo_list[2]
+        assert (
+            utxo_user_1.transaction_hash
+            == "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        assert utxo_user_1.account_address == user["address"]
+        assert utxo_user_1.token_address == token_address_1
+        assert utxo_user_1.amount == 20  # Reallocation amount #1
+        assert utxo_user_1.block_number == 123456
+        assert utxo_user_1.block_timestamp == datetime.datetime(
+            2025, 1, 18, 12, 34, 56, tzinfo=None
+        )
+
+        utxo_user_2 = _utxo_list[3]
+        assert (
+            utxo_user_2.transaction_hash
+            == "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        )
+        assert utxo_user_2.account_address == user["address"]
+        assert utxo_user_2.token_address == token_address_1
+        assert utxo_user_2.amount == 30  # Reallocation amount #2
+        assert utxo_user_2.block_number == 234567
+        assert utxo_user_2.block_timestamp == datetime.datetime(
+            2025, 7, 18, 23, 45, 6, tzinfo=None
+        )
+
+        mock_func.assert_has_calls(
+            [
+                call(token_address=token_address_1, db=ANY),
+            ]
+        )
+
+    # <Normal_11_2>
+    # Transfer with Annotation data
+    # Invalid Annotation data -> Normal transfer
+    @pytest.mark.freeze_time("2025-07-21 21:00:00")
+    @mock.patch("batch.processor_create_utxo.request_ledger_creation")
+    async def test_normal_11_2(self, mock_func, processor, async_db):
+        issuer = default_eth_account("user1")
+        user = default_eth_account("user2")
+
+        issuer_pk = decode_keyfile_json(
+            issuer["keyfile_json"], "password".encode("utf-8")
+        )
+
+        # Deploy Bond Token Contract
+        token_address_1 = await deploy_bond_token_contract(issuer["address"], issuer_pk)
+
+        # Prepare data
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.tx_hash = ""
+        token_1.issuer_address = issuer["address"]
+        token_1.token_address = token_address_1
+        token_1.abi = {}
+        token_1.version = TokenVersion.V_25_06
+        async_db.add(token_1)
+
+        account = Account()
+        account.issuer_address = issuer["address"]
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        utxo_1 = UTXO()
+        utxo_1.transaction_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        utxo_1.account_address = issuer["address"]
+        utxo_1.token_address = token_address_1
+        utxo_1.amount = 20
+        utxo_1.block_number = 123456
+        utxo_1.block_timestamp = datetime.datetime(2025, 1, 18, 12, 34, 56, tzinfo=None)
+        utxo_1.created = datetime.datetime(2025, 1, 18, 12, 34, 56, tzinfo=None)
+        async_db.add(utxo_1)
+
+        utxo_2 = UTXO()
+        utxo_2.transaction_hash = (
+            "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        )
+        utxo_2.account_address = issuer["address"]
+        utxo_2.token_address = token_address_1
+        utxo_2.amount = 80
+        utxo_2.block_number = 234567
+        utxo_2.block_timestamp = datetime.datetime(2025, 7, 18, 23, 45, 6, tzinfo=None)
+        utxo_2.created = datetime.datetime(2025, 7, 18, 23, 45, 6, tzinfo=None)
+        async_db.add(utxo_2)
+
+        await async_db.commit()
+
+        # Build transfer transaction with annotation data
+        contract = AsyncContractUtils.get_contract("IbetStraightBond", token_address_1)
+        tx = await contract.functions.transfer(user["address"], 50).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        marker = b"\xc0\xff\xee\x00"
+        annotation_data = "invalid_annotation_data".encode("utf-8")
+        tx["data"] += marker.hex() + annotation_data.hex()
+
+        # Send transaction
+        tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+            transaction=tx, private_key=issuer_pk
+        )
+
+        # Execute batch
+        await processor.process()
+        async_db.expire_all()
+
+        # assertion
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
+        assert len(_utxo_list) == 3
+
+        utxo_user_1 = _utxo_list[2]
+        assert utxo_user_1.transaction_hash == tx_hash
+        assert utxo_user_1.account_address == user["address"]
+        assert utxo_user_1.token_address == token_address_1
+        assert utxo_user_1.amount == 50
+        assert utxo_user_1.block_number == tx_receipt["blockNumber"]
+        assert utxo_user_1.block_timestamp is not None
+
+        mock_func.assert_has_calls(
+            [
+                call(token_address=token_address_1, db=ANY),
+            ]
+        )
 
     ###########################################################################
     # Error Case

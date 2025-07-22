@@ -35,7 +35,7 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
-from web3.types import TxReceipt
+from web3.types import TxData, TxReceipt
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
@@ -260,6 +260,16 @@ class ContractUtils:
         tx = web3.eth.get_transaction(tx_hash)
         block = web3.eth.get_block(tx["blockNumber"])
         return block
+
+    @staticmethod
+    def get_transaction(tx_hash: str) -> TxData:
+        """Get transaction by hash
+
+        :param tx_hash: Transaction hash
+        :return: Transaction details
+        """
+        tx = web3.eth.get_transaction(tx_hash)
+        return tx
 
     @staticmethod
     def get_event_logs(
@@ -598,6 +608,16 @@ class AsyncContractUtils:
         tx = await async_web3.eth.get_transaction(tx_hash)
         block = await async_web3.eth.get_block(tx["blockNumber"])
         return block
+
+    @staticmethod
+    async def get_transaction(tx_hash: str) -> TxData:
+        """Get transaction by hash
+
+        :param tx_hash: Transaction hash
+        :return: Transaction details
+        """
+        tx = await async_web3.eth.get_transaction(tx_hash)
+        return tx
 
     @staticmethod
     async def get_event_logs(
