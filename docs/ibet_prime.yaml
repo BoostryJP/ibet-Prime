@@ -9878,6 +9878,121 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/transactions:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: List Ibet Wst Transactions
+      description: |-
+        List IbetWST transactions
+
+        - This endpoint retrieves all IbetWST transactions based on the provided query parameters.
+      operationId: ListIbetWSTTransactions
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: ibet_wst_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 'IbetWST contract address (**This affects total number**) '
+            title: Ibet Wst Address
+          description: 'IbetWST contract address (**This affects total number**) '
+        - name: tx_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Transaction ID
+            title: Tx Id
+          description: Transaction ID
+        - name: tx_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - enum:
+                  - deploy
+                  - mint
+                  - burn
+                  - add_whitelist
+                  - delete_whitelist
+                  - transfer
+                  - request_trade
+                  - cancel_trade
+                  - accept_trade
+                  - reject_trade
+                type: string
+              - type: 'null'
+            description: Transaction type
+            title: Tx Type
+          description: Transaction type
+        - name: tx_hash
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Transaction hash
+            title: Tx Hash
+          description: Transaction hash
+        - name: authorizer
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Authorizer address
+            title: Authorizer
+          description: Authorizer address
+        - name: finalized
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: True if the block is finalized, False otherwise
+            title: Finalized
+          description: True if the block is finalized, False otherwise
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListIbetWSTTransactionsResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
   /ibet_wst/transactions/{tx_id}:
     get:
       tags:
@@ -13529,9 +13644,11 @@ components:
             - burn
             - add_whitelist
             - delete_whitelist
+            - transfer
             - request_trade
             - cancel_trade
             - accept_trade
+            - reject_trade
           title: Tx Type
           description: Transaction type
         version:
@@ -13583,6 +13700,7 @@ components:
           anyOf:
             - $ref: '#/components/schemas/IbetWSTEventLogMint'
             - $ref: '#/components/schemas/IbetWSTEventLogBurn'
+            - $ref: '#/components/schemas/IbetWSTEventLogTransfer'
             - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteListAdded'
             - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteListDeleted'
             - $ref: '#/components/schemas/IbetWSTEventLogTrade'
@@ -15106,6 +15224,27 @@ components:
       description: IbetWST 
         TradeRequested/TradeCancelled/TradeAccepted/TradeRejected event log 
         schema
+    IbetWSTEventLogTransfer:
+      properties:
+        from_address:
+          type: string
+          title: From Address
+          description: Address from which the tokens were transferred
+        to_address:
+          type: string
+          title: To Address
+          description: Address to which the tokens were transferred
+        value:
+          type: integer
+          title: Value
+          description: Amount of tokens transferred
+      type: object
+      required:
+        - from_address
+        - to_address
+        - value
+      title: IbetWSTEventLogTransfer
+      description: IbetWST Transfer event log schema
     IbetWSTInsufficientBalanceErrorCode:
       type: integer
       enum:
@@ -16003,6 +16142,22 @@ components:
         - trades
       title: ListIbetWSTTradesResponse
       description: ListIbetWSTTrades response schema
+    ListIbetWSTTransactionsResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        transactions:
+          items:
+            $ref: '#/components/schemas/GetIbetWSTTransactionResponse'
+          type: array
+          title: Transactions
+          description: List of IbetWST transactions
+      type: object
+      required:
+        - result_set
+        - transactions
+      title: ListIbetWSTTransactionsResponse
+      description: ListIbetWSTTransactions response schema
     ListTokenHistorySortItem:
       type: string
       enum:

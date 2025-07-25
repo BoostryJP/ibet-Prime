@@ -64,6 +64,20 @@ class IbetWSTAuthorization(BaseModel):
     )
 
 
+IbetWSTTxType = Literal[
+    "deploy",
+    "mint",
+    "burn",
+    "add_whitelist",
+    "delete_whitelist",
+    "transfer",
+    "request_trade",
+    "cancel_trade",
+    "accept_trade",
+    "reject_trade",
+]
+
+
 class IbetWSTTrade(BaseModel):
     """IbetWST Trade schema"""
 
@@ -108,6 +122,23 @@ class ListAllIbetWSTTokensQuery(BasePaginationQuery):
     )
     sort_order: Optional[SortOrder] = Field(
         SortOrder.DESC, description=SortOrder.__doc__
+    )
+
+
+class ListIbetWSTTransactionsQuery(BasePaginationQuery):
+    """ListIbetWSTTransactions request query schema"""
+
+    ibet_wst_address: ChecksumEthereumAddress = Field(
+        description="IbetWST contract address (**This affects total number**) "
+    )
+    tx_id: Optional[str] = Field(None, description="Transaction ID")
+    tx_type: Optional[IbetWSTTxType] = Field(None, description="Transaction type")
+    tx_hash: Optional[str] = Field(None, description="Transaction hash")
+    authorizer: Optional[ChecksumEthereumAddress] = Field(
+        None, description="Authorizer address"
+    )
+    finalized: Optional[bool] = Field(
+        None, description="True if the block is finalized, False otherwise"
     )
 
 
@@ -277,6 +308,18 @@ class IbetWSTEventLogBurn(BaseModel):
     value: int = Field(..., description="Amount of tokens burned")
 
 
+class IbetWSTEventLogTransfer(BaseModel):
+    """IbetWST Transfer event log schema"""
+
+    from_address: ChecksumEthereumAddress = Field(
+        ..., description="Address from which the tokens were transferred"
+    )
+    to_address: ChecksumEthereumAddress = Field(
+        ..., description="Address to which the tokens were transferred"
+    )
+    value: int = Field(..., description="Amount of tokens transferred")
+
+
 class IbetWSTEventLogAccountWhiteListAdded(BaseModel):
     """IbetWST AccountWhiteListAdded event log schema"""
 
@@ -320,16 +363,7 @@ class GetIbetWSTTransactionResponse(BaseModel):
     """GetIbetWSTTransaction response schema"""
 
     tx_id: str = Field(description="Transaction ID")
-    tx_type: Literal[
-        "deploy",
-        "mint",
-        "burn",
-        "add_whitelist",
-        "delete_whitelist",
-        "request_trade",
-        "cancel_trade",
-        "accept_trade",
-    ] = Field(description="Transaction type")
+    tx_type: IbetWSTTxType = Field(description="Transaction type")
     version: str = Field(description="IbetWST version")
     status: Literal[0, 1, 2, 3] = Field(
         description="Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)"
@@ -347,10 +381,20 @@ class GetIbetWSTTransactionResponse(BaseModel):
     event_log: Optional[
         IbetWSTEventLogMint
         | IbetWSTEventLogBurn
+        | IbetWSTEventLogTransfer
         | IbetWSTEventLogAccountWhiteListAdded
         | IbetWSTEventLogAccountWhiteListDeleted
         | IbetWSTEventLogTrade
     ] = Field(None, description="Event log for the transaction (if applicable)")
+
+
+class ListIbetWSTTransactionsResponse(BaseModel):
+    """ListIbetWSTTransactions response schema"""
+
+    result_set: ResultSet
+    transactions: list[GetIbetWSTTransactionResponse] = Field(
+        description="List of IbetWST transactions"
+    )
 
 
 class GetIbetWSTWhitelistResponse(BaseModel):
