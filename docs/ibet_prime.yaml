@@ -3172,8 +3172,6 @@ paths:
             anyOf:
               - const: garnishment
                 type: string
-              - const: inheritance
-                type: string
               - const: force_unlock
                 type: string
               - const: ibet_wst_bridge
@@ -7807,8 +7805,6 @@ paths:
           schema:
             anyOf:
               - const: garnishment
-                type: string
-              - const: inheritance
                 type: string
               - const: force_unlock
                 type: string
@@ -16252,7 +16248,6 @@ components:
       type: string
       enum:
         - garnishment
-        - inheritance
         - force_lock
         - ibet_wst_bridge
       title: LockMessage
@@ -18349,7 +18344,6 @@ components:
           type: string
           enum:
             - garnishment
-            - inheritance
             - force_unlock
             - ibet_wst_bridge
           title: Message
@@ -18696,7 +18690,6 @@ components:
       type: string
       enum:
         - garnishment
-        - inheritance
         - force_unlock
         - ibet_wst_bridge
       title: UnlockMessage
