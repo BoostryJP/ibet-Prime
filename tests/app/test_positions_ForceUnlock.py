@@ -555,12 +555,11 @@ class TestForceUnlock:
                 {
                     "type": "enum",
                     "loc": ["body", "message"],
-                    "msg": "Input should be 'garnishment', 'inheritance', "
+                    "msg": "Input should be 'garnishment', "
                     "'force_unlock' or 'ibet_wst_bridge'",
                     "input": "invalid_message",
                     "ctx": {
-                        "expected": "'garnishment', 'inheritance', 'force_unlock' "
-                        "or 'ibet_wst_bridge'"
+                        "expected": "'garnishment', 'force_unlock' or 'ibet_wst_bridge'"
                     },
                 }
             ],

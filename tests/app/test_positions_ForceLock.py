@@ -522,12 +522,11 @@ class TestForceLock:
             "detail": [
                 {
                     "ctx": {
-                        "expected": "'garnishment', 'inheritance', 'force_lock' "
-                        "or 'ibet_wst_bridge'"
+                        "expected": "'garnishment', 'force_lock' or 'ibet_wst_bridge'"
                     },
                     "input": "invalid_message",
                     "loc": ["body", "message"],
-                    "msg": "Input should be 'garnishment', 'inheritance', "
+                    "msg": "Input should be 'garnishment', "
                     "'force_lock' or 'ibet_wst_bridge'",
                     "type": "enum",
                 }

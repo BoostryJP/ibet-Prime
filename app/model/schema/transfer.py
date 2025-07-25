@@ -78,7 +78,7 @@ class Transfer(TransferBase):
 
 
 class TransferDataMessage(BaseModel):
-    message: Literal["garnishment", "inheritance", "force_unlock", "ibet_wst_bridge"]
+    message: Literal["garnishment", "force_unlock", "ibet_wst_bridge"]
 
 
 class TransferWithMessage(TransferBase):
@@ -134,10 +134,7 @@ class ListTransferHistoryQuery(BasePaginationQuery):
     )
     data: Optional[str] = Field(None, description="source event data")
     message: Optional[
-        Literal["garnishment"]
-        | Literal["inheritance"]
-        | Literal["force_unlock"]
-        | Literal["ibet_wst_bridge"]
+        Literal["garnishment"] | Literal["force_unlock"] | Literal["ibet_wst_bridge"]
     ] = Field(None, description="message field in source event data")
 
     sort_item: Optional[ListTransferHistorySortItem] = Field(
