@@ -875,7 +875,29 @@ class TestProcessor:
 
         # Lock
         tx = token_contract_1.functions.lock(
-            issuer_address, 40, '{"message": "locked1"}'
+            issuer_address, 20, '{"message": "garnishment"}'
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+        tx = token_contract_1.functions.lock(
+            issuer_address, 20, '{"message": "ibet_wst_bridge"}'
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+        tx = token_contract_1.functions.lock(
+            issuer_address, 20, '{"message": "inheritance"}'
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -904,7 +926,7 @@ class TestProcessor:
         ).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
-        assert _position.balance == 100 - 40
+        assert _position.balance == 100 - 60
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
@@ -924,12 +946,12 @@ class TestProcessor:
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
-        assert _locked_position.value == 40
+        assert _locked_position.value == 60
 
         _lock_list = (
             await async_db.scalars(select(IDXLock).order_by(IDXLock.id))
         ).all()
-        assert len(_lock_list) == 1
+        assert len(_lock_list) == 3
 
         _lock1 = _lock_list[0]
         assert _lock1.id == 1
@@ -937,14 +959,34 @@ class TestProcessor:
         assert _lock1.msg_sender == issuer_address
         assert _lock1.lock_address == issuer_address
         assert _lock1.account_address == issuer_address
-        assert _lock1.value == 40
-        assert _lock1.data == {"message": "locked1"}
+        assert _lock1.value == 20
+        assert _lock1.data == {"message": "garnishment"}
         assert _lock1.is_forced is False
+
+        _lock2 = _lock_list[1]
+        assert _lock2.id == 2
+        assert _lock2.token_address == token_address_1
+        assert _lock2.msg_sender == issuer_address
+        assert _lock2.lock_address == issuer_address
+        assert _lock2.account_address == issuer_address
+        assert _lock2.value == 20
+        assert _lock2.data == {"message": "ibet_wst_bridge"}
+        assert _lock2.is_forced is False
+
+        _lock3 = _lock_list[2]
+        assert _lock3.id == 3
+        assert _lock3.token_address == token_address_1
+        assert _lock3.msg_sender == issuer_address
+        assert _lock3.lock_address == issuer_address
+        assert _lock3.account_address == issuer_address
+        assert _lock3.value == 20
+        assert _lock3.data == {}
+        assert _lock3.is_forced is False
 
         _notification_list = (
             await async_db.scalars(select(Notification).order_by(Notification.created))
         ).all()
-        assert len(_notification_list) == 1
+        assert len(_notification_list) == 3
 
         _notification1 = _notification_list[0]
         assert _notification1.id == 1
@@ -956,8 +998,36 @@ class TestProcessor:
             "token_type": "IbetShare",
             "account_address": issuer_address,
             "lock_address": issuer_address,
-            "value": 40,
-            "data": {"message": "locked1"},
+            "value": 20,
+            "data": {"message": "garnishment"},
+        }
+
+        _notification2 = _notification_list[1]
+        assert _notification2.id == 2
+        assert _notification2.issuer_address == issuer_address
+        assert _notification2.priority == 0
+        assert _notification2.type == NotificationType.LOCK_INFO
+        assert _notification2.metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": issuer_address,
+            "lock_address": issuer_address,
+            "value": 20,
+            "data": {"message": "ibet_wst_bridge"},
+        }
+
+        _notification3 = _notification_list[2]
+        assert _notification3.id == 3
+        assert _notification3.issuer_address == issuer_address
+        assert _notification3.priority == 0
+        assert _notification3.type == NotificationType.LOCK_INFO
+        assert _notification3.metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": issuer_address,
+            "lock_address": issuer_address,
+            "value": 20,
+            "data": {},
         }
 
         _idx_position_share_block_number = (
@@ -1026,7 +1096,7 @@ class TestProcessor:
 
         # ForceLock
         tx = token_contract_1.functions.forceLock(
-            issuer_address, issuer_address, 40, '{"message": "force_locked1"}'
+            issuer_address, issuer_address, 40, '{"message": "force_lock"}'
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1089,7 +1159,7 @@ class TestProcessor:
         assert _lock1.lock_address == issuer_address
         assert _lock1.account_address == issuer_address
         assert _lock1.value == 40
-        assert _lock1.data == {"message": "force_locked1"}
+        assert _lock1.data == {"message": "force_lock"}
         assert _lock1.is_forced is True
 
         _notification_list = (
@@ -1108,7 +1178,7 @@ class TestProcessor:
             "account_address": issuer_address,
             "lock_address": issuer_address,
             "value": 40,
-            "data": {"message": "force_locked1"},
+            "data": {"message": "force_lock"},
         }
 
         _idx_position_share_block_number = (
@@ -1177,7 +1247,7 @@ class TestProcessor:
 
         # Lock
         tx = token_contract_1.functions.lock(
-            issuer_address, 40, '{"message": "locked1"}'
+            issuer_address, 40, '{"message": "garnishment"}'
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1211,7 +1281,7 @@ class TestProcessor:
 
         # Unlock
         tx = token_contract_1.functions.unlock(
-            issuer_address, issuer_address, 30, '{"message": "unlocked1"}'
+            issuer_address, issuer_address, 30, '{"message": "garnishment"}'
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1274,7 +1344,7 @@ class TestProcessor:
         assert _lock1.lock_address == issuer_address
         assert _lock1.account_address == issuer_address
         assert _lock1.value == 40
-        assert _lock1.data == {"message": "locked1"}
+        assert _lock1.data == {"message": "garnishment"}
 
         _unlock_list = (
             await async_db.scalars(select(IDXUnlock).order_by(IDXUnlock.id))
@@ -1289,7 +1359,7 @@ class TestProcessor:
         assert _unlock1.account_address == issuer_address
         assert _unlock1.recipient_address == issuer_address
         assert _unlock1.value == 30
-        assert _unlock1.data == {"message": "unlocked1"}
+        assert _unlock1.data == {"message": "garnishment"}
         assert _unlock1.is_forced is False
 
         _notification_list = (
@@ -1308,7 +1378,7 @@ class TestProcessor:
             "account_address": issuer_address,
             "lock_address": issuer_address,
             "value": 40,
-            "data": {"message": "locked1"},
+            "data": {"message": "garnishment"},
         }
 
         _notification1 = _notification_list[1]
@@ -1323,7 +1393,7 @@ class TestProcessor:
             "lock_address": issuer_address,
             "recipient_address": issuer_address,
             "value": 30,
-            "data": {"message": "unlocked1"},
+            "data": {"message": "garnishment"},
         }
 
         _idx_position_share_block_number = (
@@ -1392,7 +1462,7 @@ class TestProcessor:
 
         # Lock
         tx = token_contract_1.functions.lock(
-            issuer_address, 40, '{"message": "locked1"}'
+            issuer_address, 40, '{"message": "garnishment"}'
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1430,7 +1500,7 @@ class TestProcessor:
             issuer_address,
             issuer_address,
             30,
-            '{"message": "unlocked1"}',
+            '{"message": "garnishment"}',
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -1493,7 +1563,7 @@ class TestProcessor:
         assert _lock1.lock_address == issuer_address
         assert _lock1.account_address == issuer_address
         assert _lock1.value == 40
-        assert _lock1.data == {"message": "locked1"}
+        assert _lock1.data == {"message": "garnishment"}
 
         _unlock_list = (
             await async_db.scalars(select(IDXUnlock).order_by(IDXUnlock.id))
@@ -1508,7 +1578,7 @@ class TestProcessor:
         assert _unlock1.account_address == issuer_address
         assert _unlock1.recipient_address == issuer_address
         assert _unlock1.value == 30
-        assert _unlock1.data == {"message": "unlocked1"}
+        assert _unlock1.data == {"message": "garnishment"}
         assert _unlock1.is_forced is True
 
         _notification_list = (
@@ -1527,7 +1597,7 @@ class TestProcessor:
             "account_address": issuer_address,
             "lock_address": issuer_address,
             "value": 40,
-            "data": {"message": "locked1"},
+            "data": {"message": "garnishment"},
         }
 
         _notification1 = _notification_list[1]
@@ -1542,7 +1612,7 @@ class TestProcessor:
             "lock_address": issuer_address,
             "recipient_address": issuer_address,
             "value": 30,
-            "data": {"message": "unlocked1"},
+            "data": {"message": "garnishment"},
         }
 
         _idx_position_share_block_number = (
@@ -4286,7 +4356,7 @@ class TestProcessor:
         # - lock issuer's balance to lock_account
         # - Tx is executed by token holder
         tx = token_contract_1.functions.lock(
-            lock_account["address"], 40, '{"message": "lock"}'
+            lock_account["address"], 40, '{"message": "garnishment"}'
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -4305,7 +4375,7 @@ class TestProcessor:
             issuer_address,
             after_locked_account["address"],
             30,
-            '{"message": "force_changed"}',
+            '{"message": "ibet_wst_bridge"}',
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -4394,7 +4464,7 @@ class TestProcessor:
         assert lock_idx_list[0].lock_address == lock_account["address"]
         assert lock_idx_list[0].account_address == issuer_address
         assert lock_idx_list[0].value == 40
-        assert lock_idx_list[0].data == {"message": "lock"}
+        assert lock_idx_list[0].data == {"message": "garnishment"}
         assert lock_idx_list[0].is_forced is False
 
         assert lock_idx_list[1].id == 2
@@ -4403,7 +4473,7 @@ class TestProcessor:
         assert lock_idx_list[1].lock_address == lock_account["address"]
         assert lock_idx_list[1].account_address == after_locked_account["address"]
         assert lock_idx_list[1].value == 30
-        assert lock_idx_list[1].data == {"message": "force_changed"}
+        assert lock_idx_list[1].data == {"message": "ibet_wst_bridge"}
         assert lock_idx_list[1].is_forced is True
 
         unlock_idx_list = (
@@ -4418,7 +4488,7 @@ class TestProcessor:
         assert unlock_idx_list[0].account_address == issuer_address
         assert unlock_idx_list[0].recipient_address == after_locked_account["address"]
         assert unlock_idx_list[0].value == 30
-        assert unlock_idx_list[0].data == {"message": "force_changed"}
+        assert unlock_idx_list[0].data == {"message": "ibet_wst_bridge"}
         assert unlock_idx_list[0].is_forced is True
 
         notification_list = (
@@ -4436,7 +4506,7 @@ class TestProcessor:
             "account_address": issuer_address,
             "lock_address": lock_account["address"],
             "value": 40,
-            "data": {"message": "lock"},
+            "data": {"message": "garnishment"},
         }
 
         assert notification_list[1].id == 2
@@ -4450,7 +4520,7 @@ class TestProcessor:
             "lock_address": lock_account["address"],
             "recipient_address": after_locked_account["address"],
             "value": 30,
-            "data": {"message": "force_changed"},
+            "data": {"message": "ibet_wst_bridge"},
         }
 
         assert notification_list[2].id == 3
@@ -4463,7 +4533,7 @@ class TestProcessor:
             "account_address": after_locked_account["address"],
             "lock_address": lock_account["address"],
             "value": 30,
-            "data": {"message": "force_changed"},
+            "data": {"message": "ibet_wst_bridge"},
         }
 
         idx_position_share_block_number = (

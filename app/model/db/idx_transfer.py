@@ -41,7 +41,6 @@ class IDXTransferSourceEventType(StrEnum):
 class DataMessage(BaseModel):
     message: Literal[
         "garnishment",
-        "inheritance",
         "force_unlock",
         "ibet_wst_bridge",
     ]
@@ -77,7 +76,7 @@ class IDXTransfer(Base):
     #   source_event = "Transfer", "Reallocation"
     #     => None
     #   source_event = "Unlock", "ForceUnlock"
-    #     => "force_unlock", "garnishment", "inheritance"
+    #     => "force_unlock", "garnishment"
     #   source_event = "ForceChangeLockedAccount"
     #     => "ibet_wst_bridge"
     message: Mapped[str | None] = mapped_column(String(50), index=True)

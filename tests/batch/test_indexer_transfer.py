@@ -1214,8 +1214,8 @@ class TestProcessor:
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
-        assert _transfer.data == {"message": "inheritance"}
-        assert _transfer.message == "inheritance"
+        assert _transfer.data == {}
+        assert _transfer.message == None
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
         assert _transfer.block_timestamp == datetime.fromtimestamp(
             block["timestamp"], UTC

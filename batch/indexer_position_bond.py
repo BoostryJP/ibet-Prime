@@ -50,6 +50,7 @@ from app.model.db import (
     TokenType,
 )
 from app.model.ibet import IbetExchangeInterface, IbetStraightBondContract
+from app.model.schema import LockDataMessage, UnlockDataMessage
 from app.utils.asyncio_utils import SemaphoreTaskGroup
 from app.utils.ibet_contract_utils import AsyncContractUtils
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
@@ -1516,6 +1517,7 @@ class Processor:
         """
         try:
             data = json.loads(data_str)
+            LockDataMessage.model_validate(data)
         except Exception:
             data = {}
 
@@ -1563,6 +1565,7 @@ class Processor:
         """
         try:
             data = json.loads(data_str)
+            UnlockDataMessage.model_validate(data)
         except Exception:
             data = {}
 
@@ -1833,6 +1836,7 @@ class Processor:
     ):
         try:
             data = json.loads(data_str)
+            LockDataMessage.model_validate(data)
         except Exception:
             data = {}
 
@@ -1866,6 +1870,7 @@ class Processor:
     ):
         try:
             data = json.loads(data_str)
+            UnlockDataMessage.model_validate(data)
         except Exception:
             data = {}
 
