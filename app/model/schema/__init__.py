@@ -111,6 +111,8 @@ from .ibet_wst import (
     ListAllIbetWSTTokensSortItem,
     ListIbetWSTTradesQuery,
     ListIbetWSTTradesResponse,
+    ListIbetWSTTransactionsQuery,
+    ListIbetWSTTransactionsResponse,
     RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
     TransferIbetWSTRequest,

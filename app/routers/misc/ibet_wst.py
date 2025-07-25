@@ -64,6 +64,8 @@ from app.model.schema import (
     ListAllIbetWSTTokensSortItem,
     ListIbetWSTTradesQuery,
     ListIbetWSTTradesResponse,
+    ListIbetWSTTransactionsQuery,
+    ListIbetWSTTransactionsResponse,
     RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
     TransferIbetWSTRequest,
@@ -267,6 +269,97 @@ async def burn_ibet_wst_balance(
     return json_response({"tx_id": tx_id})
 
 
+# GET: /ibet_wst/transactions
+@router.get(
+    "/transactions",
+    operation_id="ListIbetWSTTransactions",
+    response_model=ListIbetWSTTransactionsResponse,
+    responses=get_routers_responses(404),
+)
+async def list_ibet_wst_transactions(
+    db: DBAsyncSession,
+    get_query: Annotated[ListIbetWSTTransactionsQuery, Query()],
+):
+    """
+    List IbetWST transactions
+
+    - This endpoint retrieves all IbetWST transactions based on the provided query parameters.
+    """
+
+    # Base Query
+    stmt = select(EthIbetWSTTx).where(
+        EthIbetWSTTx.ibet_wst_address == get_query.ibet_wst_address
+    )
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(EthIbetWSTTx).order_by(None)
+    )
+
+    # Search Filter
+    if get_query.tx_id is not None:
+        stmt = stmt.where(EthIbetWSTTx.tx_id == get_query.tx_id)
+    if get_query.tx_type is not None:
+        stmt = stmt.where(EthIbetWSTTx.tx_type == get_query.tx_type)
+    if get_query.tx_hash is not None:
+        stmt = stmt.where(EthIbetWSTTx.tx_hash == get_query.tx_hash)
+    if get_query.authorizer is not None:
+        stmt = stmt.where(EthIbetWSTTx.authorizer == get_query.authorizer)
+    if get_query.finalized is not None:
+        stmt = stmt.where(EthIbetWSTTx.finalized == get_query.finalized)
+
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(EthIbetWSTTx).order_by(None)
+    )
+
+    # Sort
+    stmt = stmt.order_by(desc(EthIbetWSTTx.created))
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    # Execute Query
+    wst_txs: Sequence[EthIbetWSTTx] = (await db.scalars(stmt)).all()
+
+    # Response
+    tx_list = []
+    for wst_tx in wst_txs:
+        _created_datetime = (
+            pytz.timezone("UTC")
+            .localize(wst_tx.created)
+            .astimezone(local_tz)
+            .isoformat()
+        )
+        tx_list.append(
+            {
+                "tx_id": wst_tx.tx_id,
+                "tx_type": wst_tx.tx_type,
+                "version": wst_tx.version,
+                "status": wst_tx.status,
+                "ibet_wst_address": wst_tx.ibet_wst_address,
+                "tx_sender": wst_tx.tx_sender,
+                "authorizer": wst_tx.authorizer,
+                "tx_hash": wst_tx.tx_hash,
+                "block_number": wst_tx.block_number,
+                "finalized": wst_tx.finalized,
+                "event_log": wst_tx.event_log,
+                "created": _created_datetime,
+            }
+        )
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
+            "total": total,
+        },
+        "transactions": tx_list,
+    }
+    return json_response(resp)
+
+
 # GET: /ibet_wst/transactions/{tx_id}
 @router.get(
     "/transactions/{tx_id}",
@@ -293,6 +386,9 @@ async def get_ibet_wst_transaction(
         raise HTTPException(status_code=404, detail="Transaction not found")
 
     # Response
+    _created_datetime = (
+        pytz.timezone("UTC").localize(wst_tx.created).astimezone(local_tz).isoformat()
+    )
     resp = {
         "tx_id": wst_tx.tx_id,
         "tx_type": wst_tx.tx_type,
@@ -305,6 +401,7 @@ async def get_ibet_wst_transaction(
         "block_number": wst_tx.block_number,
         "finalized": wst_tx.finalized,
         "event_log": wst_tx.event_log,
+        "created": _created_datetime,
     }
     return json_response(resp)
 

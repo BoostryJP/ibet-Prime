@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import datetime
 import uuid
 
 import pytest
@@ -72,6 +73,7 @@ class TestGetIbetWSTTransaction:
             to_address=self.user1["address"],
             value=1000,
         )
+        tx.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx)
         await async_db.commit()
 
@@ -95,6 +97,7 @@ class TestGetIbetWSTTransaction:
                 "to_address": self.user1["address"],
                 "value": 1000,
             },
+            "created": "2025-01-02T12:04:05+09:00",
         }
 
     ###########################################################################
