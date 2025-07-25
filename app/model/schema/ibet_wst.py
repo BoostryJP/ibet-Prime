@@ -386,6 +386,7 @@ class GetIbetWSTTransactionResponse(BaseModel):
         | IbetWSTEventLogAccountWhiteListDeleted
         | IbetWSTEventLogTrade
     ] = Field(None, description="Event log for the transaction (if applicable)")
+    created: str = Field(description="Transaction created datetime")
 
 
 class ListIbetWSTTransactionsResponse(BaseModel):

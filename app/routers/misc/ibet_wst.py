@@ -323,14 +323,15 @@ async def list_ibet_wst_transactions(
     wst_txs: Sequence[EthIbetWSTTx] = (await db.scalars(stmt)).all()
 
     # Response
-    resp = {
-        "result_set": {
-            "count": count,
-            "offset": get_query.offset,
-            "limit": get_query.limit,
-            "total": total,
-        },
-        "transactions": [
+    tx_list = []
+    for wst_tx in wst_txs:
+        _created_datetime = (
+            pytz.timezone("UTC")
+            .localize(wst_tx.created)
+            .astimezone(local_tz)
+            .isoformat()
+        )
+        tx_list.append(
             {
                 "tx_id": wst_tx.tx_id,
                 "tx_type": wst_tx.tx_type,
@@ -343,9 +344,18 @@ async def list_ibet_wst_transactions(
                 "block_number": wst_tx.block_number,
                 "finalized": wst_tx.finalized,
                 "event_log": wst_tx.event_log,
+                "created": _created_datetime,
             }
-            for wst_tx in wst_txs
-        ],
+        )
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
+            "total": total,
+        },
+        "transactions": tx_list,
     }
     return json_response(resp)
 
@@ -376,6 +386,9 @@ async def get_ibet_wst_transaction(
         raise HTTPException(status_code=404, detail="Transaction not found")
 
     # Response
+    _created_datetime = (
+        pytz.timezone("UTC").localize(wst_tx.created).astimezone(local_tz).isoformat()
+    )
     resp = {
         "tx_id": wst_tx.tx_id,
         "tx_type": wst_tx.tx_type,
@@ -388,6 +401,7 @@ async def get_ibet_wst_transaction(
         "block_number": wst_tx.block_number,
         "finalized": wst_tx.finalized,
         "event_log": wst_tx.event_log,
+        "created": _created_datetime,
     }
     return json_response(resp)
 

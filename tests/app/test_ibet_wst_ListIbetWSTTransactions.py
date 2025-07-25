@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import datetime
 import uuid
 
 import pytest
@@ -137,6 +138,7 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
@@ -159,6 +161,7 @@ class TestListIbetWSTTransactions:
         tx_2.block_number = 23456789
         tx_2.finalized = False
         tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 2, 3, 4, 5, 6, tzinfo=None)
         async_db.add(tx_2)
 
         await async_db.commit()
@@ -193,6 +196,7 @@ class TestListIbetWSTTransactions:
                     "block_number": 23456789,
                     "finalized": False,
                     "event_log": None,
+                    "created": "2025-02-03T13:05:06+09:00",
                 },
                 {
                     "tx_id": tx_id_1,
@@ -210,6 +214,7 @@ class TestListIbetWSTTransactions:
                         "to_address": self.user2["address"],
                         "value": 1000,
                     },
+                    "created": "2025-01-02T12:04:05+09:00",
                 },
             ],
         }
@@ -245,6 +250,7 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
@@ -267,6 +273,7 @@ class TestListIbetWSTTransactions:
         tx_2.block_number = 23456789
         tx_2.finalized = False
         tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 2, 3, 4, 5, 6, tzinfo=None)
         async_db.add(tx_2)
 
         await async_db.commit()
@@ -306,6 +313,7 @@ class TestListIbetWSTTransactions:
                         "to_address": self.user2["address"],
                         "value": 1000,
                     },
+                    "created": "2025-01-02T12:04:05+09:00",
                 }
             ],
         }
@@ -341,6 +349,7 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
@@ -363,6 +372,7 @@ class TestListIbetWSTTransactions:
         tx_2.block_number = 23456789
         tx_2.finalized = False
         tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 2, 3, 4, 5, 6, tzinfo=None)
         async_db.add(tx_2)
 
         await async_db.commit()
@@ -402,6 +412,7 @@ class TestListIbetWSTTransactions:
                         "to_address": self.user2["address"],
                         "value": 1000,
                     },
+                    "created": "2025-01-02T12:04:05+09:00",
                 }
             ],
         }
@@ -437,6 +448,7 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
@@ -459,6 +471,7 @@ class TestListIbetWSTTransactions:
         tx_2.block_number = 23456789
         tx_2.finalized = False
         tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 2, 3, 4, 5, 6, tzinfo=None)
         async_db.add(tx_2)
 
         await async_db.commit()
@@ -498,6 +511,7 @@ class TestListIbetWSTTransactions:
                         "to_address": self.user2["address"],
                         "value": 1000,
                     },
+                    "created": "2025-01-02T12:04:05+09:00",
                 }
             ],
         }
@@ -533,6 +547,7 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
@@ -555,6 +570,7 @@ class TestListIbetWSTTransactions:
         tx_2.block_number = 23456789
         tx_2.finalized = False
         tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 2, 3, 4, 5, 6, tzinfo=None)
         async_db.add(tx_2)
 
         await async_db.commit()
@@ -594,6 +610,7 @@ class TestListIbetWSTTransactions:
                         "to_address": self.user2["address"],
                         "value": 1000,
                     },
+                    "created": "2025-01-02T12:04:05+09:00",
                 }
             ],
         }
@@ -629,6 +646,7 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
@@ -651,6 +669,7 @@ class TestListIbetWSTTransactions:
         tx_2.block_number = 23456789
         tx_2.finalized = False
         tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 2, 3, 4, 5, 6, tzinfo=None)
         async_db.add(tx_2)
 
         await async_db.commit()
@@ -687,6 +706,7 @@ class TestListIbetWSTTransactions:
                         "to_address": self.user2["address"],
                         "value": 1000,
                     },
+                    "created": "2025-01-02T12:04:05+09:00",
                 }
             ],
         }
@@ -722,6 +742,7 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
@@ -744,6 +765,7 @@ class TestListIbetWSTTransactions:
         tx_2.block_number = 23456789
         tx_2.finalized = False
         tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 2, 3, 4, 5, 6, tzinfo=None)
         async_db.add(tx_2)
 
         await async_db.commit()
@@ -784,6 +806,7 @@ class TestListIbetWSTTransactions:
                         "to_address": self.user2["address"],
                         "value": 1000,
                     },
+                    "created": "2025-01-02T12:04:05+09:00",
                 }
             ],
         }

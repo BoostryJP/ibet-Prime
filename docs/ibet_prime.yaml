@@ -13707,6 +13707,10 @@ components:
             - type: 'null'
           title: Event Log
           description: Event log for the transaction (if applicable)
+        created:
+          type: string
+          title: Created
+          description: Transaction created datetime
       type: object
       required:
         - tx_id
@@ -13719,6 +13723,7 @@ components:
         - tx_hash
         - block_number
         - finalized
+        - created
       title: GetIbetWSTTransactionResponse
       description: GetIbetWSTTransaction response schema
     GetIbetWSTWhitelistResponse:
