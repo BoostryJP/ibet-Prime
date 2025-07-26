@@ -44,6 +44,7 @@ from app.model.db import (
     IbetWSTTxType,
     IbetWSTVersion,
     IDXEthIbetWSTTrade,
+    IDXEthIbetWSTWhitelist,
     Token,
     TokenType,
 )
@@ -68,6 +69,7 @@ from app.model.schema import (
     ListIbetWSTTransactionsResponse,
     RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
+    RetrieveIbetWSTWhitelistAccountsResponse,
     TransferIbetWSTRequest,
 )
 from app.utils.docs_utils import get_routers_responses
@@ -404,6 +406,41 @@ async def get_ibet_wst_transaction(
         "created": _created_datetime,
     }
     return json_response(resp)
+
+
+# GET: /ibet_wst/whitelists/{ibet_wst_address}
+@router.get(
+    "/whitelists/{ibet_wst_address}",
+    operation_id="RetrieveIbetWSTWhitelistAccounts",
+    response_model=RetrieveIbetWSTWhitelistAccountsResponse,
+    responses=get_routers_responses(422),
+)
+async def retrieve_ibet_wst_whitelist_accounts(
+    db: DBAsyncSession,
+    ibet_wst_address: Annotated[
+        EthereumAddress, Path(description="IbetWST contract address")
+    ],
+):
+    """
+    Retrieve all whitelisted accounts for a specific IbetWST contract address
+
+    - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
+    """
+    # Get whitelists
+    whitelist_list: Sequence[IDXEthIbetWSTWhitelist] = (
+        await db.scalars(
+            select(IDXEthIbetWSTWhitelist).where(
+                IDXEthIbetWSTWhitelist.ibet_wst_address == ibet_wst_address
+            )
+        )
+    ).all()
+
+    # Response
+    account_list = []
+    for whitelist in whitelist_list:
+        account_list.append(whitelist.account_address)
+
+    return json_response({"whitelist_accounts": account_list})
 
 
 # GET: /ibet_wst/whitelists/{ibet_wst_address}/{account_address}

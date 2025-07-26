@@ -452,3 +452,17 @@ class EthToIbetBridgeTx(Base):
     tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
     # Block number
     block_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+############################################################
+# Whitelist
+############################################################
+class IDXEthIbetWSTWhitelist(Base):
+    """INDEX IbetWST Whitelist (Ethereum)"""
+
+    __tablename__ = "idx_eth_ibet_wst_whitelist"
+
+    # IbetWST contract address
+    ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # Account address
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)

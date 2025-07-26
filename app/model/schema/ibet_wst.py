@@ -398,6 +398,12 @@ class ListIbetWSTTransactionsResponse(BaseModel):
     )
 
 
+class RetrieveIbetWSTWhitelistAccountsResponse(BaseModel):
+    """RetrieveIbetWSTWhitelistAccounts response schema"""
+
+    whitelist_accounts: list[str] = Field(description="List of whitelisted accounts")
+
+
 class GetIbetWSTWhitelistResponse(BaseModel):
     """GetIbetWSTWhitelist response schema"""
 

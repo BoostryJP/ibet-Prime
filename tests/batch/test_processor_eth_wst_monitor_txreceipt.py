@@ -40,6 +40,7 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    IDXEthIbetWSTWhitelist,
     Token,
     TokenType,
     TokenVersion,
@@ -604,6 +605,17 @@ class TestProcessor:
             "account_address": self.user1["address"],
         }
 
+        # Verify that the whitelist entry has been created
+        idx_whitelist: IDXEthIbetWSTWhitelist = (
+            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+        ).first()
+        assert idx_whitelist is not None
+        assert (
+            idx_whitelist.ibet_wst_address
+            == "0x9876543210abcdef1234567890abcdef12345678"
+        )
+        assert idx_whitelist.account_address == self.user1["address"]
+
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=add_whitelist",
             f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
@@ -672,6 +684,12 @@ class TestProcessor:
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
         async_db.add(wst_tx)
+
+        idx_whitelist = IDXEthIbetWSTWhitelist(
+            ibet_wst_address=wst_tx.ibet_wst_address,
+            account_address=self.user1["address"],
+        )
+        async_db.add(idx_whitelist)
         await async_db.commit()
 
         # Execute batch
@@ -691,6 +709,12 @@ class TestProcessor:
         assert wst_tx_af.event_log == {
             "account_address": self.user1["address"],
         }
+
+        # Verify that the whitelist entry has been deleted
+        idx_whitelist_af = (
+            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+        ).first()
+        assert idx_whitelist_af is None
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=delete_whitelist",

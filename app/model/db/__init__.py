@@ -82,6 +82,7 @@ from .ibet_wst import (
     IDXEthIbetWSTTrade,
     IDXEthIbetWSTTradeBlockNumber,
     IDXEthIbetWSTTradeState,
+    IDXEthIbetWSTWhitelist,
 )
 from .idx_block_data import IDXBlockData, IDXBlockDataBlockNumber
 from .idx_dvp_delivery import DeliveryStatus, IDXDelivery, IDXDeliveryBlockNumber

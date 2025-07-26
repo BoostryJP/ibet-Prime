@@ -10021,6 +10021,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404Model'
+  /ibet_wst/whitelists/{ibet_wst_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Retrieve Ibet Wst Whitelist Accounts
+      description: |-
+        Retrieve all whitelisted accounts for a specific IbetWST contract address
+
+        - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
+      operationId: RetrieveIbetWSTWhitelistAccounts
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrieveIbetWSTWhitelistAccountsResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /ibet_wst/whitelists/{ibet_wst_address}/{account_address}:
     get:
       tags:
@@ -17430,6 +17462,19 @@ components:
         - log_message
       title: RetrieveFreezeLogResponse
       description: Frozen log data (RESPONSE)
+    RetrieveIbetWSTWhitelistAccountsResponse:
+      properties:
+        whitelist_accounts:
+          items:
+            type: string
+          type: array
+          title: Whitelist Accounts
+          description: List of whitelisted accounts
+      type: object
+      required:
+        - whitelist_accounts
+      title: RetrieveIbetWSTWhitelistAccountsResponse
+      description: RetrieveIbetWSTWhitelistAccounts response schema
     RetrieveLedgerDetailsDataHistoryResponse:
       properties:
         account_address:
