@@ -14310,7 +14310,7 @@ components:
         event_type:
           $ref: '#/components/schemas/ScheduledEventType'
         data:
-          $ref: '#/components/schemas/IbetShareUpdate'
+          $ref: '#/components/schemas/IbetShareScheduledUpdateData'
       type: object
       required:
         - scheduled_datetime
@@ -14318,6 +14318,110 @@ components:
         - data
       title: IbetShareScheduledUpdate
       description: scheduled event (Request)
+    IbetShareScheduledUpdateData:
+      properties:
+        cancellation_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Cancellation Date
+        dividend_record_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Dividend Record Date
+        dividend_payment_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Dividend Payment Date
+        dividends:
+          anyOf:
+            - type: number
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Dividends
+        tradable_exchange_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Require Personal Info Registered
+        transferable:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transferable
+        status:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Status
+        is_offering:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Offering
+        contact_information:
+          anyOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+          title: Contact Information
+        privacy_policy:
+          anyOf:
+            - type: string
+              maxLength: 5000
+            - type: 'null'
+          title: Privacy Policy
+        transfer_approval_required:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transfer Approval Required
+        principal_value:
+          anyOf:
+            - type: integer
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Principal Value
+        is_canceled:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Canceled
+        memo:
+          anyOf:
+            - type: string
+              maxLength: 10000
+            - type: 'null'
+          title: Memo
+      type: object
+      title: IbetShareScheduledUpdateData
+      description: ibet Share scheduled update data schema
     IbetShareTransfer:
       properties:
         token_address:
@@ -14964,7 +15068,7 @@ components:
         event_type:
           $ref: '#/components/schemas/ScheduledEventType'
         data:
-          $ref: '#/components/schemas/IbetStraightBondUpdate'
+          $ref: '#/components/schemas/IbetStraightBondScheduledUpdateData'
       type: object
       required:
         - scheduled_datetime
@@ -14972,6 +15076,144 @@ components:
         - data
       title: IbetStraightBondScheduledUpdate
       description: scheduled event (Request)
+    IbetStraightBondScheduledUpdateData:
+      properties:
+        face_value:
+          anyOf:
+            - type: integer
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Face Value
+        face_value_currency:
+          anyOf:
+            - type: string
+              maxLength: 3
+              minLength: 3
+            - type: 'null'
+          title: Face Value Currency
+        purpose:
+          anyOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+          title: Purpose
+        interest_rate:
+          anyOf:
+            - type: number
+              maximum: 100.0
+              minimum: 0.0
+            - type: 'null'
+          title: Interest Rate
+        interest_payment_date:
+          anyOf:
+            - items:
+                type: string
+                pattern: ^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              type: array
+            - type: 'null'
+          title: Interest Payment Date
+        interest_payment_currency:
+          anyOf:
+            - type: string
+              maxLength: 3
+              minLength: 3
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Interest Payment Currency
+        redemption_value:
+          anyOf:
+            - type: integer
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Redemption Value
+        redemption_value_currency:
+          anyOf:
+            - type: string
+              maxLength: 3
+              minLength: 3
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Redemption Value Currency
+        redemption_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Redemption Date
+        base_fx_rate:
+          anyOf:
+            - type: number
+              minimum: 0.0
+            - type: 'null'
+          title: Base Fx Rate
+        transferable:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transferable
+        status:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Status
+        is_offering:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Offering
+        is_redeemed:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Redeemed
+        tradable_exchange_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Require Personal Info Registered
+        contact_information:
+          anyOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+          title: Contact Information
+        privacy_policy:
+          anyOf:
+            - type: string
+              maxLength: 5000
+            - type: 'null'
+          title: Privacy Policy
+        transfer_approval_required:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transfer Approval Required
+        memo:
+          anyOf:
+            - type: string
+              maxLength: 10000
+            - type: 'null'
+          title: Memo
+      type: object
+      title: IbetStraightBondScheduledUpdateData
+      description: ibet Straight Bond scheduled update data schema
     IbetStraightBondTransfer:
       properties:
         token_address:
