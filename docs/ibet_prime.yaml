@@ -14443,6 +14443,13 @@ components:
               maxLength: 10000
             - type: 'null'
           title: Memo
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       title: IbetShareUpdate
       description: ibet Share schema (Update)
@@ -15124,6 +15131,13 @@ components:
               maxLength: 10000
             - type: 'null'
           title: Memo
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)

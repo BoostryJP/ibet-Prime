@@ -566,24 +566,67 @@ async def update_share_token(
                 f"the operation is not supported in {_token.version}"
             )
 
+    if _token.version < TokenVersion.V_25_06:
+        if update_data.activate_ibet_wst is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
     # Send transaction
     try:
         token_contract = IbetShareContract(token_address)
         original_contents = (await token_contract.get()).__dict__
+        tx_params = UpdateParams(
+            cancellation_date=update_data.cancellation_date,
+            dividend_record_date=update_data.dividend_record_date,
+            dividend_payment_date=update_data.dividend_payment_date,
+            dividends=update_data.dividends,
+            tradable_exchange_contract_address=update_data.tradable_exchange_contract_address,
+            personal_info_contract_address=update_data.personal_info_contract_address,
+            require_personal_info_registered=update_data.require_personal_info_registered,
+            transferable=update_data.transferable,
+            status=update_data.status,
+            is_offering=update_data.is_offering,
+            contact_information=update_data.contact_information,
+            privacy_policy=update_data.privacy_policy,
+            transfer_approval_required=update_data.transfer_approval_required,
+            principal_value=update_data.principal_value,
+            is_canceled=update_data.is_canceled,
+            memo=update_data.memo,
+        )
         await token_contract.update(
-            tx_params=UpdateParams(**update_data.model_dump()),
+            tx_params=tx_params,
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
 
+    # Activate IbetWST
+    if update_data.activate_ibet_wst and not _token.ibet_wst_activated:
+        tx_id = str(uuid.uuid4())
+        _token.ibet_wst_activated = True
+        _token.ibet_wst_version = IbetWSTVersion.V_1
+        _token.ibet_wst_tx_id = tx_id
+
+        # Register IbetWST transaction
+        _ibet_wst_tx = EthIbetWSTTx()
+        _ibet_wst_tx.tx_id = tx_id
+        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+        _ibet_wst_tx.version = IbetWSTVersion.V_1
+        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+        _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name=token_contract.name, initial_owner=issuer_address
+        )
+        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+        db.add(_ibet_wst_tx)
+
     # Register operation log
     operation_log = TokenUpdateOperationLog()
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
     operation_log.type = TokenType.IBET_SHARE
-    operation_log.arguments = update_data.model_dump(exclude_none=True)
+    operation_log.arguments = tx_params.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
     operation_log.operation_category = TokenUpdateOperationCategory.UPDATE
     db.add(operation_log)
