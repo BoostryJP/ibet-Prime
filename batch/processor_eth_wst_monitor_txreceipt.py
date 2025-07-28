@@ -22,7 +22,7 @@ import sys
 from typing import Sequence
 
 import uvloop
-from sqlalchemy import and_, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
@@ -43,6 +43,7 @@ from app.model.db import (
     IbetWSTEventLogTransfer,
     IbetWSTTxStatus,
     IbetWSTTxType,
+    IDXEthIbetWSTWhitelist,
     Token,
 )
 from app.model.eth import IbetWST
@@ -155,6 +156,7 @@ async def finalize_tx(
     """
     match wst_tx.tx_type:
         case IbetWSTTxType.DEPLOY:
+            # Update wst address
             token = (
                 await db_session.scalars(
                     select(Token).where(Token.ibet_wst_tx_id == wst_tx.tx_id).limit(1)
@@ -167,6 +169,7 @@ async def finalize_tx(
             token.ibet_wst_address = tx_receipt.get("contractAddress", None)
             await db_session.merge(token)
         case IbetWSTTxType.MINT:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Mint().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -179,6 +182,7 @@ async def finalize_tx(
                 )
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.BURN:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Burn().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -191,6 +195,7 @@ async def finalize_tx(
                 )
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ADD_WHITELIST:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -201,7 +206,14 @@ async def finalize_tx(
                     account_address=event["args"]["accountAddress"],
                 )
                 await db_session.merge(wst_tx)
+            # Add to whitelist table
+            whitelist = IDXEthIbetWSTWhitelist(
+                ibet_wst_address=wst_tx.ibet_wst_address,
+                account_address=event["args"]["accountAddress"],
+            )
+            await db_session.merge(whitelist)
         case IbetWSTTxType.DELETE_WHITELIST:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -212,7 +224,19 @@ async def finalize_tx(
                     account_address=event["args"]["accountAddress"],
                 )
                 await db_session.merge(wst_tx)
+            # Delete from whitelist table
+            await db_session.execute(
+                delete(IDXEthIbetWSTWhitelist).where(
+                    and_(
+                        IDXEthIbetWSTWhitelist.ibet_wst_address
+                        == wst_tx.ibet_wst_address,
+                        IDXEthIbetWSTWhitelist.account_address
+                        == event["args"]["accountAddress"],
+                    )
+                )
+            )
         case IbetWSTTxType.TRANSFER:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Transfer().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -226,6 +250,7 @@ async def finalize_tx(
                 )
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REQUEST_TRADE:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRequested().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -244,6 +269,7 @@ async def finalize_tx(
                 )
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.CANCEL_TRADE:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeCancelled().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -262,6 +288,7 @@ async def finalize_tx(
                 )
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ACCEPT_TRADE:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeAccepted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
@@ -280,6 +307,7 @@ async def finalize_tx(
                 )
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REJECT_TRADE:
+            # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRejected().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
