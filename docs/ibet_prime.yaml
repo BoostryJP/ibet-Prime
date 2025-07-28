@@ -14023,6 +14023,7 @@ components:
         - '24_06'
         - '24_09'
         - '25_06'
+        - '25_09'
       title: IbetShareContractVersion
     IbetShareCreate:
       properties:
@@ -14715,6 +14716,7 @@ components:
         - '24_06'
         - '24_09'
         - '25_06'
+        - '25_09'
       title: IbetStraightBondContractVersion
     IbetStraightBondCreate:
       properties:

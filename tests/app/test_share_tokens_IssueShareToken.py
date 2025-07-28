@@ -173,7 +173,7 @@ class TestIssueShareToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is None
             assert token_1.ibet_wst_version is None
 
@@ -307,7 +307,7 @@ class TestIssueShareToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is None
             assert token_1.ibet_wst_version is None
 
@@ -459,7 +459,7 @@ class TestIssueShareToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_version is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
@@ -597,7 +597,7 @@ class TestIssueShareToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is None
             assert token_1.ibet_wst_version is None
 
@@ -916,7 +916,7 @@ class TestIssueShareToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is True
             assert token_1.ibet_wst_version == IbetWSTVersion.V_1
 

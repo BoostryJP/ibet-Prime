@@ -83,7 +83,7 @@ class TestBulkTransferShareTokenOwnership:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = {}
-            _token.version = TokenVersion.V_25_06
+            _token.version = TokenVersion.V_25_09
             async_db.add(_token)
 
         await async_db.commit()
@@ -178,7 +178,7 @@ class TestBulkTransferShareTokenOwnership:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = {}
-            _token.version = TokenVersion.V_25_06
+            _token.version = TokenVersion.V_25_09
             async_db.add(_token)
 
         await async_db.commit()
@@ -629,7 +629,7 @@ class TestBulkTransferShareTokenOwnership:
         _token.token_address = self.req_tokens[0]
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -679,7 +679,7 @@ class TestBulkTransferShareTokenOwnership:
             _token.issuer_address = self.from_address
             _token.token_address = _t
             _token.abi = {}
-            _token.version = TokenVersion.V_25_06
+            _token.version = TokenVersion.V_25_09
             async_db.add(_token)
 
         await async_db.commit()

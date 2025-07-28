@@ -72,7 +72,7 @@ class TestAddIbetWSTWhitelist:
         token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_deployed = True
         token.ibet_wst_address = self.ibet_wst_address
         async_db.add(token)

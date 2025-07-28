@@ -290,7 +290,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -383,7 +383,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -474,7 +474,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -564,7 +564,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -663,7 +663,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -770,7 +770,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -879,7 +879,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -979,7 +979,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -1079,7 +1079,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
@@ -1174,7 +1174,7 @@ class TestProcessor:
         token.issuer_address = self.issuer["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id

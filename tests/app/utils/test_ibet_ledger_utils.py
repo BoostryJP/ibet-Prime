@@ -132,7 +132,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = "test_issuer_address"
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
         await async_db.commit()
 
@@ -164,7 +164,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
         await async_db.commit()
 
@@ -196,7 +196,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         # Prepare data: LedgerTemplate
@@ -280,7 +280,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         # Prepare data: LedgerTemplate
@@ -423,7 +423,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         # Prepare data: LedgerTemplate
@@ -679,7 +679,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         # Prepare data: LedgerTemplate
@@ -929,7 +929,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         # Prepare data: LedgerTemplate
@@ -1082,7 +1082,7 @@ class TestRequestLedgerCreation:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         # Prepare data: LedgerTemplate
@@ -1343,7 +1343,7 @@ class TestFinalizeLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
         await async_db.commit()
 
@@ -1373,7 +1373,7 @@ class TestFinalizeLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
         await async_db.commit()
 
@@ -1403,7 +1403,7 @@ class TestFinalizeLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
         await async_db.commit()
 
@@ -1507,7 +1507,7 @@ class TestFinalizeLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
         await async_db.commit()
 
@@ -1782,7 +1782,7 @@ class TestFinalizeLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
         await async_db.commit()
 

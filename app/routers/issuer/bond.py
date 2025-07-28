@@ -356,7 +356,7 @@ async def issue_bond_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_25_06
+    _token.version = TokenVersion.V_25_09
     if token.activate_ibet_wst:
         tx_id = str(uuid.uuid4())
         # Activate IbetWST
@@ -599,7 +599,7 @@ async def update_bond_token(
                 f"the operation is not supported in {_token.version}"
             )
 
-    if _token.version < TokenVersion.V_25_06:
+    if _token.version < TokenVersion.V_25_09:
         if update_data.activate_ibet_wst is not None:
             raise OperationNotSupportedVersionError(
                 f"the operation is not supported in {_token.version}"

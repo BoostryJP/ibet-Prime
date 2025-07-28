@@ -92,7 +92,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -232,7 +232,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -373,7 +373,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -518,7 +518,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -862,7 +862,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -908,7 +908,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -953,7 +953,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1019,7 +1019,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1085,7 +1085,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1149,7 +1149,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1213,7 +1213,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1290,7 +1290,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1387,7 +1387,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1501,7 +1501,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1598,7 +1598,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1706,7 +1706,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1802,7 +1802,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1903,7 +1903,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1972,7 +1972,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10

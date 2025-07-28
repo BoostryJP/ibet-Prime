@@ -116,7 +116,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -267,7 +267,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -339,7 +339,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -468,7 +468,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -573,7 +573,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1097,7 +1097,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1226,7 +1226,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1275,7 +1275,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1347,7 +1347,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         }
 
     # <Error_18>
-    # OperationNotSupportedVersionError: v25.6
+    # OperationNotSupportedVersionError: v25.9
     @pytest.mark.asyncio
     async def test_error_18(self, async_client, async_db):
         test_account = default_eth_account("user1")
@@ -1369,7 +1369,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 1
-        token.version = TokenVersion.V_24_09
+        token.version = TokenVersion.V_25_06
         async_db.add(token)
 
         await async_db.commit()
@@ -1391,5 +1391,5 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
-            "detail": "the operation is not supported in 24_09",
+            "detail": "the operation is not supported in 25_06",
         }
