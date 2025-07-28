@@ -62,7 +62,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -102,7 +102,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: Position
@@ -230,7 +230,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: Position
@@ -369,7 +369,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -638,7 +638,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -760,7 +760,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -927,7 +927,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -1111,7 +1111,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1314,7 +1314,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1544,7 +1544,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1774,7 +1774,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1977,7 +1977,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2207,7 +2207,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2437,7 +2437,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2640,7 +2640,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2871,7 +2871,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3139,7 +3139,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3345,7 +3345,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3578,7 +3578,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3811,7 +3811,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4014,7 +4014,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4244,7 +4244,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4447,7 +4447,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4707,7 +4707,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4967,7 +4967,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -5227,7 +5227,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -5487,7 +5487,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -5747,7 +5747,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -6008,7 +6008,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -6308,7 +6308,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -6607,7 +6607,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -6837,7 +6837,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -7084,7 +7084,7 @@ class TestListAllShareTokenHolders:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data

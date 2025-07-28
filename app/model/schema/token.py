@@ -148,6 +148,10 @@ class IbetStraightBondUpdate(BaseModel):
     transfer_approval_required: Optional[bool] = None
     memo: Optional[str] = Field(default=None, max_length=10000)
 
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
+
     @field_validator("base_fx_rate")
     @classmethod
     def base_fx_rate_6_decimal_places(cls, v):
@@ -267,6 +271,10 @@ class IbetShareUpdate(BaseModel):
     principal_value: Optional[int] = Field(default=None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool] = None
     memo: Optional[str] = Field(default=None, max_length=10000)
+
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
 
     @field_validator("is_canceled")
     @classmethod

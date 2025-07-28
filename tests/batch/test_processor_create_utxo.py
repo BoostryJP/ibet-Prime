@@ -174,7 +174,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -186,7 +186,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         account = Account()
@@ -325,7 +325,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         latest_block_number = web3.eth.block_number
@@ -444,7 +444,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         account = Account()
@@ -541,7 +541,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         account = Account()
@@ -637,7 +637,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -822,7 +822,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -834,7 +834,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         account = Account()
@@ -910,7 +910,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -922,7 +922,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         account = Account()
@@ -1068,7 +1068,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -1080,7 +1080,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         account = Account()
@@ -1258,7 +1258,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -1270,7 +1270,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         account = Account()
@@ -1432,7 +1432,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         account = Account()
@@ -1586,7 +1586,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -1598,7 +1598,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         account = Account()
@@ -1773,7 +1773,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         token_address_2 = await deploy_share_token_contract(
@@ -1785,7 +1785,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         account = Account()
@@ -1944,7 +1944,7 @@ class TestProcessor:
         token_1.issuer_address = issuer["address"]
         token_1.token_address = token_address_1
         token_1.abi = {}
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         account = Account()
@@ -2101,7 +2101,7 @@ class TestProcessor:
         token_1.issuer_address = issuer["address"]
         token_1.token_address = token_address_1
         token_1.abi = {}
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         account = Account()
@@ -2200,7 +2200,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         await async_db.commit()
@@ -2254,7 +2254,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         _token_1.token_status = 1
         async_db.add(_token_1)
 

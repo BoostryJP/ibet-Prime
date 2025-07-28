@@ -33,6 +33,7 @@ class IbetStraightBondContractVersion(StrEnum):
     V_24_06 = "24_06"
     V_24_09 = "24_09"
     V_25_06 = "25_06"
+    V_25_09 = "25_09"
 
 
 class IbetStraightBond(BaseModel):
@@ -73,6 +74,7 @@ class IbetShareContractVersion(StrEnum):
     V_24_06 = "24_06"
     V_24_09 = "24_09"
     V_25_06 = "25_06"
+    V_25_09 = "25_09"
 
 
 class IbetShare(BaseModel):

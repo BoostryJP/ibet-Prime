@@ -48,7 +48,7 @@ class TestRetrieveBondToken:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_deployed = True
@@ -161,7 +161,7 @@ class TestRetrieveBondToken:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_25_06,
+            "contract_version": TokenVersion.V_25_09,
             "ibet_wst_activated": True,
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
@@ -183,7 +183,7 @@ class TestRetrieveBondToken:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_activated = True
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_deployed = True
@@ -296,7 +296,7 @@ class TestRetrieveBondToken:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_25_06,
+            "contract_version": TokenVersion.V_25_09,
             "ibet_wst_activated": True,
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
@@ -334,7 +334,7 @@ class TestRetrieveBondToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

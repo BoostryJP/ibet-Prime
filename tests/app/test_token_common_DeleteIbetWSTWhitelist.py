@@ -73,7 +73,7 @@ class TestAddIbetWSTWhitelist:
         token.issuer_address = self.issuer["address"]
         token.token_address = self.token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_deployed = True
         token.ibet_wst_address = self.ibet_wst_address
         async_db.add(token)
@@ -193,7 +193,7 @@ class TestAddIbetWSTWhitelist:
         token.issuer_address = self.issuer["address"]
         token.token_address = self.token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         token.ibet_wst_deployed = True
         token.ibet_wst_address = self.ibet_wst_address
         async_db.add(token)

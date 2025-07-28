@@ -32,6 +32,9 @@ from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
     AuthToken,
+    EthIbetWSTTx,
+    IbetWSTTxType,
+    IbetWSTVersion,
     Token,
     TokenAttrUpdate,
     TokenType,
@@ -69,6 +72,10 @@ async def deploy_share_token_contract(
 
 
 @mock.patch("app.model.ibet.token.TX_GAS_LIMIT", 8000000)
+@mock.patch(
+    "app.routers.issuer.share.ETH_MASTER_ACCOUNT_ADDRESS",
+    "0x1234567890123456789012345678901234567890",
+)
 class TestAppRoutersShareTokensTokenAddressPOST:
     # target API endpoint
     base_url = "/share/tokens/{}"
@@ -78,6 +85,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     ###########################################################################
 
     # <Normal_1>
+    # Update share token attributes
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
         test_account = default_eth_account("user1")
@@ -108,7 +116,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -131,6 +139,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "principal_value": 1000,
             "is_canceled": True,
             "memo": "m" * 10000,
+            "activate_ibet_wst": True,
         }
         resp = await async_client.post(
             self.base_url.format(_token_address),
@@ -141,6 +150,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             },
         )
 
+        # assertion
         assert resp.status_code == 200
         assert resp.json() is None
 
@@ -152,6 +162,27 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             )
         ).all()
         assert len(token_attr_update) == 1
+
+        token_af = (
+            await async_db.scalars(
+                select(Token).where(Token.token_address == _token_address).limit(1)
+            )
+        ).first()
+        assert token_af.ibet_wst_activated is True
+        assert token_af.ibet_wst_version == IbetWSTVersion.V_1
+        assert token_af.ibet_wst_tx_id is not None
+
+        ibet_wst_tx: EthIbetWSTTx = (
+            await async_db.scalars(select(EthIbetWSTTx).limit(1))
+        ).first()
+        assert ibet_wst_tx.tx_id == token_af.ibet_wst_tx_id
+        assert ibet_wst_tx.tx_type == IbetWSTTxType.DEPLOY
+        assert ibet_wst_tx.version == IbetWSTVersion.V_1
+        assert ibet_wst_tx.tx_params == {
+            "name": "token.name",
+            "initial_owner": _issuer_address,
+        }
+        assert ibet_wst_tx.tx_sender == "0x1234567890123456789012345678901234567890"
 
         operation_log = (
             await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
@@ -236,7 +267,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -308,7 +339,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -437,7 +468,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -542,7 +573,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1066,7 +1097,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1195,7 +1226,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1244,7 +1275,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1313,4 +1344,52 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.json() == {
             "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
             "detail": "the operation is not supported in 22_12",
+        }
+
+    # <Error_18>
+    # OperationNotSupportedVersionError: v25.9
+    @pytest.mark.asyncio
+    async def test_error_18(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.token_status = 1
+        token.version = TokenVersion.V_25_06
+        async_db.add(token)
+
+        await async_db.commit()
+
+        # request target API
+        req_param = {
+            "activate_ibet_wst": True,
+        }
+        resp = await async_client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
+            "detail": "the operation is not supported in 25_06",
         }

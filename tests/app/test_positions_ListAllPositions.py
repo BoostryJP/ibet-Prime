@@ -54,7 +54,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -107,7 +107,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -208,7 +208,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position 1
@@ -247,7 +247,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position-2
@@ -286,7 +286,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position-3
@@ -409,7 +409,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position 1
@@ -429,7 +429,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position 2
@@ -459,7 +459,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position 3
@@ -557,7 +557,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -579,7 +579,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -599,7 +599,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -685,7 +685,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -705,7 +705,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -725,7 +725,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -806,7 +806,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -826,7 +826,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -846,7 +846,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -919,7 +919,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -939,7 +939,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -959,7 +959,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -979,7 +979,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -1094,7 +1094,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -1114,7 +1114,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -1134,7 +1134,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -1154,7 +1154,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -1243,7 +1243,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position
@@ -1381,7 +1381,7 @@ class TestListAllPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Position

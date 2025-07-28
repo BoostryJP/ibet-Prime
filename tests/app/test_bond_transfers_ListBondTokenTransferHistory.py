@@ -75,7 +75,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -152,7 +152,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -258,7 +258,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -347,7 +347,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -436,7 +436,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -513,7 +513,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -590,7 +590,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -698,7 +698,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -806,7 +806,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -883,7 +883,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -972,7 +972,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1061,7 +1061,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1138,7 +1138,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1214,7 +1214,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1292,7 +1292,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1375,7 +1375,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1479,7 +1479,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1583,7 +1583,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1715,7 +1715,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1847,7 +1847,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXTransfer
@@ -1971,7 +1971,7 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
