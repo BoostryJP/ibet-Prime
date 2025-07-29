@@ -930,7 +930,7 @@ class TestBurnWithAuthorization:
 
         # Sign the digest from the authorizer's private key
         signature = EthWeb3.eth.account.unsafe_sign_hash(
-            digest, bytes.fromhex(self.owner["private_key"])
+            digest, bytes.fromhex(self.user1["private_key"])
         )
 
         # Attempt to burn tokens with valid authorization
@@ -996,7 +996,7 @@ class TestBurnWithAuthorization:
         # Sign the digest from the authorizer's private key
         signature = EthWeb3.eth.account.unsafe_sign_hash(
             digest,
-            bytes.fromhex(self.user1["private_key"]),  # Invalid authorizer key
+            bytes.fromhex(self.relayer["private_key"]),  # Invalid authorizer key
         )
 
         # Attempt to burn tokens with invalid authorization
