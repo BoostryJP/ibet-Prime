@@ -220,7 +220,7 @@ async def get_ibet_wst_balance(
     "/balances/{account_address}/{ibet_wst_address}/burn",
     operation_id="BurnIbetWSTBalance",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(404, 422, IbetWSTInsufficientBalanceError),
 )
 async def burn_ibet_wst_balance(
     request: Request,
@@ -243,6 +243,12 @@ async def burn_ibet_wst_balance(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
+
+    # Pre-transaction check: Ensure ST token balance is sufficient
+    wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
+    wst_balance = await wst_contract.balance_of(to_checksum_address(account_address))
+    if wst_balance < req_params.value:
+        raise IbetWSTInsufficientBalanceError
 
     # Insert transaction record
     tx_id = str(uuid.uuid4())
@@ -485,7 +491,7 @@ async def get_ibet_wst_whitelist(
     "/transfers/{ibet_wst_address}",
     operation_id="TransferIbetWST",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(404, 422, IbetWSTInsufficientBalanceError),
 )
 async def transfer_ibet_wst(
     request: Request,
@@ -508,6 +514,14 @@ async def transfer_ibet_wst(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
+
+    # Pre-transaction check: Ensure ST token balance is sufficient
+    wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
+    wst_balance = await wst_contract.balance_of(
+        to_checksum_address(req_params.from_address)
+    )
+    if wst_balance < req_params.value:
+        raise IbetWSTInsufficientBalanceError
 
     # Insert transaction record
     tx_id = str(uuid.uuid4())
@@ -941,8 +955,6 @@ async def get_ibet_wst_trade(
 ###################################################################
 # Utility Functions
 ###################################################################
-
-
 def get_client_ip(request: Request):
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     if x_forwarded_for:
