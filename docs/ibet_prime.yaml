@@ -9874,6 +9874,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
   /ibet_wst/transactions:
     get:
       tags:
@@ -10143,6 +10150,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
   /ibet_wst/trades/{ibet_wst_address}/request:
     post:
       tags:
