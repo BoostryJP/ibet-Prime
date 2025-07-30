@@ -873,9 +873,10 @@ class Processor:
                         lock_map[lock_address][before_account] = True
                         lock_map[lock_address][after_account] = True
 
-                    # Update locked positions
+                    # Update positions
                     for lock_address in lock_map:
                         for account_address in lock_map[lock_address]:
+                            # Update locked positions
                             value = await self.__get_account_locked_token(
                                 token_contract=token,
                                 lock_address=lock_address,
@@ -887,6 +888,24 @@ class Processor:
                                 lock_address=lock_address,
                                 account_address=account_address,
                                 value=value,
+                            )
+                            # Update positions
+                            (
+                                balance,
+                                pending_transfer,
+                                exchange_balance,
+                                exchange_commitment,
+                            ) = await self.__get_account_balance_all(
+                                token, account_address
+                            )
+                            await self.__sink_on_position(
+                                db_session=db_session,
+                                token_address=to_checksum_address(token.address),
+                                account_address=account_address,
+                                balance=balance,
+                                exchange_balance=exchange_balance,
+                                exchange_commitment=exchange_commitment,
+                                pending_transfer=pending_transfer,
                             )
                 except Exception:
                     pass
@@ -1627,7 +1646,7 @@ class Processor:
                 position.exchange_commitment = exchange_commitment
             await db_session.merge(position)
         elif any(
-            value is not None and value > 0
+            value is not None
             for value in [
                 balance,
                 pending_transfer,

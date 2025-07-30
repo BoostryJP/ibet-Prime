@@ -4424,14 +4424,19 @@ class TestProcessor:
         assert locked_position_before_account.account_address == issuer_address
         assert locked_position_before_account.value == 40 - 30
 
-        position_before_account = (
+        position_after_account = (
             await async_db.scalars(
                 select(IDXPosition)
                 .where(IDXPosition.account_address == after_locked_account["address"])
                 .limit(1)
             )
         ).first()
-        assert position_before_account is None  # No position for after_locked_account
+        assert position_after_account.token_address == token_address_1
+        assert position_after_account.account_address == after_locked_account["address"]
+        assert position_after_account.balance == 0
+        assert position_after_account.exchange_balance == 0
+        assert position_after_account.exchange_commitment == 0
+        assert position_after_account.pending_transfer == 0
 
         locked_position_after_account = (
             await async_db.scalars(
