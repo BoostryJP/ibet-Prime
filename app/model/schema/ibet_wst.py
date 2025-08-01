@@ -268,6 +268,31 @@ class ListIbetWSTTradesQuery(BasePaginationQuery):
     )
 
 
+class GetERC20BalanceQuery(BaseModel):
+    """GetERC20Balance request query schema"""
+
+    token_address: ChecksumEthereumAddress = Field(
+        description="Token contract address to check balance"
+    )
+    account_address: ChecksumEthereumAddress = Field(
+        description="Account address to check balance"
+    )
+
+
+class GetERC20AllowanceQuery(BaseModel):
+    """GetERC20Allowance request query schema"""
+
+    token_address: ChecksumEthereumAddress = Field(
+        description="Token contract address to check allowance"
+    )
+    account_address: ChecksumEthereumAddress = Field(
+        description="Account address to check allowance"
+    )
+    spender_address: ChecksumEthereumAddress = Field(
+        description="Spender address to check allowance"
+    )
+
+
 ############################
 # RESPONSE
 ############################
@@ -423,3 +448,15 @@ class GetIbetWSTTradeResponse(RootModel[IbetWSTTrade]):
     """IbetWSTToken response schema"""
 
     pass
+
+
+class GetERC20BalanceResponse(BaseModel):
+    """GetERC20Balance response schema"""
+
+    balance: int = Field(..., description="ERC20 token balance")
+
+
+class GetERC20AllowanceResponse(BaseModel):
+    """GetERC20Allowance response schema"""
+
+    allowance: int = Field(..., description="ERC20 token allowance")
