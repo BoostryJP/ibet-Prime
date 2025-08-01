@@ -55,6 +55,10 @@ from app.model.schema import (
     AcceptIbetWSTTradeRequest,
     BurnIbetWSTRequest,
     CancelIbetWSTTradeRequest,
+    GetERC20AllowanceQuery,
+    GetERC20AllowanceResponse,
+    GetERC20BalanceQuery,
+    GetERC20BalanceResponse,
     GetIbetWSTBalanceResponse,
     GetIbetWSTTradeResponse,
     GetIbetWSTTransactionResponse,
@@ -950,6 +954,63 @@ async def get_ibet_wst_trade(
         "memo": trade.memo,
     }
     return json_response(resp)
+
+
+# GET: /ibet_wst/erc20/balance
+@router.get(
+    "/erc20/balance",
+    operation_id="GetERC20Balance",
+    response_model=GetERC20BalanceResponse,
+    responses=get_routers_responses(422),
+)
+async def get_erc20_balance(
+    query: Annotated[
+        GetERC20BalanceQuery, Query(description="Query parameters for ERC20 balance")
+    ],
+):
+    """
+    Get ERC20 token balance
+
+    - This endpoint retrieves the balance of a specific ERC20 token for a given account address.
+    - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+    """
+
+    # Get balance amount
+    # - If token_address is not an ERC20 token, it will return 0 balance.
+    erc20 = ERC20(query.token_address)
+    balance = await erc20.balance_of(query.account_address)
+
+    # Return response
+    return json_response({"balance": balance})
+
+
+# GET: /ibet_wst/erc20/allowance
+@router.get(
+    "/erc20/allowance",
+    operation_id="GetERC20Allowance",
+    response_model=GetERC20AllowanceResponse,
+    responses=get_routers_responses(422),
+)
+async def get_erc20_allowance(
+    query: Annotated[
+        GetERC20AllowanceQuery,
+        Query(description="Query parameters for ERC20 allowance"),
+    ],
+):
+    """
+    Get ERC20 token allowance
+
+    - This endpoint retrieves the allowance of a specific ERC20 token for a given account address.
+    - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+    """
+
+    # Get allowance amount
+    # - If token_address is not an ERC20 token, it will return 0 allowance
+    erc20 = ERC20(query.token_address)
+    allowance = await erc20.allowance(query.account_address, query.spender_address)
+
+    # Return response
+    return json_response({"allowance": allowance})
 
 
 ###################################################################

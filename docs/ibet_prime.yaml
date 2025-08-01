@@ -10509,6 +10509,96 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/erc20/balance:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Erc20 Balance
+      description: |-
+        Get ERC20 token balance
+
+        - This endpoint retrieves the balance of a specific ERC20 token for a given account address.
+        - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+      operationId: GetERC20Balance
+      parameters:
+        - name: token_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Token contract address to check balance
+            title: Token Address
+          description: Token contract address to check balance
+        - name: account_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Account address to check balance
+            title: Account Address
+          description: Account address to check balance
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetERC20BalanceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/erc20/allowance:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Erc20 Allowance
+      description: |-
+        Get ERC20 token allowance
+
+        - This endpoint retrieves the allowance of a specific ERC20 token for a given account address.
+        - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+      operationId: GetERC20Allowance
+      parameters:
+        - name: token_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Token contract address to check allowance
+            title: Token Address
+          description: Token contract address to check allowance
+        - name: account_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Account address to check allowance
+            title: Account Address
+          description: Account address to check allowance
+        - name: spender_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Spender address to check allowance
+            title: Spender Address
+          description: Spender address to check allowance
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetERC20AllowanceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -13657,6 +13747,28 @@ components:
         - results
       title: GetBatchRegisterPersonalInfoResponse
       description: Get Batch Register PersonalInfo schema (RESPONSE)
+    GetERC20AllowanceResponse:
+      properties:
+        allowance:
+          type: integer
+          title: Allowance
+          description: ERC20 token allowance
+      type: object
+      required:
+        - allowance
+      title: GetERC20AllowanceResponse
+      description: GetERC20Allowance response schema
+    GetERC20BalanceResponse:
+      properties:
+        balance:
+          type: integer
+          title: Balance
+          description: ERC20 token balance
+      type: object
+      required:
+        - balance
+      title: GetERC20BalanceResponse
+      description: GetERC20Balance response schema
     GetIbetWSTBalanceResponse:
       properties:
         balance:
