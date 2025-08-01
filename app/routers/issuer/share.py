@@ -87,11 +87,13 @@ from app.model.db import (
     IDXLock,
     IDXLockedPosition,
     IDXPersonalInfo,
+    IDXPersonalInfoHistory,
     IDXPosition,
     IDXTransfer,
     IDXTransferApproval,
     IDXTransferApprovalsSortItem,
     IDXUnlock,
+    PersonalInfoEventType,
     ScheduledEvents,
     Token,
     TokenHolderExtraInfo,
@@ -2726,12 +2728,20 @@ async def register_share_token_holder_personal_info(
         }
     )
     if personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN:
+        # Add off-chain personal info
         _off_personal_info = IDXPersonalInfo()
         _off_personal_info.issuer_address = issuer_address
         _off_personal_info.account_address = personal_info.account_address
         _off_personal_info.personal_info = input_personal_info
         _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
         await db.merge(_off_personal_info)
+        # Add personal info history
+        _personal_info_history = IDXPersonalInfoHistory()
+        _personal_info_history.issuer_address = issuer_address
+        _personal_info_history.account_address = personal_info.account_address
+        _personal_info_history.event_type = PersonalInfoEventType.REGISTER
+        _personal_info_history.personal_info = input_personal_info
+        db.add(_personal_info_history)
         await db.commit()
     else:
         # Check the length of personal info content

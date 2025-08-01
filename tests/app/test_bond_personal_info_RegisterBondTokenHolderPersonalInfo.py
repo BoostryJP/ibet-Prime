@@ -21,13 +21,14 @@ import hashlib
 from unittest.mock import patch
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import and_, select
 
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
     AuthToken,
     IDXPersonalInfo,
+    IDXPersonalInfoHistory,
     Token,
     TokenType,
     TokenVersion,
@@ -240,6 +241,33 @@ class TestRegisterBondTokenHolderPersonalInfo:
                 "tax_category": 10,
             }
             assert _off_personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN
+
+            _personal_info_history = (
+                await async_db.scalars(
+                    select(IDXPersonalInfoHistory)
+                    .where(
+                        and_(
+                            IDXPersonalInfoHistory.issuer_address == _issuer_address,
+                            IDXPersonalInfoHistory.account_address
+                            == _test_account_address,
+                        )
+                    )
+                    .limit(1)
+                )
+            ).first()
+            assert _personal_info_history.id is not None
+            assert _personal_info_history.issuer_address == _issuer_address
+            assert _personal_info_history.account_address == _test_account_address
+            assert _personal_info_history.personal_info == {
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "address": "test_address",
+                "postal_code": "test_postal_code",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
 
     # <Normal_2_1>
     # Optional items
