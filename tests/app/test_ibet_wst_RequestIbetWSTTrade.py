@@ -106,8 +106,8 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(ibet_wst_address=self.ibet_wst_address),
             json={
-                "seller_st_account": self.user1["address"],
-                "buyer_st_account": self.user2["address"],
+                "seller_st_account_address": self.user1["address"],
+                "buyer_st_account_address": self.user2["address"],
                 "sc_token_address": self.sc_token_address,
                 "st_value": 1000,
                 "sc_value": 2000,
@@ -169,13 +169,13 @@ class TestAddIbetWSTWhitelist:
             "detail": [
                 {
                     "type": "missing",
-                    "loc": ["body", "seller_st_account"],
+                    "loc": ["body", "seller_st_account_address"],
                     "msg": "Field required",
                     "input": {},
                 },
                 {
                     "type": "missing",
-                    "loc": ["body", "buyer_st_account"],
+                    "loc": ["body", "buyer_st_account_address"],
                     "msg": "Field required",
                     "input": {},
                 },
@@ -249,8 +249,8 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(ibet_wst_address=self.ibet_wst_address),
             json={
-                "seller_st_account": self.user1["address"],
-                "buyer_st_account": self.user2["address"],
+                "seller_st_account_address": self.user1["address"],
+                "buyer_st_account_address": self.user2["address"],
                 "sc_token_address": self.sc_token_address,
                 "st_value": 1000,
                 "sc_value": 2000,

@@ -580,7 +580,8 @@ class TestProcessor:
         wst_tx.tx_hash = self.tx_hash
         wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
         wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
         )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
@@ -614,7 +615,8 @@ class TestProcessor:
             idx_whitelist.ibet_wst_address
             == "0x9876543210abcdef1234567890abcdef12345678"
         )
-        assert idx_whitelist.account_address == self.user1["address"]
+        assert idx_whitelist.st_account_address == self.user1["address"]
+        assert idx_whitelist.sc_account_address == self.user1["address"]
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=add_whitelist",
@@ -679,7 +681,8 @@ class TestProcessor:
         wst_tx.tx_hash = self.tx_hash
         wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
         wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
         )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
@@ -687,7 +690,8 @@ class TestProcessor:
 
         idx_whitelist = IDXEthIbetWSTWhitelist(
             ibet_wst_address=wst_tx.ibet_wst_address,
-            account_address=self.user1["address"],
+            st_account_address=self.user1["address"],
+            sc_account_address=self.user1["address"],
         )
         async_db.add(idx_whitelist)
         await async_db.commit()
@@ -786,11 +790,9 @@ class TestProcessor:
         wst_tx.tx_hash = self.tx_hash
         wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
         wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
-            seller_st_account_address=self.user1["address"],
-            buyer_st_account_address=self.user2["address"],
+            seller_st_account=self.user1["address"],
+            buyer_st_account=self.user2["address"],
             sc_token_address="0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
-            seller_sc_account_address=self.user1["address"],
-            buyer_sc_account_address=self.user2["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test trade request",

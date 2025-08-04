@@ -463,5 +463,7 @@ class IDXEthIbetWSTWhitelist(Base):
 
     # IbetWST contract address
     ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
-    # Account address
-    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # ST account address
+    st_account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # SC account address
+    sc_account_address: Mapped[str] = mapped_column(String(42), primary_key=True)

@@ -364,8 +364,8 @@ async def add_ibet_wst_whitelist(
     # Generate digest
     digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
         domain_separator=domain_separator,
-        st_account=data.st_account,  # ST Account to be added to whitelist
-        sc_account=data.sc_account,  # SC Account to be added to whitelist
+        st_account=data.st_account_address,  # ST Account to be added to whitelist
+        sc_account=data.sc_account_address,  # SC Account to be added to whitelist
         nonce=nonce,
     )
 
@@ -381,8 +381,8 @@ async def add_ibet_wst_whitelist(
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = token.ibet_wst_address
     wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
-        st_account=data.st_account,  # ST Account to be added to whitelist
-        sc_account=data.sc_account,  # SC Account to be added to whitelist
+        st_account=data.st_account_address,  # ST Account to be added to whitelist
+        sc_account=data.sc_account_address,  # SC Account to be added to whitelist
     )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = issuer_address
@@ -479,7 +479,7 @@ async def delete_ibet_wst_whitelist(
     # Generate digest
     digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
         domain_separator=domain_separator,
-        st_account=data.st_account,  # Account to be deleted to whitelist
+        st_account=data.st_account_address,  # Account to be deleted to whitelist
         nonce=nonce,
     )
 
@@ -495,7 +495,7 @@ async def delete_ibet_wst_whitelist(
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = token.ibet_wst_address
     wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
-        st_account=data.st_account,  # Account to be deleted to whitelist
+        st_account=data.st_account_address,  # Account to be deleted to whitelist
     )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = issuer_address

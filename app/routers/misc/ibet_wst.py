@@ -448,7 +448,12 @@ async def retrieve_ibet_wst_whitelist_accounts(
     # Response
     account_list = []
     for whitelist in whitelist_list:
-        account_list.append(whitelist.account_address)
+        account_list.append(
+            {
+                "st_account_address": whitelist.st_account_address,
+                "sc_account_address": whitelist.sc_account_address,
+            }
+        )
 
     return json_response({"whitelist_accounts": account_list})
 
@@ -483,11 +488,17 @@ async def get_ibet_wst_whitelist(
 
     # Get whitelist status
     wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
-    is_whitelisted = await wst_contract.account_white_list(
+    whitelist = await wst_contract.account_white_list(
         to_checksum_address(account_address)
     )
 
-    return json_response({"whitelisted": is_whitelisted})
+    return json_response(
+        {
+            "st_account_address": whitelist.st_account,
+            "sc_account_address": whitelist.sc_account,
+            "listed": whitelist.listed,
+        }
+    )
 
 
 # POST: /ibet_wst/transfers/{ibet_wst_address}
@@ -595,8 +606,8 @@ async def request_ibet_wst_trade(
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = ibet_wst_address
     wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
-        seller_st_account=req_params.seller_st_account,
-        buyer_st_account=req_params.buyer_st_account,
+        seller_st_account=req_params.seller_st_account_address,
+        buyer_st_account=req_params.buyer_st_account_address,
         sc_token_address=req_params.sc_token_address,
         st_value=req_params.st_value,
         sc_value=req_params.sc_value,

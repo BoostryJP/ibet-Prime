@@ -85,8 +85,8 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
             json={
-                "st_account": self.user1_st["address"],
-                "sc_account": self.user1_sc["address"],
+                "st_account_address": self.user1_st["address"],
+                "sc_account_address": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": self.issuer["address"],
@@ -128,8 +128,8 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
             json={
-                "st_account": "invalid_account_address",
-                "sc_account": "invalid_account_address",
+                "st_account_address": "invalid_account_address",
+                "sc_account_address": "invalid_account_address",
             },
             headers={
                 "issuer-address": self.issuer["address"],
@@ -144,14 +144,14 @@ class TestAddIbetWSTWhitelist:
             "detail": [
                 {
                     "type": "value_error",
-                    "loc": ["body", "st_account"],
+                    "loc": ["body", "st_account_address"],
                     "msg": "Value error, invalid ethereum address",
                     "input": "invalid_account_address",
                     "ctx": {"error": {}},
                 },
                 {
                     "type": "value_error",
-                    "loc": ["body", "sc_account"],
+                    "loc": ["body", "sc_account_address"],
                     "msg": "Value error, invalid ethereum address",
                     "input": "invalid_account_address",
                     "ctx": {"error": {}},
@@ -166,8 +166,8 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
             json={
-                "st_account": self.user1_st["address"],
-                "sc_account": self.user1_sc["address"],
+                "st_account_address": self.user1_st["address"],
+                "sc_account_address": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": "invalid_issuer_address",
@@ -222,8 +222,8 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
             json={
-                "st_account": self.user1_st["address"],
-                "sc_account": self.user1_sc["address"],
+                "st_account_address": self.user1_st["address"],
+                "sc_account_address": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": self.issuer["address"],
@@ -254,8 +254,8 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
             json={
-                "st_account": self.user1_st["address"],
-                "sc_account": self.user1_sc["address"],
+                "st_account_address": self.user1_st["address"],
+                "sc_account_address": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": self.issuer["address"],
