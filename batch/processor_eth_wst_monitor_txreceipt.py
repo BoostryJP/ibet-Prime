@@ -41,6 +41,7 @@ from app.model.db import (
     IbetWSTEventLogTradeRejected,
     IbetWSTEventLogTradeRequested,
     IbetWSTEventLogTransfer,
+    IbetWSTTxParamsAddAccountWhiteList,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IDXEthIbetWSTWhitelist,
@@ -207,11 +208,14 @@ async def finalize_tx(
                 )
                 await db_session.merge(wst_tx)
             # Add to whitelist table
-            whitelist = IDXEthIbetWSTWhitelist(
-                ibet_wst_address=wst_tx.ibet_wst_address,
-                account_address=event["args"]["accountAddress"],
+            tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
+            await db_session.merge(
+                IDXEthIbetWSTWhitelist(
+                    ibet_wst_address=wst_tx.ibet_wst_address,
+                    st_account_address=tx_params["st_account"],
+                    sc_account_address=tx_params["sc_account"],
+                )
             )
-            await db_session.merge(whitelist)
         case IbetWSTTxType.DELETE_WHITELIST:
             # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
@@ -230,7 +234,7 @@ async def finalize_tx(
                     and_(
                         IDXEthIbetWSTWhitelist.ibet_wst_address
                         == wst_tx.ibet_wst_address,
-                        IDXEthIbetWSTWhitelist.account_address
+                        IDXEthIbetWSTWhitelist.st_account_address
                         == event["args"]["accountAddress"],
                     )
                 )

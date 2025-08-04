@@ -145,16 +145,19 @@ class ListIbetWSTTransactionsQuery(BasePaginationQuery):
 class AddIbetWSTWhitelistRequest(BaseModel):
     """AddIbetWSTWhitelist request schema"""
 
-    account_address: ChecksumEthereumAddress = Field(
-        description="Account address to whitelist"
+    st_account_address: ChecksumEthereumAddress = Field(
+        description="ST account address to be added to the whitelist"
+    )
+    sc_account_address: ChecksumEthereumAddress = Field(
+        description="SC account address to be added to the whitelist"
     )
 
 
 class DeleteIbetWSTWhitelistRequest(BaseModel):
     """DeleteIbetWSTWhitelist request schema"""
 
-    account_address: ChecksumEthereumAddress = Field(
-        description="Account address to whitelist"
+    st_account_address: ChecksumEthereumAddress = Field(
+        description="ST account address to be removed from the whitelist"
     )
 
 
@@ -199,12 +202,6 @@ class RequestIbetWSTTradeRequest(BaseModel):
     )
     sc_token_address: ChecksumEthereumAddress = Field(
         description="SC token contract address"
-    )
-    seller_sc_account_address: ChecksumEthereumAddress = Field(
-        description="SC seller account address"
-    )
-    buyer_sc_account_address: ChecksumEthereumAddress = Field(
-        description="SC buyer account address"
     )
     st_value: PositiveInt = Field(description="Value of IbetWST to trade")
     sc_value: PositiveInt = Field(description="Value of SC token to trade")
@@ -423,17 +420,36 @@ class ListIbetWSTTransactionsResponse(BaseModel):
     )
 
 
+class IbetWSTWhitelistAccount(BaseModel):
+    """IbetWST Whitelist Account schema"""
+
+    st_account_address: ChecksumEthereumAddress = Field(
+        description="ST account address of the whitelisted account"
+    )
+    sc_account_address: ChecksumEthereumAddress = Field(
+        description="SC account address of the whitelisted account"
+    )
+
+
 class RetrieveIbetWSTWhitelistAccountsResponse(BaseModel):
     """RetrieveIbetWSTWhitelistAccounts response schema"""
 
-    whitelist_accounts: list[str] = Field(description="List of whitelisted accounts")
+    whitelist_accounts: list[IbetWSTWhitelistAccount] = Field(
+        description="List of whitelisted accounts"
+    )
 
 
 class GetIbetWSTWhitelistResponse(BaseModel):
     """GetIbetWSTWhitelist response schema"""
 
-    whitelisted: bool = Field(
-        description="True if the account is whitelisted, False otherwise"
+    st_account_address: str = Field(
+        description="ST account address of the whitelisted account"
+    )
+    sc_account_address: str = Field(
+        description="SC account address of the whitelisted account"
+    )
+    listed: bool = Field(
+        description="True if the account is listed in the whitelist, False otherwise"
     )
 
 

@@ -21,14 +21,23 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from eth_utils import to_checksum_address
 
 from app.model.db import Token, TokenType, TokenVersion
+from app.model.eth.wst import IbetWSTWhiteList
 
 
 @pytest.mark.asyncio
 class TestGetIbetWSTWhiteList:
     # API endpoint
     api_url = "/ibet_wst/whitelists/{ibet_wst_address}/{account_address}"
+
+    st_account_address = to_checksum_address(
+        "0x1234567890abcdef1234567890abcdef12345678"
+    )
+    sc_account_address = to_checksum_address(
+        "0x234567890abcdef1234567890abcdef123456789"
+    )
 
     ###########################################################################
     # Normal
@@ -38,12 +47,17 @@ class TestGetIbetWSTWhiteList:
     # Return whitelist status of account
     @mock.patch(
         "app.routers.misc.ibet_wst.IbetWST.account_white_list",
-        AsyncMock(return_value=True),
+        AsyncMock(
+            return_value=IbetWSTWhiteList(
+                st_account=st_account_address,
+                sc_account=sc_account_address,
+                listed=True,
+            )
+        ),
     )
     async def test_normal_1(self, async_client, async_db):
         # Define parameters
         issuer_address = "0x1234567890abcdef1234567890abcdef12345678"
-        account_address = "0x234567890abcdef1234567890abcdef123456789"
         ibet_token_address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
         ibet_wst_address = "0xbcdefabcdefabcdefabcdefabcdefabcdefabcde"
 
@@ -63,14 +77,18 @@ class TestGetIbetWSTWhiteList:
         # Send request
         resp = await async_client.get(
             self.api_url.format(
-                account_address=account_address,
+                account_address=self.st_account_address,
                 ibet_wst_address=ibet_wst_address,
             )
         )
 
         # Check response status code
         assert resp.status_code == 200
-        assert resp.json() == {"whitelisted": True}
+        assert resp.json() == {
+            "st_account_address": self.st_account_address,
+            "sc_account_address": self.sc_account_address,
+            "listed": True,
+        }
 
     ###########################################################################
     # Error
@@ -111,10 +129,6 @@ class TestGetIbetWSTWhiteList:
 
     # <Error_2>
     # ibet-WST token not found
-    @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.account_white_list",
-        AsyncMock(return_value=True),
-    )
     async def test_error_2(self, async_client, async_db):
         # Define parameters
         account_address = "0x234567890abcdef1234567890abcdef123456789"

@@ -11553,13 +11553,18 @@ components:
         3:SET
     AddIbetWSTWhitelistRequest:
       properties:
-        account_address:
+        st_account_address:
           type: string
-          title: Account Address
-          description: Account address to whitelist
+          title: St Account Address
+          description: ST account address to be added to the whitelist
+        sc_account_address:
+          type: string
+          title: Sc Account Address
+          description: SC account address to be added to the whitelist
       type: object
       required:
-        - account_address
+        - st_account_address
+        - sc_account_address
       title: AddIbetWSTWhitelistRequest
       description: AddIbetWSTWhitelist request schema
     AuthTokenAlreadyExistsErrorCode:
@@ -13129,13 +13134,13 @@ components:
       title: DVPDeliveryInfoNotification
     DeleteIbetWSTWhitelistRequest:
       properties:
-        account_address:
+        st_account_address:
           type: string
-          title: Account Address
-          description: Account address to whitelist
+          title: St Account Address
+          description: ST account address to be removed from the whitelist
       type: object
       required:
-        - account_address
+        - st_account_address
       title: DeleteIbetWSTWhitelistRequest
       description: DeleteIbetWSTWhitelist request schema
     DeliveryStatus:
@@ -13882,13 +13887,24 @@ components:
       description: GetIbetWSTTransaction response schema
     GetIbetWSTWhitelistResponse:
       properties:
-        whitelisted:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        sc_account_address:
+          type: string
+          title: Sc Account Address
+          description: SC account address of the whitelisted account
+        listed:
           type: boolean
-          title: Whitelisted
-          description: True if the account is whitelisted, False otherwise
+          title: Listed
+          description: True if the account is listed in the whitelist, False 
+            otherwise
       type: object
       required:
-        - whitelisted
+        - st_account_address
+        - sc_account_address
+        - listed
       title: GetIbetWSTWhitelistResponse
       description: GetIbetWSTWhitelist response schema
     HTTPValidationError:
@@ -15805,6 +15821,22 @@ components:
       title: IbetWSTTransactionResponse
       description: Common response schema for APIs that send IbetWST 
         transactions
+    IbetWSTWhitelistAccount:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        sc_account_address:
+          type: string
+          title: Sc Account Address
+          description: SC account address of the whitelisted account
+      type: object
+      required:
+        - st_account_address
+        - sc_account_address
+      title: IbetWSTWhitelistAccount
+      description: IbetWST Whitelist Account schema
     Integer64bitLimitExceededErrorCode:
       type: integer
       enum:
@@ -17488,14 +17520,6 @@ components:
           type: string
           title: Sc Token Address
           description: SC token contract address
-        seller_sc_account_address:
-          type: string
-          title: Seller Sc Account Address
-          description: SC seller account address
-        buyer_sc_account_address:
-          type: string
-          title: Buyer Sc Account Address
-          description: SC buyer account address
         st_value:
           type: integer
           exclusiveMinimum: 0.0
@@ -17522,8 +17546,6 @@ components:
         - seller_st_account_address
         - buyer_st_account_address
         - sc_token_address
-        - seller_sc_account_address
-        - buyer_sc_account_address
         - st_value
         - sc_value
         - memo
@@ -17850,7 +17872,7 @@ components:
       properties:
         whitelist_accounts:
           items:
-            type: string
+            $ref: '#/components/schemas/IbetWSTWhitelistAccount'
           type: array
           title: Whitelist Accounts
           description: List of whitelisted accounts

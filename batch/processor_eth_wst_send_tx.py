@@ -45,7 +45,7 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
 )
-from app.model.eth import IbetWST, IbetWSTAuthorization, IbetWSTTrade
+from app.model.eth import IbetWST, IbetWSTAuthorization
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc
@@ -241,7 +241,8 @@ async def send_add_whitelist_transaction(
     wst_contract = IbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
     tx_hash = await wst_contract.add_account_white_list_with_authorization(
-        account=tx_params["account_address"],
+        st_account=tx_params["st_account"],
+        sc_account=tx_params["sc_account"],
         authorization=IbetWSTAuthorization(
             nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
             v=wst_tx.authorization["v"],
@@ -264,7 +265,7 @@ async def send_delete_whitelist_transaction(
     wst_contract = IbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsDeleteAccountWhiteList = wst_tx.tx_params
     tx_hash = await wst_contract.delete_account_white_list_with_authorization(
-        account=tx_params["account_address"],
+        st_account=tx_params["st_account"],
         authorization=IbetWSTAuthorization(
             nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
             v=wst_tx.authorization["v"],
@@ -362,16 +363,12 @@ async def send_request_trade_transaction(
     wst_contract = IbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsRequestTrade = wst_tx.tx_params
     tx_hash = await wst_contract.request_trade_with_authorization(
-        trade=IbetWSTTrade(
-            seller_st_account=tx_params["seller_st_account_address"],
-            buyer_st_account=tx_params["buyer_st_account_address"],
-            sc_token_address=tx_params["sc_token_address"],
-            seller_sc_account=tx_params["seller_sc_account_address"],
-            buyer_sc_account=tx_params["buyer_sc_account_address"],
-            st_value=tx_params["st_value"],
-            sc_value=tx_params["sc_value"],
-            memo=tx_params["memo"],
-        ),
+        seller_st_account=tx_params["seller_st_account"],
+        buyer_st_account=tx_params["buyer_st_account"],
+        sc_token_address=tx_params["sc_token_address"],
+        st_value=tx_params["st_value"],
+        sc_value=tx_params["sc_value"],
+        memo=tx_params["memo"],
         authorization=IbetWSTAuthorization(
             nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
             v=wst_tx.authorization["v"],
