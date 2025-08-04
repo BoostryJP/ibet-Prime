@@ -190,7 +190,8 @@ class TestProcessor:
             "0x1234567890abcdef1234567890abcdef12345678"
         )
         wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
         )
         wst_tx.authorizer = self.issuer["address"]
         wst_tx.authorization = IbetWSTAuthorization(
@@ -255,7 +256,7 @@ class TestProcessor:
             "0x1234567890abcdef1234567890abcdef12345678"
         )
         wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
         )
         wst_tx.authorizer = self.issuer["address"]
         wst_tx.authorization = IbetWSTAuthorization(
@@ -320,13 +321,11 @@ class TestProcessor:
             "0x1234567890abcdef1234567890abcdef12345678"
         )
         wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
-            seller_st_account_address=self.user1["address"],
-            buyer_st_account_address=self.user2["address"],
+            seller_st_account=self.user1["address"],
+            buyer_st_account=self.user2["address"],
             sc_token_address=to_checksum_address(
                 "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
             ),
-            seller_sc_account_address=self.user1["address"],
-            buyer_sc_account_address=self.user2["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test trade request",

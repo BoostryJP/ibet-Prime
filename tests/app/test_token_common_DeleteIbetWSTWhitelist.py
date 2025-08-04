@@ -83,7 +83,7 @@ class TestAddIbetWSTWhitelist:
         # Send request
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
-            json={"account_address": self.user1["address"]},
+            json={"st_account": self.user1["address"]},
             headers={
                 "issuer-address": self.issuer["address"],
                 "eoa-password": E2EEUtils.encrypt("password"),
@@ -101,7 +101,7 @@ class TestAddIbetWSTWhitelist:
         assert wst_tx.status == IbetWSTTxStatus.PENDING
         assert wst_tx.ibet_wst_address == self.ibet_wst_address
         assert wst_tx.tx_params == {
-            "account_address": self.user1["address"],
+            "st_account": self.user1["address"],
         }
         assert wst_tx.tx_sender == self.relayer["address"]
         assert wst_tx.authorizer == self.issuer["address"]
@@ -122,7 +122,7 @@ class TestAddIbetWSTWhitelist:
         # Send request with invalid account address
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
-            json={"account_address": "invalid_account_address"},
+            json={"st_account": "invalid_account_address"},
             headers={
                 "issuer-address": self.issuer["address"],
                 "eoa-password": E2EEUtils.encrypt("password"),
@@ -136,7 +136,7 @@ class TestAddIbetWSTWhitelist:
             "detail": [
                 {
                     "type": "value_error",
-                    "loc": ["body", "account_address"],
+                    "loc": ["body", "st_account"],
                     "msg": "Value error, invalid ethereum address",
                     "input": "invalid_account_address",
                     "ctx": {"error": {}},
@@ -150,7 +150,7 @@ class TestAddIbetWSTWhitelist:
         # Send request
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
-            json={"account_address": self.user1["address"]},
+            json={"st_account": self.user1["address"]},
             headers={
                 "issuer-address": "invalid_issuer_address",
                 "eoa-password": "invalid_password",
@@ -203,7 +203,7 @@ class TestAddIbetWSTWhitelist:
         # Send request
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
-            json={"account_address": self.user1["address"]},
+            json={"st_account": self.user1["address"]},
             headers={
                 "issuer-address": self.issuer["address"],
                 "eoa-password": E2EEUtils.encrypt("invalid_password"),
@@ -232,7 +232,7 @@ class TestAddIbetWSTWhitelist:
         # Send request
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
-            json={"account_address": self.user1["address"]},
+            json={"st_account": self.user1["address"]},
             headers={
                 "issuer-address": self.issuer["address"],
                 "eoa-password": E2EEUtils.encrypt("password"),

@@ -90,6 +90,16 @@ class ERC20:
         )
 
 
+class IbetWSTWhiteList(BaseModel):
+    """
+    IbetWST White List information
+    """
+
+    st_account: EthereumAddress = Field(default=ZERO_ADDRESS)
+    sc_account: EthereumAddress = Field(default=ZERO_ADDRESS)
+    listed: bool = Field(default=False)
+
+
 class IbetWSTTrade(BaseModel):
     """
     IbetWST Trade information
@@ -233,32 +243,36 @@ class IbetWSTDigestHelper:
     @staticmethod
     def generate_add_account_whitelist_digest(
         domain_separator: bytes,
-        account_address: str,
+        st_account: str,
+        sc_account: str,
         nonce: bytes,
     ) -> bytes:
         """
         Generate the EIP-712 digest for adding an account to the whitelist.
 
         :param domain_separator: EIP-712 DOMAIN_SEPARATOR
-        :param account_address: Address of the account to add to the whitelist
+        :param st_account: Address of the ST account to add to the whitelist
+        :param sc_account: Address of the SC account to add to the whitelist
         :param nonce: Nonce for the operation, used to prevent replay attacks
         :return: EIP-712 digest for the add whitelist operation
         """
 
         type_hash = keccak(
-            text="AddAccountWhiteListWithAuthorization(address accountAddress,bytes32 nonce)"
+            text="AddAccountWhiteListWithAuthorization(address STAccountAddress,address SCAccountAddress,bytes32 nonce)"
         )
 
         struct_hash = keccak(
             encode(
                 [
                     "bytes32",  # typeHash
-                    "address",  # account
+                    "address",  # STAccountAddress
+                    "address",  # SCAccountAddress
                     "bytes32",  # nonce
                 ],
                 [
                     type_hash,
-                    to_checksum_address(account_address),
+                    to_checksum_address(st_account),
+                    to_checksum_address(sc_account),
                     nonce,
                 ],
             )
@@ -282,32 +296,32 @@ class IbetWSTDigestHelper:
     @staticmethod
     def generate_delete_account_whitelist_digest(
         domain_separator: bytes,
-        account_address: str,
+        st_account: str,
         nonce: bytes,
     ) -> bytes:
         """
         Generate the EIP-712 digest for deleting an account from the whitelist.
 
         :param domain_separator: EIP-712 DOMAIN_SEPARATOR
-        :param account_address: Address of the account to delete from the whitelist
+        :param st_account: Address of the ST account to delete from the whitelist
         :param nonce: Nonce for the operation, used to prevent replay attacks
         :return: EIP-712 digest for the delete whitelist operation
         """
 
         type_hash = keccak(
-            text="DeleteAccountWhiteListWithAuthorization(address accountAddress,bytes32 nonce)"
+            text="DeleteAccountWhiteListWithAuthorization(address STAccountAddress,bytes32 nonce)"
         )
 
         struct_hash = keccak(
             encode(
                 [
                     "bytes32",  # typeHash
-                    "address",  # account
+                    "address",  # STAccountAddress
                     "bytes32",  # nonce
                 ],
                 [
                     type_hash,
-                    to_checksum_address(account_address),
+                    to_checksum_address(st_account),
                     nonce,
                 ],
             )
@@ -461,11 +475,9 @@ class IbetWSTDigestHelper:
     @staticmethod
     def generate_request_trade_digest(
         domain_separator: bytes,
-        seller_st_account_address: str,
-        buyer_st_account_address: str,
+        seller_st_account: str,
+        buyer_st_account: str,
         sc_token_address: str,
-        seller_sc_account_address: str,
-        buyer_sc_account_address: str,
         st_value: int,
         sc_value: int,
         memo: str,
@@ -475,11 +487,9 @@ class IbetWSTDigestHelper:
         Generate the EIP-712 digest for request trade with authorization.
 
         :param domain_separator: EIP-712 DOMAIN_SEPARATOR
-        :param seller_st_account_address: Seller's ST account address
-        :param buyer_st_account_address: Buyer's ST account address
+        :param seller_st_account: Seller's ST account address
+        :param buyer_st_account: Buyer's ST account address
         :param sc_token_address: SC contract address
-        :param seller_sc_account_address: Seller's SC account address
-        :param buyer_sc_account_address: Buyer's SC account address
         :param st_value: Value of ST to trade
         :param sc_value: Value of SC to trade
         :param memo: Optional memo for the trade request
@@ -488,7 +498,7 @@ class IbetWSTDigestHelper:
         """
 
         type_hash = keccak(
-            text="RequestTradeWithAuthorization(address sellerSTAccountAddress,address buyerSTAccountAddress,address SCTokenAddress,address sellerSCAccountAddress,address buyerSCAccountAddress,uint256 STValue,uint256 SCValue,string memory memo,bytes32 nonce)"
+            text="RequestTradeWithAuthorization(address sellerSTAccountAddress,address buyerSTAccountAddress,address SCTokenAddress,uint256 STValue,uint256 SCValue,string memory memo,bytes32 nonce)"
         )
 
         struct_hash = keccak(
@@ -498,8 +508,6 @@ class IbetWSTDigestHelper:
                     "address",  # sellerSTAccountAddress
                     "address",  # buyerSTAccountAddress
                     "address",  # SCTokenAddress
-                    "address",  # sellerSCAccountAddress
-                    "address",  # buyerSCAccountAddress
                     "uint256",  # STValue
                     "uint256",  # SCValue
                     "string",  # memo
@@ -507,11 +515,9 @@ class IbetWSTDigestHelper:
                 ],
                 [
                     type_hash,
-                    to_checksum_address(seller_st_account_address),
-                    to_checksum_address(buyer_st_account_address),
+                    to_checksum_address(seller_st_account),
+                    to_checksum_address(buyer_st_account),
                     to_checksum_address(sc_token_address),
-                    to_checksum_address(seller_sc_account_address),
-                    to_checksum_address(buyer_sc_account_address),
                     st_value,
                     sc_value,
                     memo,
@@ -723,23 +729,29 @@ class IbetWST(ERC20):
             )
         )
 
-    async def account_white_list(self, account: EthereumAddress) -> bool:
+    async def account_white_list(self, account: EthereumAddress) -> IbetWSTWhiteList:
         """
         Check if account is in white list
 
         :param account: Account address
         :return: True if account is in white list, False otherwise
         """
-        return await EthAsyncContractUtils.call_function(
+        whitelist = await EthAsyncContractUtils.call_function(
             contract=self.contract,
             function_name="accountWhiteList",
             args=(to_checksum_address(account),),
-            default_returns=False,
+            default_returns=IbetWSTWhiteList(),
+        )
+        return IbetWSTWhiteList(
+            st_account=to_checksum_address(whitelist[0]),
+            sc_account=to_checksum_address(whitelist[1]),
+            listed=whitelist[2],
         )
 
     async def add_account_white_list_with_authorization(
         self,
-        account: EthereumAddress,
+        st_account: EthereumAddress,
+        sc_account: EthereumAddress,
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
@@ -747,7 +759,8 @@ class IbetWST(ERC20):
         """
         Add account to white list with authorization
 
-        :param account: Account address
+        :param st_account: Account address for ST
+        :param sc_account: Account address for SC
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
@@ -756,7 +769,8 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to add the account to the whitelist
             tx = await self.contract.functions.addAccountWhiteListWithAuthorization(
-                to_checksum_address(account),
+                to_checksum_address(st_account),
+                to_checksum_address(sc_account),
                 authorization.nonce,
                 authorization.v,
                 authorization.r,
@@ -765,7 +779,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 95000,
+                    "gas": 123000,
                 }
             )
             # Send the transaction
@@ -775,7 +789,7 @@ class IbetWST(ERC20):
 
     async def delete_account_white_list_with_authorization(
         self,
-        account: EthereumAddress,
+        st_account: EthereumAddress,
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
@@ -783,7 +797,7 @@ class IbetWST(ERC20):
         """
         Delete account from white list with authorization
 
-        :param account: Account address
+        :param st_account: Account address for ST
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
@@ -792,7 +806,7 @@ class IbetWST(ERC20):
         try:
             # Build the transaction to delete the account from the whitelist
             tx = await self.contract.functions.deleteAccountWhiteListWithAuthorization(
-                to_checksum_address(account),
+                to_checksum_address(st_account),
                 authorization.nonce,
                 authorization.v,
                 authorization.r,
@@ -879,7 +893,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 85000,
+                    "gas": 82000,
                 }
             )
             # Send the transaction
@@ -927,7 +941,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 105000,
+                    "gas": 108000,
                 }
             )
             # Send the transaction
@@ -1021,7 +1035,12 @@ class IbetWST(ERC20):
 
     async def request_trade_with_authorization(
         self,
-        trade: IbetWSTTrade,
+        seller_st_account: EthereumAddress,
+        buyer_st_account: EthereumAddress,
+        sc_token_address: EthereumAddress,
+        st_value: int,
+        sc_value: int,
+        memo: str,
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
@@ -1029,7 +1048,12 @@ class IbetWST(ERC20):
         """
         Request a trade with authorization
 
-        :param trade: Trade information
+        :param seller_st_account: Seller's ST account address
+        :param buyer_st_account: Buyer's ST account address
+        :param sc_token_address: SC contract address
+        :param st_value: Value of ST to trade
+        :param sc_value: Value of SC to trade
+        :param memo: Optional memo for the trade request
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
@@ -1038,14 +1062,12 @@ class IbetWST(ERC20):
         try:
             # Build the transaction
             tx = await self.contract.functions.requestTradeWithAuthorization(
-                to_checksum_address(trade.seller_st_account),
-                to_checksum_address(trade.buyer_st_account),
-                to_checksum_address(trade.sc_token_address),
-                to_checksum_address(trade.seller_sc_account),
-                to_checksum_address(trade.buyer_sc_account),
-                trade.st_value,
-                trade.sc_value,
-                trade.memo,
+                to_checksum_address(seller_st_account),
+                to_checksum_address(buyer_st_account),
+                to_checksum_address(sc_token_address),
+                st_value,
+                sc_value,
+                memo,
                 authorization.nonce,
                 authorization.v,
                 authorization.r,
@@ -1054,7 +1076,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 325000,
+                    "gas": 321000,
                 }
             )
             # Send the transaction
@@ -1090,7 +1112,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 115000,
+                    "gas": 113000,
                 }
             )
             # Send the transaction
@@ -1126,7 +1148,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 180000,
+                    "gas": 178000,
                 }
             )
             # Send the transaction
@@ -1162,7 +1184,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 115000,
+                    "gas": 113000,
                 }
             )
             # Send the transaction

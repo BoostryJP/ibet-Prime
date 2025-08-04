@@ -145,16 +145,19 @@ class ListIbetWSTTransactionsQuery(BasePaginationQuery):
 class AddIbetWSTWhitelistRequest(BaseModel):
     """AddIbetWSTWhitelist request schema"""
 
-    account_address: ChecksumEthereumAddress = Field(
-        description="Account address to whitelist"
+    st_account: ChecksumEthereumAddress = Field(
+        description="ST account address to be added to the whitelist"
+    )
+    sc_account: ChecksumEthereumAddress = Field(
+        description="SC account address to be added to the whitelist"
     )
 
 
 class DeleteIbetWSTWhitelistRequest(BaseModel):
     """DeleteIbetWSTWhitelist request schema"""
 
-    account_address: ChecksumEthereumAddress = Field(
-        description="Account address to whitelist"
+    st_account: ChecksumEthereumAddress = Field(
+        description="ST account address to be removed from the whitelist"
     )
 
 
@@ -191,20 +194,14 @@ class TransferIbetWSTRequest(BaseModel):
 class RequestIbetWSTTradeRequest(BaseModel):
     """RequestIbetWSTTrade request schema"""
 
-    seller_st_account_address: ChecksumEthereumAddress = Field(
+    seller_st_account: ChecksumEthereumAddress = Field(
         description="IbetWST seller account address"
     )
-    buyer_st_account_address: ChecksumEthereumAddress = Field(
+    buyer_st_account: ChecksumEthereumAddress = Field(
         description="IbetWST buyer account address"
     )
     sc_token_address: ChecksumEthereumAddress = Field(
         description="SC token contract address"
-    )
-    seller_sc_account_address: ChecksumEthereumAddress = Field(
-        description="SC seller account address"
-    )
-    buyer_sc_account_address: ChecksumEthereumAddress = Field(
-        description="SC buyer account address"
     )
     st_value: PositiveInt = Field(description="Value of IbetWST to trade")
     sc_value: PositiveInt = Field(description="Value of SC token to trade")

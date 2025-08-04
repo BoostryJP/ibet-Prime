@@ -74,13 +74,14 @@ class IbetWSTTxParamsDeploy(TypedDict):
 class IbetWSTTxParamsAddAccountWhiteList(TypedDict):
     """Parameters for IbetWST addAccountWhiteListWithAuthorization Transaction"""
 
-    account_address: str  # Address to be added to the whitelist
+    st_account: str  # ST account address to be added to the whitelist
+    sc_account: str  # SC account address to be added to the whitelist
 
 
 class IbetWSTTxParamsDeleteAccountWhiteList(TypedDict):
     """Parameters for IbetWST deleteAccountWhiteListWithAuthorization Transaction"""
 
-    account_address: str  # Address to be removed from the whitelist
+    st_account: str  # ST account address to be removed from the whitelist
 
 
 class IbetWSTTxParamsTransfer(TypedDict):
@@ -110,11 +111,9 @@ class IbetWSTTxParamsBurn(TypedDict):
 class IbetWSTTxParamsRequestTrade(TypedDict):
     """Parameters for IbetWST requestTradeWithAuthorization Transaction"""
 
-    seller_st_account_address: str  # Seller's IbetWST account address
-    buyer_st_account_address: str  # Buyer's IbetWST account address
+    seller_st_account: str  # Seller's IbetWST account address
+    buyer_st_account: str  # Buyer's IbetWST account address
     sc_token_address: str  # StableCoin contract address
-    seller_sc_account_address: str  # Seller's StableCoin account address
-    buyer_sc_account_address: str  # Buyer's StableCoin account address
     st_value: int  # Amount of IbetWST to be traded
     sc_value: int  # Amount of StableCoin to be traded
     memo: str  # Memo for the trade request

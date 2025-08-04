@@ -88,11 +88,9 @@ class TestAddIbetWSTWhitelist:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_request_trade_digest(
             domain_separator=domain_separator,
-            seller_st_account_address=self.user1["address"],
-            buyer_st_account_address=self.user2["address"],
+            seller_st_account=self.user1["address"],
+            buyer_st_account=self.user2["address"],
             sc_token_address=self.sc_token_address,
-            seller_sc_account_address=self.user1["address"],
-            buyer_sc_account_address=self.user2["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -108,11 +106,9 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(ibet_wst_address=self.ibet_wst_address),
             json={
-                "seller_st_account_address": self.user1["address"],
-                "buyer_st_account_address": self.user2["address"],
+                "seller_st_account": self.user1["address"],
+                "buyer_st_account": self.user2["address"],
                 "sc_token_address": self.sc_token_address,
-                "seller_sc_account_address": self.user1["address"],
-                "buyer_sc_account_address": self.user2["address"],
                 "st_value": 1000,
                 "sc_value": 2000,
                 "memo": "Test Trade",
@@ -137,11 +133,9 @@ class TestAddIbetWSTWhitelist:
         assert wst_tx.status == IbetWSTTxStatus.PENDING
         assert wst_tx.ibet_wst_address == self.ibet_wst_address
         assert wst_tx.tx_params == {
-            "seller_st_account_address": self.user1["address"],
-            "buyer_st_account_address": self.user2["address"],
+            "seller_st_account": self.user1["address"],
+            "buyer_st_account": self.user2["address"],
             "sc_token_address": self.sc_token_address,
-            "seller_sc_account_address": self.user1["address"],
-            "buyer_sc_account_address": self.user2["address"],
             "st_value": 1000,
             "sc_value": 2000,
             "memo": "Test Trade",
@@ -175,31 +169,19 @@ class TestAddIbetWSTWhitelist:
             "detail": [
                 {
                     "type": "missing",
-                    "loc": ["body", "seller_st_account_address"],
+                    "loc": ["body", "seller_st_account"],
                     "msg": "Field required",
                     "input": {},
                 },
                 {
                     "type": "missing",
-                    "loc": ["body", "buyer_st_account_address"],
+                    "loc": ["body", "buyer_st_account"],
                     "msg": "Field required",
                     "input": {},
                 },
                 {
                     "type": "missing",
                     "loc": ["body", "sc_token_address"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "seller_sc_account_address"],
-                    "msg": "Field required",
-                    "input": {},
-                },
-                {
-                    "type": "missing",
-                    "loc": ["body", "buyer_sc_account_address"],
                     "msg": "Field required",
                     "input": {},
                 },
@@ -249,11 +231,9 @@ class TestAddIbetWSTWhitelist:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_request_trade_digest(
             domain_separator=domain_separator,
-            seller_st_account_address=self.user1["address"],
-            buyer_st_account_address=self.user2["address"],
+            seller_st_account=self.user1["address"],
+            buyer_st_account=self.user2["address"],
             sc_token_address=self.sc_token_address,
-            seller_sc_account_address=self.user1["address"],
-            buyer_sc_account_address=self.user2["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -269,11 +249,9 @@ class TestAddIbetWSTWhitelist:
         resp = await async_client.post(
             self.api_url.format(ibet_wst_address=self.ibet_wst_address),
             json={
-                "seller_st_account_address": self.user1["address"],
-                "buyer_st_account_address": self.user2["address"],
+                "seller_st_account": self.user1["address"],
+                "buyer_st_account": self.user2["address"],
                 "sc_token_address": self.sc_token_address,
-                "seller_sc_account_address": self.user1["address"],
-                "buyer_sc_account_address": self.user2["address"],
                 "st_value": 1000,
                 "sc_value": 2000,
                 "memo": "Test Trade",

@@ -595,11 +595,9 @@ async def request_ibet_wst_trade(
     wst_tx.status = IbetWSTTxStatus.PENDING
     wst_tx.ibet_wst_address = ibet_wst_address
     wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
-        seller_st_account_address=req_params.seller_st_account_address,
-        buyer_st_account_address=req_params.buyer_st_account_address,
+        seller_st_account=req_params.seller_st_account,
+        buyer_st_account=req_params.buyer_st_account,
         sc_token_address=req_params.sc_token_address,
-        seller_sc_account_address=req_params.seller_sc_account_address,
-        buyer_sc_account_address=req_params.buyer_sc_account_address,
         st_value=req_params.st_value,
         sc_value=req_params.sc_value,
         memo=req_params.memo,

@@ -25,7 +25,6 @@ from app.model.eth import (
     IbetWST,
     IbetWSTAuthorization,
     IbetWSTDigestHelper,
-    IbetWSTTrade,
 )
 from app.utils.eth_contract_utils import EthAsyncContractUtils, EthWeb3
 from config import ZERO_ADDRESS
@@ -95,14 +94,16 @@ async def mint_wst_token(
 
 async def wst_add_account_to_whitelist(
     contract_address: str,
-    account: str,
+    st_account: str,
+    sc_account: str,
     tx_from: dict,
 ) -> None:
     """
     Add an account to the WST whitelist.
 
     :param contract_address: Address of the AuthIbetWST contract.
-    :param account: Address of the account to add to the whitelist.
+    :param st_account: Address of the ST account to add to the whitelist.
+    :param sc_account: Address of the SC account to add to the whitelist.
     :param tx_from: Transaction sender (owner of the contract).
     """
     # Get contract
@@ -112,7 +113,9 @@ async def wst_add_account_to_whitelist(
     )
 
     # Add account to whitelist
-    tx = await contract.functions.addAccountWhiteList(account).build_transaction(
+    tx = await contract.functions.addAccountWhiteList(
+        st_account, sc_account
+    ).build_transaction(
         {
             "from": tx_from["address"],
             "gas": 2000000,
@@ -129,8 +132,6 @@ async def wst_request_trade(
     contract_address: str,
     buyer_st_account: str,
     sc_token_address: str,
-    seller_sc_account: str,
-    buyer_sc_account: str,
     st_value: int,
     sc_value: int,
     memo: str,
@@ -142,8 +143,6 @@ async def wst_request_trade(
     :param contract_address: Address of the AuthIbetWST contract.
     :param buyer_st_account: Buyer's ST account address.
     :param sc_token_address: SC token address.
-    :param seller_sc_account: Seller's SC account address.
-    :param buyer_sc_account: Buyer's SC account address.
     :param st_value: ST value for the trade.
     :param sc_value: SC value for the trade.
     :param memo: Memo for the trade.
@@ -159,8 +158,6 @@ async def wst_request_trade(
     tx = await contract.functions.requestTrade(
         buyer_st_account,
         sc_token_address,
-        seller_sc_account,
-        buyer_sc_account,
         st_value,
         sc_value,
         memo,
@@ -320,17 +317,19 @@ class TestAccountWhitelist:
 
         # Add account to whitelist
         await wst_add_account_to_whitelist(
-            contract_address, self.user1["address"], self.owner
+            contract_address, self.user1["address"], self.user1["address"], self.owner
         )
 
         # Generate contract instance
         contract = IbetWST(contract_address)
 
         # Call account_white_list function
-        is_white_listed = await contract.account_white_list(self.user1["address"])
+        whitelist = await contract.account_white_list(self.user1["address"])
 
         # Assert that the address is whitelisted
-        assert is_white_listed is True
+        assert whitelist.st_account == self.user1["address"]
+        assert whitelist.sc_account == self.user1["address"]
+        assert whitelist.listed is True
 
     # Normal_2
     # - Test that an address not in the whitelist returns false.
@@ -344,10 +343,12 @@ class TestAccountWhitelist:
         contract = IbetWST(contract_address)
 
         # Call name function
-        is_white_listed = await contract.account_white_list(ZERO_ADDRESS)
+        whitelist = await contract.account_white_list(ZERO_ADDRESS)
 
         # Assert that the address is not whitelisted
-        assert is_white_listed is False
+        assert whitelist.st_account == ZERO_ADDRESS
+        assert whitelist.sc_account == ZERO_ADDRESS
+        assert whitelist.listed is False
 
 
 @pytest.mark.asyncio
@@ -385,7 +386,8 @@ class TestAddAccountWhiteListWithAuthorization:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
             domain_separator=domain_separator,
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
             nonce=nonce,
         )
 
@@ -396,7 +398,8 @@ class TestAddAccountWhiteListWithAuthorization:
 
         # Attempt to add account to whitelist with invalid authorization
         tx_hash = await contract.add_account_white_list_with_authorization(
-            account=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -413,8 +416,10 @@ class TestAddAccountWhiteListWithAuthorization:
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check if the account is whitelisted
-        is_white_listed = await contract.account_white_list(self.user1["address"])
-        assert is_white_listed is True
+        whitelist = await contract.account_white_list(self.user1["address"])
+        assert whitelist.st_account == self.user1["address"]
+        assert whitelist.sc_account == self.user1["address"]
+        assert whitelist.listed is True
 
     #################################################################
     # Error
@@ -441,7 +446,8 @@ class TestAddAccountWhiteListWithAuthorization:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
             domain_separator=domain_separator,
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
             nonce=nonce,
         )
 
@@ -453,7 +459,8 @@ class TestAddAccountWhiteListWithAuthorization:
 
         # Attempt to add account to whitelist with invalid authorization
         tx_hash = await contract.add_account_white_list_with_authorization(
-            account=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -469,8 +476,10 @@ class TestAddAccountWhiteListWithAuthorization:
         assert tx_receipt["status"] == 0  # Transaction failed
 
         # Check if the account is whitelisted
-        is_white_listed = await contract.account_white_list(self.user1["address"])
-        assert is_white_listed is False
+        whitelist = await contract.account_white_list(self.user1["address"])
+        assert whitelist.st_account == ZERO_ADDRESS
+        assert whitelist.sc_account == ZERO_ADDRESS
+        assert whitelist.listed is False
 
 
 @pytest.mark.asyncio
@@ -499,7 +508,8 @@ class TestDeleteAccountWhiteListWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=contract_address,
-            account=self.user1["address"],
+            st_account=self.user1["address"],
+            sc_account=self.user1["address"],
             tx_from=self.owner,
         )
 
@@ -515,7 +525,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
             domain_separator=domain_separator,
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
             nonce=nonce,
         )
 
@@ -526,7 +536,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
 
         # Attempt to remove account from whitelist with valid authorization
         tx_hash = await contract.delete_account_white_list_with_authorization(
-            account=self.user1["address"],
+            st_account=self.user1["address"],
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -543,8 +553,10 @@ class TestDeleteAccountWhiteListWithAuthorization:
         assert tx_receipt["status"] == 1  # Transaction was successful
 
         # Check if the account is deleted from the whitelist
-        is_white_listed = await contract.account_white_list(self.user1["address"])
-        assert is_white_listed is False
+        whitelist = await contract.account_white_list(self.user1["address"])
+        assert whitelist.st_account == ZERO_ADDRESS
+        assert whitelist.sc_account == ZERO_ADDRESS
+        assert whitelist.listed is False
 
     #################################################################
     # Error
@@ -561,7 +573,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
 
         # Add account to whitelist
         await wst_add_account_to_whitelist(
-            contract_address, self.user1["address"], self.owner
+            contract_address, self.user1["address"], self.user1["address"], self.owner
         )
 
         # Generate contract instance
@@ -576,7 +588,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
             domain_separator=domain_separator,
-            account_address=self.user1["address"],
+            st_account=self.user1["address"],
             nonce=nonce,
         )
 
@@ -588,7 +600,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
 
         # Attempt to remove account from whitelist with invalid authorization
         tx_hash = await contract.delete_account_white_list_with_authorization(
-            account=self.user1["address"],
+            st_account=self.user1["address"],
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -604,8 +616,10 @@ class TestDeleteAccountWhiteListWithAuthorization:
         assert tx_receipt["status"] == 0  # Transaction failed
 
         # Check if the account is still whitelisted
-        is_white_listed = await contract.account_white_list(self.user1["address"])
-        assert is_white_listed is True
+        whitelist = await contract.account_white_list(self.user1["address"])
+        assert whitelist.st_account == self.user1["address"]
+        assert whitelist.sc_account == self.user1["address"]
+        assert whitelist.listed is True
 
 
 @pytest.mark.asyncio
@@ -638,6 +652,14 @@ class TestTransferWithAuthorization:
             to=self.user1["address"],
             value=1000,
             tx_from=self.owner,
+        )
+
+        # Add account to whitelist
+        await wst_add_account_to_whitelist(
+            contract_address, self.user1["address"], self.user1["address"], self.owner
+        )
+        await wst_add_account_to_whitelist(
+            contract_address, self.user2["address"], self.user2["address"], self.owner
         )
 
         # Generate contract instance
@@ -705,6 +727,14 @@ class TestTransferWithAuthorization:
             to=self.user1["address"],
             value=1000,
             tx_from=self.owner,
+        )
+
+        # Add account to whitelist
+        await wst_add_account_to_whitelist(
+            contract_address, self.user1["address"], self.user1["address"], self.owner
+        )
+        await wst_add_account_to_whitelist(
+            contract_address, self.user2["address"], self.user2["address"], self.owner
         )
 
         # Generate contract instance
@@ -1053,12 +1083,14 @@ class TestGetTrade:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1067,8 +1099,6 @@ class TestGetTrade:
             contract_address=st_token_address,
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account=self.seller_sc["address"],
-            buyer_sc_account=self.buyer_sc["address"],
             st_value=100,
             sc_value=200,
             memo="Test Trade",
@@ -1148,12 +1178,14 @@ class TestRequestTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1166,11 +1198,9 @@ class TestRequestTradeWithAuthorization:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_request_trade_digest(
             domain_separator=domain_separator,
-            seller_st_account_address=self.seller_st["address"],
-            buyer_st_account_address=self.buyer_st["address"],
+            seller_st_account=self.seller_st["address"],
+            buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account_address=self.seller_sc["address"],
-            buyer_sc_account_address=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -1184,16 +1214,12 @@ class TestRequestTradeWithAuthorization:
 
         # Attempt to request trade with valid authorization
         tx_hash = await token_st.request_trade_with_authorization(
-            trade=IbetWSTTrade(
-                seller_st_account=self.seller_st["address"],
-                buyer_st_account=self.buyer_st["address"],
-                sc_token_address=sc_token_address,
-                seller_sc_account=self.seller_sc["address"],
-                buyer_sc_account=self.buyer_sc["address"],
-                st_value=1000,
-                sc_value=2000,
-                memo="Test Trade",
-            ),
+            seller_st_account=self.seller_st["address"],
+            buyer_st_account=self.buyer_st["address"],
+            sc_token_address=sc_token_address,
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -1242,12 +1268,14 @@ class TestRequestTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1260,11 +1288,9 @@ class TestRequestTradeWithAuthorization:
         # Generate digest
         digest = IbetWSTDigestHelper.generate_request_trade_digest(
             domain_separator=domain_separator,
-            seller_st_account_address=self.seller_st["address"],
-            buyer_st_account_address=self.buyer_st["address"],
+            seller_st_account=self.seller_st["address"],
+            buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account_address=self.seller_sc["address"],
-            buyer_sc_account_address=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -1279,16 +1305,12 @@ class TestRequestTradeWithAuthorization:
 
         # Attempt to request trade with invalid authorization
         tx_hash = await token_st.request_trade_with_authorization(
-            trade=IbetWSTTrade(
-                seller_st_account=self.seller_st["address"],
-                buyer_st_account=self.buyer_st["address"],
-                sc_token_address=sc_token_address,
-                seller_sc_account=self.seller_sc["address"],
-                buyer_sc_account=self.buyer_sc["address"],
-                st_value=1000,
-                sc_value=2000,
-                memo="Test Trade",
-            ),
+            seller_st_account=self.seller_st["address"],
+            buyer_st_account=self.buyer_st["address"],
+            sc_token_address=sc_token_address,
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
                 v=signature.v,
@@ -1349,12 +1371,14 @@ class TestCancelTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1363,8 +1387,6 @@ class TestCancelTradeWithAuthorization:
             contract_address=st_token_address,
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account=self.seller_sc["address"],
-            buyer_sc_account=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -1440,12 +1462,14 @@ class TestCancelTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1454,8 +1478,6 @@ class TestCancelTradeWithAuthorization:
             contract_address=st_token_address,
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account=self.seller_sc["address"],
-            buyer_sc_account=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -1550,12 +1572,14 @@ class TestAcceptTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1572,8 +1596,6 @@ class TestAcceptTradeWithAuthorization:
             contract_address=st_token_address,
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account=self.seller_sc["address"],
-            buyer_sc_account=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -1655,12 +1677,14 @@ class TestAcceptTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1677,8 +1701,6 @@ class TestAcceptTradeWithAuthorization:
             contract_address=st_token_address,
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account=self.seller_sc["address"],
-            buyer_sc_account=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -1767,12 +1789,14 @@ class TestRejectTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1781,8 +1805,6 @@ class TestRejectTradeWithAuthorization:
             contract_address=st_token_address,
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account=self.seller_sc["address"],
-            buyer_sc_account=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
@@ -1858,12 +1880,14 @@ class TestRejectTradeWithAuthorization:
         # Add account to whitelist
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.seller_st["address"],
+            st_account=self.seller_st["address"],
+            sc_account=self.seller_sc["address"],
             tx_from=self.owner,
         )
         await wst_add_account_to_whitelist(
             contract_address=st_token_address,
-            account=self.buyer_st["address"],
+            st_account=self.buyer_st["address"],
+            sc_account=self.buyer_sc["address"],
             tx_from=self.owner,
         )
 
@@ -1872,8 +1896,6 @@ class TestRejectTradeWithAuthorization:
             contract_address=st_token_address,
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
-            seller_sc_account=self.seller_sc["address"],
-            buyer_sc_account=self.buyer_sc["address"],
             st_value=1000,
             sc_value=2000,
             memo="Test Trade",
