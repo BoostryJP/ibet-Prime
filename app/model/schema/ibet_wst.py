@@ -148,8 +148,11 @@ class AddIbetWSTWhitelistRequest(BaseModel):
     st_account_address: ChecksumEthereumAddress = Field(
         description="ST account address to be added to the whitelist"
     )
-    sc_account_address: ChecksumEthereumAddress = Field(
-        description="SC account address to be added to the whitelist"
+    sc_account_address_in: ChecksumEthereumAddress = Field(
+        description="SC account address for deposits"
+    )
+    sc_account_address_out: ChecksumEthereumAddress = Field(
+        description="SC account address for withdrawals"
     )
 
 
@@ -426,8 +429,11 @@ class IbetWSTWhitelistAccount(BaseModel):
     st_account_address: ChecksumEthereumAddress = Field(
         description="ST account address of the whitelisted account"
     )
-    sc_account_address: ChecksumEthereumAddress = Field(
-        description="SC account address of the whitelisted account"
+    sc_account_address_in: ChecksumEthereumAddress = Field(
+        description="SC account address for deposits"
+    )
+    sc_account_address_out: ChecksumEthereumAddress = Field(
+        description="SC account address for withdrawals"
     )
 
 
@@ -445,8 +451,9 @@ class GetIbetWSTWhitelistResponse(BaseModel):
     st_account_address: str = Field(
         description="ST account address of the whitelisted account"
     )
-    sc_account_address: str = Field(
-        description="SC account address of the whitelisted account"
+    sc_account_address_in: str = Field(description="SC account address for deposits")
+    sc_account_address_out: str = Field(
+        description="SC account address for withdrawals"
     )
     listed: bool = Field(
         description="True if the account is listed in the whitelist, False otherwise"

@@ -74,8 +74,9 @@ class IbetWSTTxParamsDeploy(TypedDict):
 class IbetWSTTxParamsAddAccountWhiteList(TypedDict):
     """Parameters for IbetWST addAccountWhiteListWithAuthorization Transaction"""
 
-    st_account: str  # ST account address to be added to the whitelist
-    sc_account: str  # SC account address to be added to the whitelist
+    st_account: str  # ST account address
+    sc_account_in: str  # SC account address for deposits
+    sc_account_out: str  # SC account address for withdrawals
 
 
 class IbetWSTTxParamsDeleteAccountWhiteList(TypedDict):
@@ -465,5 +466,7 @@ class IDXEthIbetWSTWhitelist(Base):
     ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # ST account address
     st_account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
-    # SC account address
-    sc_account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # SC account address for deposits
+    sc_account_address_in: Mapped[str] = mapped_column(String(42), nullable=False)
+    # SC account address for withdrawals
+    sc_account_address_out: Mapped[str] = mapped_column(String(42), nullable=False)

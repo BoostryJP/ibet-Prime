@@ -213,7 +213,8 @@ async def finalize_tx(
                 IDXEthIbetWSTWhitelist(
                     ibet_wst_address=wst_tx.ibet_wst_address,
                     st_account_address=tx_params["st_account"],
-                    sc_account_address=tx_params["sc_account"],
+                    sc_account_address_in=tx_params["sc_account_in"],
+                    sc_account_address_out=tx_params["sc_account_out"],
                 )
             )
         case IbetWSTTxType.DELETE_WHITELIST:

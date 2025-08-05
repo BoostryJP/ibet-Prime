@@ -86,7 +86,8 @@ class TestAddIbetWSTWhitelist:
             self.api_url.format(token_address=self.token_address),
             json={
                 "st_account_address": self.user1_st["address"],
-                "sc_account_address": self.user1_sc["address"],
+                "sc_account_address_in": self.user1_sc["address"],
+                "sc_account_address_out": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": self.issuer["address"],
@@ -106,7 +107,8 @@ class TestAddIbetWSTWhitelist:
         assert wst_tx.ibet_wst_address == self.ibet_wst_address
         assert wst_tx.tx_params == {
             "st_account": self.user1_st["address"],
-            "sc_account": self.user1_sc["address"],
+            "sc_account_in": self.user1_sc["address"],
+            "sc_account_out": self.user1_sc["address"],
         }
         assert wst_tx.tx_sender == self.relayer["address"]
         assert wst_tx.authorizer == self.issuer["address"]
@@ -129,7 +131,8 @@ class TestAddIbetWSTWhitelist:
             self.api_url.format(token_address=self.token_address),
             json={
                 "st_account_address": "invalid_account_address",
-                "sc_account_address": "invalid_account_address",
+                "sc_account_address_in": "invalid_account_address",
+                "sc_account_address_out": "invalid_account_address",
             },
             headers={
                 "issuer-address": self.issuer["address"],
@@ -151,7 +154,14 @@ class TestAddIbetWSTWhitelist:
                 },
                 {
                     "type": "value_error",
-                    "loc": ["body", "sc_account_address"],
+                    "loc": ["body", "sc_account_address_in"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "invalid_account_address",
+                    "ctx": {"error": {}},
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["body", "sc_account_address_out"],
                     "msg": "Value error, invalid ethereum address",
                     "input": "invalid_account_address",
                     "ctx": {"error": {}},
@@ -167,7 +177,8 @@ class TestAddIbetWSTWhitelist:
             self.api_url.format(token_address=self.token_address),
             json={
                 "st_account_address": self.user1_st["address"],
-                "sc_account_address": self.user1_sc["address"],
+                "sc_account_address_in": self.user1_sc["address"],
+                "sc_account_address_out": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": "invalid_issuer_address",
@@ -196,7 +207,7 @@ class TestAddIbetWSTWhitelist:
         }
 
     # <Error_3>
-
+    # Issuer does not exist or password mismatch
     async def test_error_3(self, async_db, async_client):
         # Prepare data
         account = Account()
@@ -223,7 +234,8 @@ class TestAddIbetWSTWhitelist:
             self.api_url.format(token_address=self.token_address),
             json={
                 "st_account_address": self.user1_st["address"],
-                "sc_account_address": self.user1_sc["address"],
+                "sc_account_address_in": self.user1_sc["address"],
+                "sc_account_address_out": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": self.issuer["address"],
@@ -255,7 +267,8 @@ class TestAddIbetWSTWhitelist:
             self.api_url.format(token_address=self.token_address),
             json={
                 "st_account_address": self.user1_st["address"],
-                "sc_account_address": self.user1_sc["address"],
+                "sc_account_address_in": self.user1_sc["address"],
+                "sc_account_address_out": self.user1_sc["address"],
             },
             headers={
                 "issuer-address": self.issuer["address"],

@@ -191,7 +191,8 @@ class TestProcessor:
         )
         wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
             st_account=self.user1["address"],
-            sc_account=self.user1["address"],
+            sc_account_in=self.user1["address"],
+            sc_account_out=self.user1["address"],
         )
         wst_tx.authorizer = self.issuer["address"]
         wst_tx.authorization = IbetWSTAuthorization(

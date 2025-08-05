@@ -32,6 +32,7 @@ from app.model.db import (
     IbetWSTTxParamsAddAccountWhiteList,
     IbetWSTTxParamsBurn,
     IbetWSTTxParamsCancelTrade,
+    IbetWSTTxParamsDeleteAccountWhiteList,
     IbetWSTTxParamsDeploy,
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRejectTrade,
@@ -581,7 +582,8 @@ class TestProcessor:
         wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
         wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
             st_account=self.user1["address"],
-            sc_account=self.user1["address"],
+            sc_account_in=self.user2["address"],
+            sc_account_out=self.user2["address"],
         )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
@@ -616,7 +618,8 @@ class TestProcessor:
             == "0x9876543210abcdef1234567890abcdef12345678"
         )
         assert idx_whitelist.st_account_address == self.user1["address"]
-        assert idx_whitelist.sc_account_address == self.user1["address"]
+        assert idx_whitelist.sc_account_address_in == self.user2["address"]
+        assert idx_whitelist.sc_account_address_out == self.user2["address"]
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=add_whitelist",
@@ -680,9 +683,8 @@ class TestProcessor:
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
         wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
-        wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+        wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
             st_account=self.user1["address"],
-            sc_account=self.user1["address"],
         )
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
@@ -691,7 +693,8 @@ class TestProcessor:
         idx_whitelist = IDXEthIbetWSTWhitelist(
             ibet_wst_address=wst_tx.ibet_wst_address,
             st_account_address=self.user1["address"],
-            sc_account_address=self.user1["address"],
+            sc_account_address_in=self.user2["address"],
+            sc_account_address_out=self.user2["address"],
         )
         async_db.add(idx_whitelist)
         await async_db.commit()
