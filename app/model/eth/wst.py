@@ -824,7 +824,7 @@ class IbetWST(ERC20):
                 {
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 70000,
+                    "gas": 80000,
                 }
             )
             # Send the transaction
