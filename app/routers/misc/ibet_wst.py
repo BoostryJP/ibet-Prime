@@ -451,7 +451,8 @@ async def retrieve_ibet_wst_whitelist_accounts(
         account_list.append(
             {
                 "st_account_address": whitelist.st_account_address,
-                "sc_account_address": whitelist.sc_account_address,
+                "sc_account_address_in": whitelist.sc_account_address_in,
+                "sc_account_address_out": whitelist.sc_account_address_out,
             }
         )
 
@@ -495,7 +496,8 @@ async def get_ibet_wst_whitelist(
     return json_response(
         {
             "st_account_address": whitelist.st_account,
-            "sc_account_address": whitelist.sc_account,
+            "sc_account_address_in": whitelist.sc_account_in,
+            "sc_account_address_out": whitelist.sc_account_out,
             "listed": whitelist.listed,
         }
     )

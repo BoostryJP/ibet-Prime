@@ -35,8 +35,11 @@ class TestGetIbetWSTWhiteList:
     st_account_address = to_checksum_address(
         "0x1234567890abcdef1234567890abcdef12345678"
     )
-    sc_account_address = to_checksum_address(
+    sc_account_address_in = to_checksum_address(
         "0x234567890abcdef1234567890abcdef123456789"
+    )
+    sc_account_address_out = to_checksum_address(
+        "0x34567890abcdef1234567890abcdef1234567890"
     )
 
     ###########################################################################
@@ -50,7 +53,8 @@ class TestGetIbetWSTWhiteList:
         AsyncMock(
             return_value=IbetWSTWhiteList(
                 st_account=st_account_address,
-                sc_account=sc_account_address,
+                sc_account_in=sc_account_address_in,
+                sc_account_out=sc_account_address_out,
                 listed=True,
             )
         ),
@@ -86,7 +90,8 @@ class TestGetIbetWSTWhiteList:
         assert resp.status_code == 200
         assert resp.json() == {
             "st_account_address": self.st_account_address,
-            "sc_account_address": self.sc_account_address,
+            "sc_account_address_in": self.sc_account_address_in,
+            "sc_account_address_out": self.sc_account_address_out,
             "listed": True,
         }
 

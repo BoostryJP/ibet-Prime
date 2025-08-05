@@ -365,7 +365,8 @@ async def add_ibet_wst_whitelist(
     digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
         domain_separator=domain_separator,
         st_account=data.st_account_address,  # ST Account to be added to whitelist
-        sc_account=data.sc_account_address,  # SC Account to be added to whitelist
+        sc_account_in=data.sc_account_address_in,  # SC Account for deposits
+        sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
         nonce=nonce,
     )
 
@@ -382,7 +383,8 @@ async def add_ibet_wst_whitelist(
     wst_tx.ibet_wst_address = token.ibet_wst_address
     wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
         st_account=data.st_account_address,  # ST Account to be added to whitelist
-        sc_account=data.sc_account_address,  # SC Account to be added to whitelist
+        sc_account_in=data.sc_account_address_in,  # SC Account for deposits
+        sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
     )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
     wst_tx.authorizer = issuer_address

@@ -242,7 +242,8 @@ async def send_add_whitelist_transaction(
     tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
     tx_hash = await wst_contract.add_account_white_list_with_authorization(
         st_account=tx_params["st_account"],
-        sc_account=tx_params["sc_account"],
+        sc_account_in=tx_params["sc_account_in"],
+        sc_account_out=tx_params["sc_account_out"],
         authorization=IbetWSTAuthorization(
             nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
             v=wst_tx.authorization["v"],

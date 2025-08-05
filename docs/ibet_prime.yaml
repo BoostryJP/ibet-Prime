@@ -11557,14 +11557,19 @@ components:
           type: string
           title: St Account Address
           description: ST account address to be added to the whitelist
-        sc_account_address:
+        sc_account_address_in:
           type: string
-          title: Sc Account Address
-          description: SC account address to be added to the whitelist
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
       type: object
       required:
         - st_account_address
-        - sc_account_address
+        - sc_account_address_in
+        - sc_account_address_out
       title: AddIbetWSTWhitelistRequest
       description: AddIbetWSTWhitelist request schema
     AuthTokenAlreadyExistsErrorCode:
@@ -13891,10 +13896,14 @@ components:
           type: string
           title: St Account Address
           description: ST account address of the whitelisted account
-        sc_account_address:
+        sc_account_address_in:
           type: string
-          title: Sc Account Address
-          description: SC account address of the whitelisted account
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
         listed:
           type: boolean
           title: Listed
@@ -13903,7 +13912,8 @@ components:
       type: object
       required:
         - st_account_address
-        - sc_account_address
+        - sc_account_address_in
+        - sc_account_address_out
         - listed
       title: GetIbetWSTWhitelistResponse
       description: GetIbetWSTWhitelist response schema
@@ -15827,14 +15837,19 @@ components:
           type: string
           title: St Account Address
           description: ST account address of the whitelisted account
-        sc_account_address:
+        sc_account_address_in:
           type: string
-          title: Sc Account Address
-          description: SC account address of the whitelisted account
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
       type: object
       required:
         - st_account_address
-        - sc_account_address
+        - sc_account_address_in
+        - sc_account_address_out
       title: IbetWSTWhitelistAccount
       description: IbetWST Whitelist Account schema
     Integer64bitLimitExceededErrorCode:

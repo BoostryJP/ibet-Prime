@@ -45,7 +45,8 @@ class TestRetrieveIbetWSTWhitelistAccounts:
         whitelist = IDXEthIbetWSTWhitelist(
             ibet_wst_address=self.wst_token_address_2,  # WST token address not to be queried
             st_account_address=self.user1["address"],
-            sc_account_address=self.user1["address"],
+            sc_account_address_in=self.user1["address"],
+            sc_account_address_out=self.user1["address"],
         )
         async_db.add(whitelist)
         await async_db.commit()
@@ -68,12 +69,14 @@ class TestRetrieveIbetWSTWhitelistAccounts:
         whitelist_1 = IDXEthIbetWSTWhitelist(
             ibet_wst_address=self.wst_token_address_1,
             st_account_address=self.user1["address"],
-            sc_account_address=self.user1["address"],
+            sc_account_address_in=self.user1["address"],
+            sc_account_address_out=self.user1["address"],
         )
         whitelist_2 = IDXEthIbetWSTWhitelist(
             ibet_wst_address=self.wst_token_address_1,
             st_account_address=self.user2["address"],
-            sc_account_address=self.user2["address"],
+            sc_account_address_in=self.user2["address"],
+            sc_account_address_out=self.user2["address"],
         )
         async_db.add(whitelist_1)
         async_db.add(whitelist_2)
@@ -90,11 +93,13 @@ class TestRetrieveIbetWSTWhitelistAccounts:
             "whitelist_accounts": [
                 {
                     "st_account_address": self.user2["address"],
-                    "sc_account_address": self.user2["address"],
+                    "sc_account_address_in": self.user2["address"],
+                    "sc_account_address_out": self.user2["address"],
                 },
                 {
                     "st_account_address": self.user1["address"],
-                    "sc_account_address": self.user1["address"],
+                    "sc_account_address_in": self.user1["address"],
+                    "sc_account_address_out": self.user1["address"],
                 },
             ],
         }
