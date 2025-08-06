@@ -242,6 +242,59 @@ class IbetWSTDigestHelper:
         return digest
 
     @staticmethod
+    def generate_force_burn_from_digest(
+        domain_separator: bytes,
+        account_address: str,
+        value: int,
+        nonce: bytes,
+    ) -> bytes:
+        """
+        Generate the EIP-712 digest for force burning tokens from an account with authorization.
+
+        :param domain_separator: EIP-712 DOMAIN_SEPARATOR
+        :param account_address: Address to burn tokens from
+        :param value: Value of tokens to burn
+        :param nonce: Nonce for the operation, used to prevent replay attacks
+        :return: EIP-712 digest for the force burn operation
+        """
+
+        type_hash = keccak(
+            text="ForceBurnFromWithAuthorization(address account,uint256 value,bytes32 nonce)"
+        )
+
+        struct_hash = keccak(
+            encode(
+                [
+                    "bytes32",  # typeHash
+                    "address",  # account
+                    "uint256",  # value
+                    "bytes32",  # nonce
+                ],
+                [
+                    type_hash,
+                    to_checksum_address(account_address),
+                    value,
+                    nonce,
+                ],
+            )
+        )
+        digest = keccak(
+            encode_packed(
+                [
+                    "bytes2",  # EIP-712 prefix
+                    "bytes32",  # domainSeparator
+                    "bytes32",  # structHash
+                ],
+                [
+                    "\x19\x01".encode(),
+                    domain_separator,
+                    struct_hash,
+                ],
+            )
+        )
+        return digest
+
+    @staticmethod
     def generate_add_account_whitelist_digest(
         domain_separator: bytes,
         st_account: str,
@@ -893,6 +946,45 @@ class IbetWST(ERC20):
             # Build the transaction to burn tokens
             tx = await self.contract.functions.burnWithAuthorization(
                 to_checksum_address(from_address),
+                value,
+                authorization.nonce,
+                authorization.v,
+                authorization.r,
+                authorization.s,
+            ).build_transaction(
+                {
+                    "chainId": ETH_CHAIN_ID,
+                    "from": to_checksum_address(tx_sender),
+                    "gas": 82000,
+                }
+            )
+            # Send the transaction
+            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def force_burn_from_with_authorization(
+        self,
+        account_address: EthereumAddress,
+        value: int,
+        authorization: IbetWSTAuthorization,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
+    ) -> str:
+        """
+        Force burn tokens from an account with authorization
+
+        :param account_address: Address to burn tokens from
+        :param value: Value of tokens to burn
+        :param authorization: Authorization data containing nonce, v, r, s
+        :param tx_sender: Address of the transaction sender
+        :param tx_sender_key: Private key of the transaction sender
+        :return: Transaction hash
+        """
+        try:
+            # Build the transaction to force burn tokens
+            tx = await self.contract.functions.forceBurnFromWithAuthorization(
+                to_checksum_address(account_address),
                 value,
                 authorization.nonce,
                 authorization.v,
