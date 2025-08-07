@@ -22,7 +22,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, PositiveInt, RootModel
 
-from app.model import ChecksumEthereumAddress
+from app.model import ChecksumEthereumAddress, ValidatedDatetimeStr
 from app.model.schema.base import (
     BasePaginationQuery,
     IbetShare,
@@ -139,6 +139,12 @@ class ListIbetWSTTransactionsQuery(BasePaginationQuery):
     )
     finalized: Optional[bool] = Field(
         None, description="True if the block is finalized, False otherwise"
+    )
+    created_from: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (From)"
+    )
+    created_to: Optional[ValidatedDatetimeStr] = Field(
+        None, description="Created datetime (To)"
     )
 
 

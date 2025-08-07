@@ -9983,6 +9983,26 @@ paths:
             description: True if the block is finalized, False otherwise
             title: Finalized
           description: True if the block is finalized, False otherwise
+        - name: created_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Created datetime (From)
+            title: Created From
+          description: Created datetime (From)
+        - name: created_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Created datetime (To)
+            title: Created To
+          description: Created datetime (To)
       responses:
         '200':
           description: Successful Response
