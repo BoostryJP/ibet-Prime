@@ -711,6 +711,105 @@ class TestListIbetWSTTransactions:
             ],
         }
 
+    # <Normal_3_6>
+    # Filter by created date range
+    async def test_normal_3_6(self, async_db, async_client):
+        # Prepare data
+        tx_id_1 = str(uuid.uuid4())
+        tx_1 = EthIbetWSTTx()
+        tx_1.tx_id = tx_id_1
+        tx_1.tx_type = IbetWSTTxType.TRANSFER
+        tx_1.version = IbetWSTVersion.V_1
+        tx_1.status = IbetWSTTxStatus.SUCCEEDED
+        tx_1.ibet_wst_address = self.wst_token_address_1
+        tx_1.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx_1.tx_sender = self.tx_sender["address"]
+        tx_1.authorizer = self.authorizer_1["address"]
+        tx_1.authorization = {}
+        tx_1.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_1.block_number = 12345678
+        tx_1.finalized = True
+        tx_1.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+        )
+        tx_1.created = datetime.datetime(2024, 12, 31, 15, 0, 0, tzinfo=None)
+        async_db.add(tx_1)
+
+        tx_id_2 = str(uuid.uuid4())
+        tx_2 = EthIbetWSTTx()
+        tx_2.tx_id = tx_id_2
+        tx_2.tx_type = IbetWSTTxType.MINT
+        tx_2.version = IbetWSTVersion.V_1
+        tx_2.status = IbetWSTTxStatus.SENT
+        tx_2.ibet_wst_address = self.wst_token_address_1
+        tx_2.tx_params = IbetWSTTxParamsMint(
+            to_address=self.user1["address"],
+            value=1000,
+        )
+        tx_2.tx_sender = self.tx_sender["address"]
+        tx_2.authorizer = self.authorizer_2["address"]
+        tx_2.authorization = {}
+        tx_2.tx_hash = (
+            "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_2.block_number = 23456789
+        tx_2.finalized = False
+        tx_2.event_log = None
+        tx_2.created = datetime.datetime(2025, 1, 31, 15, 0, 1, tzinfo=None)
+        async_db.add(tx_2)
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "ibet_wst_address": self.wst_token_address_1,
+                "created_from": "2025-01-01 00:00:00",
+                "created_to": "2025-02-01 00:00:00",
+            },
+        )
+
+        # Check response
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 2,
+            },
+            "transactions": [
+                {
+                    "tx_id": tx_id_1,
+                    "tx_type": IbetWSTTxType.TRANSFER,
+                    "version": IbetWSTVersion.V_1,
+                    "status": IbetWSTTxStatus.SUCCEEDED,
+                    "ibet_wst_address": self.wst_token_address_1,
+                    "tx_sender": self.tx_sender["address"],
+                    "authorizer": self.authorizer_1["address"],
+                    "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                    "block_number": 12345678,
+                    "finalized": True,
+                    "event_log": {
+                        "from_address": self.user1["address"],
+                        "to_address": self.user2["address"],
+                        "value": 1000,
+                    },
+                    "created": "2025-01-01T00:00:00+09:00",
+                }
+            ],
+        }
+
     # <Normal_4>
     # Return transactions with pagination
     async def test_normal_4(self, async_db, async_client):
@@ -832,5 +931,57 @@ class TestListIbetWSTTransactions:
                     "msg": "Field required",
                     "input": {},
                 }
+            ],
+        }
+
+    # <Error_2>
+    async def test_error_2(self, async_db, async_client):
+        # Send request with pagination
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "ibet_wst_address": self.wst_token_address_1,
+                "tx_type": "invalid-type",  # Invalid tx_type
+                "authorizer": "invalid-address",  # Invalid authorizer address
+                "created_from": "invalid-date",  # Invalid date format
+                "created_to": "invalid-date",  # Invalid date format
+            },
+        )
+
+        # Check response
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "literal_error",
+                    "loc": ["query", "tx_type"],
+                    "msg": "Input should be 'deploy', 'mint', 'burn', 'add_whitelist', 'delete_whitelist', 'transfer', 'request_trade', 'cancel_trade', 'accept_trade' or 'reject_trade'",
+                    "input": "invalid-type",
+                    "ctx": {
+                        "expected": "'deploy', 'mint', 'burn', 'add_whitelist', 'delete_whitelist', 'transfer', 'request_trade', 'cancel_trade', 'accept_trade' or 'reject_trade'"
+                    },
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["query", "authorizer"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "invalid-address",
+                    "ctx": {"error": {}},
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["query", "created_from"],
+                    "msg": "Value error, value must be of string datetime format",
+                    "input": "invalid-date",
+                    "ctx": {"error": {}},
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["query", "created_to"],
+                    "msg": "Value error, value must be of string datetime format",
+                    "input": "invalid-date",
+                    "ctx": {"error": {}},
+                },
             ],
         }
