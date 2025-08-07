@@ -1092,6 +1092,270 @@ class TestBurnWithAuthorization:
         balance = await contract.balance_of(self.user1["address"])
         assert balance == 1000
 
+    # Error_2
+    # - Test that an error is raised when trying to burn tokens with insufficient balance.
+    async def test_error_2(self):
+        # Deploy contract
+        contract_address = await deploy_wst_token(
+            "Test Token", self.deployer, self.owner
+        )
+
+        # Mint tokens to user1
+        await mint_wst_token(
+            contract_address=contract_address,
+            to=self.user1["address"],
+            value=1000,
+            tx_from=self.owner,
+        )
+
+        # Generate contract instance
+        contract = IbetWST(contract_address)
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_burn_digest(
+            domain_separator=domain_separator,
+            from_address=self.user1["address"],
+            value=1500,  # More than the balance
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
+        # Attempt to burn tokens with valid authorization
+        tx_hash = await contract.burn_with_authorization(
+            from_address=self.user1["address"],
+            value=1500,  # More than the balance
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.relayer["address"],
+            tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        assert tx_receipt["status"] == 0  # Transaction failed
+
+        # Check the balance of the user
+        balance = await contract.balance_of(self.user1["address"])
+        assert balance == 1000  # Balance should remain unchanged
+
+
+@pytest.mark.asyncio
+class TestForceBurnFromWithAuthorization:
+    """
+    Test cases for the force_burn_from_with_authorization function of the AuthIbetWST contract.
+    """
+
+    deployer = default_eth_account("user1")
+    relayer = deployer
+    owner = default_eth_account("user2")
+    user1 = default_eth_account("user3")
+
+    #################################################################
+    # Normal
+    #################################################################
+
+    # Normal_1
+    # - Test that tokens can be forcefully burned from an account with authorization.
+    async def test_normal_1(self):
+        # Deploy contract
+        contract_address = await deploy_wst_token(
+            "Test Token", self.deployer, self.owner
+        )
+
+        # Mint tokens to user1
+        await mint_wst_token(
+            contract_address=contract_address,
+            to=self.user1["address"],
+            value=1000,
+            tx_from=self.owner,
+        )
+
+        # Generate contract instance
+        contract = IbetWST(contract_address)
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_force_burn_from_digest(
+            domain_separator=domain_separator,
+            account_address=self.user1["address"],
+            value=500,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.owner["private_key"])
+        )
+
+        # Attempt to force burn tokens with valid authorization
+        tx_hash = await contract.force_burn_from_with_authorization(
+            account_address=self.user1["address"],
+            value=500,
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.relayer["address"],
+            tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {tx_receipt['gasUsed']}")
+        assert tx_receipt["status"] == 1  # Transaction was successful
+
+        # Check the balance of the user
+        balance = await contract.balance_of(self.user1["address"])
+        assert balance == 500
+
+    #################################################################
+    # Error
+    #################################################################
+
+    # Error_1
+    # - Test that an error is raised when trying to force burn tokens from an account with invalid authorization.
+    async def test_error_1(self):
+        # Deploy contract
+        contract_address = await deploy_wst_token(
+            "Test Token", self.deployer, self.owner
+        )
+
+        # Mint tokens to user1
+        await mint_wst_token(
+            contract_address=contract_address,
+            to=self.user1["address"],
+            value=1000,
+            tx_from=self.owner,
+        )
+
+        # Generate contract instance
+        contract = IbetWST(contract_address)
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_force_burn_from_digest(
+            domain_separator=domain_separator,
+            account_address=self.user1["address"],
+            value=500,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest,
+            bytes.fromhex(self.user1["private_key"]),  # Invalid authorizer key
+        )
+
+        # Attempt to force burn tokens with invalid authorization
+        tx_hash = await contract.force_burn_from_with_authorization(
+            account_address=self.user1["address"],
+            value=500,
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.relayer["address"],
+            tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        assert tx_receipt["status"] == 0  # Transaction failed
+
+        # Check the balance of the user
+        balance = await contract.balance_of(self.user1["address"])
+        assert balance == 1000  # Balance should remain unchanged
+
+    # Error_2
+    # - Test that an error is raised when trying to force burn tokens from an account with insufficient balance.
+    async def test_error_2(self):
+        # Deploy contract
+        contract_address = await deploy_wst_token(
+            "Test Token", self.deployer, self.owner
+        )
+
+        # Mint tokens to user1
+        await mint_wst_token(
+            contract_address=contract_address,
+            to=self.user1["address"],
+            value=1000,
+            tx_from=self.owner,
+        )
+
+        # Generate contract instance
+        contract = IbetWST(contract_address)
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        domain_separator = await contract.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_force_burn_from_digest(
+            domain_separator=domain_separator,
+            account_address=self.user1["address"],
+            value=1500,  # More than the balance
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.owner["private_key"])
+        )
+
+        # Attempt to force burn tokens with valid authorization
+        tx_hash = await contract.force_burn_from_with_authorization(
+            account_address=self.user1["address"],
+            value=1500,  # More than the balance
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=self.relayer["address"],
+            tx_sender_key=bytes.fromhex(self.relayer["private_key"]),
+        )
+
+        # Wait for transaction receipt
+        tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        assert tx_receipt["status"] == 0  # Transaction failed
+
+        # Check the balance of the user
+        balance = await contract.balance_of(self.user1["address"])
+        assert (
+            balance == 1000
+        )  # Balance should remain unchanged, as burn should not succeed
+
 
 @pytest.mark.asyncio
 class TestGetTrade:
