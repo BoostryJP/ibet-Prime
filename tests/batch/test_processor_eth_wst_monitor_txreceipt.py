@@ -201,6 +201,9 @@ class TestProcessor:
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is False
+        assert (
+            wst_tx_af.ibet_wst_address == "0x9876543210abcdef1234567890abcdef12345678"
+        )
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
