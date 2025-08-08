@@ -10188,7 +10188,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
+                anyOf:
+                  - $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorResponse'
+                  - $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
+                title: Response 400 Transferibetwst
   /ibet_wst/trades/{ibet_wst_address}/request:
     post:
       tags:
@@ -10233,6 +10236,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorResponse'
   /ibet_wst/trades/{ibet_wst_address}/cancel:
     post:
       tags:
@@ -15563,6 +15573,40 @@ components:
       type: object
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)
+    IbetWSTAccountNotWhitelistedErrorCode:
+      type: integer
+      enum:
+        - 15
+      title: IbetWSTAccountNotWhitelistedErrorCode
+    IbetWSTAccountNotWhitelistedErrorMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorCode'
+          examples:
+            - 15
+        title:
+          type: string
+          title: Title
+          examples:
+            - IbetWSTAccountNotWhitelistedError
+      type: object
+      required:
+        - code
+        - title
+      title: IbetWSTAccountNotWhitelistedErrorMetainfo
+    IbetWSTAccountNotWhitelistedErrorResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: IbetWSTAccountNotWhitelistedErrorResponse
+      description: IbetWST account is not whitelisted for transfer operations
     IbetWSTAuthorization:
       properties:
         nonce:
