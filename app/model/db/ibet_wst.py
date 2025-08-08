@@ -246,7 +246,8 @@ class EthIbetWSTTx(Base):
     status: Mapped[IbetWSTTxStatus] = mapped_column(Integer, nullable=False)
     # IbetWST contract address
     # - Address of the IbetWST contract on the Ethereum network
-    # - This field is set if the transaction is for the deployed IbetWST contract
+    # - For deploy transactions: The contract address is set when the contract is deployed.
+    # - For other transactions: The contract address is set at the time the transaction is instructed.
     ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
     # Transaction parameters
     # - JSON object containing the parameters for the transaction

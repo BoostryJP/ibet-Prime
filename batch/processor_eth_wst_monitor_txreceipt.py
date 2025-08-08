@@ -118,6 +118,9 @@ class ProcessorEthWSTMonitorTxReceipt:
                     wst_tx.status = IbetWSTTxStatus.SUCCEEDED
                     wst_tx.block_number = block_number
                     wst_tx.gas_used = tx_receipt.get("gasUsed")
+                    # If the transaction type is DEPLOY, set the IbetWST address
+                    if wst_tx.tx_type == IbetWSTTxType.DEPLOY:
+                        wst_tx.ibet_wst_address = tx_receipt.get("contractAddress")
                     LOG.info(
                         f"Transaction succeeded: id={wst_tx.tx_id}, block_number={block_number}, gas_used={tx_receipt.get('gasUsed')}"
                     )
