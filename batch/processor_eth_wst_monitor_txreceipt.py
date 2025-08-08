@@ -139,7 +139,7 @@ class ProcessorEthWSTMonitorTxReceipt:
                 wst_tx.finalized = is_finalized
                 await db_session.merge(wst_tx)
 
-                if is_finalized:
+                if is_finalized and wst_tx.status == IbetWSTTxStatus.SUCCEEDED:
                     # Finalize the transaction
                     await finalize_tx(db_session, wst_tx, tx_receipt)
                     LOG.info(
