@@ -140,6 +140,14 @@ class ERC20InsufficientAllowanceError(BadRequestError):
     code = 14
 
 
+class IbetWSTAccountNotWhitelistedError(BadRequestError):
+    """
+    IbetWST account is not whitelisted for transfer operations
+    """
+
+    code = 15
+
+
 class OperationNotAllowedStateError(BadRequestError):
     """
     Error returned when server-side data is not ready to process the request

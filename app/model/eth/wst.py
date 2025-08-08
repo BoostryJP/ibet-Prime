@@ -798,7 +798,12 @@ class IbetWST(ERC20):
             contract=self.contract,
             function_name="accountWhiteList",
             args=(to_checksum_address(account),),
-            default_returns=IbetWSTWhiteList(),
+            default_returns=(
+                ZERO_ADDRESS,  # st_account
+                ZERO_ADDRESS,  # sc_account_in
+                ZERO_ADDRESS,  # sc_account_out
+                False,  # listed
+            ),
         )
         return IbetWSTWhiteList(
             st_account=to_checksum_address(whitelist[0]),

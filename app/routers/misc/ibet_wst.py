@@ -30,6 +30,7 @@ import config
 from app.database import DBAsyncSession
 from app.exceptions import (
     ERC20InsufficientAllowanceError,
+    IbetWSTAccountNotWhitelistedError,
     IbetWSTInsufficientBalanceError,
 )
 from app.model import EthereumAddress
@@ -527,7 +528,9 @@ async def get_ibet_wst_whitelist(
     "/transfers/{ibet_wst_address}",
     operation_id="TransferIbetWST",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422, IbetWSTInsufficientBalanceError),
+    responses=get_routers_responses(
+        404, 422, IbetWSTInsufficientBalanceError, IbetWSTAccountNotWhitelistedError
+    ),
 )
 async def transfer_ibet_wst(
     request: Request,
@@ -551,13 +554,21 @@ async def transfer_ibet_wst(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    # Pre-transaction check: Ensure ST token balance is sufficient
+    # Generate contract instance
     wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
+
+    # Pre-transaction check: Ensure ST token balance is sufficient
     wst_balance = await wst_contract.balance_of(
         to_checksum_address(req_params.from_address)
     )
     if wst_balance < req_params.value:
         raise IbetWSTInsufficientBalanceError
+
+    # Pre-transaction check: Ensure from_address and to_address are whitelisted
+    wl_from = await wst_contract.account_white_list(req_params.from_address)
+    wl_to = await wst_contract.account_white_list(req_params.to_address)
+    if not wl_from.listed or not wl_to.listed:
+        raise IbetWSTAccountNotWhitelistedError
 
     # Insert transaction record
     tx_id = str(uuid.uuid4())
@@ -594,7 +605,7 @@ async def transfer_ibet_wst(
     "/trades/{ibet_wst_address}/request",
     operation_id="RequestIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(404, 422, IbetWSTAccountNotWhitelistedError),
 )
 async def request_ibet_wst_trade(
     request: Request,
@@ -617,6 +628,17 @@ async def request_ibet_wst_trade(
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
+
+    # Generate contract instance
+    wst_contract = IbetWST(to_checksum_address(ibet_wst_address))
+
+    # Pre-transaction check: Ensure from_address and to_address are whitelisted
+    wl_from = await wst_contract.account_white_list(
+        req_params.seller_st_account_address
+    )
+    wl_to = await wst_contract.account_white_list(req_params.buyer_st_account_address)
+    if not wl_from.listed or not wl_to.listed:
+        raise IbetWSTAccountNotWhitelistedError
 
     # Insert transaction record
     tx_id = str(uuid.uuid4())

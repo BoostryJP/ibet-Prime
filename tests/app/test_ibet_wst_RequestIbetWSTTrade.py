@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import secrets
 from unittest import mock
+from unittest.mock import AsyncMock
 
 import pytest
 from eth_utils import to_checksum_address
@@ -34,6 +35,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.model.eth import IbetWST, IbetWSTDigestHelper
+from app.model.eth.wst import IbetWSTWhiteList
 from app.utils.eth_contract_utils import EthWeb3
 from tests.account_config import default_eth_account
 
@@ -60,6 +62,10 @@ class TestAddIbetWSTWhitelist:
 
     # <Normal_1>
     # Successfully request a trade
+    @mock.patch(
+        "app.routers.misc.ibet_wst.IbetWST.account_white_list",
+        AsyncMock(return_value=IbetWSTWhiteList(listed=True)),
+    )
     @mock.patch(
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
@@ -270,4 +276,156 @@ class TestAddIbetWSTWhitelist:
         assert resp.json() == {
             "meta": {"code": 1, "title": "NotFound"},
             "detail": "IbetWST token not found",
+        }
+
+    # <Error_3_1>
+    # Seller account is not whitelisted
+    @mock.patch(
+        "app.routers.misc.ibet_wst.IbetWST.account_white_list",
+        AsyncMock(
+            side_effect=[IbetWSTWhiteList(listed=False), IbetWSTWhiteList(listed=True)]
+        ),
+    )
+    @mock.patch(
+        "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
+        relayer["address"],
+    )
+    async def test_error_3_1(self, async_db, async_client):
+        # Prepare data: Token
+        token = Token()
+        token.token_address = self.ibet_token_address
+        token.issuer_address = self.issuer["address"]
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = self.ibet_wst_address
+        async_db.add(token)
+        await async_db.commit()
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        token_st = IbetWST(self.ibet_wst_address)
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_request_trade_digest(
+            domain_separator=domain_separator,
+            seller_st_account=self.user1["address"],
+            buyer_st_account=self.user2["address"],
+            sc_token_address=self.sc_token_address,
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(ibet_wst_address=self.ibet_wst_address),
+            json={
+                "seller_st_account_address": self.user1["address"],
+                "buyer_st_account_address": self.user2["address"],
+                "sc_token_address": self.sc_token_address,
+                "st_value": 1000,
+                "sc_value": 2000,
+                "memo": "Test Trade",
+                "authorizer": self.user1["address"],
+                "authorization": {
+                    "nonce": nonce.hex(),
+                    "v": signature.v,
+                    "r": signature.r.to_bytes(32).hex(),
+                    "s": signature.s.to_bytes(32).hex(),
+                },
+            },
+        )
+
+        # Check response status code and content
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"}
+        }
+
+    # <Error_3_2>
+    # Buyer account is not whitelisted
+    @mock.patch(
+        "app.routers.misc.ibet_wst.IbetWST.account_white_list",
+        AsyncMock(
+            side_effect=[IbetWSTWhiteList(listed=True), IbetWSTWhiteList(listed=False)]
+        ),
+    )
+    @mock.patch(
+        "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
+        relayer["address"],
+    )
+    async def test_error_3_2(self, async_db, async_client):
+        # Prepare data: Token
+        token = Token()
+        token.token_address = self.ibet_token_address
+        token.issuer_address = self.issuer["address"]
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = self.ibet_wst_address
+        async_db.add(token)
+        await async_db.commit()
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        token_st = IbetWST(self.ibet_wst_address)
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_request_trade_digest(
+            domain_separator=domain_separator,
+            seller_st_account=self.user1["address"],
+            buyer_st_account=self.user2["address"],
+            sc_token_address=self.sc_token_address,
+            st_value=1000,
+            sc_value=2000,
+            memo="Test Trade",
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(ibet_wst_address=self.ibet_wst_address),
+            json={
+                "seller_st_account_address": self.user1["address"],
+                "buyer_st_account_address": self.user2["address"],
+                "sc_token_address": self.sc_token_address,
+                "st_value": 1000,
+                "sc_value": 2000,
+                "memo": "Test Trade",
+                "authorizer": self.user1["address"],
+                "authorization": {
+                    "nonce": nonce.hex(),
+                    "v": signature.v,
+                    "r": signature.r.to_bytes(32).hex(),
+                    "s": signature.s.to_bytes(32).hex(),
+                },
+            },
+        )
+
+        # Check response status code and content
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"}
         }
