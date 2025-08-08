@@ -312,6 +312,8 @@ async def list_ibet_wst_transactions(
         stmt = stmt.where(EthIbetWSTTx.tx_id == get_query.tx_id)
     if get_query.tx_type is not None:
         stmt = stmt.where(EthIbetWSTTx.tx_type == get_query.tx_type)
+    if get_query.status is not None:
+        stmt = stmt.where(EthIbetWSTTx.status == int(get_query.status))
     if get_query.tx_hash is not None:
         stmt = stmt.where(EthIbetWSTTx.tx_hash == get_query.tx_hash)
     if get_query.authorizer is not None:

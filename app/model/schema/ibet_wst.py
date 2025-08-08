@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, PositiveInt, RootModel
@@ -78,6 +78,15 @@ IbetWSTTxType = Literal[
 ]
 
 
+class IbetWSTTxStatus(IntEnum):
+    """IbetWST Transaction Status Enum"""
+
+    PENDING = 0
+    SENT = 1
+    SUCCEEDED = 2
+    FAILED = 3
+
+
 class IbetWSTTrade(BaseModel):
     """IbetWST Trade schema"""
 
@@ -133,6 +142,10 @@ class ListIbetWSTTransactionsQuery(BasePaginationQuery):
     )
     tx_id: Optional[str] = Field(None, description="Transaction ID")
     tx_type: Optional[IbetWSTTxType] = Field(None, description="Transaction type")
+    status: Optional[IbetWSTTxStatus] = Field(
+        None,
+        description="Transaction status (0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)",
+    )
     tx_hash: Optional[str] = Field(None, description="Transaction hash")
     authorizer: Optional[ChecksumEthereumAddress] = Field(
         None, description="Authorizer address"
@@ -396,7 +409,7 @@ class GetIbetWSTTransactionResponse(BaseModel):
     tx_id: str = Field(description="Transaction ID")
     tx_type: IbetWSTTxType = Field(description="Transaction type")
     version: str = Field(description="IbetWST version")
-    status: Literal[0, 1, 2, 3] = Field(
+    status: IbetWSTTxStatus = Field(
         description="Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)"
     )
     ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")

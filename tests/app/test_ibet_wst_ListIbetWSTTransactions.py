@@ -742,31 +742,65 @@ class TestListIbetWSTTransactions:
             to_address=self.user2["address"],
             value=1000,
         )
-        tx_1.created = datetime.datetime(2024, 12, 31, 15, 0, 0, tzinfo=None)
+        tx_1.created = datetime.datetime(2024, 12, 31, 14, 59, 59, tzinfo=None)
         async_db.add(tx_1)
 
         tx_id_2 = str(uuid.uuid4())
         tx_2 = EthIbetWSTTx()
         tx_2.tx_id = tx_id_2
-        tx_2.tx_type = IbetWSTTxType.MINT
+        tx_2.tx_type = IbetWSTTxType.TRANSFER
         tx_2.version = IbetWSTVersion.V_1
-        tx_2.status = IbetWSTTxStatus.SENT
+        tx_2.status = IbetWSTTxStatus.SUCCEEDED
         tx_2.ibet_wst_address = self.wst_token_address_1
-        tx_2.tx_params = IbetWSTTxParamsMint(
-            to_address=self.user1["address"],
+        tx_2.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
             value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
         )
         tx_2.tx_sender = self.tx_sender["address"]
-        tx_2.authorizer = self.authorizer_2["address"]
+        tx_2.authorizer = self.authorizer_1["address"]
         tx_2.authorization = {}
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
         tx_2.block_number = 23456789
-        tx_2.finalized = False
-        tx_2.event_log = None
-        tx_2.created = datetime.datetime(2025, 1, 31, 15, 0, 1, tzinfo=None)
+        tx_2.finalized = True
+        tx_2.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+        )
+        tx_2.created = datetime.datetime(2024, 12, 31, 15, 0, 0, tzinfo=None)
         async_db.add(tx_2)
+
+        tx_id_3 = str(uuid.uuid4())
+        tx_3 = EthIbetWSTTx()
+        tx_3.tx_id = tx_id_3
+        tx_3.tx_type = IbetWSTTxType.TRANSFER
+        tx_3.version = IbetWSTVersion.V_1
+        tx_3.status = IbetWSTTxStatus.SENT
+        tx_3.ibet_wst_address = self.wst_token_address_1
+        tx_3.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx_3.tx_sender = self.tx_sender["address"]
+        tx_3.authorizer = self.authorizer_1["address"]
+        tx_3.authorization = {}
+        tx_3.tx_hash = (
+            "0x34567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_3.block_number = 34567890
+        tx_3.finalized = False
+        tx_3.event_log = None
+        tx_3.created = datetime.datetime(2025, 1, 31, 15, 0, 1, tzinfo=None)
+        async_db.add(tx_3)
+
         await async_db.commit()
 
         # Send request
@@ -786,19 +820,125 @@ class TestListIbetWSTTransactions:
                 "count": 1,
                 "offset": None,
                 "limit": None,
-                "total": 2,
+                "total": 3,
             },
             "transactions": [
                 {
-                    "tx_id": tx_id_1,
+                    "tx_id": tx_id_2,
                     "tx_type": IbetWSTTxType.TRANSFER,
                     "version": IbetWSTVersion.V_1,
                     "status": IbetWSTTxStatus.SUCCEEDED,
                     "ibet_wst_address": self.wst_token_address_1,
                     "tx_sender": self.tx_sender["address"],
                     "authorizer": self.authorizer_1["address"],
-                    "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                    "block_number": 12345678,
+                    "tx_hash": "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                    "block_number": 23456789,
+                    "finalized": True,
+                    "event_log": {
+                        "from_address": self.user1["address"],
+                        "to_address": self.user2["address"],
+                        "value": 1000,
+                    },
+                    "created": "2025-01-01T00:00:00+09:00",
+                }
+            ],
+        }
+
+    # <Normal_3_7>
+    # Filter by status
+    async def test_normal_3_7(self, async_db, async_client):
+        # Prepare data
+        tx_id_1 = str(uuid.uuid4())
+        tx_1 = EthIbetWSTTx()
+        tx_1.tx_id = tx_id_1
+        tx_1.tx_type = IbetWSTTxType.TRANSFER
+        tx_1.version = IbetWSTVersion.V_1
+        tx_1.status = IbetWSTTxStatus.SUCCEEDED
+        tx_1.ibet_wst_address = self.wst_token_address_1
+        tx_1.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx_1.tx_sender = self.tx_sender["address"]
+        tx_1.authorizer = self.authorizer_1["address"]
+        tx_1.authorization = {}
+        tx_1.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_1.block_number = 12345678
+        tx_1.finalized = True
+        tx_1.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+        )
+        tx_1.created = datetime.datetime(2024, 12, 31, 14, 59, 59, tzinfo=None)
+        async_db.add(tx_1)
+
+        tx_id_2 = str(uuid.uuid4())
+        tx_2 = EthIbetWSTTx()
+        tx_2.tx_id = tx_id_2
+        tx_2.tx_type = IbetWSTTxType.TRANSFER
+        tx_2.version = IbetWSTVersion.V_1
+        tx_2.status = IbetWSTTxStatus.FAILED
+        tx_2.ibet_wst_address = self.wst_token_address_1
+        tx_2.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx_2.tx_sender = self.tx_sender["address"]
+        tx_2.authorizer = self.authorizer_1["address"]
+        tx_2.authorization = {}
+        tx_2.tx_hash = (
+            "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_2.block_number = 23456789
+        tx_2.finalized = True
+        tx_2.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+        )
+        tx_2.created = datetime.datetime(2024, 12, 31, 15, 0, 0, tzinfo=None)
+        async_db.add(tx_2)
+
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "ibet_wst_address": self.wst_token_address_1,
+                "status": 3,  # Filter by status
+            },
+        )
+
+        # Check response
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 2,
+            },
+            "transactions": [
+                {
+                    "tx_id": tx_id_2,
+                    "tx_type": IbetWSTTxType.TRANSFER,
+                    "version": IbetWSTVersion.V_1,
+                    "status": IbetWSTTxStatus.FAILED,
+                    "ibet_wst_address": self.wst_token_address_1,
+                    "tx_sender": self.tx_sender["address"],
+                    "authorizer": self.authorizer_1["address"],
+                    "tx_hash": "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                    "block_number": 23456789,
                     "finalized": True,
                     "event_log": {
                         "from_address": self.user1["address"],
@@ -935,6 +1075,7 @@ class TestListIbetWSTTransactions:
         }
 
     # <Error_2>
+    # Return error when query parameters are invalid
     async def test_error_2(self, async_db, async_client):
         # Send request with pagination
         resp = await async_client.get(
@@ -942,6 +1083,7 @@ class TestListIbetWSTTransactions:
             params={
                 "ibet_wst_address": self.wst_token_address_1,
                 "tx_type": "invalid-type",  # Invalid tx_type
+                "status": 999,  # Invalid status
                 "authorizer": "invalid-address",  # Invalid authorizer address
                 "created_from": "invalid-date",  # Invalid date format
                 "created_to": "invalid-date",  # Invalid date format
@@ -961,6 +1103,13 @@ class TestListIbetWSTTransactions:
                     "ctx": {
                         "expected": "'deploy', 'mint', 'burn', 'add_whitelist', 'delete_whitelist', 'transfer', 'request_trade', 'cancel_trade', 'accept_trade' or 'reject_trade'"
                     },
+                },
+                {
+                    "type": "enum",
+                    "loc": ["query", "status"],
+                    "msg": "Input should be 0, 1, 2 or 3",
+                    "input": "999",
+                    "ctx": {"expected": "0, 1, 2 or 3"},
                 },
                 {
                     "type": "value_error",
