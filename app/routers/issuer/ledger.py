@@ -396,7 +396,9 @@ async def retrieve_ledger_template(
     "/{token_address}/template",
     operation_id="CreateUpdateLedgerTemplate",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(
+        422, 404, InvalidParameterError, Integer64bitLimitExceededError
+    ),
 )
 async def create_update_ledger_template(
     db: DBAsyncSession,
