@@ -25,6 +25,7 @@ import pytz
 from fastapi import APIRouter, Header, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, delete, desc, func, select
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import log
@@ -395,7 +396,9 @@ async def retrieve_ledger_template(
     "/{token_address}/template",
     operation_id="CreateUpdateLedgerTemplate",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(
+        422, 404, InvalidParameterError, Integer64bitLimitExceededError
+    ),
 )
 async def create_update_ledger_template(
     db: DBAsyncSession,
@@ -510,7 +513,13 @@ async def create_update_ledger_template(
     # Request Ledger Creation
     await request_ledger_creation(db, token_address)
 
-    await db.commit()
+    try:
+        await db.commit()
+    except DBAPIError:
+        # If the data exceeds the 64-bit integer limit,
+        # an error will be raised when committing the transaction.
+        raise Integer64bitLimitExceededError
+
     return
 
 

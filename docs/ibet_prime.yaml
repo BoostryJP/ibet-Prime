@@ -4470,7 +4470,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                anyOf:
+                  - $ref: '#/components/schemas/Integer64bitLimitExceededErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                title: Response 400 Createupdateledgertemplate
     delete:
       tags:
         - token_common
