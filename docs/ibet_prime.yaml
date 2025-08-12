@@ -8547,6 +8547,94 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListAllScheduledEventsResponse'
+  /tokens/{token_address}/ibet_wst/whitelists:
+    get:
+      tags:
+        - token_common
+      summary: Retrieve Ibet Wst Whitelist Accounts With Personal Info
+      description: |-
+        Retrieve the whitelist accounts of an IbetWST contract with personal information
+
+        - This endpoint retrieves the whitelist accounts of an IbetWST contract along with their personal information.
+      operationId: RetrieveIbetWSTWhitelistAccountsWithPersonalInfo
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /tokens/{token_address}/ibet_wst/whitelists/{account_address}:
+    get:
+      tags:
+        - token_common
+      summary: Get Ibet Wst Whitelist With Personal Info
+      description: |-
+        Get IbetWST whitelist status for a specific account with personal information
+
+        - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+      operationId: GetIbetWSTWhitelistWithPersonalInfo
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Account address
+            title: Account Address
+          description: Account address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTWhitelistWithPersonalInfoResponse'
   /tokens/{token_address}/ibet_wst/whitelists/add:
     post:
       tags:
@@ -13953,6 +14041,39 @@ components:
         - listed
       title: GetIbetWSTWhitelistResponse
       description: GetIbetWSTWhitelist response schema
+    GetIbetWSTWhitelistWithPersonalInfoResponse:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        st_account_personal_info:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+          description: Personal information of the ST account
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+        listed:
+          type: boolean
+          title: Listed
+          description: True if the account is listed in the whitelist, False 
+            otherwise
+      type: object
+      required:
+        - st_account_address
+        - st_account_personal_info
+        - sc_account_address_in
+        - sc_account_address_out
+        - listed
+      title: GetIbetWSTWhitelistWithPersonalInfoResponse
+      description: GetIbetWSTWhitelistWithPersonalInfo response schema
     HTTPValidationError:
       properties:
         detail:
@@ -15930,6 +16051,33 @@ components:
         - sc_account_address_in
         - sc_account_address_out
       title: IbetWSTWhitelistAccount
+      description: IbetWST Whitelist Account schema
+    IbetWSTWhitelistAccountWithPersonalInfo:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        st_account_personal_info:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+          description: Personal information of the ST account
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+      type: object
+      required:
+        - st_account_address
+        - st_account_personal_info
+        - sc_account_address_in
+        - sc_account_address_out
+      title: IbetWSTWhitelistAccountWithPersonalInfo
       description: IbetWST Whitelist Account schema
     Integer64bitLimitExceededErrorCode:
       type: integer
@@ -17975,6 +18123,20 @@ components:
         - whitelist_accounts
       title: RetrieveIbetWSTWhitelistAccountsResponse
       description: RetrieveIbetWSTWhitelistAccounts response schema
+    RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse:
+      properties:
+        whitelist_accounts:
+          items:
+            $ref: '#/components/schemas/IbetWSTWhitelistAccountWithPersonalInfo'
+          type: array
+          title: Whitelist Accounts
+          description: List of whitelisted accounts with personal information
+      type: object
+      required:
+        - whitelist_accounts
+      title: RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse
+      description: RetrieveIbetWSTWhitelistAccountsWithPersonalInfo response 
+        schema
     RetrieveLedgerDetailsDataHistoryResponse:
       properties:
         account_address:

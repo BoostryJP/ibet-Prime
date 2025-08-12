@@ -108,6 +108,7 @@ from .ibet_wst import (
     GetIbetWSTTradeResponse,
     GetIbetWSTTransactionResponse,
     GetIbetWSTWhitelistResponse,
+    GetIbetWSTWhitelistWithPersonalInfoResponse,
     IbetWSTToken,
     IbetWSTTransactionResponse,
     ListAllIbetWSTTokensQuery,
@@ -120,6 +121,7 @@ from .ibet_wst import (
     RejectIbetWSTTradeRequest,
     RequestIbetWSTTradeRequest,
     RetrieveIbetWSTWhitelistAccountsResponse,
+    RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse,
     TransferIbetWSTRequest,
 )
 from .index import BlockNumberResponse, E2EEResponse

@@ -459,9 +459,12 @@ async def retrieve_ibet_wst_whitelist_accounts(
     # Get whitelists
     whitelist_list: Sequence[IDXEthIbetWSTWhitelist] = (
         await db.scalars(
-            select(IDXEthIbetWSTWhitelist).where(
-                IDXEthIbetWSTWhitelist.ibet_wst_address == ibet_wst_address
+            select(IDXEthIbetWSTWhitelist)
+            .where(
+                IDXEthIbetWSTWhitelist.ibet_wst_address
+                == to_checksum_address(ibet_wst_address)
             )
+            .order_by(IDXEthIbetWSTWhitelist.created.desc())
         )
     ).all()
 
@@ -501,7 +504,9 @@ async def get_ibet_wst_whitelist(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
