@@ -29,6 +29,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
+from app.exceptions import ContractRevertError
 from app.model.db import (
     Account,
     EthToIbetBridgeTx,
@@ -103,63 +104,73 @@ class WSTBridgeToIbetProcessor:
                     pending_tx.token_address
                 )
 
-                # Depending on the transaction type, call the appropriate method
-                if pending_tx.tx_type == EthToIbetBridgeTxType.FORCE_UNLOCK:
-                    tx_params: IbetBridgeTxParamsForceUnlock = pending_tx.tx_params
-                    tx_hash, tx_receipt = await ibet_token_contract.force_unlock(
-                        tx_params=ForceUnlockParams(
-                            lock_address=tx_params["lock_address"],
-                            account_address=tx_params["account_address"],
-                            recipient_address=tx_params["recipient_address"],
-                            value=tx_params["value"],
-                            data=json.dumps(tx_params["data"]),
-                        ),
-                        tx_sender=pending_tx.tx_sender,
-                        tx_sender_key=issuer_pk,
-                    )
-                elif (
-                    pending_tx.tx_type
-                    == EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
-                ):
-                    tx_params: IbetBridgeTxParamsForceChangeLockedAccount = (
-                        pending_tx.tx_params
-                    )
-                    (
-                        tx_hash,
-                        tx_receipt,
-                    ) = await ibet_token_contract.force_change_locked_account(
-                        tx_params=ForceChangeLockedAccountParams(
-                            lock_address=tx_params["lock_address"],
-                            before_account_address=tx_params["before_account_address"],
-                            after_account_address=tx_params["after_account_address"],
-                            value=tx_params["value"],
-                            data=json.dumps(tx_params["data"]),
-                        ),
-                        tx_sender=pending_tx.tx_sender,
-                        tx_sender_key=issuer_pk,
-                    )
-                else:
+                try:
+                    # Depending on the transaction type, call the appropriate method
+                    if pending_tx.tx_type == EthToIbetBridgeTxType.FORCE_UNLOCK:
+                        tx_params: IbetBridgeTxParamsForceUnlock = pending_tx.tx_params
+                        tx_hash, tx_receipt = await ibet_token_contract.force_unlock(
+                            tx_params=ForceUnlockParams(
+                                lock_address=tx_params["lock_address"],
+                                account_address=tx_params["account_address"],
+                                recipient_address=tx_params["recipient_address"],
+                                value=tx_params["value"],
+                                data=json.dumps(tx_params["data"]),
+                            ),
+                            tx_sender=pending_tx.tx_sender,
+                            tx_sender_key=issuer_pk,
+                        )
+                    elif (
+                        pending_tx.tx_type
+                        == EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
+                    ):
+                        tx_params: IbetBridgeTxParamsForceChangeLockedAccount = (
+                            pending_tx.tx_params
+                        )
+                        (
+                            tx_hash,
+                            tx_receipt,
+                        ) = await ibet_token_contract.force_change_locked_account(
+                            tx_params=ForceChangeLockedAccountParams(
+                                lock_address=tx_params["lock_address"],
+                                before_account_address=tx_params[
+                                    "before_account_address"
+                                ],
+                                after_account_address=tx_params[
+                                    "after_account_address"
+                                ],
+                                value=tx_params["value"],
+                                data=json.dumps(tx_params["data"]),
+                            ),
+                            tx_sender=pending_tx.tx_sender,
+                            tx_sender_key=issuer_pk,
+                        )
+                    else:
+                        LOG.error(
+                            f"Unknown transaction type: id={pending_tx.tx_id}, type={pending_tx.tx_type}"
+                        )
+                        pending_tx.status = EthToIbetBridgeTxStatus.FAILED
+                        await db_session.merge(pending_tx)
+                        await db_session.commit()
+                        continue
+                except ContractRevertError as cre:
+                    # If the transaction failed, update the status to FAILED
                     LOG.error(
-                        f"Unknown transaction type: id={pending_tx.tx_id}, type={pending_tx.tx_type}"
+                        f"Transaction failed: id={pending_tx.tx_id} ( {cre.code} | {cre.message} )"
                     )
                     pending_tx.status = EthToIbetBridgeTxStatus.FAILED
                     await db_session.merge(pending_tx)
                     await db_session.commit()
                     continue
 
-                if tx_receipt["status"] != 1:
-                    # If the transaction failed, update the status to FAILED
-                    LOG.error(f"Transaction failed: id={pending_tx.tx_id}")
-                    pending_tx.status = EthToIbetBridgeTxStatus.FAILED
-                else:
-                    # If the transaction succeeded, update the status to SUCCEEDED
-                    LOG.info(f"Transaction sent successfully: id={pending_tx.tx_id}")
-                    pending_tx.tx_hash = tx_hash
-                    pending_tx.block_number = tx_receipt["blockNumber"]
-                    pending_tx.status = EthToIbetBridgeTxStatus.SUCCEEDED
+                # If the transaction succeeded, update the status to SUCCEEDED
+                LOG.info(f"Transaction sent successfully: id={pending_tx.tx_id}")
+                pending_tx.tx_hash = tx_hash
+                pending_tx.block_number = tx_receipt["blockNumber"]
+                pending_tx.status = EthToIbetBridgeTxStatus.SUCCEEDED
                 await db_session.merge(pending_tx)
                 await db_session.commit()
         except Exception:
+            # If another error occurs, retry the transaction later
             await db_session.rollback()
             raise
         finally:
