@@ -32,15 +32,9 @@ class TestGetIbetWSTWhiteList:
     # API endpoint
     api_url = "/ibet_wst/whitelists/{ibet_wst_address}/{account_address}"
 
-    st_account_address = to_checksum_address(
-        "0x1234567890abcdef1234567890abcdef12345678"
-    )
-    sc_account_address_in = to_checksum_address(
-        "0x234567890abcdef1234567890abcdef123456789"
-    )
-    sc_account_address_out = to_checksum_address(
-        "0x34567890abcdef1234567890abcdef1234567890"
-    )
+    st_account_address = "0x1234567890abcdef1234567890abcdef12345678"
+    sc_account_address_in = "0x234567890abcdef1234567890abcdef123456789"
+    sc_account_address_out = "0x34567890abcdef1234567890abcdef1234567890"
 
     ###########################################################################
     # Normal
@@ -52,9 +46,9 @@ class TestGetIbetWSTWhiteList:
         "app.routers.misc.ibet_wst.IbetWST.account_white_list",
         AsyncMock(
             return_value=IbetWSTWhiteList(
-                st_account=st_account_address,
-                sc_account_in=sc_account_address_in,
-                sc_account_out=sc_account_address_out,
+                st_account=to_checksum_address(st_account_address),
+                sc_account_in=to_checksum_address(sc_account_address_in),
+                sc_account_out=to_checksum_address(sc_account_address_out),
                 listed=True,
             )
         ),
@@ -67,14 +61,14 @@ class TestGetIbetWSTWhiteList:
 
         # Prepare data: Token
         token = Token()
-        token.token_address = ibet_token_address
-        token.issuer_address = issuer_address
+        token.token_address = to_checksum_address(ibet_token_address)
+        token.issuer_address = to_checksum_address(issuer_address)
         token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
         token.ibet_wst_deployed = True
-        token.ibet_wst_address = ibet_wst_address
+        token.ibet_wst_address = to_checksum_address(ibet_wst_address)
         async_db.add(token)
         await async_db.commit()
 
@@ -89,9 +83,9 @@ class TestGetIbetWSTWhiteList:
         # Check response status code
         assert resp.status_code == 200
         assert resp.json() == {
-            "st_account_address": self.st_account_address,
-            "sc_account_address_in": self.sc_account_address_in,
-            "sc_account_address_out": self.sc_account_address_out,
+            "st_account_address": to_checksum_address(self.st_account_address),
+            "sc_account_address_in": to_checksum_address(self.sc_account_address_in),
+            "sc_account_address_out": to_checksum_address(self.sc_account_address_out),
             "listed": True,
         }
 

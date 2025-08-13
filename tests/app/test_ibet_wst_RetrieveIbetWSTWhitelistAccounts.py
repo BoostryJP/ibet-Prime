@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from eth_utils import to_checksum_address
 
 from app.model.db import IDXEthIbetWSTWhitelist
 from tests.account_config import default_eth_account
@@ -31,8 +32,8 @@ class TestRetrieveIbetWSTWhitelistAccounts:
     user1 = default_eth_account("user1")
     user2 = default_eth_account("user2")
 
-    wst_token_address_1 = "0x1234567890AbcdEF1234567890aBcdef12345678"
-    wst_token_address_2 = "0x234567890abCDEf1234567890aBCdEf123456789"
+    wst_token_address_1 = "0x1234567890abcdef1234567890abcdef12345678"
+    wst_token_address_2 = "0x234567890abcdef1234567890abcdef123456789"
 
     ###########################################################################
     # Normal
@@ -43,7 +44,9 @@ class TestRetrieveIbetWSTWhitelistAccounts:
     async def test_normal_1(self, async_db, async_client):
         # Prepare test data
         whitelist = IDXEthIbetWSTWhitelist(
-            ibet_wst_address=self.wst_token_address_2,  # WST token address not to be queried
+            ibet_wst_address=to_checksum_address(
+                self.wst_token_address_2
+            ),  # WST token address not to be queried
             st_account_address=self.user1["address"],
             sc_account_address_in=self.user1["address"],
             sc_account_address_out=self.user1["address"],
@@ -67,13 +70,13 @@ class TestRetrieveIbetWSTWhitelistAccounts:
     async def test_normal_2(self, async_db, async_client):
         # Prepare test data
         whitelist_1 = IDXEthIbetWSTWhitelist(
-            ibet_wst_address=self.wst_token_address_1,
+            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
             st_account_address=self.user1["address"],
             sc_account_address_in=self.user1["address"],
             sc_account_address_out=self.user1["address"],
         )
         whitelist_2 = IDXEthIbetWSTWhitelist(
-            ibet_wst_address=self.wst_token_address_1,
+            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
             st_account_address=self.user2["address"],
             sc_account_address_in=self.user2["address"],
             sc_account_address_out=self.user2["address"],

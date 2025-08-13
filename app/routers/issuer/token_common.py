@@ -19,21 +19,24 @@ SPDX-License-Identifier: Apache-2.0
 
 import secrets
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Sequence
 
 import pytz
 from eth_keyfile import decode_keyfile_json
+from eth_utils import to_checksum_address
 from fastapi import APIRouter, Header, HTTPException, Path, Query
 from sqlalchemy import and_, asc, desc, func, select
 from starlette.requests import Request
 
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError
+from app.model import EthereumAddress
 from app.model.db import (
     EthIbetWSTTx,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    IDXPersonalInfo,
     ScheduledEvents,
     Token,
     TokenStatus,
@@ -43,18 +46,21 @@ from app.model.db.ibet_wst import (
     IbetWSTAuthorization,
     IbetWSTTxParamsAddAccountWhiteList,
     IbetWSTTxParamsDeleteAccountWhiteList,
+    IDXEthIbetWSTWhitelist,
 )
 from app.model.eth import IbetWST, IbetWSTDigestHelper
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     AddIbetWSTWhitelistRequest,
     DeleteIbetWSTWhitelistRequest,
+    GetIbetWSTWhitelistWithPersonalInfoResponse,
     IbetWSTTransactionResponse,
     ListAllIssuedTokensQuery,
     ListAllIssuedTokensResponse,
     ListAllScheduledEventsQuery,
     ListAllScheduledEventsResponse,
     ListAllScheduledEventsSortItem,
+    RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse,
 )
 from app.utils.check_utils import (
     address_is_valid_address,
@@ -282,6 +288,185 @@ async def list_all_scheduled_events(
         "scheduled_events": schedule_events,
     }
     return json_response(resp)
+
+
+# GET: /tokens/{token_address}/ibet_wst/whitelists
+@router.get(
+    "/tokens/{token_address}/ibet_wst/whitelists",
+    operation_id="RetrieveIbetWSTWhitelistAccountsWithPersonalInfo",
+    response_model=RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse,
+    responses=get_routers_responses(404, 422),
+)
+async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
+    db: DBAsyncSession,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+):
+    """
+    Retrieve the whitelist accounts of an IbetWST contract with personal information
+
+    - This endpoint retrieves the whitelist accounts of an IbetWST contract along with their personal information.
+    """
+
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    # Get whitelists
+    whitelist_list: Sequence[tuple[IDXEthIbetWSTWhitelist, IDXPersonalInfo]] = (
+        (
+            await db.execute(
+                select(IDXEthIbetWSTWhitelist, IDXPersonalInfo)
+                .where(
+                    IDXEthIbetWSTWhitelist.ibet_wst_address == token.ibet_wst_address
+                )
+                .join(
+                    Token,
+                    IDXEthIbetWSTWhitelist.ibet_wst_address == Token.ibet_wst_address,
+                )
+                .outerjoin(
+                    IDXPersonalInfo,
+                    and_(
+                        Token.issuer_address == IDXPersonalInfo.issuer_address,
+                        IDXEthIbetWSTWhitelist.st_account_address
+                        == IDXPersonalInfo.account_address,
+                    ),
+                )
+                .order_by(IDXEthIbetWSTWhitelist.created.desc())
+            )
+        )
+        .tuples()
+        .all()
+    )
+
+    # Response
+    account_list = []
+    for item in whitelist_list:
+        if item[1] is not None:
+            personal_info = item[1].json()
+            account_list.append(
+                {
+                    "st_account_address": item[0].st_account_address,
+                    "st_account_personal_info": personal_info["personal_info"],
+                    "sc_account_address_in": item[0].sc_account_address_in,
+                    "sc_account_address_out": item[0].sc_account_address_out,
+                }
+            )
+        else:
+            account_list.append(
+                {
+                    "st_account_address": item[0].st_account_address,
+                    "st_account_personal_info": None,
+                    "sc_account_address_in": item[0].sc_account_address_in,
+                    "sc_account_address_out": item[0].sc_account_address_out,
+                }
+            )
+
+    return json_response({"whitelist_accounts": account_list})
+
+
+# GET: /tokens/{token_address}/ibet_wst/whitelists/{account_address}
+@router.get(
+    "/tokens/{token_address}/ibet_wst/whitelists/{account_address}",
+    operation_id="GetIbetWSTWhitelistWithPersonalInfo",
+    response_model=GetIbetWSTWhitelistWithPersonalInfoResponse,
+    responses=get_routers_responses(),
+)
+async def get_ibet_wst_whitelist_with_personal_info(
+    db: DBAsyncSession,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    account_address: Annotated[EthereumAddress, Path(description="Account address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+):
+    """
+    Get IbetWST whitelist status for a specific account with personal information
+
+    - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+    """
+
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    # Get whitelist status
+    wst_contract = IbetWST(to_checksum_address(token.ibet_wst_address))
+    whitelist = await wst_contract.account_white_list(
+        to_checksum_address(account_address)
+    )
+
+    # Get personal information
+    personal_info: IDXPersonalInfo | None = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.issuer_address
+                    == to_checksum_address(issuer_address),
+                    IDXPersonalInfo.account_address
+                    == to_checksum_address(account_address),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+
+    return json_response(
+        {
+            "st_account_address": whitelist.st_account,
+            "st_account_personal_info": personal_info.personal_info
+            if personal_info
+            else None,
+            "sc_account_address_in": whitelist.sc_account_in,
+            "sc_account_address_out": whitelist.sc_account_out,
+            "listed": whitelist.listed,
+        }
+    )
 
 
 # POST: /tokens/{token_address}/ibet_wst/whitelists/add

@@ -31,6 +31,7 @@ from app.model.schema.base import (
     SortOrder,
     TokenType,
 )
+from app.model.schema.personal_info import PersonalInfo
 
 
 ############################
@@ -456,6 +457,23 @@ class IbetWSTWhitelistAccount(BaseModel):
     )
 
 
+class IbetWSTWhitelistAccountWithPersonalInfo(BaseModel):
+    """IbetWST Whitelist Account schema"""
+
+    st_account_address: ChecksumEthereumAddress = Field(
+        description="ST account address of the whitelisted account"
+    )
+    st_account_personal_info: PersonalInfo | None = Field(
+        description="Personal information of the ST account"
+    )
+    sc_account_address_in: ChecksumEthereumAddress = Field(
+        description="SC account address for deposits"
+    )
+    sc_account_address_out: ChecksumEthereumAddress = Field(
+        description="SC account address for withdrawals"
+    )
+
+
 class RetrieveIbetWSTWhitelistAccountsResponse(BaseModel):
     """RetrieveIbetWSTWhitelistAccounts response schema"""
 
@@ -464,11 +482,37 @@ class RetrieveIbetWSTWhitelistAccountsResponse(BaseModel):
     )
 
 
+class RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse(BaseModel):
+    """RetrieveIbetWSTWhitelistAccountsWithPersonalInfo response schema"""
+
+    whitelist_accounts: list[IbetWSTWhitelistAccountWithPersonalInfo] = Field(
+        description="List of whitelisted accounts with personal information"
+    )
+
+
 class GetIbetWSTWhitelistResponse(BaseModel):
     """GetIbetWSTWhitelist response schema"""
 
     st_account_address: str = Field(
         description="ST account address of the whitelisted account"
+    )
+    sc_account_address_in: str = Field(description="SC account address for deposits")
+    sc_account_address_out: str = Field(
+        description="SC account address for withdrawals"
+    )
+    listed: bool = Field(
+        description="True if the account is listed in the whitelist, False otherwise"
+    )
+
+
+class GetIbetWSTWhitelistWithPersonalInfoResponse(BaseModel):
+    """GetIbetWSTWhitelistWithPersonalInfo response schema"""
+
+    st_account_address: str = Field(
+        description="ST account address of the whitelisted account"
+    )
+    st_account_personal_info: PersonalInfo | None = Field(
+        description="Personal information of the ST account"
     )
     sc_account_address_in: str = Field(description="SC account address for deposits")
     sc_account_address_out: str = Field(
