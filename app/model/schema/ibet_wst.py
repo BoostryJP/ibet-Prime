@@ -69,6 +69,7 @@ IbetWSTTxType = Literal[
     "deploy",
     "mint",
     "burn",
+    "force_burn",
     "add_whitelist",
     "delete_whitelist",
     "transfer",
@@ -192,6 +193,15 @@ class BurnIbetWSTRequest(BaseModel):
     authorization: IbetWSTAuthorization = Field(
         description="Authorization for the transaction"
     )
+
+
+class ForceBurnIbetWSTRequest(BaseModel):
+    """ForceBurnIbetWST request schema"""
+
+    account_address: ChecksumEthereumAddress = Field(
+        description="Account address from which to force burn IbetWST"
+    )
+    value: PositiveInt = Field(description="Amount of IbetWST to force burn")
 
 
 class TransferIbetWSTRequest(BaseModel):

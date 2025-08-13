@@ -198,6 +198,19 @@ async def finalize_tx(
                     value=event["args"]["value"],
                 )
                 await db_session.merge(wst_tx)
+        case IbetWSTTxType.FORCE_BURN:
+            # Update the IbetWST transaction with the event log
+            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            events = ibet_wst.contract.events.Burn().process_receipt(
+                txn_receipt=tx_receipt, errors=DISCARD
+            )
+            event = events[0] if len(events) > 0 else None
+            if event is not None:
+                wst_tx.event_log = IbetWSTEventLogBurn(
+                    from_address=event["args"]["from"],
+                    value=event["args"]["value"],
+                )
+                await db_session.merge(wst_tx)
         case IbetWSTTxType.ADD_WHITELIST:
             # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)

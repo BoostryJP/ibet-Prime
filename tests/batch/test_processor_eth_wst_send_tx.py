@@ -37,6 +37,7 @@ from app.model.db import (
     IbetWSTTxParamsCancelTrade,
     IbetWSTTxParamsDeleteAccountWhiteList,
     IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsForceBurn,
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRequestTrade,
     IbetWSTTxParamsTransfer,
@@ -750,6 +751,72 @@ class TestProcessor:
         # Check if the log was recorded
         assert caplog.messages == [
             f"Processing transaction: id={tx_id}, type=transfer",
+            f"Transaction sent successfully: id={tx_id}",
+        ]
+
+    # Normal_2_11
+    # - Confirm that processing is performed correctly when there is target data to process
+    # - transaction type: Force Burn
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        eth_master["address"],
+    )
+    @mock.patch(
+        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        eth_master["private_key"],
+    )
+    @mock.patch(
+        "app.model.eth.wst.IbetWST.force_burn_from_with_authorization",
+        AsyncMock(return_value="test_tx_hash"),
+    )
+    async def test_normal_2_11(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        async_db.add(account)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.FORCE_BURN
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.PENDING
+        wst_tx.ibet_wst_address = to_checksum_address(
+            "0x1234567890abcdef1234567890abcdef12345678"
+        )
+        wst_tx.tx_params = IbetWSTTxParamsForceBurn(
+            account=self.user1["address"],
+            value=1000,
+        )
+        wst_tx.authorizer = self.issuer["address"]
+        wst_tx.authorization = IbetWSTAuthorization(
+            nonce=secrets.token_bytes(32).hex(),
+            v=27,
+            r=secrets.token_bytes(32).hex(),
+            s=secrets.token_bytes(32).hex(),
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Check if the transaction was processed
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx_af.tx_hash == "test_tx_hash"
+
+        # Check if the log was recorded
+        assert caplog.messages == [
+            f"Processing transaction: id={tx_id}, type=force_burn",
             f"Transaction sent successfully: id={tx_id}",
         ]
 

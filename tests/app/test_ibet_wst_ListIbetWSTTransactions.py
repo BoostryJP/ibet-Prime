@@ -1098,10 +1098,10 @@ class TestListIbetWSTTransactions:
                 {
                     "type": "literal_error",
                     "loc": ["query", "tx_type"],
-                    "msg": "Input should be 'deploy', 'mint', 'burn', 'add_whitelist', 'delete_whitelist', 'transfer', 'request_trade', 'cancel_trade', 'accept_trade' or 'reject_trade'",
+                    "msg": "Input should be 'deploy', 'mint', 'burn', 'force_burn', 'add_whitelist', 'delete_whitelist', 'transfer', 'request_trade', 'cancel_trade', 'accept_trade' or 'reject_trade'",
                     "input": "invalid-type",
                     "ctx": {
-                        "expected": "'deploy', 'mint', 'burn', 'add_whitelist', 'delete_whitelist', 'transfer', 'request_trade', 'cancel_trade', 'accept_trade' or 'reject_trade'"
+                        "expected": "'deploy', 'mint', 'burn', 'force_burn', 'add_whitelist', 'delete_whitelist', 'transfer', 'request_trade', 'cancel_trade', 'accept_trade' or 'reject_trade'"
                     },
                 },
                 {
