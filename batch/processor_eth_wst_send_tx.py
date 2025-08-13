@@ -38,6 +38,7 @@ from app.model.db import (
     IbetWSTTxParamsCancelTrade,
     IbetWSTTxParamsDeleteAccountWhiteList,
     IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsForceBurn,
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRejectTrade,
     IbetWSTTxParamsRequestTrade,
@@ -132,6 +133,11 @@ class ProcessorEthWSTSendTx:
                     elif wst_tx.tx_type == IbetWSTTxType.BURN:
                         # Send burn transaction
                         tx_hash = await send_burn_transaction(wst_tx, tx_sender_account)
+                    elif wst_tx.tx_type == IbetWSTTxType.FORCE_BURN:
+                        # Send force burn transaction
+                        tx_hash = await send_force_burn_transaction(
+                            wst_tx, tx_sender_account
+                        )
                     elif wst_tx.tx_type == IbetWSTTxType.REQUEST_TRADE:
                         # Send request trade transaction
                         tx_hash = await send_request_trade_transaction(
@@ -341,6 +347,30 @@ async def send_burn_transaction(
     tx_params: IbetWSTTxParamsBurn = wst_tx.tx_params
     tx_hash = await wst_contract.burn_with_authorization(
         from_address=tx_params["from_address"],
+        value=wst_tx.tx_params["value"],
+        authorization=IbetWSTAuthorization(
+            nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),
+            v=wst_tx.authorization["v"],
+            r=bytes(32).fromhex(wst_tx.authorization["r"]),
+            s=bytes(32).fromhex(wst_tx.authorization["s"]),
+        ),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash
+
+
+async def send_force_burn_transaction(
+    wst_tx: EthIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> str:
+    """
+    Send a transaction to force burn IbetWST tokens.
+    """
+    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    tx_params: IbetWSTTxParamsForceBurn = wst_tx.tx_params
+    tx_hash = await wst_contract.force_burn_from_with_authorization(
+        account_address=tx_params["account"],
         value=wst_tx.tx_params["value"],
         authorization=IbetWSTAuthorization(
             nonce=bytes(32).fromhex(wst_tx.authorization["nonce"]),

@@ -100,6 +100,7 @@ from .ibet_wst import (
     BurnIbetWSTRequest,
     CancelIbetWSTTradeRequest,
     DeleteIbetWSTWhitelistRequest,
+    ForceBurnIbetWSTRequest,
     GetERC20AllowanceQuery,
     GetERC20AllowanceResponse,
     GetERC20BalanceQuery,

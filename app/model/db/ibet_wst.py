@@ -39,6 +39,7 @@ class IbetWSTTxType(StrEnum):
     DEPLOY = "deploy"
     MINT = "mint"
     BURN = "burn"
+    FORCE_BURN = "force_burn"
     ADD_WHITELIST = "add_whitelist"
     DELETE_WHITELIST = "delete_whitelist"
     TRANSFER = "transfer"
@@ -107,6 +108,13 @@ class IbetWSTTxParamsBurn(TypedDict):
 
     from_address: str  # Address from which the tokens will be burned
     value: int  # Amount of IbetWST to be burned
+
+
+class IbetWSTTxParamsForceBurn(TypedDict):
+    """Parameters for IbetWST forceBurnWithAuthorization Transaction"""
+
+    account: str  # Address from which the tokens will be forcefully burned
+    value: int  # Amount of IbetWST to be forcefully burned
 
 
 class IbetWSTTxParamsRequestTrade(TypedDict):
@@ -258,6 +266,7 @@ class EthIbetWSTTx(Base):
         | IbetWSTTxParamsTransfer
         | IbetWSTTxParamsMint
         | IbetWSTTxParamsBurn
+        | IbetWSTTxParamsForceBurn
         | IbetWSTTxParamsRequestTrade
         | IbetWSTTxParamsCancelTrade
         | IbetWSTTxParamsAcceptTrade

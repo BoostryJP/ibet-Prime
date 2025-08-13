@@ -8654,13 +8654,17 @@ paths:
           required: true
           schema:
             type: string
+            description: Token address
             title: Token Address
+          description: Token address
         - name: issuer-address
           in: header
           required: true
           schema:
             type: string
+            description: Issuer address
             title: Issuer-Address
+          description: Issuer address
         - name: eoa-password
           in: header
           required: false
@@ -8668,7 +8672,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: EOA passphrase
             title: Eoa-Password
+          description: EOA passphrase
         - name: auth-token
           in: header
           required: false
@@ -8676,7 +8682,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: JWT authentication token
             title: Auth-Token
+          description: JWT authentication token
       requestBody:
         required: true
         content:
@@ -8725,13 +8733,17 @@ paths:
           required: true
           schema:
             type: string
+            description: Token address
             title: Token Address
+          description: Token address
         - name: issuer-address
           in: header
           required: true
           schema:
             type: string
+            description: Issuer address
             title: Issuer-Address
+          description: Issuer address
         - name: eoa-password
           in: header
           required: false
@@ -8739,7 +8751,9 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: EOA passphrase
             title: Eoa-Password
+          description: EOA passphrase
         - name: auth-token
           in: header
           required: false
@@ -8747,13 +8761,94 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: JWT authentication token
             title: Auth-Token
+          description: JWT authentication token
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DeleteIbetWSTWhitelistRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /tokens/{token_address}/ibet_wst/positions/force_burn:
+    post:
+      tags:
+        - token_common
+      summary: Force Burn Ibet Wst Position
+      description: |-
+        Force burn an IbetWST position for a specific account
+
+        - This endpoint allows an issuer to force burn an IbetWST position for a specific account.
+      operationId: ForceBurnIbetWSTPosition
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: EOA passphrase
+            title: Eoa-Password
+          description: EOA passphrase
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: JWT authentication token
+            title: Auth-Token
+          description: JWT authentication token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForceBurnIbetWSTRequest'
       responses:
         '200':
           description: Successful Response
@@ -10032,6 +10127,7 @@ paths:
                   - deploy
                   - mint
                   - burn
+                  - force_burn
                   - add_whitelist
                   - delete_whitelist
                   - transfer
@@ -13749,6 +13845,23 @@ components:
         - eoa_password
       title: FinishDVPDeliveryRequest
       description: DVP delivery finish schema (REQUEST)
+    ForceBurnIbetWSTRequest:
+      properties:
+        account_address:
+          type: string
+          title: Account Address
+          description: Account address from which to force burn IbetWST
+        value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Value
+          description: Amount of IbetWST to force burn
+      type: object
+      required:
+        - account_address
+        - value
+      title: ForceBurnIbetWSTRequest
+      description: ForceBurnIbetWST request schema
     ForceLockRequest:
       properties:
         token_address:
@@ -13939,6 +14052,7 @@ components:
             - deploy
             - mint
             - burn
+            - force_burn
             - add_whitelist
             - delete_whitelist
             - transfer

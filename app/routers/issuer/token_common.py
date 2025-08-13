@@ -36,6 +36,7 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    IDXEthIbetWSTWhitelist,
     IDXPersonalInfo,
     ScheduledEvents,
     Token,
@@ -46,13 +47,14 @@ from app.model.db.ibet_wst import (
     IbetWSTAuthorization,
     IbetWSTTxParamsAddAccountWhiteList,
     IbetWSTTxParamsDeleteAccountWhiteList,
-    IDXEthIbetWSTWhitelist,
+    IbetWSTTxParamsForceBurn,
 )
 from app.model.eth import IbetWST, IbetWSTDigestHelper
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     AddIbetWSTWhitelistRequest,
     DeleteIbetWSTWhitelistRequest,
+    ForceBurnIbetWSTRequest,
     GetIbetWSTWhitelistWithPersonalInfoResponse,
     IbetWSTTransactionResponse,
     ListAllIssuedTokensQuery,
@@ -480,10 +482,12 @@ async def add_ibet_wst_whitelist(
     db: DBAsyncSession,
     request: Request,
     data: AddIbetWSTWhitelistRequest,
-    token_address: Annotated[str, Path()],
-    issuer_address: Annotated[str, Header()],
-    eoa_password: Annotated[Optional[str], Header()] = None,
-    auth_token: Annotated[Optional[str], Header()] = None,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+    eoa_password: Annotated[Optional[str], Header(description="EOA passphrase")] = None,
+    auth_token: Annotated[
+        Optional[str], Header(description="JWT authentication token")
+    ] = None,
 ):
     """
     Add an account to the IbetWST whitelist
@@ -508,7 +512,7 @@ async def add_ibet_wst_whitelist(
     _account, decrypt_password = await check_auth(
         request=request,
         db=db,
-        issuer_address=issuer_address,
+        issuer_address=to_checksum_address(issuer_address),
         eoa_password=eoa_password,
         auth_token=auth_token,
     )
@@ -525,8 +529,8 @@ async def add_ibet_wst_whitelist(
             select(Token)
             .where(
                 and_(
-                    Token.issuer_address == issuer_address,
-                    Token.token_address == token_address,
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
                     Token.token_status != TokenStatus.FAILED,
                     Token.ibet_wst_address.is_not(None),
                 )
@@ -572,7 +576,7 @@ async def add_ibet_wst_whitelist(
         sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
     )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-    wst_tx.authorizer = issuer_address
+    wst_tx.authorizer = to_checksum_address(issuer_address)
     wst_tx.authorization = IbetWSTAuthorization(
         nonce=nonce.hex(),
         v=signature.v,
@@ -596,10 +600,12 @@ async def delete_ibet_wst_whitelist(
     db: DBAsyncSession,
     request: Request,
     data: DeleteIbetWSTWhitelistRequest,
-    token_address: Annotated[str, Path()],
-    issuer_address: Annotated[str, Header()],
-    eoa_password: Annotated[Optional[str], Header()] = None,
-    auth_token: Annotated[Optional[str], Header()] = None,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+    eoa_password: Annotated[Optional[str], Header(description="EOA passphrase")] = None,
+    auth_token: Annotated[
+        Optional[str], Header(description="JWT authentication token")
+    ] = None,
 ):
     """
     Delete an account from the IbetWST whitelist
@@ -623,7 +629,7 @@ async def delete_ibet_wst_whitelist(
     _account, decrypt_password = await check_auth(
         request=request,
         db=db,
-        issuer_address=issuer_address,
+        issuer_address=to_checksum_address(issuer_address),
         eoa_password=eoa_password,
         auth_token=auth_token,
     )
@@ -640,8 +646,8 @@ async def delete_ibet_wst_whitelist(
             select(Token)
             .where(
                 and_(
-                    Token.issuer_address == issuer_address,
-                    Token.token_address == token_address,
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
                     Token.token_status != TokenStatus.FAILED,
                     Token.ibet_wst_address.is_not(None),
                 )
@@ -685,7 +691,125 @@ async def delete_ibet_wst_whitelist(
         st_account=data.st_account_address,  # Account to be deleted to whitelist
     )
     wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-    wst_tx.authorizer = issuer_address
+    wst_tx.authorizer = to_checksum_address(issuer_address)
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=nonce.hex(),
+        v=signature.v,
+        r=signature.r.to_bytes(32).hex(),
+        s=signature.s.to_bytes(32).hex(),
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
+
+
+# POST: /tokens/{token_address}/ibet_wst/positions/force_burn
+@router.post(
+    "/tokens/{token_address}/ibet_wst/positions/force_burn",
+    operation_id="ForceBurnIbetWSTPosition",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(400, 404, 422),
+)
+async def force_burn_ibet_wst_position(
+    db: DBAsyncSession,
+    request: Request,
+    data: ForceBurnIbetWSTRequest,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+    eoa_password: Annotated[Optional[str], Header(description="EOA passphrase")] = None,
+    auth_token: Annotated[
+        Optional[str], Header(description="JWT authentication token")
+    ] = None,
+):
+    """
+    Force burn an IbetWST position for a specific account
+
+    - This endpoint allows an issuer to force burn an IbetWST position for a specific account.
+    """
+
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    # - Check if the eoa_password or auth_token is valid
+    issuer_account, decrypt_password = await check_auth(
+        request=request,
+        db=db,
+        issuer_address=to_checksum_address(issuer_address),
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Get private key
+    keyfile_json = issuer_account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+    )
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+    if token.token_status == TokenStatus.PENDING:
+        raise InvalidParameterError("This token is temporarily unavailable")
+
+    # Generate IbetWST contract instance
+    contract = IbetWST(token.ibet_wst_address)
+
+    # Generate nonce
+    nonce = secrets.token_bytes(32)
+
+    # Get domain separator
+    domain_separator = await contract.domain_separator()
+
+    # Generate digest
+    digest = IbetWSTDigestHelper.generate_force_burn_from_digest(
+        domain_separator=domain_separator,
+        account_address=data.account_address,  # Account to force burn
+        value=data.value,  # Amount to force burn
+        nonce=nonce,
+    )
+
+    # Sign the digest from the authorizer's private key
+    signature = EthWeb3.eth.account.unsafe_sign_hash(digest, private_key)
+
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.FORCE_BURN
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = token.ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsForceBurn(
+        account=data.account_address,  # Account to force burn
+        value=data.value,  # Amount to force burn
+    )
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = to_checksum_address(issuer_address)
     wst_tx.authorization = IbetWSTAuthorization(
         nonce=nonce.hex(),
         v=signature.v,

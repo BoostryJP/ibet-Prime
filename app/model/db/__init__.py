@@ -72,6 +72,7 @@ from .ibet_wst import (
     IbetWSTTxParamsCancelTrade,
     IbetWSTTxParamsDeleteAccountWhiteList,
     IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsForceBurn,
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRejectTrade,
     IbetWSTTxParamsRequestTrade,

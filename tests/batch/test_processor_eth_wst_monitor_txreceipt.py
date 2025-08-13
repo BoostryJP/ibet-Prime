@@ -34,6 +34,7 @@ from app.model.db import (
     IbetWSTTxParamsCancelTrade,
     IbetWSTTxParamsDeleteAccountWhiteList,
     IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsForceBurn,
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRejectTrade,
     IbetWSTTxParamsRequestTrade,
@@ -1231,6 +1232,97 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=transfer",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
+        ]
+
+    # Normal_4_2_10
+    # - TxReceipt: exists(success)
+    # - Finalized
+    # - TxType: FORCE_BURN
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "gasUsed": 21000,
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        MagicMock(
+            return_value=[
+                {
+                    "args": {
+                        "from": user1["address"],
+                        "value": 1000,
+                    },  # Burn event log
+                }
+            ]
+        ),
+    )
+    async def test_normal_4_2_10(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.FORCE_BURN
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsForceBurn(
+            account=self.user1["address"],
+            value=1000,
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
+        assert wst_tx_af.finalized is True
+        assert wst_tx_af.event_log == {
+            "from_address": self.user1["address"],
+            "value": 1000,
+        }
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=force_burn",
             f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
             f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
