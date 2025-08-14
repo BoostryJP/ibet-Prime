@@ -1427,5 +1427,6 @@ class TestProcessor:
             f"Transaction receipt not found, skipping processing: id={another_tx_id}",
             f"Monitor transaction: id={tx_id}, type=deploy",
             f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Duplicate transaction found: id={another_tx_id}, sender={self.eth_master['address']}, nonce=100",
             f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]

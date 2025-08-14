@@ -22,7 +22,7 @@ import sys
 from typing import Sequence
 
 import uvloop
-from sqlalchemy import and_, delete, select, update
+from sqlalchemy import and_, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
@@ -376,19 +376,28 @@ async def finalize_tx(
 
     # If there are transactions with duplicate nonces,
     # update the status of all such records to FAILED.
-    await db_session.execute(
-        update(EthIbetWSTTx)
-        .where(
-            and_(
-                EthIbetWSTTx.tx_sender == wst_tx.tx_sender,
-                EthIbetWSTTx.tx_nonce == wst_tx.tx_nonce,
-                EthIbetWSTTx.tx_id != wst_tx.tx_id,
-                EthIbetWSTTx.status == IbetWSTTxStatus.SENT,
-                EthIbetWSTTx.finalized.is_not(True),
+    duplicate_tx_list: Sequence[EthIbetWSTTx] = (
+        await db_session.scalars(
+            select(EthIbetWSTTx).where(
+                and_(
+                    EthIbetWSTTx.tx_sender == wst_tx.tx_sender,
+                    EthIbetWSTTx.tx_nonce == wst_tx.tx_nonce,
+                    EthIbetWSTTx.tx_id != wst_tx.tx_id,
+                    EthIbetWSTTx.status == IbetWSTTxStatus.SENT,
+                    EthIbetWSTTx.finalized.is_not(True),
+                )
             )
         )
-        .values(status=IbetWSTTxStatus.FAILED, finalized=True)
-    )
+    ).all()
+    if len(duplicate_tx_list) > 0:
+        # Update the status of all duplicate transactions to FAILED
+        for duplicate_tx in duplicate_tx_list:
+            LOG.warning(
+                f"Duplicate transaction found: id={duplicate_tx.tx_id}, sender={duplicate_tx.tx_sender}, nonce={duplicate_tx.tx_nonce}"
+            )
+            duplicate_tx.status = IbetWSTTxStatus.FAILED
+            duplicate_tx.finalized = True
+            await db_session.merge(duplicate_tx)
 
 
 async def main():
