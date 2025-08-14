@@ -38,7 +38,7 @@ async def deploy_token(
     :param owner: Address of the owner of the contract.
     :return: Transaction hash of the deployment.
     """
-    tx_hash = await EthAsyncContractUtils.deploy_contract(
+    tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
         contract_name="IbetERC20",
         args=[
             name,
@@ -79,7 +79,7 @@ async def mint_token(
             "gas": 2000000,
         }
     )
-    tx_hash = await EthAsyncContractUtils.send_transaction(
+    tx_hash, _ = await EthAsyncContractUtils.send_transaction(
         transaction=tx,
         private_key=bytes.fromhex(tx_from["private_key"]),
     )
@@ -113,7 +113,7 @@ async def approve_token(
             "gas": 2000000,
         }
     )
-    tx_hash = await EthAsyncContractUtils.send_transaction(
+    tx_hash, _ = await EthAsyncContractUtils.send_transaction(
         transaction=tx,
         private_key=bytes.fromhex(tx_from["private_key"]),
     )

@@ -289,6 +289,9 @@ class EthIbetWSTTx(Base):
     # - IP address of the client who initiated the transaction
     # - This field is set when the transaction is executed directly via API call.
     client_ip: Mapped[str | None] = mapped_column(String(40))
+    # Transaction nonce
+    # - Nonce of the transaction on the Ethereum network
+    tx_nonce: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     # Transaction hash
     # - Hash of the transaction on the Ethereum network
     # - Set to None if the transaction is not yet sent

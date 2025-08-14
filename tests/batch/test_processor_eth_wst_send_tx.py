@@ -115,7 +115,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.utils.eth_contract_utils.EthAsyncContractUtils.deploy_contract",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_1(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -150,6 +150,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -171,7 +172,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.add_account_white_list_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_2(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -217,6 +218,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -238,7 +240,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.delete_account_white_list_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_3(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -282,6 +284,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -303,7 +306,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.request_trade_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_4(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -354,6 +357,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -375,7 +379,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.cancel_trade_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_5(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -419,6 +423,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -440,7 +445,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.accept_trade_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_6(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -482,6 +487,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -503,7 +509,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.reject_trade_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_7(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -545,6 +551,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -566,7 +573,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.mint_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_8(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -611,6 +618,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -632,7 +640,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.burn_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_9(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -677,6 +685,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -698,7 +707,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.transfer_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_10(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -746,6 +755,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
@@ -767,7 +777,7 @@ class TestProcessor:
     )
     @mock.patch(
         "app.model.eth.wst.IbetWST.force_burn_from_with_authorization",
-        AsyncMock(return_value="test_tx_hash"),
+        AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_11(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -812,6 +822,7 @@ class TestProcessor:
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
+        assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
 
         # Check if the log was recorded
