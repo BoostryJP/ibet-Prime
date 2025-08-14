@@ -39,7 +39,7 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
-from web3.types import RPCEndpoint, RPCResponse, TxReceipt
+from web3.types import Nonce, RPCEndpoint, RPCResponse, TxReceipt
 
 from app import log
 from app.database import async_engine
@@ -172,7 +172,7 @@ class EthAsyncContractUtils:
     @staticmethod
     async def deploy_contract(
         contract_name: str, args: list, deployer: EthereumAddress, private_key: bytes
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """Deploy contract
 
         :param contract_name: contract name
@@ -203,7 +203,7 @@ class EthAsyncContractUtils:
                 }
             )
             # Send transaction
-            tx_hash = await EthAsyncContractUtils.send_transaction(
+            tx_hash, nonce = await EthAsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
         except TimeExhausted as timeout_error:
@@ -212,7 +212,7 @@ class EthAsyncContractUtils:
         except Exception as error:
             raise SendTransactionError(error)
 
-        return tx_hash
+        return tx_hash, nonce
 
     @classmethod
     def get_contract(cls, contract_name: str, contract_address: EthereumAddress):
@@ -270,7 +270,7 @@ class EthAsyncContractUtils:
 
         :param transaction: Transaction parameters
         :param private_key: Private key of the sender
-        :return: Transaction hash
+        :return: Tuple of transaction hash and nonce
         """
         _tx_from = transaction["from"]
 
@@ -286,7 +286,7 @@ class EthAsyncContractUtils:
         tx_hash = await EthWeb3.eth.send_raw_transaction(
             signed_tx.raw_transaction.to_0x_hex()
         )
-        return tx_hash.to_0x_hex()
+        return tx_hash.to_0x_hex(), nonce
 
     @staticmethod
     async def wait_for_transaction_receipt(tx_hash: str, timeout: int = 10):

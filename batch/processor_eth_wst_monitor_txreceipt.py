@@ -158,196 +158,246 @@ async def finalize_tx(
     """
     Finalize the IbetWST transaction.
     """
-    match wst_tx.tx_type:
-        case IbetWSTTxType.DEPLOY:
-            # Update wst address
-            token = (
-                await db_session.scalars(
-                    select(Token).where(Token.ibet_wst_tx_id == wst_tx.tx_id).limit(1)
-                )
-            ).first()
-            if token is None:
-                return
+    # If the transaction is successful,
+    # update token information and event logs.
+    if wst_tx.status == IbetWSTTxStatus.SUCCEEDED:
+        match wst_tx.tx_type:
+            case IbetWSTTxType.DEPLOY:
+                # Update wst address
+                token = (
+                    await db_session.scalars(
+                        select(Token)
+                        .where(Token.ibet_wst_tx_id == wst_tx.tx_id)
+                        .limit(1)
+                    )
+                ).first()
+                if token is None:
+                    return
 
-            token.ibet_wst_deployed = True
-            token.ibet_wst_address = tx_receipt.get("contractAddress", None)
-            await db_session.merge(token)
-        case IbetWSTTxType.MINT:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.Mint().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogMint(
-                    to_address=event["args"]["to"],
-                    value=event["args"]["value"],
+                token.ibet_wst_deployed = True
+                token.ibet_wst_address = tx_receipt.get("contractAddress", None)
+                await db_session.merge(token)
+            case IbetWSTTxType.MINT:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.Mint().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
                 )
-                await db_session.merge(wst_tx)
-        case IbetWSTTxType.BURN:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.Burn().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogBurn(
-                    from_address=event["args"]["from"],
-                    value=event["args"]["value"],
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogMint(
+                        to_address=event["args"]["to"],
+                        value=event["args"]["value"],
+                    )
+                    await db_session.merge(wst_tx)
+            case IbetWSTTxType.BURN:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.Burn().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
                 )
-                await db_session.merge(wst_tx)
-        case IbetWSTTxType.FORCE_BURN:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.Burn().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogBurn(
-                    from_address=event["args"]["from"],
-                    value=event["args"]["value"],
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogBurn(
+                        from_address=event["args"]["from"],
+                        value=event["args"]["value"],
+                    )
+                    await db_session.merge(wst_tx)
+            case IbetWSTTxType.FORCE_BURN:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.Burn().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
                 )
-                await db_session.merge(wst_tx)
-        case IbetWSTTxType.ADD_WHITELIST:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogAccountWhiteListAdded(
-                    account_address=event["args"]["accountAddress"],
-                )
-                await db_session.merge(wst_tx)
-            # Add to whitelist table
-            tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
-            await db_session.merge(
-                IDXEthIbetWSTWhitelist(
-                    ibet_wst_address=wst_tx.ibet_wst_address,
-                    st_account_address=tx_params["st_account"],
-                    sc_account_address_in=tx_params["sc_account_in"],
-                    sc_account_address_out=tx_params["sc_account_out"],
-                )
-            )
-        case IbetWSTTxType.DELETE_WHITELIST:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogAccountWhiteListDeleted(
-                    account_address=event["args"]["accountAddress"],
-                )
-                await db_session.merge(wst_tx)
-            # Delete from whitelist table
-            await db_session.execute(
-                delete(IDXEthIbetWSTWhitelist).where(
-                    and_(
-                        IDXEthIbetWSTWhitelist.ibet_wst_address
-                        == wst_tx.ibet_wst_address,
-                        IDXEthIbetWSTWhitelist.st_account_address
-                        == event["args"]["accountAddress"],
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogBurn(
+                        from_address=event["args"]["from"],
+                        value=event["args"]["value"],
+                    )
+                    await db_session.merge(wst_tx)
+            case IbetWSTTxType.ADD_WHITELIST:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = (
+                    ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
+                        txn_receipt=tx_receipt, errors=DISCARD
                     )
                 )
-            )
-        case IbetWSTTxType.TRANSFER:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.Transfer().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogTransfer(
-                    from_address=event["args"]["from"],
-                    to_address=event["args"]["to"],
-                    value=event["args"]["value"],
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogAccountWhiteListAdded(
+                        account_address=event["args"]["accountAddress"],
+                    )
+                    await db_session.merge(wst_tx)
+                # Add to whitelist table
+                tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
+                await db_session.merge(
+                    IDXEthIbetWSTWhitelist(
+                        ibet_wst_address=wst_tx.ibet_wst_address,
+                        st_account_address=tx_params["st_account"],
+                        sc_account_address_in=tx_params["sc_account_in"],
+                        sc_account_address_out=tx_params["sc_account_out"],
+                    )
                 )
-                await db_session.merge(wst_tx)
-        case IbetWSTTxType.REQUEST_TRADE:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.TradeRequested().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogTradeRequested(
-                    index=event["args"]["index"],
-                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
-                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
-                    sc_token_address=event["args"]["SCTokenAddress"],
-                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
-                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
-                    st_value=event["args"]["STValue"],
-                    sc_value=event["args"]["SCValue"],
+            case IbetWSTTxType.DELETE_WHITELIST:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = (
+                    ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
+                        txn_receipt=tx_receipt, errors=DISCARD
+                    )
                 )
-                await db_session.merge(wst_tx)
-        case IbetWSTTxType.CANCEL_TRADE:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.TradeCancelled().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogTradeCancelled(
-                    index=event["args"]["index"],
-                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
-                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
-                    sc_token_address=event["args"]["SCTokenAddress"],
-                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
-                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
-                    st_value=event["args"]["STValue"],
-                    sc_value=event["args"]["SCValue"],
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogAccountWhiteListDeleted(
+                        account_address=event["args"]["accountAddress"],
+                    )
+                    await db_session.merge(wst_tx)
+                # Delete from whitelist table
+                await db_session.execute(
+                    delete(IDXEthIbetWSTWhitelist).where(
+                        and_(
+                            IDXEthIbetWSTWhitelist.ibet_wst_address
+                            == wst_tx.ibet_wst_address,
+                            IDXEthIbetWSTWhitelist.st_account_address
+                            == event["args"]["accountAddress"],
+                        )
+                    )
                 )
-                await db_session.merge(wst_tx)
-        case IbetWSTTxType.ACCEPT_TRADE:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.TradeAccepted().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogTradeAccepted(
-                    index=event["args"]["index"],
-                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
-                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
-                    sc_token_address=event["args"]["SCTokenAddress"],
-                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
-                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
-                    st_value=event["args"]["STValue"],
-                    sc_value=event["args"]["SCValue"],
+            case IbetWSTTxType.TRANSFER:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.Transfer().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
                 )
-                await db_session.merge(wst_tx)
-        case IbetWSTTxType.REJECT_TRADE:
-            # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
-            events = ibet_wst.contract.events.TradeRejected().process_receipt(
-                txn_receipt=tx_receipt, errors=DISCARD
-            )
-            event = events[0] if len(events) > 0 else None
-            if event is not None:
-                wst_tx.event_log = IbetWSTEventLogTradeRejected(
-                    index=event["args"]["index"],
-                    seller_st_account_address=event["args"]["sellerSTAccountAddress"],
-                    buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
-                    sc_token_address=event["args"]["SCTokenAddress"],
-                    seller_sc_account_address=event["args"]["sellerSCAccountAddress"],
-                    buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
-                    st_value=event["args"]["STValue"],
-                    sc_value=event["args"]["SCValue"],
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogTransfer(
+                        from_address=event["args"]["from"],
+                        to_address=event["args"]["to"],
+                        value=event["args"]["value"],
+                    )
+                    await db_session.merge(wst_tx)
+            case IbetWSTTxType.REQUEST_TRADE:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.TradeRequested().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
                 )
-                await db_session.merge(wst_tx)
-        case _:
-            return
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogTradeRequested(
+                        index=event["args"]["index"],
+                        seller_st_account_address=event["args"][
+                            "sellerSTAccountAddress"
+                        ],
+                        buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                        sc_token_address=event["args"]["SCTokenAddress"],
+                        seller_sc_account_address=event["args"][
+                            "sellerSCAccountAddress"
+                        ],
+                        buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                        st_value=event["args"]["STValue"],
+                        sc_value=event["args"]["SCValue"],
+                    )
+                    await db_session.merge(wst_tx)
+            case IbetWSTTxType.CANCEL_TRADE:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.TradeCancelled().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
+                )
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogTradeCancelled(
+                        index=event["args"]["index"],
+                        seller_st_account_address=event["args"][
+                            "sellerSTAccountAddress"
+                        ],
+                        buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                        sc_token_address=event["args"]["SCTokenAddress"],
+                        seller_sc_account_address=event["args"][
+                            "sellerSCAccountAddress"
+                        ],
+                        buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                        st_value=event["args"]["STValue"],
+                        sc_value=event["args"]["SCValue"],
+                    )
+                    await db_session.merge(wst_tx)
+            case IbetWSTTxType.ACCEPT_TRADE:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.TradeAccepted().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
+                )
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogTradeAccepted(
+                        index=event["args"]["index"],
+                        seller_st_account_address=event["args"][
+                            "sellerSTAccountAddress"
+                        ],
+                        buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                        sc_token_address=event["args"]["SCTokenAddress"],
+                        seller_sc_account_address=event["args"][
+                            "sellerSCAccountAddress"
+                        ],
+                        buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                        st_value=event["args"]["STValue"],
+                        sc_value=event["args"]["SCValue"],
+                    )
+                    await db_session.merge(wst_tx)
+            case IbetWSTTxType.REJECT_TRADE:
+                # Update the IbetWST transaction with the event log
+                ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+                events = ibet_wst.contract.events.TradeRejected().process_receipt(
+                    txn_receipt=tx_receipt, errors=DISCARD
+                )
+                event = events[0] if len(events) > 0 else None
+                if event is not None:
+                    wst_tx.event_log = IbetWSTEventLogTradeRejected(
+                        index=event["args"]["index"],
+                        seller_st_account_address=event["args"][
+                            "sellerSTAccountAddress"
+                        ],
+                        buyer_st_account_address=event["args"]["buyerSTAccountAddress"],
+                        sc_token_address=event["args"]["SCTokenAddress"],
+                        seller_sc_account_address=event["args"][
+                            "sellerSCAccountAddress"
+                        ],
+                        buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
+                        st_value=event["args"]["STValue"],
+                        sc_value=event["args"]["SCValue"],
+                    )
+                    await db_session.merge(wst_tx)
+            case _:
+                return
+
+    # If there are transactions with duplicate nonces,
+    # update the status of all such records to FAILED.
+    duplicate_tx_list: Sequence[EthIbetWSTTx] = (
+        await db_session.scalars(
+            select(EthIbetWSTTx).where(
+                and_(
+                    EthIbetWSTTx.tx_sender == wst_tx.tx_sender,
+                    EthIbetWSTTx.tx_nonce == wst_tx.tx_nonce,
+                    EthIbetWSTTx.tx_id != wst_tx.tx_id,
+                    EthIbetWSTTx.status == IbetWSTTxStatus.SENT,
+                    EthIbetWSTTx.finalized.is_not(True),
+                )
+            )
+        )
+    ).all()
+    if len(duplicate_tx_list) > 0:
+        # Update the status of all duplicate transactions to FAILED
+        for duplicate_tx in duplicate_tx_list:
+            LOG.warning(
+                f"Duplicate transaction found: id={duplicate_tx.tx_id}, sender={duplicate_tx.tx_sender}, nonce={duplicate_tx.tx_nonce}"
+            )
+            duplicate_tx.status = IbetWSTTxStatus.FAILED
+            duplicate_tx.finalized = True
+            await db_session.merge(duplicate_tx)
 
 
 async def main():

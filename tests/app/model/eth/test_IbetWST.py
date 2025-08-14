@@ -44,7 +44,7 @@ async def deploy_wst_token(
     :param owner: Address of the owner of the contract.
     :return: Transaction hash of the deployment.
     """
-    tx_hash = await EthAsyncContractUtils.deploy_contract(
+    tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
         contract_name="AuthIbetWST",
         args=[
             name,
@@ -85,7 +85,7 @@ async def mint_wst_token(
             "gas": 2000000,
         }
     )
-    tx_hash = await EthAsyncContractUtils.send_transaction(
+    tx_hash, _ = await EthAsyncContractUtils.send_transaction(
         transaction=tx,
         private_key=bytes.fromhex(tx_from["private_key"]),
     )
@@ -123,7 +123,7 @@ async def wst_add_account_to_whitelist(
             "gas": 2000000,
         }
     )
-    tx_hash = await EthAsyncContractUtils.send_transaction(
+    tx_hash, _ = await EthAsyncContractUtils.send_transaction(
         transaction=tx,
         private_key=bytes.fromhex(tx_from["private_key"]),
     )
@@ -169,7 +169,7 @@ async def wst_request_trade(
             "gas": 2000000,
         }
     )
-    tx_hash = await EthAsyncContractUtils.send_transaction(
+    tx_hash, _ = await EthAsyncContractUtils.send_transaction(
         transaction=tx,
         private_key=bytes.fromhex(tx_from["private_key"]),
     )
@@ -189,7 +189,7 @@ async def deploy_erc20_token(
     :param owner: Address of the owner of the contract.
     :return: Transaction hash of the deployment.
     """
-    tx_hash = await EthAsyncContractUtils.deploy_contract(
+    tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
         contract_name="IbetERC20",
         args=[
             name,
@@ -230,7 +230,7 @@ async def mint_erc20_token(
             "gas": 2000000,
         }
     )
-    tx_hash = await EthAsyncContractUtils.send_transaction(
+    tx_hash, _ = await EthAsyncContractUtils.send_transaction(
         transaction=tx,
         private_key=bytes.fromhex(tx_from["private_key"]),
     )
@@ -264,7 +264,7 @@ async def erc20_approve_token(
             "gas": 2000000,
         }
     )
-    tx_hash = await EthAsyncContractUtils.send_transaction(
+    tx_hash, _ = await EthAsyncContractUtils.send_transaction(
         transaction=tx,
         private_key=bytes.fromhex(tx_from["private_key"]),
     )
@@ -410,7 +410,7 @@ class TestAddAccountWhiteListWithAuthorization:
         )
 
         # Attempt to add account to whitelist with invalid authorization
-        tx_hash = await contract.add_account_white_list_with_authorization(
+        tx_hash, _ = await contract.add_account_white_list_with_authorization(
             st_account=self.user1["address"],
             sc_account_in=self.user2["address"],
             sc_account_out=self.user3["address"],
@@ -474,7 +474,7 @@ class TestAddAccountWhiteListWithAuthorization:
         )
 
         # Attempt to add account to whitelist with invalid authorization
-        tx_hash = await contract.add_account_white_list_with_authorization(
+        tx_hash, _ = await contract.add_account_white_list_with_authorization(
             st_account=self.user1["address"],
             sc_account_in=self.user2["address"],
             sc_account_out=self.user3["address"],
@@ -554,7 +554,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
         )
 
         # Attempt to remove account from whitelist with valid authorization
-        tx_hash = await contract.delete_account_white_list_with_authorization(
+        tx_hash, _ = await contract.delete_account_white_list_with_authorization(
             st_account=self.user1["address"],
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
@@ -623,7 +623,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
         )
 
         # Attempt to remove account from whitelist with invalid authorization
-        tx_hash = await contract.delete_account_white_list_with_authorization(
+        tx_hash, _ = await contract.delete_account_white_list_with_authorization(
             st_account=self.user1["address"],
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
@@ -721,7 +721,7 @@ class TestTransferWithAuthorization:
         )
 
         # Attempt to transfer tokens with valid authorization
-        tx_hash = await contract.transfer_with_authorization(
+        tx_hash, _ = await contract.transfer_with_authorization(
             from_address=self.user1["address"],
             to_address=self.user2["address"],
             value=500,
@@ -805,7 +805,7 @@ class TestTransferWithAuthorization:
         )
 
         # Attempt to transfer tokens with valid authorization
-        tx_hash = await contract.transfer_with_authorization(
+        tx_hash, _ = await contract.transfer_with_authorization(
             from_address=self.user1["address"],
             to_address=self.user2["address"],
             value=500,
@@ -872,7 +872,7 @@ class TestMintWithAuthorization:
         )
 
         # Attempt to mint tokens with valid authorization
-        tx_hash = await contract.mint_with_authorization(
+        tx_hash, _ = await contract.mint_with_authorization(
             to_address=self.user1["address"],
             value=1000,
             authorization=IbetWSTAuthorization(
@@ -929,7 +929,7 @@ class TestMintWithAuthorization:
         )
 
         # Attempt to mint tokens with invalid authorization
-        tx_hash = await contract.mint_with_authorization(
+        tx_hash, _ = await contract.mint_with_authorization(
             to_address=self.user1["address"],
             value=1000,
             authorization=IbetWSTAuthorization(
@@ -1005,7 +1005,7 @@ class TestBurnWithAuthorization:
         )
 
         # Attempt to burn tokens with valid authorization
-        tx_hash = await contract.burn_with_authorization(
+        tx_hash, _ = await contract.burn_with_authorization(
             from_address=self.user1["address"],
             value=500,
             authorization=IbetWSTAuthorization(
@@ -1071,7 +1071,7 @@ class TestBurnWithAuthorization:
         )
 
         # Attempt to burn tokens with invalid authorization
-        tx_hash = await contract.burn_with_authorization(
+        tx_hash, _ = await contract.burn_with_authorization(
             from_address=self.user1["address"],
             value=500,
             authorization=IbetWSTAuthorization(
@@ -1131,7 +1131,7 @@ class TestBurnWithAuthorization:
         )
 
         # Attempt to burn tokens with valid authorization
-        tx_hash = await contract.burn_with_authorization(
+        tx_hash, _ = await contract.burn_with_authorization(
             from_address=self.user1["address"],
             value=1500,  # More than the balance
             authorization=IbetWSTAuthorization(
@@ -1207,7 +1207,7 @@ class TestForceBurnFromWithAuthorization:
         )
 
         # Attempt to force burn tokens with valid authorization
-        tx_hash = await contract.force_burn_from_with_authorization(
+        tx_hash, _ = await contract.force_burn_from_with_authorization(
             account_address=self.user1["address"],
             value=500,
             authorization=IbetWSTAuthorization(
@@ -1273,7 +1273,7 @@ class TestForceBurnFromWithAuthorization:
         )
 
         # Attempt to force burn tokens with invalid authorization
-        tx_hash = await contract.force_burn_from_with_authorization(
+        tx_hash, _ = await contract.force_burn_from_with_authorization(
             account_address=self.user1["address"],
             value=500,
             authorization=IbetWSTAuthorization(
@@ -1333,7 +1333,7 @@ class TestForceBurnFromWithAuthorization:
         )
 
         # Attempt to force burn tokens with valid authorization
-        tx_hash = await contract.force_burn_from_with_authorization(
+        tx_hash, _ = await contract.force_burn_from_with_authorization(
             account_address=self.user1["address"],
             value=1500,  # More than the balance
             authorization=IbetWSTAuthorization(
@@ -1522,7 +1522,7 @@ class TestRequestTradeWithAuthorization:
         )
 
         # Attempt to request trade with valid authorization
-        tx_hash = await token_st.request_trade_with_authorization(
+        tx_hash, _ = await token_st.request_trade_with_authorization(
             seller_st_account=self.seller_st["address"],
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
@@ -1615,7 +1615,7 @@ class TestRequestTradeWithAuthorization:
         )
 
         # Attempt to request trade with invalid authorization
-        tx_hash = await token_st.request_trade_with_authorization(
+        tx_hash, _ = await token_st.request_trade_with_authorization(
             seller_st_account=self.seller_st["address"],
             buyer_st_account=self.buyer_st["address"],
             sc_token_address=sc_token_address,
@@ -1725,7 +1725,7 @@ class TestCancelTradeWithAuthorization:
         )
 
         # Attempt to cancel trade with valid authorization
-        tx_hash = await token_st.cancel_trade_with_authorization(
+        tx_hash, _ = await token_st.cancel_trade_with_authorization(
             index=1,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
@@ -1819,7 +1819,7 @@ class TestCancelTradeWithAuthorization:
         )
 
         # Attempt to cancel trade with invalid authorization
-        tx_hash = await token_st.cancel_trade_with_authorization(
+        tx_hash, _ = await token_st.cancel_trade_with_authorization(
             index=1,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
@@ -1938,7 +1938,7 @@ class TestAcceptTradeWithAuthorization:
         )
 
         # Attempt to accept trade with valid authorization
-        tx_hash = await token_st.accept_trade_with_authorization(
+        tx_hash, _ = await token_st.accept_trade_with_authorization(
             index=1,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
@@ -2046,7 +2046,7 @@ class TestAcceptTradeWithAuthorization:
         )
 
         # Attempt to accept trade with invalid authorization
-        tx_hash = await token_st.accept_trade_with_authorization(
+        tx_hash, _ = await token_st.accept_trade_with_authorization(
             index=1,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
@@ -2151,7 +2151,7 @@ class TestRejectTradeWithAuthorization:
         )
 
         # Attempt to reject trade with valid authorization
-        tx_hash = await token_st.reject_trade_with_authorization(
+        tx_hash, _ = await token_st.reject_trade_with_authorization(
             index=1,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,
@@ -2245,7 +2245,7 @@ class TestRejectTradeWithAuthorization:
         )
 
         # Attempt to reject trade with invalid authorization
-        tx_hash = await token_st.reject_trade_with_authorization(
+        tx_hash, _ = await token_st.reject_trade_with_authorization(
             index=1,
             authorization=IbetWSTAuthorization(
                 nonce=nonce,

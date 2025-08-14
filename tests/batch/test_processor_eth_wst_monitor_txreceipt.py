@@ -1326,3 +1326,107 @@ class TestProcessor:
             f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
             f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
         ]
+
+    # Normal_5
+    # - TxReceipt: exists(success)
+    # - Finalized
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            side_effect=[
+                TimeExhausted,  # Simulate a timeout for the first call
+                {
+                    "status": 1,
+                    "blockNumber": 100,
+                    "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                    "gasUsed": 21000,
+                },  # Successful receipt for the second call
+            ]
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=100),
+    )
+    async def test_normal_5(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        another_tx_id = str(uuid.uuid4())
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = another_tx_id  # Use a different tx_id
+        wst_tx.tx_type = IbetWSTTxType.DEPLOY
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token", initial_owner=self.issuer["address"]
+        )
+        wst_tx.tx_sender = self.eth_master["address"]  # Use the same sender address
+        wst_tx.tx_nonce = 100  # Set a same nonce with another transaction
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.DEPLOY
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name="Test Token", initial_owner=self.issuer["address"]
+        )
+        wst_tx.tx_sender = self.eth_master["address"]  # Use the same sender address
+        wst_tx.tx_nonce = 100  # Set a same nonce with another transaction
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
+        assert wst_tx_af.finalized is True
+
+        wst_tx_another_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == another_tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_another_af.status == IbetWSTTxStatus.FAILED
+        assert wst_tx_another_af.block_number is None
+        assert wst_tx_another_af.gas_used is None
+        assert wst_tx_another_af.finalized is True
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={another_tx_id}, type=deploy",
+            f"Transaction receipt not found, skipping processing: id={another_tx_id}",
+            f"Monitor transaction: id={tx_id}, type=deploy",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+            f"Duplicate transaction found: id={another_tx_id}, sender={self.eth_master['address']}, nonce=100",
+            f"Transaction finalized: id={tx_id}, block_number=100, gas_used=21000",
+        ]

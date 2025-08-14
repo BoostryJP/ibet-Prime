@@ -78,7 +78,7 @@ class TestDeployContract:
     # Deploy contract
     async def test_normal_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -144,7 +144,7 @@ class TestGetContract:
     # Get contract
     async def test_normal_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -174,7 +174,7 @@ class TestGetContract:
     # Contract does not exist
     async def test_error_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -210,7 +210,7 @@ class TestCallFunction:
     # Call function
     async def test_normal_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -246,7 +246,7 @@ class TestCallFunction:
     # Call function that does not exist
     async def test_error_1_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -277,7 +277,7 @@ class TestCallFunction:
     # <Error_1_2>
     async def test_error_1_2(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -321,7 +321,7 @@ class TestGetBlockByTransactionHash:
     # Get block by transaction hash
     async def test_normal_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -353,7 +353,7 @@ class TestGetFinalizedBlockNumber:
     # Get finalized block number
     async def test_normal_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -389,7 +389,7 @@ class TestGetEventLogs:
     # Get event logs
     async def test_normal_1(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -419,7 +419,7 @@ class TestGetEventLogs:
                 "gas": 2000000,
             }
         )
-        tx_hash = await EthAsyncContractUtils.send_transaction(
+        tx_hash, _ = await EthAsyncContractUtils.send_transaction(
             transaction=tx,
             private_key=bytes.fromhex(self.issuer["private_key"]),
         )
@@ -444,7 +444,7 @@ class TestGetEventLogs:
     # Get event logs with non-existent event
     async def test_normal_2(self):
         # Deploy contract
-        tx_hash = await EthAsyncContractUtils.deploy_contract(
+        tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
             contract_name="AuthIbetWST",
             args=[
                 "Test Token",
@@ -474,7 +474,7 @@ class TestGetEventLogs:
                 "gas": 2000000,
             }
         )
-        tx_hash = await EthAsyncContractUtils.send_transaction(
+        tx_hash, _ = await EthAsyncContractUtils.send_transaction(
             transaction=tx,
             private_key=bytes.fromhex(self.issuer["private_key"]),
         )

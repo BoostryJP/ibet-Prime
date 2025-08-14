@@ -24,6 +24,7 @@ from eth_abi.packed import encode_packed
 from eth_utils import keccak, to_checksum_address
 from pydantic import BaseModel, Field
 from web3.contract import AsyncContract
+from web3.types import Nonce
 
 from app.exceptions import SendTransactionError
 from app.model import EthereumAddress
@@ -820,7 +821,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Add account to white list with authorization
 
@@ -830,7 +831,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to add the account to the whitelist
@@ -860,7 +861,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Delete account from white list with authorization
 
@@ -868,7 +869,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to delete the account from the whitelist
@@ -897,7 +898,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Mint tokens with authorization
 
@@ -906,7 +907,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to mint tokens
@@ -936,7 +937,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Burn tokens with authorization
 
@@ -945,7 +946,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to burn tokens
@@ -975,7 +976,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Force burn tokens from an account with authorization
 
@@ -984,7 +985,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to force burn tokens
@@ -1017,7 +1018,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Transfer tokens with authorization
 
@@ -1029,7 +1030,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to transfer tokens
@@ -1065,7 +1066,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Receive tokens with authorization
 
@@ -1077,7 +1078,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to receive tokens
@@ -1150,7 +1151,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Request a trade with authorization
 
@@ -1163,7 +1164,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction
@@ -1196,7 +1197,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Cancel a trade with authorization
 
@@ -1204,7 +1205,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to cancel the trade
@@ -1232,7 +1233,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Accept a trade with authorization
 
@@ -1240,7 +1241,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to accept the trade
@@ -1268,7 +1269,7 @@ class IbetWST(ERC20):
         authorization: IbetWSTAuthorization,
         tx_sender: EthereumAddress,
         tx_sender_key: bytes,
-    ) -> str:
+    ) -> tuple[str, Nonce]:
         """
         Reject a trade with authorization
 
@@ -1276,7 +1277,7 @@ class IbetWST(ERC20):
         :param authorization: Authorization data containing nonce, v, r, s
         :param tx_sender: Address of the transaction sender
         :param tx_sender_key: Private key of the transaction sender
-        :return: Transaction hash
+        :return: Transaction hash and nonce
         """
         try:
             # Build the transaction to reject the trade
