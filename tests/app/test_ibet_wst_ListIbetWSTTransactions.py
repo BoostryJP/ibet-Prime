@@ -24,8 +24,10 @@ import pytest
 
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTEventLogTradeRequested,
     IbetWSTEventLogTransfer,
     IbetWSTTxParamsMint,
+    IbetWSTTxParamsRequestTrade,
     IbetWSTTxParamsTransfer,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -107,9 +109,9 @@ class TestListIbetWSTTransactions:
             "transactions": [],
         }
 
-    # <Normal_2>
+    # <Normal_2_1>
     # Return transactions for the specified address
-    async def test_normal_2(self, async_db, async_client):
+    async def test_normal_2_1(self, async_db, async_client):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -218,6 +220,99 @@ class TestListIbetWSTTransactions:
                 },
             ],
         }
+
+    # <Normal_2_2>
+    # Return transactions for the specified address
+    # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
+    async def test_normal_2_2(self, async_db, async_client):
+        # Prepare data
+        tx_id_1 = str(uuid.uuid4())
+        tx_1 = EthIbetWSTTx()
+        tx_1.tx_id = tx_id_1
+        tx_1.tx_type = IbetWSTTxType.REQUEST_TRADE
+        tx_1.version = IbetWSTVersion.V_1
+        tx_1.status = IbetWSTTxStatus.SUCCEEDED
+        tx_1.ibet_wst_address = self.wst_token_address_1
+        tx_1.tx_params = IbetWSTTxParamsRequestTrade(
+            seller_st_account="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_st_account="0x234567890abCDEf1234567890aBCdEf123456789",
+            sc_token_address="0x34567890abCdEF1234567890abcDeF1234567890",
+            st_value=100,
+            sc_value=1234567890,
+            memo="Test trade request",
+        )
+        tx_1.tx_sender = self.tx_sender["address"]
+        tx_1.authorizer = self.authorizer_1["address"]
+        tx_1.authorization = {}
+        tx_1.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_1.block_number = 12345678
+        tx_1.finalized = True
+        tx_1.event_log = IbetWSTEventLogTradeRequested(
+            index=111,
+            seller_st_account_address="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_st_account_address="0x234567890abCDEf1234567890aBCdEf123456789",
+            sc_token_address="0x34567890abCdEF1234567890abcDeF1234567890",
+            seller_sc_account_address="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_sc_account_address="0x234567890abCDEf1234567890aBCdEf123456789",
+            st_value=100,
+            sc_value=1234567890,
+            sc_decimals=8,
+        )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
+        async_db.add(tx_1)
+
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "ibet_wst_address": self.wst_token_address_1,
+            },
+        )
+
+        # Check response
+        assert resp.status_code == 200
+        assert (
+            resp.json()
+            == {
+                "result_set": {
+                    "count": 1,
+                    "offset": None,
+                    "limit": None,
+                    "total": 1,
+                },
+                "transactions": [
+                    {
+                        "tx_id": tx_id_1,
+                        "tx_type": IbetWSTTxType.REQUEST_TRADE,
+                        "version": IbetWSTVersion.V_1,
+                        "status": IbetWSTTxStatus.SUCCEEDED,
+                        "ibet_wst_address": self.wst_token_address_1,
+                        "tx_sender": self.tx_sender["address"],
+                        "authorizer": self.authorizer_1["address"],
+                        "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                        "block_number": 12345678,
+                        "finalized": True,
+                        "event_log": {
+                            "index": 111,
+                            "seller_st_account_address": "0x1234567890AbcdEF1234567890aBcdef12345678",
+                            "buyer_st_account_address": "0x234567890abCDEf1234567890aBCdEf123456789",
+                            "sc_token_address": "0x34567890abCdEF1234567890abcDeF1234567890",
+                            "seller_sc_account_address": "0x1234567890AbcdEF1234567890aBcdef12345678",
+                            "buyer_sc_account_address": "0x234567890abCDEf1234567890aBCdEf123456789",
+                            "st_value": 100,
+                            "sc_value": 1234567890,
+                            "display_sc_value": "12.3456789",  # Calculated from sc_value and sc_decimals
+                            "sc_decimals": 8,
+                        },
+                        "created": "2025-01-02T12:04:05+09:00",
+                    },
+                ],
+            }
+        )
 
     # <Normal_3_1>
     # Filter by tx_id

@@ -191,6 +191,7 @@ class IbetWSTEventLogTradeRequested(TypedDict):
     buyer_sc_account_address: str  # Buyer's StableCoin account address
     st_value: int  # Amount of IbetWST traded
     sc_value: int  # Amount of StableCoin traded
+    sc_decimals: int  # Decimals of the StableCoin token
 
 
 class IbetWSTEventLogTradeCancelled(TypedDict):
@@ -204,6 +205,7 @@ class IbetWSTEventLogTradeCancelled(TypedDict):
     buyer_sc_account_address: str  # Buyer's StableCoin account address
     st_value: int  # Amount of IbetWST traded
     sc_value: int  # Amount of StableCoin traded
+    sc_decimals: int  # Decimals of the StableCoin token
 
 
 class IbetWSTEventLogTradeAccepted(TypedDict):
@@ -217,6 +219,7 @@ class IbetWSTEventLogTradeAccepted(TypedDict):
     buyer_sc_account_address: str  # Buyer's StableCoin account address
     st_value: int  # Amount of IbetWST traded
     sc_value: int  # Amount of StableCoin traded
+    sc_decimals: int  # Decimals of the StableCoin token
 
 
 class IbetWSTEventLogTradeRejected(TypedDict):
@@ -230,6 +233,7 @@ class IbetWSTEventLogTradeRejected(TypedDict):
     buyer_sc_account_address: str  # Buyer's StableCoin account address
     st_value: int  # Amount of IbetWST traded
     sc_value: int  # Amount of StableCoin traded
+    sc_decimals: int  # Decimals of the StableCoin token
 
 
 class EthIbetWSTTx(Base):

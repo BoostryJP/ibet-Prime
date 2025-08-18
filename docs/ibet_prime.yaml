@@ -15961,6 +15961,14 @@ components:
           type: integer
           title: Sc Value
           description: Value of SC token to trade
+        display_sc_value:
+          type: string
+          title: Display Sc Value
+          description: Value of SC token to trade (decimals considered)
+        sc_decimals:
+          type: integer
+          title: Sc Decimals
+          description: Decimals of the SC token
       type: object
       required:
         - index
@@ -15971,6 +15979,8 @@ components:
         - buyer_sc_account_address
         - st_value
         - sc_value
+        - display_sc_value
+        - sc_decimals
       title: IbetWSTEventLogTrade
       description: IbetWST 
         TradeRequested/TradeCancelled/TradeAccepted/TradeRejected event log 

@@ -276,3 +276,44 @@ class TestAllowance:
 
         # Assert that the allowance is correct
         assert allowance == 0
+
+
+@pytest.mark.asyncio
+class TestDecimals:
+    """
+    Test ERC20 contract decimals function
+    """
+
+    deployer = default_eth_account("user1")
+    issuer = default_eth_account("user2")
+
+    #################################################################
+    # Normal
+    #################################################################
+
+    # Normal_1
+    # - Test that the decimals function returns 18 when called on a contract after deploying it.
+    async def test_normal_1(self):
+        # Deploy contract
+        contract_address = await deploy_token("Test Token", self.deployer, self.issuer)
+
+        # Generate contract instance
+        contract = ERC20(contract_address)
+
+        # Call decimals function
+        decimals = await contract.decimals()
+
+        # Assert that the decimals is 18
+        assert decimals == 18
+
+    # Normal_2
+    # - Test that the decimals function returns 18 when called on a contract at the zero address.
+    async def test_normal_2(self):
+        # Generate contract instance
+        contract = ERC20(ZERO_ADDRESS)
+
+        # Call decimals function
+        decimals = await contract.decimals()
+
+        # Assert that the decimals is 18
+        assert decimals == 18
