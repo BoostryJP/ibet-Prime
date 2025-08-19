@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated, Sequence
 
 import pytz
@@ -357,12 +358,32 @@ async def list_ibet_wst_transactions(
     # Response
     tx_list = []
     for wst_tx in wst_txs:
+        # Set event_log
+        event_log = wst_tx.event_log
+        if wst_tx.tx_type in [
+            IbetWSTTxType.REQUEST_TRADE,
+            IbetWSTTxType.CANCEL_TRADE,
+            IbetWSTTxType.ACCEPT_TRADE,
+            IbetWSTTxType.REJECT_TRADE,
+        ]:
+            # For trade-related transactions, set additional event_log fields
+            sc_value = wst_tx.event_log.get("sc_value", 0)
+            sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
+            event_log["sc_value"] = sc_value
+            event_log["sc_decimals"] = sc_decimals
+            event_log["display_sc_value"] = str(
+                Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
+            )
+
+        # Set created datetime
         _created_datetime = (
             pytz.timezone("UTC")
             .localize(wst_tx.created)
             .astimezone(local_tz)
             .isoformat()
         )
+
+        # Append transaction details
         tx_list.append(
             {
                 "tx_id": wst_tx.tx_id,
@@ -375,7 +396,7 @@ async def list_ibet_wst_transactions(
                 "tx_hash": wst_tx.tx_hash,
                 "block_number": wst_tx.block_number,
                 "finalized": wst_tx.finalized,
-                "event_log": wst_tx.event_log,
+                "event_log": event_log,
                 "created": _created_datetime,
             }
         )
@@ -417,10 +438,29 @@ async def get_ibet_wst_transaction(
     if wst_tx is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    # Response
+    # Set event_log
+    event_log = wst_tx.event_log
+    if wst_tx.tx_type in [
+        IbetWSTTxType.REQUEST_TRADE,
+        IbetWSTTxType.CANCEL_TRADE,
+        IbetWSTTxType.ACCEPT_TRADE,
+        IbetWSTTxType.REJECT_TRADE,
+    ]:
+        # For trade-related transactions, set additional event_log fields
+        sc_value = wst_tx.event_log.get("sc_value", 0)
+        sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
+        event_log["sc_value"] = sc_value
+        event_log["sc_decimals"] = sc_decimals
+        event_log["display_sc_value"] = str(
+            Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
+        )
+
+    # Set created datetime
     _created_datetime = (
         pytz.timezone("UTC").localize(wst_tx.created).astimezone(local_tz).isoformat()
     )
+
+    # Response
     resp = {
         "tx_id": wst_tx.tx_id,
         "tx_type": wst_tx.tx_type,

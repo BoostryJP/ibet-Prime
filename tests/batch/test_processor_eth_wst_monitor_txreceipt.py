@@ -161,7 +161,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -203,7 +203,7 @@ class TestProcessor:
         assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is False
         assert (
-            wst_tx_af.ibet_wst_address == "0x9876543210abcdef1234567890abcdef12345678"
+            wst_tx_af.ibet_wst_address == "0x9876543210abCDef1234567890AbcDef12345678"
         )
 
         assert caplog.messages == [
@@ -276,7 +276,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -338,7 +338,7 @@ class TestProcessor:
             )
         ).first()
         assert token_af.ibet_wst_deployed is True
-        assert token_af.ibet_wst_address == "0x9876543210abcdef1234567890abcdef12345678"
+        assert token_af.ibet_wst_address == "0x9876543210abCDef1234567890AbcDef12345678"
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
@@ -356,7 +356,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -402,7 +402,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsMint(
             to_address=self.user1["address"],
             value=1000,
@@ -447,7 +447,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -493,7 +493,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsBurn(
             from_address=self.user1["address"],
             value=1000,
@@ -538,7 +538,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -583,7 +583,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
             st_account=self.user1["address"],
             sc_account_in=self.user2["address"],
@@ -619,7 +619,7 @@ class TestProcessor:
         assert idx_whitelist is not None
         assert (
             idx_whitelist.ibet_wst_address
-            == "0x9876543210abcdef1234567890abcdef12345678"
+            == "0x9876543210abCDef1234567890AbcDef12345678"
         )
         assert idx_whitelist.st_account_address == self.user1["address"]
         assert idx_whitelist.sc_account_address_in == self.user2["address"]
@@ -641,7 +641,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -686,7 +686,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
             st_account=self.user1["address"],
         )
@@ -743,7 +743,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -761,7 +761,7 @@ class TestProcessor:
                         "index": 1,
                         "sellerSTAccountAddress": user1["address"],
                         "buyerSTAccountAddress": user2["address"],
-                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "SCTokenAddress": "0x876543210abCdEF1234567890AbCdeF123456789",
                         "sellerSCAccountAddress": user1["address"],
                         "buyerSCAccountAddress": user2["address"],
                         "STValue": 1000,
@@ -770,6 +770,10 @@ class TestProcessor:
                 }
             ]
         ),
+    )
+    @mock.patch(
+        "app.model.eth.wst.ERC20.decimals",
+        AsyncMock(return_value=6),
     )
     async def test_normal_4_2_5(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -795,11 +799,11 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
             seller_st_account=self.user1["address"],
             buyer_st_account=self.user2["address"],
-            sc_token_address="0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            sc_token_address="0x876543210abCdEF1234567890AbCdeF123456789",
             st_value=1000,
             sc_value=2000,
             memo="Test trade request",
@@ -827,11 +831,12 @@ class TestProcessor:
             "index": 1,
             "seller_st_account_address": self.user1["address"],
             "buyer_st_account_address": self.user2["address"],
-            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "sc_token_address": "0x876543210abCdEF1234567890AbCdeF123456789",
             "seller_sc_account_address": self.user1["address"],
             "buyer_sc_account_address": self.user2["address"],
             "st_value": 1000,
             "sc_value": 2000,
+            "sc_decimals": 6,
         }
 
         assert caplog.messages == [
@@ -850,7 +855,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -868,7 +873,7 @@ class TestProcessor:
                         "index": 1,
                         "sellerSTAccountAddress": user1["address"],
                         "buyerSTAccountAddress": user2["address"],
-                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "SCTokenAddress": "0x876543210abCdEF1234567890AbCdeF123456789",
                         "sellerSCAccountAddress": user1["address"],
                         "buyerSCAccountAddress": user2["address"],
                         "STValue": 1000,
@@ -877,6 +882,10 @@ class TestProcessor:
                 }
             ]
         ),
+    )
+    @mock.patch(
+        "app.model.eth.wst.ERC20.decimals",
+        AsyncMock(return_value=6),
     )
     async def test_normal_4_2_6(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -902,7 +911,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsCancelTrade(index=1)
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
@@ -927,11 +936,12 @@ class TestProcessor:
             "index": 1,
             "seller_st_account_address": self.user1["address"],
             "buyer_st_account_address": self.user2["address"],
-            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "sc_token_address": "0x876543210abCdEF1234567890AbCdeF123456789",
             "seller_sc_account_address": self.user1["address"],
             "buyer_sc_account_address": self.user2["address"],
             "st_value": 1000,
             "sc_value": 2000,
+            "sc_decimals": 6,
         }
 
         assert caplog.messages == [
@@ -950,7 +960,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -968,7 +978,7 @@ class TestProcessor:
                         "index": 1,
                         "sellerSTAccountAddress": user1["address"],
                         "buyerSTAccountAddress": user2["address"],
-                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "SCTokenAddress": "0x876543210abCdEF1234567890AbCdeF123456789",
                         "sellerSCAccountAddress": user1["address"],
                         "buyerSCAccountAddress": user2["address"],
                         "STValue": 1000,
@@ -977,6 +987,10 @@ class TestProcessor:
                 }
             ]
         ),
+    )
+    @mock.patch(
+        "app.model.eth.wst.ERC20.decimals",
+        AsyncMock(return_value=6),
     )
     async def test_normal_4_2_7(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -1002,7 +1016,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsAcceptTrade(index=1)
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
@@ -1027,11 +1041,12 @@ class TestProcessor:
             "index": 1,
             "seller_st_account_address": self.user1["address"],
             "buyer_st_account_address": self.user2["address"],
-            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "sc_token_address": "0x876543210abCdEF1234567890AbCdeF123456789",
             "seller_sc_account_address": self.user1["address"],
             "buyer_sc_account_address": self.user2["address"],
             "st_value": 1000,
             "sc_value": 2000,
+            "sc_decimals": 6,
         }
 
         assert caplog.messages == [
@@ -1050,7 +1065,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -1068,7 +1083,7 @@ class TestProcessor:
                         "index": 1,
                         "sellerSTAccountAddress": user1["address"],
                         "buyerSTAccountAddress": user2["address"],
-                        "SCTokenAddress": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+                        "SCTokenAddress": "0x876543210abCdEF1234567890AbCdeF123456789",
                         "sellerSCAccountAddress": user1["address"],
                         "buyerSCAccountAddress": user2["address"],
                         "STValue": 1000,
@@ -1077,6 +1092,10 @@ class TestProcessor:
                 }
             ]
         ),
+    )
+    @mock.patch(
+        "app.model.eth.wst.ERC20.decimals",
+        AsyncMock(return_value=6),
     )
     async def test_normal_4_2_8(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
@@ -1102,7 +1121,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsRejectTrade(index=1)
         wst_tx.tx_sender = self.eth_master["address"]
         wst_tx.finalized = False
@@ -1127,11 +1146,12 @@ class TestProcessor:
             "index": 1,
             "seller_st_account_address": self.user1["address"],
             "buyer_st_account_address": self.user2["address"],
-            "sc_token_address": "0x876f5c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h",
+            "sc_token_address": "0x876543210abCdEF1234567890AbCdeF123456789",
             "seller_sc_account_address": self.user1["address"],
             "buyer_sc_account_address": self.user2["address"],
             "st_value": 1000,
             "sc_value": 2000,
+            "sc_decimals": 6,
         }
 
         assert caplog.messages == [
@@ -1150,7 +1170,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -1197,7 +1217,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsTransfer(
             from_address=self.user1["address"],
             to_address=self.user2["address"],
@@ -1246,7 +1266,7 @@ class TestProcessor:
             return_value={
                 "status": 1,
                 "blockNumber": 100,
-                "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                 "gasUsed": 21000,
             }
         ),
@@ -1292,7 +1312,7 @@ class TestProcessor:
         wst_tx.version = IbetWSTVersion.V_1
         wst_tx.status = IbetWSTTxStatus.SENT
         wst_tx.tx_hash = self.tx_hash
-        wst_tx.ibet_wst_address = "0x9876543210abcdef1234567890abcdef12345678"
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
         wst_tx.tx_params = IbetWSTTxParamsForceBurn(
             account=self.user1["address"],
             value=1000,
@@ -1338,7 +1358,7 @@ class TestProcessor:
                 {
                     "status": 1,
                     "blockNumber": 100,
-                    "contractAddress": "0x9876543210abcdef1234567890abcdef12345678",
+                    "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
                     "gasUsed": 21000,
                 },  # Successful receipt for the second call
             ]

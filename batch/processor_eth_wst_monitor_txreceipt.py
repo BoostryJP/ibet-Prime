@@ -47,7 +47,7 @@ from app.model.db import (
     IDXEthIbetWSTWhitelist,
     Token,
 )
-from app.model.eth import IbetWST
+from app.model.eth import ERC20, IbetWST
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
@@ -287,6 +287,7 @@ async def finalize_tx(
                 )
                 event = events[0] if len(events) > 0 else None
                 if event is not None:
+                    sc_token = ERC20(event["args"]["SCTokenAddress"])
                     wst_tx.event_log = IbetWSTEventLogTradeRequested(
                         index=event["args"]["index"],
                         seller_st_account_address=event["args"][
@@ -300,6 +301,7 @@ async def finalize_tx(
                         buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
                         st_value=event["args"]["STValue"],
                         sc_value=event["args"]["SCValue"],
+                        sc_decimals=(await sc_token.decimals()),
                     )
                     await db_session.merge(wst_tx)
             case IbetWSTTxType.CANCEL_TRADE:
@@ -310,6 +312,7 @@ async def finalize_tx(
                 )
                 event = events[0] if len(events) > 0 else None
                 if event is not None:
+                    sc_token = ERC20(event["args"]["SCTokenAddress"])
                     wst_tx.event_log = IbetWSTEventLogTradeCancelled(
                         index=event["args"]["index"],
                         seller_st_account_address=event["args"][
@@ -323,6 +326,7 @@ async def finalize_tx(
                         buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
                         st_value=event["args"]["STValue"],
                         sc_value=event["args"]["SCValue"],
+                        sc_decimals=(await sc_token.decimals()),
                     )
                     await db_session.merge(wst_tx)
             case IbetWSTTxType.ACCEPT_TRADE:
@@ -333,6 +337,7 @@ async def finalize_tx(
                 )
                 event = events[0] if len(events) > 0 else None
                 if event is not None:
+                    sc_token = ERC20(event["args"]["SCTokenAddress"])
                     wst_tx.event_log = IbetWSTEventLogTradeAccepted(
                         index=event["args"]["index"],
                         seller_st_account_address=event["args"][
@@ -346,6 +351,7 @@ async def finalize_tx(
                         buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
                         st_value=event["args"]["STValue"],
                         sc_value=event["args"]["SCValue"],
+                        sc_decimals=(await sc_token.decimals()),
                     )
                     await db_session.merge(wst_tx)
             case IbetWSTTxType.REJECT_TRADE:
@@ -356,6 +362,7 @@ async def finalize_tx(
                 )
                 event = events[0] if len(events) > 0 else None
                 if event is not None:
+                    sc_token = ERC20(event["args"]["SCTokenAddress"])
                     wst_tx.event_log = IbetWSTEventLogTradeRejected(
                         index=event["args"]["index"],
                         seller_st_account_address=event["args"][
@@ -369,6 +376,7 @@ async def finalize_tx(
                         buyer_sc_account_address=event["args"]["buyerSCAccountAddress"],
                         st_value=event["args"]["STValue"],
                         sc_value=event["args"]["SCValue"],
+                        sc_decimals=(await sc_token.decimals()),
                     )
                     await db_session.merge(wst_tx)
             case _:

@@ -90,6 +90,19 @@ class ERC20:
             default_returns=0,
         )
 
+    async def decimals(self) -> int:
+        """
+        Get token decimals
+
+        :return: Token decimals
+        """
+        return await EthAsyncContractUtils.call_function(
+            contract=self.contract,
+            function_name="decimals",
+            args=(),
+            default_returns=18,
+        )
+
 
 class IbetWSTWhiteList(BaseModel):
     """
