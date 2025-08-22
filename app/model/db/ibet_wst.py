@@ -310,7 +310,7 @@ class EthIbetWSTTx(Base):
     finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Event log of the transaction
     # - Set if the transaction emits events and the block is finalized
-    # - Not set if the tx_tye is "DEPLOY"
+    # - Not set if the tx_type is "DEPLOY"
     event_log: Mapped[
         IbetWSTEventLogMint
         | IbetWSTEventLogBurn

@@ -360,20 +360,21 @@ async def list_ibet_wst_transactions(
     for wst_tx in wst_txs:
         # Set event_log
         event_log = wst_tx.event_log
-        if wst_tx.tx_type in [
-            IbetWSTTxType.REQUEST_TRADE,
-            IbetWSTTxType.CANCEL_TRADE,
-            IbetWSTTxType.ACCEPT_TRADE,
-            IbetWSTTxType.REJECT_TRADE,
-        ]:
-            # For trade-related transactions, set additional event_log fields
-            sc_value = wst_tx.event_log.get("sc_value", 0)
-            sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
-            event_log["sc_value"] = sc_value
-            event_log["sc_decimals"] = sc_decimals
-            event_log["display_sc_value"] = str(
-                Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
-            )
+        if event_log is not None:
+            if wst_tx.tx_type in [
+                IbetWSTTxType.REQUEST_TRADE,
+                IbetWSTTxType.CANCEL_TRADE,
+                IbetWSTTxType.ACCEPT_TRADE,
+                IbetWSTTxType.REJECT_TRADE,
+            ]:
+                # For trade-related transactions, set additional event_log fields
+                sc_value = wst_tx.event_log.get("sc_value", 0)
+                sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
+                event_log["sc_value"] = sc_value
+                event_log["sc_decimals"] = sc_decimals
+                event_log["display_sc_value"] = str(
+                    Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
+                )
 
         # Set created datetime
         _created_datetime = (
@@ -440,20 +441,21 @@ async def get_ibet_wst_transaction(
 
     # Set event_log
     event_log = wst_tx.event_log
-    if wst_tx.tx_type in [
-        IbetWSTTxType.REQUEST_TRADE,
-        IbetWSTTxType.CANCEL_TRADE,
-        IbetWSTTxType.ACCEPT_TRADE,
-        IbetWSTTxType.REJECT_TRADE,
-    ]:
-        # For trade-related transactions, set additional event_log fields
-        sc_value = wst_tx.event_log.get("sc_value", 0)
-        sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
-        event_log["sc_value"] = sc_value
-        event_log["sc_decimals"] = sc_decimals
-        event_log["display_sc_value"] = str(
-            Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
-        )
+    if event_log is not None:
+        if wst_tx.tx_type in [
+            IbetWSTTxType.REQUEST_TRADE,
+            IbetWSTTxType.CANCEL_TRADE,
+            IbetWSTTxType.ACCEPT_TRADE,
+            IbetWSTTxType.REJECT_TRADE,
+        ]:
+            # For trade-related transactions, set additional event_log fields
+            sc_value = wst_tx.event_log.get("sc_value", 0)
+            sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
+            event_log["sc_value"] = sc_value
+            event_log["sc_decimals"] = sc_decimals
+            event_log["display_sc_value"] = str(
+                Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
+            )
 
     # Set created datetime
     _created_datetime = (
