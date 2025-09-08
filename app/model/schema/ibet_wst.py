@@ -376,19 +376,11 @@ class IbetWSTEventLogTransfer(BaseModel):
     value: int = Field(..., description="Amount of tokens transferred")
 
 
-class IbetWSTEventLogAccountWhiteListAdded(BaseModel):
-    """IbetWST AccountWhiteListAdded event log schema"""
+class IbetWSTEventLogAccountWhiteList(BaseModel):
+    """IbetWST AccountWhiteList event log schema"""
 
     account_address: ChecksumEthereumAddress = Field(
-        ..., description="Address of the account added to the whitelist"
-    )
-
-
-class IbetWSTEventLogAccountWhiteListDeleted(BaseModel):
-    """IbetWST AccountWhiteListDeleted event log schema"""
-
-    account_address: ChecksumEthereumAddress = Field(
-        ..., description="Address of the account removed from the whitelist"
+        ..., description="Address of the account added to/removed from the whitelist"
     )
 
 
@@ -442,8 +434,7 @@ class GetIbetWSTTransactionResponse(BaseModel):
         IbetWSTEventLogMint
         | IbetWSTEventLogBurn
         | IbetWSTEventLogTransfer
-        | IbetWSTEventLogAccountWhiteListAdded
-        | IbetWSTEventLogAccountWhiteListDeleted
+        | IbetWSTEventLogAccountWhiteList
         | IbetWSTEventLogTrade
     ] = Field(None, description="Event log for the transaction (if applicable)")
     created: str = Field(description="Transaction created datetime")
