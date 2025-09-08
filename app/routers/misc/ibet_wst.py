@@ -501,6 +501,7 @@ async def retrieve_ibet_wst_whitelist_accounts(
     Retrieve all whitelisted accounts for a specific IbetWST contract address
 
     - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
+    - The data returned by this API is generated based on finalized blocks.
     """
     # Get whitelists
     whitelist_list: Sequence[IDXEthIbetWSTWhitelist] = (
@@ -546,6 +547,7 @@ async def get_ibet_wst_whitelist(
     Get IbetWST whitelist status for a specific account address
 
     - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+    - The data returned by this API also reflects the state of non-finalized blocks.
     """
     # Check if ibet-WST exists
     _token = (
@@ -938,6 +940,7 @@ async def list_ibet_wst_trades(
     List IbetWST trades
 
     - This endpoint retrieves a list of trades from the IbetWST contract based on the provided query parameters.
+    - The data returned by this API is generated based on finalized blocks.
     """
     # Base Query
     stmt = select(IDXEthIbetWSTTrade).where(
@@ -1038,6 +1041,7 @@ async def get_ibet_wst_trade(
     Get details of a specific IbetWST trade
 
     - This endpoint retrieves the details of a specific trade by its index from the IbetWST contract.
+    - The data returned by this API is generated based on finalized blocks.
     """
     # Get Trade
     trade: IDXEthIbetWSTTrade | None = (
@@ -1086,6 +1090,7 @@ async def get_erc20_balance(
     Get ERC20 token balance
 
     - This endpoint retrieves the balance of a specific ERC20 token for a given account address.
+    - The data returned by this API also reflects the state of non-finalized blocks.
     - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
     """
 
@@ -1115,6 +1120,7 @@ async def get_erc20_allowance(
     Get ERC20 token allowance
 
     - This endpoint retrieves the allowance of a specific ERC20 token for a given account address.
+    - The data returned by this API also reflects the state of non-finalized blocks.
     - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
     """
 

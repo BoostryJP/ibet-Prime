@@ -10256,6 +10256,7 @@ paths:
         Retrieve all whitelisted accounts for a specific IbetWST contract address
 
         - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
+        - The data returned by this API is generated based on finalized blocks.
       operationId: RetrieveIbetWSTWhitelistAccounts
       parameters:
         - name: ibet_wst_address
@@ -10288,6 +10289,7 @@ paths:
         Get IbetWST whitelist status for a specific account address
 
         - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+        - The data returned by this API also reflects the state of non-finalized blocks.
       operationId: GetIbetWSTWhitelist
       parameters:
         - name: ibet_wst_address
@@ -10583,6 +10585,7 @@ paths:
         List IbetWST trades
 
         - This endpoint retrieves a list of trades from the IbetWST contract based on the provided query parameters.
+        - The data returned by this API is generated based on finalized blocks.
       operationId: ListIbetWSTTrades
       parameters:
         - name: ibet_wst_address
@@ -10701,6 +10704,7 @@ paths:
         Get details of a specific IbetWST trade
 
         - This endpoint retrieves the details of a specific trade by its index from the IbetWST contract.
+        - The data returned by this API is generated based on finalized blocks.
       operationId: GetIbetWSTTrade
       parameters:
         - name: ibet_wst_address
@@ -10747,6 +10751,7 @@ paths:
         Get ERC20 token balance
 
         - This endpoint retrieves the balance of a specific ERC20 token for a given account address.
+        - The data returned by this API also reflects the state of non-finalized blocks.
         - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
       operationId: GetERC20Balance
       parameters:
@@ -10788,6 +10793,7 @@ paths:
         Get ERC20 token allowance
 
         - This endpoint retrieves the allowance of a specific ERC20 token for a given account address.
+        - The data returned by this API also reflects the state of non-finalized blocks.
         - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
       operationId: GetERC20Allowance
       parameters:
@@ -14106,8 +14112,7 @@ components:
             - $ref: '#/components/schemas/IbetWSTEventLogMint'
             - $ref: '#/components/schemas/IbetWSTEventLogBurn'
             - $ref: '#/components/schemas/IbetWSTEventLogTransfer'
-            - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteListAdded'
-            - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteListDeleted'
+            - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteList'
             - $ref: '#/components/schemas/IbetWSTEventLogTrade'
             - type: 'null'
           title: Event Log
@@ -15873,28 +15878,18 @@ components:
         - s
       title: IbetWSTAuthorization
       description: IbetWST Authorization schema
-    IbetWSTEventLogAccountWhiteListAdded:
+    IbetWSTEventLogAccountWhiteList:
       properties:
         account_address:
           type: string
           title: Account Address
-          description: Address of the account added to the whitelist
+          description: Address of the account added to/removed from the 
+            whitelist
       type: object
       required:
         - account_address
-      title: IbetWSTEventLogAccountWhiteListAdded
-      description: IbetWST AccountWhiteListAdded event log schema
-    IbetWSTEventLogAccountWhiteListDeleted:
-      properties:
-        account_address:
-          type: string
-          title: Account Address
-          description: Address of the account removed from the whitelist
-      type: object
-      required:
-        - account_address
-      title: IbetWSTEventLogAccountWhiteListDeleted
-      description: IbetWST AccountWhiteListDeleted event log schema
+      title: IbetWSTEventLogAccountWhiteList
+      description: IbetWST AccountWhiteList event log schema
     IbetWSTEventLogBurn:
       properties:
         from_address:
