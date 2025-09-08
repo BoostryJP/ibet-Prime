@@ -209,7 +209,9 @@ async def get_ibet_wst_balance(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
@@ -245,7 +247,9 @@ async def burn_ibet_wst_balance(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
@@ -595,7 +599,9 @@ async def transfer_ibet_wst(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
@@ -670,7 +676,9 @@ async def request_ibet_wst_trade(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
@@ -742,7 +750,9 @@ async def cancel_ibet_wst_trade(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
@@ -800,7 +810,9 @@ async def accept_ibet_wst_trade(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
@@ -874,7 +886,9 @@ async def reject_ibet_wst_trade(
     # Check if ibet-WST exists
     _token = (
         await db.scalars(
-            select(Token).where(Token.ibet_wst_address == ibet_wst_address).limit(1)
+            select(Token)
+            .where(Token.ibet_wst_address == to_checksum_address(ibet_wst_address))
+            .limit(1)
         )
     ).first()
     if _token is None:
@@ -927,7 +941,7 @@ async def list_ibet_wst_trades(
     """
     # Base Query
     stmt = select(IDXEthIbetWSTTrade).where(
-        IDXEthIbetWSTTrade.ibet_wst_address == ibet_wst_address
+        IDXEthIbetWSTTrade.ibet_wst_address == to_checksum_address(ibet_wst_address)
     )
     total = await db.scalar(
         stmt.with_only_columns(func.count())
@@ -1030,7 +1044,8 @@ async def get_ibet_wst_trade(
         await db.scalars(
             select(IDXEthIbetWSTTrade).where(
                 and_(
-                    IDXEthIbetWSTTrade.ibet_wst_address == ibet_wst_address,
+                    IDXEthIbetWSTTrade.ibet_wst_address
+                    == to_checksum_address(ibet_wst_address),
                     IDXEthIbetWSTTrade.index == index,
                 )
             )
