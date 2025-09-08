@@ -21,6 +21,7 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from eth_utils import to_checksum_address
 
 from app.model.db import Token, TokenType, TokenVersion
 
@@ -48,14 +49,14 @@ class TestGetIbetWSTBalance:
 
         # Prepare data: Token
         token = Token()
-        token.token_address = ibet_token_address
+        token.token_address = to_checksum_address(ibet_token_address)
         token.issuer_address = issuer_address
         token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
         token.ibet_wst_deployed = True
-        token.ibet_wst_address = ibet_wst_address
+        token.ibet_wst_address = to_checksum_address(ibet_wst_address)
         async_db.add(token)
         await async_db.commit()
 
