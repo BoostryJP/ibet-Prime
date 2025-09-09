@@ -64,6 +64,7 @@ from app.utils import o11y_utils
 from app.utils.docs_utils import custom_openapi
 from config import (
     BC_EXPLORER_ENABLED,
+    DEDICATED_DVP_AGENT_MODE,
     DEDICATED_OFFCHAIN_TX_MODE,
     DVP_AGENT_FEATURE_ENABLED,
     FREEZE_LOG_FEATURE_ENABLED,
@@ -184,6 +185,10 @@ if DEDICATED_OFFCHAIN_TX_MODE:
 
     if IBET_WST_FEATURE_ENABLED:
         app.include_router(ibet_wst.router)
+
+elif DEDICATED_DVP_AGENT_MODE:
+    if DVP_AGENT_FEATURE_ENABLED:
+        app.include_router(settlement_agent.router)
 
 else:
     app.include_router(common.router)
