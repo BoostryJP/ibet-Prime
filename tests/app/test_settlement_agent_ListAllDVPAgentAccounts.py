@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from unittest import mock
+
 import pytest
 
 from app.model.db import DVPAgentAccount
@@ -72,6 +74,43 @@ class TestListAllDVPAgentAccounts:
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000001",
+                "is_deleted": False,
+            },
+        ]
+
+    # <Normal_3>
+    # Data exist
+    # - DEDICATED_DVP_AGENT_MODE = True
+    @pytest.mark.asyncio
+    @mock.patch("app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_MODE", True)
+    @mock.patch(
+        "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_0"
+    )
+    async def test_normal_3(self, async_client, async_db):
+        # Prepare data
+        dvp_agent_account = DVPAgentAccount()
+        dvp_agent_account.account_address = "0x1234567890123456789012345678900000000000"
+        dvp_agent_account.keyfile = "test_keyfile_0"
+        dvp_agent_account.eoa_password = "test_password_0"
+        dvp_agent_account.dedicated_agent_id = "test_agent_0"
+        async_db.add(dvp_agent_account)
+
+        dvp_agent_account = DVPAgentAccount()
+        dvp_agent_account.account_address = "0x1234567890123456789012345678900000000001"
+        dvp_agent_account.keyfile = "test_keyfile_1"
+        dvp_agent_account.eoa_password = "test_password_1"
+        async_db.add(dvp_agent_account)
+
+        await async_db.commit()
+
+        # Request target api
+        resp = await async_client.get(self.test_url)
+
+        # Assertion
+        assert resp.status_code == 200
+        assert resp.json() == [
+            {
+                "account_address": "0x1234567890123456789012345678900000000000",
                 "is_deleted": False,
             },
         ]

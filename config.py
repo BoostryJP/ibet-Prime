@@ -361,6 +361,7 @@ DEDICATED_OFFCHAIN_TX_MODE = (
 DEDICATED_DVP_AGENT_MODE = (
     True if os.environ.get("DEDICATED_DVP_AGENT_MODE") == "1" else False
 )
+DEDICATED_DVP_AGENT_ID = os.environ.get("DEDICATED_DVP_AGENT_ID")
 
 
 ####################################################

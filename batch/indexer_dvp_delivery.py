@@ -616,7 +616,7 @@ class Processor:
         :return: None
         """
         # Verify account exists
-        _buyer = (
+        _buyer: Account | None = (
             await db_session.scalars(
                 select(Account)
                 .where(
@@ -628,7 +628,7 @@ class Processor:
                 .limit(1)
             )
         ).first()
-        _seller = (
+        _seller: Account | None = (
             await db_session.scalars(
                 select(Account)
                 .where(
@@ -640,14 +640,18 @@ class Processor:
                 .limit(1)
             )
         ).first()
-        _agent = await db_session.scalars(
-            select(DVPAgentAccount).where(
-                and_(
-                    DVPAgentAccount.account_address == agent_address,
-                    DVPAgentAccount.is_deleted == False,
+        _agent: DVPAgentAccount | None = (
+            await db_session.scalars(
+                select(DVPAgentAccount)
+                .where(
+                    and_(
+                        DVPAgentAccount.account_address == agent_address,
+                        DVPAgentAccount.is_deleted == False,
+                    )
                 )
+                .limit(1)
             )
-        )
+        ).first()
         if _buyer is None and _seller is None and _agent is None:
             return
 
@@ -679,6 +683,9 @@ class Processor:
                 delivery.confirmed = False
                 delivery.valid = True
                 delivery.status = DeliveryStatus.DELIVERY_CREATED
+                delivery.dedicated_agent_id = (
+                    _agent.dedicated_agent_id if _agent is not None else None
+                )
         elif event_type == "Canceled":
             if delivery is not None:
                 delivery.cancel_blocktimestamp = datetime.fromtimestamp(
