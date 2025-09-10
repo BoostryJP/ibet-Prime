@@ -346,17 +346,29 @@ E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" el
 
 
 ####################################################
-# Settings for the "BlockchainExplorer"
-####################################################
-BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
-
-
-####################################################
-# Settings for the "SealedTx" feature
+# Dedicated Off-chain Transaction Mode
+# - Boot mode for off-chain transaction dedicated server
 ####################################################
 DEDICATED_OFFCHAIN_TX_MODE = (
     True if os.environ.get("DEDICATED_OFFCHAIN_TX_MODE") == "1" else False
 )
+
+
+####################################################
+# Dedicated DVP Agent Mode
+# - Boot mode for DvP agent dedicated server
+####################################################
+DEDICATED_DVP_AGENT_MODE = (
+    True if os.environ.get("DEDICATED_DVP_AGENT_MODE") == "1" else False
+)
+DEDICATED_DVP_AGENT_ID = os.environ.get("DEDICATED_DVP_AGENT_ID")
+
+
+####################################################
+# Settings for the "BlockchainExplorer"
+####################################################
+BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
+
 
 ####################################################
 # Settings for the "FreezeLog" feature

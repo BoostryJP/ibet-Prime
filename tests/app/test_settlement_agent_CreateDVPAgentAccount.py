@@ -54,6 +54,7 @@ class TestCreateDVPAgentAccount:
             await async_db.scalars(select(DVPAgentAccount).limit(1))
         ).first()
         assert dvp_agent_account is not None
+        assert dvp_agent_account.dedicated_agent_id is None
 
         tx_lock = (
             await async_db.scalars(
@@ -102,6 +103,43 @@ class TestCreateDVPAgentAccount:
             await async_db.scalars(select(DVPAgentAccount).limit(1))
         ).first()
         assert dvp_agent_account is not None
+        assert dvp_agent_account.dedicated_agent_id is None
+
+        tx_lock = (
+            await async_db.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == dvp_agent_account.account_address)
+                .limit(1)
+            )
+        ).first()
+        assert tx_lock is not None
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "account_address": dvp_agent_account.account_address,
+            "is_deleted": dvp_agent_account.is_deleted,
+        }
+
+    # <Normal_3>
+    # DEDICATED_DVP_AGENT_MODE = True
+    @pytest.mark.asyncio
+    @mock.patch("app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_MODE", True)
+    @mock.patch(
+        "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_1"
+    )
+    async def test_normal_3(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
+        # Request target api
+        req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
+        resp = await async_client.post(self.test_url, json=req_param)
+
+        # Assertion
+        dvp_agent_account = (
+            await async_db.scalars(select(DVPAgentAccount).limit(1))
+        ).first()
+        assert dvp_agent_account is not None
+        assert dvp_agent_account.dedicated_agent_id == "test_agent_1"
 
         tx_lock = (
             await async_db.scalars(

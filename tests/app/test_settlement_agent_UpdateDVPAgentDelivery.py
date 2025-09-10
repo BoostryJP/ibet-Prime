@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from unittest import mock
+
 import pytest
 from eth_keyfile import decode_keyfile_json
 
@@ -286,6 +288,124 @@ class TestUpdateDVPDelivery:
         # request target API
         req_param = {
             "operation_type": "Abort",
+            "account_address": agent_address,
+            "eoa_password": E2EEUtils.encrypt("password"),
+        }
+        resp = await async_client.post(
+            self.base_url.format(
+                exchange_address=ibet_security_token_dvp_contract.address,
+                delivery_id=1,
+            ),
+            json=req_param,
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+    # <Normal_3>
+    # DEDICATED_DVP_AGENT_MODE = True
+    @pytest.mark.asyncio
+    @mock.patch("app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_MODE", True)
+    @mock.patch(
+        "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_0"
+    )
+    async def test_normal_3(
+        self,
+        ibet_security_token_dvp_contract,
+        ibet_personal_info_contract,
+        async_client,
+        async_db,
+    ):
+        issuer = default_eth_account("user1")
+        issuer_address = issuer["address"]
+        _keyfile = issuer["keyfile_json"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        user = default_eth_account("user2")
+        user_address_1 = user["address"]
+        user_private_key_1 = decode_keyfile_json(
+            raw_keyfile_json=user["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        agent = default_eth_account("user3")
+        agent_address = agent["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        dvp_agent_account = DVPAgentAccount()
+        dvp_agent_account.account_address = agent_address
+        dvp_agent_account.keyfile = agent["keyfile_json"]
+        dvp_agent_account.eoa_password = E2EEUtils.encrypt("password")
+        dvp_agent_account.dedicated_agent_id = "test_agent_0"
+        async_db.add(dvp_agent_account)
+
+        token_contract_1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            ibet_personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
+        )
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = token_contract_1.address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        async_db.add(token)
+
+        await async_db.commit()
+
+        # Transfer
+        tx = token_contract_1.functions.transferFrom(
+            issuer_address, ibet_security_token_dvp_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # CreateDelivery
+        tx = ibet_security_token_dvp_contract.functions.createDelivery(
+            token_contract_1.address, user_address_1, 30, agent_address, "." * 1000
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
+
+        # ConfirmDelivery
+        tx = ibet_security_token_dvp_contract.functions.confirmDelivery(
+            1
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, user_private_key_1)
+
+        # request target API
+        req_param = {
+            "operation_type": "Finish",
             "account_address": agent_address,
             "eoa_password": E2EEUtils.encrypt("password"),
         }

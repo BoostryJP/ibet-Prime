@@ -124,12 +124,6 @@ The main environment variables are as follows.
         <td>0x0000000000000000000000000000000000000000</td>
     </tr>
     <tr>
-        <td>BC_EXPLORER_ENABLED</td>
-        <td>False</td>
-        <td nowrap>Whether to use the BC Explorer</td>
-        <td>0(not use) / 1(use)</td>
-    </tr>
-    <tr>
         <td>TZ</td>
         <td>False</td>
         <td nowrap>Timezone</td>
@@ -142,10 +136,40 @@ The main environment variables are as follows.
         <td>http://localhost:8545</td>
     </tr>
     <tr>
+        <td>DEDICATED_OFFCHAIN_TX_MODE</td>
+        <td>False</td>
+        <td nowrap>Boot mode for off-chain transaction dedicated server</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
+        <td>DEDICATED_DVP_AGENT_MODE</td>
+        <td>False</td>
+        <td nowrap>Boot mode for DvP agent dedicated server</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
         <td>IBET_WST_FEATURE_ENABLED</td>
         <td>False</td>
         <td nowrap>Weather to use IbetWST features</td>
         <td>1</td>
+    </tr>
+    <tr>
+        <td>DVP_AGENT_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Whether to use DVP agent features</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
+        <td>BC_EXPLORER_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Whether to use the BC Explorer</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
+        <td>FREEZE_LOG_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Whether to use the "FreezeLog" features</td>
+        <td>0(not use) / 1(use)</td>
     </tr>
 </table>
 

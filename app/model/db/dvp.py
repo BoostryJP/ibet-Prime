@@ -38,6 +38,8 @@ class DVPAgentAccount(Base):
     eoa_password: Mapped[str | None] = mapped_column(String(2000))
     # delete flag
     is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    # dedicated agent id
+    dedicated_agent_id: Mapped[str | None] = mapped_column(String(100))
 
 
 class DVPAsyncProcessType(StrEnum):

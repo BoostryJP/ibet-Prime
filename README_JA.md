@@ -125,12 +125,6 @@ $ npm install
         <td>0x0000000000000000000000000000000000000000</td>
     </tr>
     <tr>
-        <td>BC_EXPLORER_ENABLED</td>
-        <td>False</td>
-        <td nowrap>BCエクスプローラの機能を利用有無</td>
-        <td>0（利用しない） / 1（利用する）</td>
-    </tr>
-    <tr>
         <td>TZ</td>
         <td>False</td>
         <td nowrap>タイムゾーン</td>
@@ -143,9 +137,39 @@ $ npm install
         <td>http://localhost:8545</td>
     </tr>
     <tr>
+        <td>DEDICATED_OFFCHAIN_TX_MODE</td>
+        <td>False</td>
+        <td nowrap>OffchainTx 専用サーバーの起動モード</td>
+        <td>0(利用しない) / 1(利用する)</td>
+    </tr>
+    <tr>
+        <td>DEDICATED_DVP_AGENT_MODE</td>
+        <td>False</td>
+        <td nowrap>DVPエージェント専用サーバーの起動モード</td>
+        <td>0(利用しない) / 1(利用する)</td>
+    </tr>
+    <tr>
         <td>IBET_WST_FEATURE_ENABLED</td>
         <td>False</td>
         <td nowrap>IbetWST関連機能の利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
+    </tr>
+    <tr>
+        <td>DVP_AGENT_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>DVPエージェント関連機能の利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
+    </tr>
+    <tr>
+        <td>BC_EXPLORER_ENABLED</td>
+        <td>False</td>
+        <td nowrap>BCエクスプローラの機能を利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
+    </tr>
+    <tr>
+        <td>FREEZE_LOG_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>FreezeLog関連機能の利用有無</td>
         <td>0（利用しない） / 1（利用する）</td>
     </tr>
 </table>

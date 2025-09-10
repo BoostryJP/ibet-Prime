@@ -732,6 +732,7 @@ class TestProcessor:
         dvp_agent_account.account_address = agent_address
         dvp_agent_account.keyfile = "test_keyfile_0"
         dvp_agent_account.eoa_password = "test_password_0"
+        dvp_agent_account.dedicated_agent_id = "test_agent_id_0"
         async_db.add(dvp_agent_account)
 
         # Prepare data : Token
@@ -847,6 +848,7 @@ class TestProcessor:
         assert _delivery.confirmed is False
         assert _delivery.valid is True
         assert _delivery.status == DeliveryStatus.DELIVERY_CREATED
+        assert _delivery.dedicated_agent_id == "test_agent_id_0"
 
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
