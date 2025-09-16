@@ -126,11 +126,9 @@ class AccountChangeRSAPassphraseRequest(BaseModel):
 
 
 class AccountAuthTokenRequest(BaseModel):
-    """Account Create Auth Token schema (REQUEST)"""
+    """Generate Account Auth Token schema (REQUEST)"""
 
-    valid_duration: int = Field(
-        None, ge=0, le=259200
-    )  # The maximum valid duration shall be 3 days.
+    valid_duration: int = Field(None, ge=0, description="Valid duration (seconds)")
 
 
 class CreateUpdateChildAccountRequest(BaseModel):

@@ -11696,12 +11696,12 @@ components:
       properties:
         valid_duration:
           type: integer
-          maximum: 259200.0
           minimum: 0.0
           title: Valid Duration
+          description: Valid duration (seconds)
       type: object
       title: AccountAuthTokenRequest
-      description: Account Create Auth Token schema (REQUEST)
+      description: Generate Account Auth Token schema (REQUEST)
     AccountAuthTokenResponse:
       properties:
         auth_token:

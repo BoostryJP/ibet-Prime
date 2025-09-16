@@ -422,54 +422,6 @@ class TestGenerateIssuerAuthToken:
             ],
         }
 
-    # Error_4_3
-    # RequestValidationError
-    # [body] valid_duration is less than or equal to 259200
-    @pytest.mark.asyncio
-    async def test_error_4_3(self, async_client, async_db, freezer):
-        test_account = default_eth_account("user1")
-
-        # prepare data
-        account = Account()
-        account.issuer_address = test_account["address"]
-        account.keyfile = test_account["keyfile_json"]
-        account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        async_db.add(account)
-
-        await async_db.commit()
-
-        # request target api
-        freezer.move_to("2022-07-15 12:34:56")
-        resp = await async_client.post(
-            self.apiurl.format(test_account["address"]),
-            json={"valid_duration": 259201},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
-        )
-
-        # assertion
-        auth_token = (
-            await async_db.scalars(
-                select(AuthToken)
-                .where(AuthToken.issuer_address == test_account["address"])
-                .limit(1)
-            )
-        ).first()
-        assert auth_token is None
-
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {"code": 1, "title": "RequestValidationError"},
-            "detail": [
-                {
-                    "ctx": {"le": 259200},
-                    "input": 259201,
-                    "loc": ["body", "valid_duration"],
-                    "msg": "Input should be less than or equal to 259200",
-                    "type": "less_than_equal",
-                }
-            ],
-        }
-
     # Error_5
     # AuthorizationError
     @pytest.mark.asyncio
