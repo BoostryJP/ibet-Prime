@@ -31,7 +31,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRetrieveBatchBondRedemptionStatus:
@@ -44,8 +44,8 @@ class TestRetrieveBatchBondRedemptionStatus:
     ]
 
     account_list = [
-        {"address": config_eth_account("user1")["address"], "amount": 1},
-        {"address": config_eth_account("user2")["address"], "amount": 2},
+        {"address": default_eth_account("user1")["address"], "amount": 1},
+        {"address": default_eth_account("user2")["address"], "amount": 2},
     ]
 
     ###########################################################################
@@ -56,7 +56,7 @@ class TestRetrieveBatchBondRedemptionStatus:
     # Single Record(No personal information)
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
@@ -75,7 +75,7 @@ class TestRetrieveBatchBondRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -145,7 +145,7 @@ class TestRetrieveBatchBondRedemptionStatus:
     # Single Record(With personal information)
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
@@ -164,7 +164,7 @@ class TestRetrieveBatchBondRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -234,7 +234,7 @@ class TestRetrieveBatchBondRedemptionStatus:
     # Multiple Records
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
@@ -253,7 +253,7 @@ class TestRetrieveBatchBondRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -349,7 +349,7 @@ class TestRetrieveBatchBondRedemptionStatus:
     # NotFound
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
@@ -368,7 +368,7 @@ class TestRetrieveBatchBondRedemptionStatus:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()

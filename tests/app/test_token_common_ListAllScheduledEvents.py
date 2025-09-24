@@ -24,10 +24,10 @@ from unittest import mock
 import pytest
 import pytz
 
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from config import TZ
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListAllScheduledEvents:
@@ -35,8 +35,8 @@ class TestListAllScheduledEvents:
     api_url = "tokens/scheduled_events"
     local_tz = pytz.timezone(TZ)
 
-    test_issuer_address_1 = config_eth_account("user1")["address"]
-    test_issuer_address_2 = config_eth_account("user2")["address"]
+    test_issuer_address_1 = default_eth_account("user1")["address"]
+    test_issuer_address_2 = default_eth_account("user2")["address"]
 
     test_token_1_address = "0x1234567890123456789012345678900000000010"
     test_token_1_name = "test_token_1"
@@ -69,7 +69,7 @@ class TestListAllScheduledEvents:
     # <Normal_2_1>
     # TokenType = IbetStraightBond
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_2_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -278,7 +278,7 @@ class TestListAllScheduledEvents:
     # <Normal_2_2>
     # TokenType = IbetShare
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -447,7 +447,7 @@ class TestListAllScheduledEvents:
     # <Normal_3>
     # Header(issuer_address) is set
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_3(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -581,7 +581,7 @@ class TestListAllScheduledEvents:
     # <Normal_4_1>
     # Search Filter: token_type
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_4_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -728,7 +728,7 @@ class TestListAllScheduledEvents:
     # <Normal_4_2>
     # Search Filter: token_address
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_4_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -875,7 +875,7 @@ class TestListAllScheduledEvents:
     # <Normal_4_3>
     # Search Filter: status
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_4_3(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -1006,7 +1006,7 @@ class TestListAllScheduledEvents:
     # <Normal_5_1>
     # Sort: created
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -1217,7 +1217,7 @@ class TestListAllScheduledEvents:
     # <Normal_5_2>
     # Sort: scheduled_datetime
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -1428,7 +1428,7 @@ class TestListAllScheduledEvents:
     # <Normal_5_3>
     # Sort: token_address
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5_3(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):
@@ -1639,7 +1639,7 @@ class TestListAllScheduledEvents:
     # <Normal_6>
     # Offset/Limit
     @pytest.mark.asyncio
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_6(
         self, mock_IbetStraightBondContract_get, async_client, async_db
     ):

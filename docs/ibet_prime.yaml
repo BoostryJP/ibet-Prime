@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: ibet Prime
   description: Security token management system for ibet network
-  version: '25.6'
+  version: '25.9'
 paths:
   /:
     get:
@@ -32,7 +32,14 @@ paths:
       tags:
         - common
       summary: Service Health Check
-      description: Service health check
+      description: |-
+        Service health check
+
+        Check following services are available:
+        - Database
+        - ibet Node
+        - Ethereum Node (if IbetWST feature is enabled)
+        - E2EE Setting
       operationId: ServiceHealthCheck
       responses:
         '200':
@@ -106,8 +113,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -201,8 +208,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -247,8 +254,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -289,8 +296,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -343,8 +350,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -436,8 +443,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -614,8 +621,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -697,8 +704,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -707,7 +714,8 @@ paths:
       tags:
         - account
       summary: Delete Child Account
-      description: Delete the child account and its off-chain personal information
+      description: Delete the child account and its off-chain personal 
+        information
       operationId: DeleteChildAccount
       parameters:
         - name: issuer_address
@@ -796,8 +804,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/SendTransactionErrorResponse'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -861,8 +869,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -933,8 +941,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1061,8 +1069,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1143,8 +1151,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1215,8 +1223,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1381,8 +1389,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1508,8 +1516,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1580,8 +1588,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1666,7 +1674,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponse'
+                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponseWithResult'
         '422':
           description: Validation Error
           content:
@@ -1746,8 +1754,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1899,8 +1907,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -1982,8 +1990,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -2192,12 +2200,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: Search condition of balance(0:equal, 1:greater than or equal,
-              2:less than or equal）
+            description: Search condition of balance(0:equal, 1:greater than or 
+              equal, 2:less than or equal）
             default: 0
             title: Balance Operator
-          description: Search condition of balance(0:equal, 1:greater than or equal,
-            2:less than or equal）
+          description: Search condition of balance(0:equal, 1:greater than or 
+            equal, 2:less than or equal）
         - name: pending_transfer
           in: query
           required: false
@@ -2215,12 +2223,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: Search condition of pending transfer(0:equal, 1:greater than
-              or equal, 2:less than or equal）
+            description: Search condition of pending transfer(0:equal, 1:greater
+              than or equal, 2:less than or equal）
             default: 0
             title: Pending Transfer Operator
-          description: Search condition of pending transfer(0:equal, 1:greater than
-            or equal, 2:less than or equal）
+          description: Search condition of pending transfer(0:equal, 1:greater 
+            than or equal, 2:less than or equal）
         - name: locked
           in: query
           required: false
@@ -2238,12 +2246,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of locked amount(0:equal, 1:greater than
-              or equal, 2:less than or equal）
+            description: search condition of locked amount(0:equal, 1:greater 
+              than or equal, 2:less than or equal）
             default: 0
             title: Locked Operator
-          description: search condition of locked amount(0:equal, 1:greater than or
-            equal, 2:less than or equal）
+          description: search condition of locked amount(0:equal, 1:greater than
+            or equal, 2:less than or equal）
         - name: balance_and_pending_transfer
           in: query
           required: false
@@ -2261,12 +2269,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of balance plus pending transfer(0:equal,
-              1:greater than or equal, 2:less than or equal）
+            description: search condition of balance plus pending 
+              transfer(0:equal, 1:greater than or equal, 2:less than or equal）
             default: 0
             title: Balance And Pending Transfer Operator
-          description: search condition of balance plus pending transfer(0:equal,
-            1:greater than or equal, 2:less than or equal）
+          description: search condition of balance plus pending 
+            transfer(0:equal, 1:greater than or equal, 2:less than or equal）
         - name: account_address
           in: query
           required: false
@@ -2326,8 +2334,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -2372,8 +2380,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -2424,8 +2432,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -2505,8 +2513,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthorizationErrorResponse'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -2578,8 +2586,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -2675,8 +2683,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -2746,7 +2754,8 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Initiatebondtokenbatchpersonalinforegistration
+                title: Response 401 
+                  Initiatebondtokenbatchpersonalinforegistration
         '404':
           description: Not Found Error
           content:
@@ -2754,21 +2763,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Initiatebondtokenbatchpersonalinforegistration
+                title: Response 400 
+                  Initiatebondtokenbatchpersonalinforegistration
   /bond/tokens/{token_address}/personal_info/batch/{batch_id}:
     get:
       tags:
         - bond
       summary: Retrieve Bond Token Personal Info Batch Registration Status
-      description: Retrieve the status of bond token personal information batch registration
+      description: Retrieve the status of bond token personal information batch 
+        registration
       operationId: RetrieveBondTokenPersonalInfoBatchRegistrationStatus
       parameters:
         - name: token_address
@@ -2998,8 +3009,8 @@ paths:
                   - $ref: '#/components/schemas/Error401Model'
                 title: Response 401 Transferbondtokenownership
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3161,9 +3172,9 @@ paths:
             anyOf:
               - const: garnishment
                 type: string
-              - const: inheritance
-                type: string
               - const: force_unlock
+                type: string
+              - const: ibet_wst_bridge
                 type: string
               - type: 'null'
             description: message field in source event data
@@ -3211,8 +3222,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3333,9 +3344,11 @@ paths:
                 items:
                   $ref: '#/components/schemas/TransferApprovalStatus'
               - type: 'null'
-            description: 0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled
+            description: 0:unapproved, 1:escrow_finished, 2:transferred, 
+              3:canceled
             title: Status
-          description: 0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled
+          description: 0:unapproved, 1:escrow_finished, 2:transferred, 
+            3:canceled
         - name: sort_item
           in: query
           required: false
@@ -3376,8 +3389,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3455,8 +3468,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3510,8 +3523,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3578,8 +3591,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3755,8 +3768,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3898,8 +3911,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -3940,8 +3953,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4292,8 +4305,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4354,8 +4367,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4405,8 +4418,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4452,12 +4465,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                anyOf:
+                  - $ref: '#/components/schemas/Integer64bitLimitExceededErrorResponse'
+                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                title: Response 400 Createupdateledgertemplate
     delete:
       tags:
         - token_common
@@ -4493,8 +4509,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4553,8 +4569,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4607,8 +4623,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4664,8 +4680,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4720,8 +4736,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4767,8 +4783,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -4896,21 +4912,23 @@ paths:
           required: false
           schema:
             type: boolean
-            description: Whether to include positions that were held in the past but
-              currently have a zero balance.
+            description: Whether to include positions that were held in the past
+              but currently have a zero balance.
             default: false
             title: Include Former Position
-          description: Whether to include positions that were held in the past but
-            currently have a zero balance.
+          description: Whether to include positions that were held in the past 
+            but currently have a zero balance.
         - name: include_token_attributes
           in: query
           required: false
           schema:
             type: boolean
-            description: Whether to include token attribute information in the response.
+            description: Whether to include token attribute information in the 
+              response.
             default: false
             title: Include Token Attributes
-          description: Whether to include token attribute information in the response.
+          description: Whether to include token attribute information in the 
+            response.
         - name: token_type
           in: query
           required: false
@@ -5212,8 +5230,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5289,8 +5307,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5346,8 +5364,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5423,8 +5441,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/SendTransactionErrorResponse'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5488,8 +5506,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5560,8 +5578,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5688,8 +5706,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5770,8 +5788,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -5842,8 +5860,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6008,8 +6026,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6135,8 +6153,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6207,8 +6225,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6293,7 +6311,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponse'
+                $ref: '#/components/schemas/ListBatchIssueRedeemUploadResponseWithResult'
         '422':
           description: Validation Error
           content:
@@ -6373,8 +6391,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6526,8 +6544,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6609,8 +6627,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6819,12 +6837,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: Search condition of balance(0:equal, 1:greater than or equal,
-              2:less than or equal）
+            description: Search condition of balance(0:equal, 1:greater than or 
+              equal, 2:less than or equal）
             default: 0
             title: Balance Operator
-          description: Search condition of balance(0:equal, 1:greater than or equal,
-            2:less than or equal）
+          description: Search condition of balance(0:equal, 1:greater than or 
+            equal, 2:less than or equal）
         - name: pending_transfer
           in: query
           required: false
@@ -6842,12 +6860,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: Search condition of pending transfer(0:equal, 1:greater than
-              or equal, 2:less than or equal）
+            description: Search condition of pending transfer(0:equal, 1:greater
+              than or equal, 2:less than or equal）
             default: 0
             title: Pending Transfer Operator
-          description: Search condition of pending transfer(0:equal, 1:greater than
-            or equal, 2:less than or equal）
+          description: Search condition of pending transfer(0:equal, 1:greater 
+            than or equal, 2:less than or equal）
         - name: locked
           in: query
           required: false
@@ -6865,12 +6883,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of locked amount(0:equal, 1:greater than
-              or equal, 2:less than or equal）
+            description: search condition of locked amount(0:equal, 1:greater 
+              than or equal, 2:less than or equal）
             default: 0
             title: Locked Operator
-          description: search condition of locked amount(0:equal, 1:greater than or
-            equal, 2:less than or equal）
+          description: search condition of locked amount(0:equal, 1:greater than
+            or equal, 2:less than or equal）
         - name: balance_and_pending_transfer
           in: query
           required: false
@@ -6888,12 +6906,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: search condition of balance plus pending transfer(0:equal,
-              1:greater than or equal, 2:less than or equal）
+            description: search condition of balance plus pending 
+              transfer(0:equal, 1:greater than or equal, 2:less than or equal）
             default: 0
             title: Balance And Pending Transfer Operator
-          description: search condition of balance plus pending transfer(0:equal,
-            1:greater than or equal, 2:less than or equal）
+          description: search condition of balance plus pending 
+            transfer(0:equal, 1:greater than or equal, 2:less than or equal）
         - name: account_address
           in: query
           required: false
@@ -6953,8 +6971,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -6999,8 +7017,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -7051,8 +7069,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -7132,8 +7150,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthorizationErrorResponse'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -7205,8 +7223,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -7302,8 +7320,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -7373,7 +7391,8 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/AuthorizationErrorResponse'
                   - $ref: '#/components/schemas/Error401Model'
-                title: Response 401 Initiatesharetokenbatchpersonalinforegistration
+                title: Response 401 
+                  Initiatesharetokenbatchpersonalinforegistration
         '404':
           description: Not Found Error
           content:
@@ -7381,21 +7400,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/BatchPersonalInfoRegistrationValidationErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Initiatesharetokenbatchpersonalinforegistration
+                title: Response 400 
+                  Initiatesharetokenbatchpersonalinforegistration
   /share/tokens/{token_address}/personal_info/batch/{batch_id}:
     get:
       tags:
         - share
       summary: Retrieve Share Token Personal Info Batch Registration Status
-      description: Retrieve the status of share token personal information batch registration
+      description: Retrieve the status of share token personal information batch
+        registration
       operationId: RetrieveShareTokenPersonalInfoBatchRegistrationStatus
       parameters:
         - name: token_address
@@ -7625,8 +7646,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -7788,9 +7809,9 @@ paths:
             anyOf:
               - const: garnishment
                 type: string
-              - const: inheritance
-                type: string
               - const: force_unlock
+                type: string
+              - const: ibet_wst_bridge
                 type: string
               - type: 'null'
             description: message field in source event data
@@ -7838,8 +7859,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -7960,9 +7981,11 @@ paths:
                 items:
                   $ref: '#/components/schemas/TransferApprovalStatus'
               - type: 'null'
-            description: 0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled
+            description: 0:unapproved, 1:escrow_finished, 2:transferred, 
+              3:canceled
             title: Status
-          description: 0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled
+          description: 0:unapproved, 1:escrow_finished, 2:transferred, 
+            3:canceled
         - name: sort_item
           in: query
           required: false
@@ -8003,8 +8026,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -8082,8 +8105,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -8137,8 +8160,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -8205,8 +8228,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -8527,13 +8550,338 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListAllScheduledEventsResponse'
+  /tokens/{token_address}/ibet_wst/whitelists:
+    get:
+      tags:
+        - token_common
+      summary: Retrieve Ibet Wst Whitelist Accounts With Personal Info
+      description: |-
+        Retrieve the whitelist accounts of an IbetWST contract with personal information
+
+        - This endpoint retrieves the whitelist accounts of an IbetWST contract along with their personal information.
+      operationId: RetrieveIbetWSTWhitelistAccountsWithPersonalInfo
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /tokens/{token_address}/ibet_wst/whitelists/{account_address}:
+    get:
+      tags:
+        - token_common
+      summary: Get Ibet Wst Whitelist With Personal Info
+      description: |-
+        Get IbetWST whitelist status for a specific account with personal information
+
+        - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+      operationId: GetIbetWSTWhitelistWithPersonalInfo
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Account address
+            title: Account Address
+          description: Account address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTWhitelistWithPersonalInfoResponse'
+  /tokens/{token_address}/ibet_wst/whitelists/add:
+    post:
+      tags:
+        - token_common
+      summary: Add Ibet Wst Whitelist
+      description: |-
+        Add an account to the IbetWST whitelist
+
+        - This endpoint allows an issuer to add an account to the whitelist of an IbetWST contract.
+      operationId: AddIbetWSTWhitelist
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: EOA passphrase
+            title: Eoa-Password
+          description: EOA passphrase
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: JWT authentication token
+            title: Auth-Token
+          description: JWT authentication token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddIbetWSTWhitelistRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /tokens/{token_address}/ibet_wst/whitelists/delete:
+    post:
+      tags:
+        - token_common
+      summary: Delete Ibet Wst Whitelist
+      description: |-
+        Delete an account from the IbetWST whitelist
+
+        - This endpoint allows an issuer to delete an account from the whitelist of an IbetWST contract.
+      operationId: DeleteIbetWSTWhitelist
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: EOA passphrase
+            title: Eoa-Password
+          description: EOA passphrase
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: JWT authentication token
+            title: Auth-Token
+          description: JWT authentication token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteIbetWSTWhitelistRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /tokens/{token_address}/ibet_wst/positions/force_burn:
+    post:
+      tags:
+        - token_common
+      summary: Force Burn Ibet Wst Position
+      description: |-
+        Force burn an IbetWST position for a specific account
+
+        - This endpoint allows an issuer to force burn an IbetWST position for a specific account.
+      operationId: ForceBurnIbetWSTPosition
+      parameters:
+        - name: token_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Token address
+            title: Token Address
+          description: Token address
+        - name: issuer-address
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Issuer address
+            title: Issuer-Address
+          description: Issuer address
+        - name: eoa-password
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: EOA passphrase
+            title: Eoa-Password
+          description: EOA passphrase
+        - name: auth-token
+          in: header
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: JWT authentication token
+            title: Auth-Token
+          description: JWT authentication token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForceBurnIbetWSTRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400Model'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /token/holders/personal_info:
     get:
       tags:
         - token_common
       summary: List All Token Holders Personal Info
-      description: Lists the personal information of all registered holders linked
-        to the token issuer
+      description: Lists the personal information of all registered holders 
+        linked to the token issuer
       operationId: ListTokenHoldersPersonalInfo
       parameters:
         - name: offset
@@ -8837,8 +9185,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -8919,8 +9267,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -8988,12 +9336,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: Search condition of hold balance(0:equal, 1:greater than
-              or equal, 2:less than or equal）
+            description: Search condition of hold balance(0:equal, 1:greater 
+              than or equal, 2:less than or equal）
             default: 0
             title: Hold Balance Operator
-          description: Search condition of hold balance(0:equal, 1:greater than or
-            equal, 2:less than or equal）
+          description: Search condition of hold balance(0:equal, 1:greater than 
+            or equal, 2:less than or equal）
         - name: locked_balance
           in: query
           required: false
@@ -9011,12 +9359,12 @@ paths:
             anyOf:
               - $ref: '#/components/schemas/ValueOperator'
               - type: 'null'
-            description: Search condition of locked balance(0:equal, 1:greater than
-              or equal, 2:less than or equal）
+            description: Search condition of locked balance(0:equal, 1:greater 
+              than or equal, 2:less than or equal）
             default: 0
             title: Locked Balance Operator
-          description: Search condition of locked balance(0:equal, 1:greater than
-            or equal, 2:less than or equal）
+          description: Search condition of locked balance(0:equal, 1:greater 
+            than or equal, 2:less than or equal）
         - name: account_address
           in: query
           required: false
@@ -9089,8 +9437,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9250,8 +9598,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9312,8 +9660,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9370,8 +9718,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9438,8 +9786,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9473,8 +9821,8 @@ paths:
         '200':
           description: Successful Response
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9502,12 +9850,990 @@ paths:
         '200':
           description: Successful Response
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /ibet_wst/tokens:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: List All Ibet Wst Tokens
+      description: |-
+        List all IbetWST tokens
+
+        - This endpoint retrieves all IbetWST tokens based on the provided query parameters.
+        - Only tokens whose deployment has already been finalized will be returned.
+      operationId: ListAllIbetWSTTokens
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: issuer_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Issuer address (**This affects total number**)
+            title: Issuer Address
+          description: Issuer address (**This affects total number**)
+        - name: ibet_wst_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: ibet_token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: ibet token contract address
+            title: Ibet Token Address
+          description: ibet token contract address
+        - name: token_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/TokenType'
+              - type: 'null'
+            description: Token type
+            title: Token Type
+          description: Token type
+        - name: sort_item
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ListAllIbetWSTTokensSortItem'
+              - type: 'null'
+            default: created
+            title: Sort Item
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/SortOrder'
+              - type: 'null'
+            description: 'Sort order (0: ASC, 1: DESC)'
+            default: 1
+            title: Sort Order
+          description: 'Sort order (0: ASC, 1: DESC)'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAllIbetWSTTokensResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/balances/{account_address}/{ibet_wst_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Balance
+      description: |-
+        Get IbetWST balance for a specific account address
+
+        - This endpoint retrieves the IbetWST balance for the specified account address.
+      operationId: GetIbetWSTBalance
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Account address
+            title: Account Address
+          description: Account address
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTBalanceResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/balances/{account_address}/{ibet_wst_address}/burn:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Burn Ibet Wst Balance
+      description: |-
+        Burn IbetWST balance
+        - This endpoint allows a user to send burnWithAuthorization transaction to the IbetWST contract.
+      operationId: BurnIbetWSTBalance
+      parameters:
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Account address
+            title: Account Address
+          description: Account address
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BurnIbetWSTRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
+  /ibet_wst/transactions:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: List Ibet Wst Transactions
+      description: |-
+        List IbetWST transactions
+
+        - This endpoint retrieves all IbetWST transactions based on the provided query parameters.
+      operationId: ListIbetWSTTransactions
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: ibet_wst_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 'IbetWST contract address (**This affects total number**) '
+            title: Ibet Wst Address
+          description: 'IbetWST contract address (**This affects total number**) '
+        - name: tx_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Transaction ID
+            title: Tx Id
+          description: Transaction ID
+        - name: tx_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - enum:
+                  - deploy
+                  - mint
+                  - burn
+                  - force_burn
+                  - add_whitelist
+                  - delete_whitelist
+                  - transfer
+                  - request_trade
+                  - cancel_trade
+                  - accept_trade
+                  - reject_trade
+                type: string
+              - type: 'null'
+            description: Transaction type
+            title: Tx Type
+          description: Transaction type
+        - name: status
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/IbetWSTTxStatus'
+              - type: 'null'
+            description: 'Transaction status (0: PENDING, 1: SENT, 2: SUCCEEDED, 3:
+              FAILED)'
+            title: Status
+          description: 'Transaction status (0: PENDING, 1: SENT, 2: SUCCEEDED, 3:
+            FAILED)'
+        - name: tx_hash
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Transaction hash
+            title: Tx Hash
+          description: Transaction hash
+        - name: authorizer
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Authorizer address
+            title: Authorizer
+          description: Authorizer address
+        - name: finalized
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: True if the block is finalized, False otherwise
+            title: Finalized
+          description: True if the block is finalized, False otherwise
+        - name: created_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Created datetime (From)
+            title: Created From
+          description: Created datetime (From)
+        - name: created_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Created datetime (To)
+            title: Created To
+          description: Created datetime (To)
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListIbetWSTTransactionsResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+  /ibet_wst/transactions/{tx_id}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Transaction
+      description: |-
+        Get IbetWST transaction details
+
+        - This endpoint retrieves the details of a specific IbetWST transaction by its ID.
+      operationId: GetIbetWSTTransaction
+      parameters:
+        - name: tx_id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST transaction ID
+            title: Tx Id
+          description: IbetWST transaction ID
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+  /ibet_wst/whitelists/{ibet_wst_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Retrieve Ibet Wst Whitelist Accounts
+      description: |-
+        Retrieve all whitelisted accounts for a specific IbetWST contract address
+
+        - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
+        - The data returned by this API is generated based on finalized blocks.
+      operationId: RetrieveIbetWSTWhitelistAccounts
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrieveIbetWSTWhitelistAccountsResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/whitelists/{ibet_wst_address}/{account_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Whitelist
+      description: |-
+        Get IbetWST whitelist status for a specific account address
+
+        - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+        - The data returned by this API also reflects the state of non-finalized blocks.
+      operationId: GetIbetWSTWhitelist
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: account_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Account address
+            title: Account Address
+          description: Account address
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTWhitelistResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/transfers/{ibet_wst_address}:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Transfer Ibet Wst
+      description: |-
+        Transfer IbetWST tokens
+
+        - This endpoint allows a user to send transferWithAuthorization transaction to the IbetWST contract.
+      operationId: TransferIbetWST
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferIbetWSTRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorResponse'
+                  - $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
+                title: Response 400 Transferibetwst
+  /ibet_wst/trades/{ibet_wst_address}/request:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Request Ibet Wst Trade
+      description: |-
+        Request an IbetWST trade
+
+        - This endpoint allows a user to send requestTradeWithAuthorization transaction to the IbetWST contract.
+      operationId: RequestIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorResponse'
+  /ibet_wst/trades/{ibet_wst_address}/cancel:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Cancel Ibet Wst Trade
+      description: |-
+        Cancel an IbetWST trade
+
+        - This endpoint allows a user to send cancelTradeWithAuthorization transaction to the IbetWST contract.
+      operationId: CancelIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}/accept:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Accept Ibet Wst Trade
+      description: |-
+        Accept an IbetWST trade
+
+        - This endpoint allows a user to send acceptTradeWithAuthorization transaction to the IbetWST contract.
+        - If seller's ST token balance is insufficient, an IbetWSTInsufficientBalanceError will be raised.
+        - If buyer's SC token allowance is insufficient, an ERC20InsufficientAllowanceError will be raised.
+      operationId: AcceptIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/ERC20InsufficientAllowanceErrorResponse'
+                  - $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorResponse'
+                title: Response 400 Acceptibetwsttrade
+  /ibet_wst/trades/{ibet_wst_address}/reject:
+    post:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Reject Ibet Wst Trade
+      description: |-
+        Reject an IbetWST trade
+
+        - This endpoint allows a user to send rejectTradeWithAuthorization transaction to the IbetWST contract.
+      operationId: RejectIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectIbetWSTTradeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: List Ibet Wst Trades
+      description: |-
+        List IbetWST trades
+
+        - This endpoint retrieves a list of trades from the IbetWST contract based on the provided query parameters.
+        - The data returned by this API is generated based on finalized blocks.
+      operationId: ListIbetWSTTrades
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: offset
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Offset for pagination
+            title: Offset
+          description: Offset for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+                minimum: 0
+              - type: 'null'
+            description: Limit for pagination
+            title: Limit
+          description: Limit for pagination
+        - name: seller_st_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: IbetWST seller account address
+            title: Seller St Account Address
+          description: IbetWST seller account address
+        - name: buyer_st_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: IbetWST buyer account address
+            title: Buyer St Account Address
+          description: IbetWST buyer account address
+        - name: sc_token_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: SC token contract address
+            title: Sc Token Address
+          description: SC token contract address
+        - name: seller_sc_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: SC seller account address
+            title: Seller Sc Account Address
+          description: SC seller account address
+        - name: buyer_sc_account_address
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: SC buyer account address
+            title: Buyer Sc Account Address
+          description: SC buyer account address
+        - name: state
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - enum:
+                  - Pending
+                  - Executed
+                  - Cancelled
+                type: string
+              - type: 'null'
+            description: Trade state
+            title: State
+          description: Trade state
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListIbetWSTTradesResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/trades/{ibet_wst_address}/{index}:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Ibet Wst Trade
+      description: |-
+        Get details of a specific IbetWST trade
+
+        - This endpoint retrieves the details of a specific trade by its index from the IbetWST contract.
+        - The data returned by this API is generated based on finalized blocks.
+      operationId: GetIbetWSTTrade
+      parameters:
+        - name: ibet_wst_address
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IbetWST contract address
+            title: Ibet Wst Address
+          description: IbetWST contract address
+        - name: index
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: Trade index
+            title: Index
+          description: Trade index
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIbetWSTTradeResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/erc20/balance:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Erc20 Balance
+      description: |-
+        Get ERC20 token balance
+
+        - This endpoint retrieves the balance of a specific ERC20 token for a given account address.
+        - The data returned by this API also reflects the state of non-finalized blocks.
+        - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+      operationId: GetERC20Balance
+      parameters:
+        - name: token_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Token contract address to check balance
+            title: Token Address
+          description: Token contract address to check balance
+        - name: account_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Account address to check balance
+            title: Account Address
+          description: Account address to check balance
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetERC20BalanceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
+  /ibet_wst/erc20/allowance:
+    get:
+      tags:
+        - '[misc] ibet_wst'
+      summary: Get Erc20 Allowance
+      description: |-
+        Get ERC20 token allowance
+
+        - This endpoint retrieves the allowance of a specific ERC20 token for a given account address.
+        - The data returned by this API also reflects the state of non-finalized blocks.
+        - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+      operationId: GetERC20Allowance
+      parameters:
+        - name: token_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Token contract address to check allowance
+            title: Token Address
+          description: Token contract address to check allowance
+        - name: account_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Account address to check allowance
+            title: Account Address
+          description: Account address to check allowance
+        - name: spender_address
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Spender address to check allowance
+            title: Spender Address
+          description: Spender address to check allowance
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetERC20AllowanceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422Model'
   /settlement/dvp/agent/accounts:
     get:
       tags:
@@ -9548,8 +10874,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9617,8 +10943,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9770,8 +11096,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9821,8 +11147,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -9908,8 +11234,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -10021,8 +11347,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -10096,8 +11422,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -10165,8 +11491,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -10203,8 +11529,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -10252,8 +11578,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error422Model'
         '400':
-          description: Invalid Parameter Error / Send Transaction Error / Contract
-            Revert Error etc
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
           content:
             application/json:
               schema:
@@ -10322,6 +11648,27 @@ components:
         - eoa_password
       title: AbortDVPDeliveryRequest
       description: DVP delivery abort schema (REQUEST)
+    AcceptIbetWSTTradeRequest:
+      properties:
+        index:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Index
+          description: Trade index
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - index
+        - authorizer
+        - authorization
+      title: AcceptIbetWSTTradeRequest
+      description: AcceptIbetWSTTrade request schema
     Account:
       properties:
         issuer_address:
@@ -10349,12 +11696,12 @@ components:
       properties:
         valid_duration:
           type: integer
-          maximum: 259200.0
           minimum: 0.0
           title: Valid Duration
+          description: Valid duration (seconds)
       type: object
       title: AccountAuthTokenRequest
-      description: Account Create Auth Token schema (REQUEST)
+      description: Generate Account Auth Token schema (REQUEST)
     AccountAuthTokenResponse:
       properties:
         auth_token:
@@ -10439,6 +11786,27 @@ components:
         1:CREATING
         2:CHANGING
         3:SET
+    AddIbetWSTWhitelistRequest:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address to be added to the whitelist
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+      type: object
+      required:
+        - st_account_address
+        - sc_account_address_in
+        - sc_account_address_out
+      title: AddIbetWSTWhitelistRequest
+      description: AddIbetWSTWhitelist request schema
     AuthTokenAlreadyExistsErrorCode:
       type: integer
       enum:
@@ -10652,6 +12020,62 @@ components:
         - batch_id
       title: BatchIssueRedeemUploadIdResponse
       description: Batch issue/redeem upload id (RESPONSE)
+    BatchIssueRedeemUploadWithResult:
+      properties:
+        batch_id:
+          type: string
+          title: Batch Id
+          description: UUID v4 required
+        issuer_address:
+          type: string
+          title: Issuer Address
+        token_type:
+          $ref: '#/components/schemas/TokenType'
+        token_address:
+          type: string
+          title: Token Address
+        processed:
+          type: boolean
+          title: Processed
+        created:
+          type: string
+          title: Created
+        results:
+          items:
+            $ref: '#/components/schemas/GetBatchIssueRedeemResult'
+          type: array
+          title: Results
+      type: object
+      required:
+        - batch_id
+        - issuer_address
+        - token_type
+        - token_address
+        - processed
+        - created
+        - results
+      title: BatchIssueRedeemUploadWithResult
+      description: Batch issue/redeem Upload
+      examples:
+        - batch_id: cfd83622-34dc-4efe-a68b-2cc275d3d824
+          created: '2022-09-02T19:49:33.370874+09:00'
+          issuer_address: '0x0000000000000000000000000000000000000000'
+          processed: true
+          results:
+            - account_address: string
+              amount: 0
+              personal_information:
+                address: string
+                birth: string
+                email: string
+                is_corporate: true
+                key_manager: string
+                name: string
+                postal_code: string
+                tax_category: 0
+              status: 0
+          token_address: '0x0000000000000000000000000000000000000000'
+          token_type: Bond
     BatchPersonalInfoRegistrationValidationErrorCode:
       type: integer
       enum:
@@ -10684,8 +12108,8 @@ components:
         - meta
         - detail
       title: BatchPersonalInfoRegistrationValidationErrorResponse
-      description: The uploaded list of batch personal info registration has invalid
-        records
+      description: The uploaded list of batch personal info registration has 
+        invalid records
     BatchRegisterPersonalInfoErrorMetaInfo:
       properties:
         upload_id:
@@ -10807,7 +12231,8 @@ components:
         - is_corporate
         - tax_category
       title: BatchRegisterPersonalInfoResult
-      description: Result of Creating Batch Register PersonalInfo schema (RESPONSE)
+      description: Result of Creating Batch Register PersonalInfo schema 
+        (RESPONSE)
     BatchRegisterPersonalInfoUploadResponse:
       properties:
         batch_id:
@@ -11205,6 +12630,27 @@ components:
         - result_set
       title: BulkTransferUploadResponse
       description: Bulk transfer uploads
+    BurnIbetWSTRequest:
+      properties:
+        value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Value
+          description: Amount of IbetWST to burn
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - value
+        - authorizer
+        - authorization
+      title: BurnIbetWSTRequest
+      description: BurnIbetWST request schema
     CancelDVPDeliveryRequest:
       properties:
         operation_type:
@@ -11216,6 +12662,27 @@ components:
         - operation_type
       title: CancelDVPDeliveryRequest
       description: DVP delivery cancel schema (REQUEST)
+    CancelIbetWSTTradeRequest:
+      properties:
+        index:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Index
+          description: Trade index
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - index
+        - authorizer
+        - authorization
+      title: CancelIbetWSTTradeRequest
+      description: CancelIbetWSTTrade request schema
     ChildAccount:
       properties:
         issuer_address:
@@ -11294,6 +12761,7 @@ components:
         - 111401
         - 111501
         - 111601
+        - 111701
         - 120001
         - 120002
         - 120101
@@ -11322,6 +12790,7 @@ components:
         - 121401
         - 121501
         - 121601
+        - 121701
         - 130001
         - 130101
         - 130102
@@ -11685,7 +13154,8 @@ components:
           description: YYYY/MM/DD
       type: object
       title: CreateUpdateLedgerDetailsDataRequest
-      description: Create or Update Ledger Details Data Structure schema (Request)
+      description: Create or Update Ledger Details Data Structure schema 
+        (Request)
     CreateUpdateLedgerDetailsDataTemplateRequest:
       properties:
         type:
@@ -11700,7 +13170,8 @@ components:
       required:
         - type
       title: CreateUpdateLedgerDetailsDataTemplateRequest
-      description: Create or Update Ledger Details Data Template schema (Request)
+      description: Create or Update Ledger Details Data Template schema 
+        (Request)
     CreateUpdateLedgerDetailsTemplateRequest:
       properties:
         token_detail_type:
@@ -11901,6 +13372,17 @@ components:
         - notice_type
         - metainfo
       title: DVPDeliveryInfoNotification
+    DeleteIbetWSTWhitelistRequest:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address to be removed from the whitelist
+      type: object
+      required:
+        - st_account_address
+      title: DeleteIbetWSTWhitelistRequest
+      description: DeleteIbetWSTWhitelist request schema
     DeliveryStatus:
       type: integer
       enum:
@@ -12118,6 +13600,78 @@ components:
         - send_timestamp
       title: E2EMessagingResponse
       description: E2E Messaging schema (Response)
+    ERC20InsufficientAllowanceErrorCode:
+      type: integer
+      enum:
+        - 14
+      title: ERC20InsufficientAllowanceErrorCode
+    ERC20InsufficientAllowanceErrorMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/ERC20InsufficientAllowanceErrorCode'
+          examples:
+            - 14
+        title:
+          type: string
+          title: Title
+          examples:
+            - ERC20InsufficientAllowanceError
+      type: object
+      required:
+        - code
+        - title
+      title: ERC20InsufficientAllowanceErrorMetainfo
+    ERC20InsufficientAllowanceErrorResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/ERC20InsufficientAllowanceErrorMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: ERC20InsufficientAllowanceErrorResponse
+      description: Insufficient allowance for ERC20 token transfer
+    Error400MetaModel:
+      properties:
+        code:
+          type: integer
+          title: Code
+          examples:
+            - 0
+            - 1
+            - 2
+            - 100001
+        title:
+          type: string
+          title: Title
+          examples:
+            - InvalidParameterError
+            - SendTransactionError
+            - ContractRevertError
+      type: object
+      required:
+        - code
+        - title
+      title: Error400MetaModel
+    Error400Model:
+      properties:
+        meta:
+          $ref: '#/components/schemas/Error400MetaModel'
+        detail:
+          type: string
+          title: Detail
+          examples:
+            - this token is temporarily unavailable
+            - failed to register token address token list
+            - The address has already been registered.
+      type: object
+      required:
+        - meta
+        - detail
+      title: Error400Model
     Error401MetaModel:
       properties:
         code:
@@ -12297,6 +13851,23 @@ components:
         - eoa_password
       title: FinishDVPDeliveryRequest
       description: DVP delivery finish schema (REQUEST)
+    ForceBurnIbetWSTRequest:
+      properties:
+        account_address:
+          type: string
+          title: Account Address
+          description: Account address from which to force burn IbetWST
+        value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Value
+          description: Amount of IbetWST to force burn
+      type: object
+      required:
+        - account_address
+        - value
+      title: ForceBurnIbetWSTRequest
+      description: ForceBurnIbetWST request schema
     ForceLockRequest:
       properties:
         token_address:
@@ -12438,6 +14009,193 @@ components:
         - results
       title: GetBatchRegisterPersonalInfoResponse
       description: Get Batch Register PersonalInfo schema (RESPONSE)
+    GetERC20AllowanceResponse:
+      properties:
+        allowance:
+          type: integer
+          title: Allowance
+          description: ERC20 token allowance
+      type: object
+      required:
+        - allowance
+      title: GetERC20AllowanceResponse
+      description: GetERC20Allowance response schema
+    GetERC20BalanceResponse:
+      properties:
+        balance:
+          type: integer
+          title: Balance
+          description: ERC20 token balance
+      type: object
+      required:
+        - balance
+      title: GetERC20BalanceResponse
+      description: GetERC20Balance response schema
+    GetIbetWSTBalanceResponse:
+      properties:
+        balance:
+          type: integer
+          title: Balance
+          description: IbetWST balance
+      type: object
+      required:
+        - balance
+      title: GetIbetWSTBalanceResponse
+      description: GetIbetWSTBalance response schema
+    GetIbetWSTTradeResponse:
+      $ref: '#/components/schemas/IbetWSTTrade'
+      title: GetIbetWSTTradeResponse
+      description: IbetWSTToken response schema
+    GetIbetWSTTransactionResponse:
+      properties:
+        tx_id:
+          type: string
+          title: Tx Id
+          description: Transaction ID
+        tx_type:
+          type: string
+          enum:
+            - deploy
+            - mint
+            - burn
+            - force_burn
+            - add_whitelist
+            - delete_whitelist
+            - transfer
+            - request_trade
+            - cancel_trade
+            - accept_trade
+            - reject_trade
+          title: Tx Type
+          description: Transaction type
+        version:
+          type: string
+          title: Version
+          description: IbetWST version
+        status:
+          $ref: '#/components/schemas/IbetWSTTxStatus'
+          description: 'Transaction status(0: PENDING, 1: SENT, 2: SUCCEEDED, 3: FAILED)'
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: IbetWST contract address
+        tx_sender:
+          type: string
+          title: Tx Sender
+          description: Transaction sender address
+        authorizer:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Authorizer
+          description: Authorizer address
+        tx_hash:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Tx Hash
+          description: Transaction hash
+        block_number:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Block Number
+          description: Block number when transaction was mined
+        finalized:
+          type: boolean
+          title: Finalized
+          description: True if the block is finalized, False otherwise
+        event_log:
+          anyOf:
+            - $ref: '#/components/schemas/IbetWSTEventLogMint'
+            - $ref: '#/components/schemas/IbetWSTEventLogBurn'
+            - $ref: '#/components/schemas/IbetWSTEventLogTransfer'
+            - $ref: '#/components/schemas/IbetWSTEventLogAccountWhiteList'
+            - $ref: '#/components/schemas/IbetWSTEventLogTrade'
+            - type: 'null'
+          title: Event Log
+          description: Event log for the transaction (if applicable)
+        created:
+          type: string
+          title: Created
+          description: Transaction created datetime
+      type: object
+      required:
+        - tx_id
+        - tx_type
+        - version
+        - status
+        - ibet_wst_address
+        - tx_sender
+        - authorizer
+        - tx_hash
+        - block_number
+        - finalized
+        - created
+      title: GetIbetWSTTransactionResponse
+      description: GetIbetWSTTransaction response schema
+    GetIbetWSTWhitelistResponse:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+        listed:
+          type: boolean
+          title: Listed
+          description: True if the account is listed in the whitelist, False 
+            otherwise
+      type: object
+      required:
+        - st_account_address
+        - sc_account_address_in
+        - sc_account_address_out
+        - listed
+      title: GetIbetWSTWhitelistResponse
+      description: GetIbetWSTWhitelist response schema
+    GetIbetWSTWhitelistWithPersonalInfoResponse:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        st_account_personal_info:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+          description: Personal information of the ST account
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+        listed:
+          type: boolean
+          title: Listed
+          description: True if the account is listed in the whitelist, False 
+            otherwise
+      type: object
+      required:
+        - st_account_address
+        - st_account_personal_info
+        - sc_account_address_in
+        - sc_account_address_out
+        - listed
+      title: GetIbetWSTWhitelistWithPersonalInfoResponse
+      description: GetIbetWSTWhitelistWithPersonalInfo response schema
     HTTPValidationError:
       properties:
         detail:
@@ -12696,6 +14454,7 @@ components:
         - '24_06'
         - '24_09'
         - '25_06'
+        - '25_09'
       title: IbetShareContractVersion
     IbetShareCreate:
       properties:
@@ -12734,7 +14493,8 @@ components:
         dividend_record_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
               const: ''
             - type: 'null'
@@ -12742,7 +14502,8 @@ components:
         dividend_payment_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
               const: ''
             - type: 'null'
@@ -12750,7 +14511,8 @@ components:
         cancellation_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
               const: ''
             - type: 'null'
@@ -12807,6 +14569,13 @@ components:
             - type: boolean
             - type: 'null'
           title: Is Canceled
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       required:
         - name
@@ -12902,12 +14671,35 @@ components:
         issue_datetime:
           type: string
           title: Issue Datetime
+          description: Issue datetime (ISO 8601 format)
         token_status:
           anyOf:
             - $ref: '#/components/schemas/TokenStatus'
             - type: 'null'
+          description: Token deploy status
         contract_version:
           $ref: '#/components/schemas/IbetShareContractVersion'
+          description: Contract version
+        ibet_wst_activated:
+          type: boolean
+          title: Ibet Wst Activated
+          description: IbetWST activated
+        ibet_wst_version:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Version
+          description: IbetWST version
+        ibet_wst_deployed:
+          type: boolean
+          title: Ibet Wst Deployed
+          description: IbetWST deployed
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: IbetWST contract address
       type: object
       required:
         - issuer_address
@@ -12935,6 +14727,10 @@ components:
         - issue_datetime
         - token_status
         - contract_version
+        - ibet_wst_activated
+        - ibet_wst_version
+        - ibet_wst_deployed
+        - ibet_wst_address
       title: IbetShareResponse
       description: ibet Share schema (Response)
     IbetShareScheduledUpdate:
@@ -12946,7 +14742,7 @@ components:
         event_type:
           $ref: '#/components/schemas/ScheduledEventType'
         data:
-          $ref: '#/components/schemas/IbetShareUpdate'
+          $ref: '#/components/schemas/IbetShareScheduledUpdateData'
       type: object
       required:
         - scheduled_datetime
@@ -12954,36 +14750,13 @@ components:
         - data
       title: IbetShareScheduledUpdate
       description: scheduled event (Request)
-    IbetShareTransfer:
-      properties:
-        token_address:
-          type: string
-          title: Token Address
-        from_address:
-          type: string
-          title: From Address
-        to_address:
-          type: string
-          title: To Address
-        amount:
-          type: integer
-          maximum: 1000000000000.0
-          minimum: 1.0
-          title: Amount
-      type: object
-      required:
-        - token_address
-        - from_address
-        - to_address
-        - amount
-      title: IbetShareTransfer
-      description: ibet Share schema (Transfer)
-    IbetShareUpdate:
+    IbetShareScheduledUpdateData:
       properties:
         cancellation_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
               const: ''
             - type: 'null'
@@ -12991,7 +14764,8 @@ components:
         dividend_record_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
               const: ''
             - type: 'null'
@@ -12999,7 +14773,8 @@ components:
         dividend_payment_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
               const: ''
             - type: 'null'
@@ -13076,6 +14851,141 @@ components:
               maxLength: 10000
             - type: 'null'
           title: Memo
+      type: object
+      title: IbetShareScheduledUpdateData
+      description: ibet Share scheduled update data schema
+    IbetShareTransfer:
+      properties:
+        token_address:
+          type: string
+          title: Token Address
+        from_address:
+          type: string
+          title: From Address
+        to_address:
+          type: string
+          title: To Address
+        amount:
+          type: integer
+          maximum: 1000000000000.0
+          minimum: 1.0
+          title: Amount
+      type: object
+      required:
+        - token_address
+        - from_address
+        - to_address
+        - amount
+      title: IbetShareTransfer
+      description: ibet Share schema (Transfer)
+    IbetShareUpdate:
+      properties:
+        cancellation_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Cancellation Date
+        dividend_record_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Dividend Record Date
+        dividend_payment_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Dividend Payment Date
+        dividends:
+          anyOf:
+            - type: number
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Dividends
+        tradable_exchange_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Require Personal Info Registered
+        transferable:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transferable
+        status:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Status
+        is_offering:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Offering
+        contact_information:
+          anyOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+          title: Contact Information
+        privacy_policy:
+          anyOf:
+            - type: string
+              maxLength: 5000
+            - type: 'null'
+          title: Privacy Policy
+        transfer_approval_required:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transfer Approval Required
+        principal_value:
+          anyOf:
+            - type: integer
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Principal Value
+        is_canceled:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Canceled
+        memo:
+          anyOf:
+            - type: string
+              maxLength: 10000
+            - type: 'null'
+          title: Memo
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       title: IbetShareUpdate
       description: ibet Share schema (Update)
@@ -13237,6 +15147,7 @@ components:
         - '24_06'
         - '24_09'
         - '25_06'
+        - '25_09'
       title: IbetStraightBondContractVersion
     IbetStraightBondCreate:
       properties:
@@ -13272,7 +15183,8 @@ components:
         redemption_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: 'null'
           title: Redemption Date
         redemption_value:
@@ -13292,7 +15204,8 @@ components:
         return_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: 'null'
           title: Return Date
         return_amount:
@@ -13388,6 +15301,13 @@ components:
             - type: boolean
             - type: 'null'
           title: Transfer Approval Required
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       required:
         - name
@@ -13504,12 +15424,35 @@ components:
         issue_datetime:
           type: string
           title: Issue Datetime
+          description: Issue datetime (ISO 8601 format)
         token_status:
           anyOf:
             - $ref: '#/components/schemas/TokenStatus'
             - type: 'null'
+          description: Token deploy status
         contract_version:
           $ref: '#/components/schemas/IbetStraightBondContractVersion'
+          description: Contract version
+        ibet_wst_activated:
+          type: boolean
+          title: Ibet Wst Activated
+          description: IbetWST activated
+        ibet_wst_version:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Version
+          description: IbetWST version
+        ibet_wst_deployed:
+          type: boolean
+          title: Ibet Wst Deployed
+          description: IbetWST deployed
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: IbetWST contract address
       type: object
       required:
         - issuer_address
@@ -13543,6 +15486,10 @@ components:
         - issue_datetime
         - token_status
         - contract_version
+        - ibet_wst_activated
+        - ibet_wst_version
+        - ibet_wst_deployed
+        - ibet_wst_address
       title: IbetStraightBondResponse
       description: ibet Straight Bond schema (Response)
     IbetStraightBondScheduledUpdate:
@@ -13554,7 +15501,7 @@ components:
         event_type:
           $ref: '#/components/schemas/ScheduledEventType'
         data:
-          $ref: '#/components/schemas/IbetStraightBondUpdate'
+          $ref: '#/components/schemas/IbetStraightBondScheduledUpdateData'
       type: object
       required:
         - scheduled_datetime
@@ -13562,6 +15509,144 @@ components:
         - data
       title: IbetStraightBondScheduledUpdate
       description: scheduled event (Request)
+    IbetStraightBondScheduledUpdateData:
+      properties:
+        face_value:
+          anyOf:
+            - type: integer
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Face Value
+        face_value_currency:
+          anyOf:
+            - type: string
+              maxLength: 3
+              minLength: 3
+            - type: 'null'
+          title: Face Value Currency
+        purpose:
+          anyOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+          title: Purpose
+        interest_rate:
+          anyOf:
+            - type: number
+              maximum: 100.0
+              minimum: 0.0
+            - type: 'null'
+          title: Interest Rate
+        interest_payment_date:
+          anyOf:
+            - items:
+                type: string
+                pattern: ^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              type: array
+            - type: 'null'
+          title: Interest Payment Date
+        interest_payment_currency:
+          anyOf:
+            - type: string
+              maxLength: 3
+              minLength: 3
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Interest Payment Currency
+        redemption_value:
+          anyOf:
+            - type: integer
+              maximum: 5000000000.0
+              minimum: 0.0
+            - type: 'null'
+          title: Redemption Value
+        redemption_value_currency:
+          anyOf:
+            - type: string
+              maxLength: 3
+              minLength: 3
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Redemption Value Currency
+        redemption_date:
+          anyOf:
+            - type: string
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+            - type: string
+              const: ''
+            - type: 'null'
+          title: Redemption Date
+        base_fx_rate:
+          anyOf:
+            - type: number
+              minimum: 0.0
+            - type: 'null'
+          title: Base Fx Rate
+        transferable:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transferable
+        status:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Status
+        is_offering:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Offering
+        is_redeemed:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Redeemed
+        tradable_exchange_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Tradable Exchange Contract Address
+        personal_info_contract_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Personal Info Contract Address
+        require_personal_info_registered:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Require Personal Info Registered
+        contact_information:
+          anyOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+          title: Contact Information
+        privacy_policy:
+          anyOf:
+            - type: string
+              maxLength: 5000
+            - type: 'null'
+          title: Privacy Policy
+        transfer_approval_required:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Transfer Approval Required
+        memo:
+          anyOf:
+            - type: string
+              maxLength: 10000
+            - type: 'null'
+          title: Memo
+      type: object
+      title: IbetStraightBondScheduledUpdateData
+      description: ibet Straight Bond scheduled update data schema
     IbetStraightBondTransfer:
       properties:
         token_address:
@@ -13651,7 +15736,8 @@ components:
         redemption_date:
           anyOf:
             - type: string
-              pattern: ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+              pattern: 
+                ^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
             - type: string
               const: ''
             - type: 'null'
@@ -13720,9 +15806,401 @@ components:
               maxLength: 10000
             - type: 'null'
           title: Memo
+        activate_ibet_wst:
+          anyOf:
+            - type: boolean
+              const: true
+            - type: 'null'
+          title: Activate Ibet Wst
+          description: Activate IbetWST
       type: object
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)
+    IbetWSTAccountNotWhitelistedErrorCode:
+      type: integer
+      enum:
+        - 15
+      title: IbetWSTAccountNotWhitelistedErrorCode
+    IbetWSTAccountNotWhitelistedErrorMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorCode'
+          examples:
+            - 15
+        title:
+          type: string
+          title: Title
+          examples:
+            - IbetWSTAccountNotWhitelistedError
+      type: object
+      required:
+        - code
+        - title
+      title: IbetWSTAccountNotWhitelistedErrorMetainfo
+    IbetWSTAccountNotWhitelistedErrorResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/IbetWSTAccountNotWhitelistedErrorMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: IbetWSTAccountNotWhitelistedErrorResponse
+      description: IbetWST account is not whitelisted for transfer operations
+    IbetWSTAuthorization:
+      properties:
+        nonce:
+          type: string
+          title: Nonce
+          description: Nonce for the authorization (Hexadecimal string)
+        v:
+          type: integer
+          title: V
+          description: v value for the authorization signature
+        r:
+          type: string
+          title: R
+          description: r value for the authorization signature (Hexadecimal 
+            string)
+        s:
+          type: string
+          title: S
+          description: s value for the authorization signature (Hexadecimal 
+            string)
+      type: object
+      required:
+        - nonce
+        - v
+        - r
+        - s
+      title: IbetWSTAuthorization
+      description: IbetWST Authorization schema
+    IbetWSTEventLogAccountWhiteList:
+      properties:
+        account_address:
+          type: string
+          title: Account Address
+          description: Address of the account added to/removed from the 
+            whitelist
+      type: object
+      required:
+        - account_address
+      title: IbetWSTEventLogAccountWhiteList
+      description: IbetWST AccountWhiteList event log schema
+    IbetWSTEventLogBurn:
+      properties:
+        from_address:
+          type: string
+          title: From Address
+          description: Address from which the tokens were burned
+        value:
+          type: integer
+          title: Value
+          description: Amount of tokens burned
+      type: object
+      required:
+        - from_address
+        - value
+      title: IbetWSTEventLogBurn
+      description: IbetWST Burn event log schema
+    IbetWSTEventLogMint:
+      properties:
+        to_address:
+          type: string
+          title: To Address
+          description: Address to which the tokens were minted
+        value:
+          type: integer
+          title: Value
+          description: Amount of tokens minted
+      type: object
+      required:
+        - to_address
+        - value
+      title: IbetWSTEventLogMint
+      description: IbetWST Mint event log schema
+    IbetWSTEventLogTrade:
+      properties:
+        index:
+          type: integer
+          title: Index
+          description: Trade index
+        seller_st_account_address:
+          type: string
+          title: Seller St Account Address
+          description: IbetWST seller account address
+        buyer_st_account_address:
+          type: string
+          title: Buyer St Account Address
+          description: IbetWST buyer account address
+        sc_token_address:
+          type: string
+          title: Sc Token Address
+          description: SC token contract address
+        seller_sc_account_address:
+          type: string
+          title: Seller Sc Account Address
+          description: SC seller account address
+        buyer_sc_account_address:
+          type: string
+          title: Buyer Sc Account Address
+          description: SC buyer account address
+        st_value:
+          type: integer
+          title: St Value
+          description: Value of IbetWST to trade
+        sc_value:
+          type: integer
+          title: Sc Value
+          description: Value of SC token to trade
+        display_sc_value:
+          type: string
+          title: Display Sc Value
+          description: Value of SC token to trade (decimals considered)
+        sc_decimals:
+          type: integer
+          title: Sc Decimals
+          description: Decimals of the SC token
+      type: object
+      required:
+        - index
+        - seller_st_account_address
+        - buyer_st_account_address
+        - sc_token_address
+        - seller_sc_account_address
+        - buyer_sc_account_address
+        - st_value
+        - sc_value
+        - display_sc_value
+        - sc_decimals
+      title: IbetWSTEventLogTrade
+      description: IbetWST 
+        TradeRequested/TradeCancelled/TradeAccepted/TradeRejected event log 
+        schema
+    IbetWSTEventLogTransfer:
+      properties:
+        from_address:
+          type: string
+          title: From Address
+          description: Address from which the tokens were transferred
+        to_address:
+          type: string
+          title: To Address
+          description: Address to which the tokens were transferred
+        value:
+          type: integer
+          title: Value
+          description: Amount of tokens transferred
+      type: object
+      required:
+        - from_address
+        - to_address
+        - value
+      title: IbetWSTEventLogTransfer
+      description: IbetWST Transfer event log schema
+    IbetWSTInsufficientBalanceErrorCode:
+      type: integer
+      enum:
+        - 13
+      title: IbetWSTInsufficientBalanceErrorCode
+    IbetWSTInsufficientBalanceErrorMetainfo:
+      properties:
+        code:
+          $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorCode'
+          examples:
+            - 13
+        title:
+          type: string
+          title: Title
+          examples:
+            - IbetWSTInsufficientBalanceError
+      type: object
+      required:
+        - code
+        - title
+      title: IbetWSTInsufficientBalanceErrorMetainfo
+    IbetWSTInsufficientBalanceErrorResponse:
+      properties:
+        meta:
+          $ref: '#/components/schemas/IbetWSTInsufficientBalanceErrorMetainfo'
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+        - meta
+        - detail
+      title: IbetWSTInsufficientBalanceErrorResponse
+      description: Insufficient balance for IbetWST token transfer
+    IbetWSTToken:
+      properties:
+        issuer_address:
+          type: string
+          title: Issuer Address
+          description: Issuer address
+        ibet_wst_address:
+          type: string
+          title: Ibet Wst Address
+          description: IbetWST contract address
+        ibet_token_address:
+          type: string
+          title: Ibet Token Address
+          description: ibet token contract address
+        ibet_token_type:
+          $ref: '#/components/schemas/TokenType'
+          description: ibet token type
+        ibet_token_attributes:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBond'
+            - $ref: '#/components/schemas/IbetShare'
+          title: Ibet Token Attributes
+          description: ibet token attributes
+        created:
+          type: string
+          title: Created
+          description: Created datetime
+      type: object
+      required:
+        - issuer_address
+        - ibet_wst_address
+        - ibet_token_address
+        - ibet_token_type
+        - ibet_token_attributes
+        - created
+      title: IbetWSTToken
+      description: IbetWST Token schema
+    IbetWSTTrade:
+      properties:
+        index:
+          type: integer
+          title: Index
+          description: Trade index
+        seller_st_account_address:
+          type: string
+          title: Seller St Account Address
+          description: IbetWST seller account address
+        buyer_st_account_address:
+          type: string
+          title: Buyer St Account Address
+          description: IbetWST buyer account address
+        sc_token_address:
+          type: string
+          title: Sc Token Address
+          description: SC token contract address
+        seller_sc_account_address:
+          type: string
+          title: Seller Sc Account Address
+          description: SC seller account address
+        buyer_sc_account_address:
+          type: string
+          title: Buyer Sc Account Address
+          description: SC buyer account address
+        st_value:
+          type: integer
+          title: St Value
+          description: Value of IbetWST to trade
+        sc_value:
+          type: integer
+          title: Sc Value
+          description: Value of SC token to trade
+        state:
+          type: string
+          enum:
+            - Pending
+            - Executed
+            - Cancelled
+          title: State
+          description: Trade state
+        memo:
+          type: string
+          title: Memo
+          description: Memo for the trade
+      type: object
+      required:
+        - index
+        - seller_st_account_address
+        - buyer_st_account_address
+        - sc_token_address
+        - seller_sc_account_address
+        - buyer_sc_account_address
+        - st_value
+        - sc_value
+        - state
+        - memo
+      title: IbetWSTTrade
+      description: IbetWST Trade schema
+    IbetWSTTransactionResponse:
+      properties:
+        tx_id:
+          type: string
+          title: Tx Id
+          description: Transaction ID
+      type: object
+      required:
+        - tx_id
+      title: IbetWSTTransactionResponse
+      description: Common response schema for APIs that send IbetWST 
+        transactions
+    IbetWSTTxStatus:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+      title: IbetWSTTxStatus
+      description: IbetWST Transaction Status Enum
+    IbetWSTWhitelistAccount:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+      type: object
+      required:
+        - st_account_address
+        - sc_account_address_in
+        - sc_account_address_out
+      title: IbetWSTWhitelistAccount
+      description: IbetWST Whitelist Account schema
+    IbetWSTWhitelistAccountWithPersonalInfo:
+      properties:
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address of the whitelisted account
+        st_account_personal_info:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+          description: Personal information of the ST account
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+      type: object
+      required:
+        - st_account_address
+        - st_account_personal_info
+        - sc_account_address_in
+        - sc_account_address_out
+      title: IbetWSTWhitelistAccountWithPersonalInfo
+      description: IbetWST Whitelist Account schema
     Integer64bitLimitExceededErrorCode:
       type: integer
       enum:
@@ -14210,6 +16688,27 @@ components:
         - key_manager
         - holder_name
       title: ListAllHoldersSortItem
+    ListAllIbetWSTTokensResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        tokens:
+          items:
+            $ref: '#/components/schemas/IbetWSTToken'
+          type: array
+          title: Tokens
+      type: object
+      required:
+        - result_set
+        - tokens
+      title: ListAllIbetWSTTokensResponse
+      description: ListAllIbetWSTTokens response schema
+    ListAllIbetWSTTokensSortItem:
+      type: string
+      enum:
+        - created
+        - token_address
+      title: ListAllIbetWSTTokensSortItem
     ListAllIssuedTokensResponse:
       properties:
         result_set:
@@ -14410,6 +16909,21 @@ components:
         - uploads
       title: ListBatchIssueRedeemUploadResponse
       description: List All Batch issue/redeem Upload(RESPONSE)
+    ListBatchIssueRedeemUploadResponseWithResult:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        uploads:
+          items:
+            $ref: '#/components/schemas/BatchIssueRedeemUploadWithResult'
+          type: array
+          title: Uploads
+      type: object
+      required:
+        - result_set
+        - uploads
+      title: ListBatchIssueRedeemUploadResponseWithResult
+      description: List All Batch issue/redeem Upload(RESPONSE)
     ListBatchRegisterPersonalInfoUploadResponse:
       properties:
         result_set:
@@ -14425,6 +16939,38 @@ components:
         - uploads
       title: ListBatchRegisterPersonalInfoUploadResponse
       description: List All Batch Register PersonalInfo Upload (Response)
+    ListIbetWSTTradesResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        trades:
+          items:
+            $ref: '#/components/schemas/IbetWSTTrade'
+          type: array
+          title: Trades
+          description: List of IbetWST trades
+      type: object
+      required:
+        - result_set
+        - trades
+      title: ListIbetWSTTradesResponse
+      description: ListIbetWSTTrades response schema
+    ListIbetWSTTransactionsResponse:
+      properties:
+        result_set:
+          $ref: '#/components/schemas/ResultSet'
+        transactions:
+          items:
+            $ref: '#/components/schemas/GetIbetWSTTransactionResponse'
+          type: array
+          title: Transactions
+          description: List of IbetWST transactions
+      type: object
+      required:
+        - result_set
+        - transactions
+      title: ListIbetWSTTransactionsResponse
+      description: ListIbetWSTTransactions response schema
     ListTokenHistorySortItem:
       type: string
       enum:
@@ -14674,8 +17220,8 @@ components:
       type: string
       enum:
         - garnishment
-        - inheritance
         - force_lock
+        - ibet_wst_bridge
       title: LockMessage
     LockedPosition:
       properties:
@@ -14745,8 +17291,8 @@ components:
         - meta
         - detail
       title: MultipleTokenTransferNotAllowedErrorResponse
-      description: Transfer operations that do not allow specifying multiple tokens
-        at once
+      description: Transfer operations that do not allow specifying multiple 
+        tokens at once
     NonTransferableTokenErrorCode:
       type: integer
       enum:
@@ -14828,8 +17374,8 @@ components:
         - meta
         - detail
       title: OperationNotAllowedStateErrorResponse
-      description: Error returned when server-side data is not ready to process the
-        request
+      description: Error returned when server-side data is not ready to process 
+        the request
     OperationNotPermittedForOlderIssuersCode:
       type: integer
       enum:
@@ -15303,6 +17849,74 @@ components:
         - key_manager
       title: RegisterPersonalInfoRequest
       description: Register Personal Information schema (REQUEST)
+    RejectIbetWSTTradeRequest:
+      properties:
+        index:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Index
+          description: Trade index
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - index
+        - authorizer
+        - authorization
+      title: RejectIbetWSTTradeRequest
+      description: RejectIbetWSTTrade request schema
+    RequestIbetWSTTradeRequest:
+      properties:
+        seller_st_account_address:
+          type: string
+          title: Seller St Account Address
+          description: IbetWST seller account address
+        buyer_st_account_address:
+          type: string
+          title: Buyer St Account Address
+          description: IbetWST buyer account address
+        sc_token_address:
+          type: string
+          title: Sc Token Address
+          description: SC token contract address
+        st_value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: St Value
+          description: Value of IbetWST to trade
+        sc_value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Sc Value
+          description: Value of SC token to trade
+        memo:
+          type: string
+          title: Memo
+          description: Memo for the trade
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - seller_st_account_address
+        - buyer_st_account_address
+        - sc_token_address
+        - st_value
+        - sc_value
+        - memo
+        - authorizer
+        - authorization
+      title: RequestIbetWSTTradeRequest
+      description: RequestIbetWSTTrade request schema
     ResponseLimitExceededErrorCode:
       type: integer
       enum:
@@ -15618,6 +18232,33 @@ components:
         - log_message
       title: RetrieveFreezeLogResponse
       description: Frozen log data (RESPONSE)
+    RetrieveIbetWSTWhitelistAccountsResponse:
+      properties:
+        whitelist_accounts:
+          items:
+            $ref: '#/components/schemas/IbetWSTWhitelistAccount'
+          type: array
+          title: Whitelist Accounts
+          description: List of whitelisted accounts
+      type: object
+      required:
+        - whitelist_accounts
+      title: RetrieveIbetWSTWhitelistAccountsResponse
+      description: RetrieveIbetWSTWhitelistAccounts response schema
+    RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse:
+      properties:
+        whitelist_accounts:
+          items:
+            $ref: '#/components/schemas/IbetWSTWhitelistAccountWithPersonalInfo'
+          type: array
+          title: Whitelist Accounts
+          description: List of whitelisted accounts with personal information
+      type: object
+      required:
+        - whitelist_accounts
+      title: RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse
+      description: RetrieveIbetWSTWhitelistAccountsWithPersonalInfo response 
+        schema
     RetrieveLedgerDetailsDataHistoryResponse:
       properties:
         account_address:
@@ -16103,8 +18744,8 @@ components:
       required:
         - token_address
       title: SealedTxRegisterHolderExtraInfoRequest
-      description: Schema for holder's extra information registration using sealed
-        tx (REQUEST)
+      description: Schema for holder's extra information registration using 
+        sealed tx (REQUEST)
     SealedTxRegisterPersonalInfoRequest:
       properties:
         link_address:
@@ -16117,7 +18758,8 @@ components:
         - link_address
         - personal_information
       title: SealedTxRegisterPersonalInfoRequest
-      description: Schema for personal information registration using sealed tx (REQUEST)
+      description: Schema for personal information registration using sealed tx 
+        (REQUEST)
     SendTransactionErrorCode:
       type: integer
       enum:
@@ -16221,7 +18863,8 @@ components:
         hold_balance:
           type: integer
           title: Hold Balance
-          description: Amount of balance.This includes balance/pending_transfer/exchange_balance/exchange_commitment.
+          description: Amount of balance.This includes 
+            balance/pending_transfer/exchange_balance/exchange_commitment.
         locked_balance:
           type: integer
           title: Locked Balance
@@ -16345,7 +18988,9 @@ components:
           title: Block Timestamp
         source_event:
           type: string
-          const: Transfer
+          enum:
+            - Transfer
+            - Reallocation
           title: Source Event
           description: Source Event
         data:
@@ -16365,6 +19010,10 @@ components:
         - source_event
         - data
       title: Transfer
+      description: |-
+        Transfer data for Transfer, Reallocation events
+
+        - Source Event: Transfer, Reallocation
     TransferApprovalHistoryResponse:
       properties:
         result_set:
@@ -16678,6 +19327,19 @@ components:
         - transfer_approvals
       title: TransferApprovalsResponse
       description: transfer approvals
+    TransferDataMessage:
+      properties:
+        message:
+          type: string
+          enum:
+            - garnishment
+            - force_unlock
+            - ibet_wst_bridge
+          title: Message
+      type: object
+      required:
+        - message
+      title: TransferDataMessage
     TransferHistoryResponse:
       properties:
         result_set:
@@ -16686,7 +19348,7 @@ components:
           items:
             anyOf:
               - $ref: '#/components/schemas/Transfer'
-              - $ref: '#/components/schemas/UnlockTransfer'
+              - $ref: '#/components/schemas/TransferWithMessage'
           type: array
           title: Transfer History
       type: object
@@ -16695,13 +19357,119 @@ components:
         - transfer_history
       title: TransferHistoryResponse
       description: transfer history
+    TransferIbetWSTRequest:
+      properties:
+        from_address:
+          type: string
+          title: From Address
+          description: Sender address
+        to_address:
+          type: string
+          title: To Address
+          description: Recipient address
+        value:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Value
+          description: Amount of IbetWST to transfer
+        valid_after:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Valid After
+          description: Valid after timestamp (Unix time)
+          default: 1
+        valid_before:
+          type: integer
+          maximum: 1.8446744073709552e+19
+          exclusiveMinimum: 0.0
+          title: Valid Before
+          description: Valid before timestamp (Unix time)
+          default: 18446744073709551615
+        authorizer:
+          type: string
+          title: Authorizer
+          description: Authorizer address
+        authorization:
+          $ref: '#/components/schemas/IbetWSTAuthorization'
+          description: Authorization for the transaction
+      type: object
+      required:
+        - from_address
+        - to_address
+        - value
+        - authorizer
+        - authorization
+      title: TransferIbetWSTRequest
+      description: TransferIbetWST request schema
     TransferSourceEventType:
       type: string
       enum:
         - Transfer
         - Unlock
         - ForceUnlock
+        - ForceChangeLockedAccount
+        - Reallocation
       title: TransferSourceEventType
+    TransferWithMessage:
+      properties:
+        transaction_hash:
+          type: string
+          title: Transaction Hash
+        token_address:
+          type: string
+          title: Token Address
+        from_address:
+          type: string
+          title: From Address
+        from_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        to_address:
+          type: string
+          title: To Address
+        to_address_personal_information:
+          anyOf:
+            - $ref: '#/components/schemas/PersonalInfo'
+            - type: 'null'
+        amount:
+          type: integer
+          title: Amount
+        block_timestamp:
+          type: string
+          title: Block Timestamp
+        source_event:
+          type: string
+          enum:
+            - Unlock
+            - ForceUnlock
+            - ForceChangeLockedAccount
+          title: Source Event
+          description: Source Event
+        data:
+          anyOf:
+            - $ref: '#/components/schemas/TransferDataMessage'
+            - additionalProperties: true
+              type: object
+          title: Data
+          description: Event data
+      type: object
+      required:
+        - transaction_hash
+        - token_address
+        - from_address
+        - from_address_personal_information
+        - to_address
+        - to_address_personal_information
+        - amount
+        - block_timestamp
+        - source_event
+        - data
+      title: TransferWithMessage
+      description: |-
+        Transfer data for Unlock, ForceUnlock, ForceChangeLockedAccount events
+
+        - Source Event: Unlock, ForceUnlock, ForceChangeLockedAccount
     TxData:
       properties:
         hash:
@@ -16911,77 +19679,9 @@ components:
       type: string
       enum:
         - garnishment
-        - inheritance
         - force_unlock
+        - ibet_wst_bridge
       title: UnlockMessage
-    UnlockTransfer:
-      properties:
-        transaction_hash:
-          type: string
-          title: Transaction Hash
-        token_address:
-          type: string
-          title: Token Address
-        from_address:
-          type: string
-          title: From Address
-        from_address_personal_information:
-          anyOf:
-            - $ref: '#/components/schemas/PersonalInfo'
-            - type: 'null'
-        to_address:
-          type: string
-          title: To Address
-        to_address_personal_information:
-          anyOf:
-            - $ref: '#/components/schemas/PersonalInfo'
-            - type: 'null'
-        amount:
-          type: integer
-          title: Amount
-        block_timestamp:
-          type: string
-          title: Block Timestamp
-        source_event:
-          type: string
-          enum:
-            - Unlock
-            - ForceUnlock
-          title: Source Event
-          description: Source Event
-        data:
-          anyOf:
-            - $ref: '#/components/schemas/UnlockTransferDataMessage'
-            - additionalProperties: true
-              type: object
-          title: Data
-          description: Event data
-      type: object
-      required:
-        - transaction_hash
-        - token_address
-        - from_address
-        - from_address_personal_information
-        - to_address
-        - to_address_personal_information
-        - amount
-        - block_timestamp
-        - source_event
-        - data
-      title: UnlockTransfer
-    UnlockTransferDataMessage:
-      properties:
-        message:
-          type: string
-          enum:
-            - garnishment
-            - inheritance
-            - force_unlock
-          title: Message
-      type: object
-      required:
-        - message
-      title: UnlockTransferDataMessage
     UpdateFreezeLogRequest:
       properties:
         account_address:
@@ -17105,6 +19805,8 @@ tags:
     description: Messaging functions with external systems
   - name: '[misc] sealed_tx'
     description: Sealed transaction
+  - name: '[misc] ibet_wst'
+    description: IbetWST related features
   - name: '[misc] settlement_agent'
     description: Settlement related features for paying agent
   - name: '[misc] blockchain_explorer'

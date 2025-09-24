@@ -34,7 +34,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -53,7 +53,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -64,7 +64,7 @@ class TestCreateTokenHoldersCollection:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -109,7 +109,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -120,7 +120,7 @@ class TestCreateTokenHoldersCollection:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -177,7 +177,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -188,7 +188,7 @@ class TestCreateTokenHoldersCollection:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -221,7 +221,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -232,7 +232,7 @@ class TestCreateTokenHoldersCollection:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -259,7 +259,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -270,7 +270,7 @@ class TestCreateTokenHoldersCollection:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -305,7 +305,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -316,7 +316,7 @@ class TestCreateTokenHoldersCollection:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -350,7 +350,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address1 = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -361,7 +361,7 @@ class TestCreateTokenHoldersCollection:
         _token1.issuer_address = issuer_address
         _token1.token_address = token_address1
         _token1.abi = {}
-        _token1.version = TokenVersion.V_25_06
+        _token1.version = TokenVersion.V_25_09
         async_db.add(_token1)
 
         await async_db.commit()
@@ -397,7 +397,7 @@ class TestCreateTokenHoldersCollection:
         _token2.issuer_address = issuer_address
         _token2.token_address = token_address2
         _token2.abi = {}
-        _token2.version = TokenVersion.V_25_06
+        _token2.version = TokenVersion.V_25_09
         async_db.add(_token2)
 
         await async_db.commit()
@@ -426,7 +426,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -438,7 +438,7 @@ class TestCreateTokenHoldersCollection:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -466,7 +466,7 @@ class TestCreateTokenHoldersCollection:
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
         # issue token
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -477,7 +477,7 @@ class TestCreateTokenHoldersCollection:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()

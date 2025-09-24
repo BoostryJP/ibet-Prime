@@ -26,17 +26,6 @@ from sqlalchemy import func, select
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-    PersonalInfoContract,
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
@@ -47,11 +36,22 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
+    PersonalInfoContract,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from batch.processor_modify_personal_info import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -193,7 +193,7 @@ class TestProcessor:
     async def test_normal_1(
         self, processor, async_db, caplog: pytest.LogCaptureFixture
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
         # prepare data
@@ -228,7 +228,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = token_contract_address_1
         token_1.abi = {}
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
@@ -241,7 +241,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address_1
         token_2.token_address = token_contract_address_2
         token_2.abi = {}
-        token_2.version = TokenVersion.V_25_06
+        token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
         token_contract_address_3 = await deploy_bond_token_contract(user_1, None)
@@ -251,7 +251,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address_1
         token_3.token_address = token_contract_address_3
         token_3.abi = {}
-        token_3.version = TokenVersion.V_25_06
+        token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
         token_contract_address_4 = await deploy_share_token_contract(user_1, None)
@@ -261,14 +261,14 @@ class TestProcessor:
         token_4.issuer_address = issuer_address_1
         token_4.token_address = token_contract_address_4
         token_4.abi = {}
-        token_4.version = TokenVersion.V_25_06
+        token_4.version = TokenVersion.V_25_09
         async_db.add(token_4)
 
         # PersonalInfo
-        personal_user_1 = config_eth_account("user2")
-        personal_user_2 = config_eth_account("user3")
-        personal_user_3 = config_eth_account("user4")
-        personal_user_4 = config_eth_account("user5")
+        personal_user_1 = default_eth_account("user2")
+        personal_user_2 = default_eth_account("user3")
+        personal_user_3 = default_eth_account("user4")
+        personal_user_4 = default_eth_account("user5")
 
         idx_1 = IDXPersonalInfo()
         idx_1.issuer_address = user_1["address"]

@@ -17,33 +17,71 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Annotated, Optional
+import secrets
+import uuid
+from typing import Annotated, Optional, Sequence
 
 import pytz
-from fastapi import APIRouter, Header, Query
-from sqlalchemy import asc, desc, func, select
+from eth_keyfile import decode_keyfile_json
+from eth_utils import to_checksum_address
+from fastapi import APIRouter, Header, HTTPException, Path, Query
+from sqlalchemy import and_, asc, desc, func, select
+from starlette.requests import Request
 
-import config
 from app.database import DBAsyncSession
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import ScheduledEvents, Token, TokenType
+from app.exceptions import InvalidParameterError
+from app.model import EthereumAddress
+from app.model.db import (
+    EthIbetWSTTx,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
+    IDXEthIbetWSTWhitelist,
+    IDXPersonalInfo,
+    ScheduledEvents,
+    Token,
+    TokenStatus,
+    TokenType,
+)
+from app.model.db.ibet_wst import (
+    IbetWSTAuthorization,
+    IbetWSTTxParamsAddAccountWhiteList,
+    IbetWSTTxParamsDeleteAccountWhiteList,
+    IbetWSTTxParamsForceBurn,
+)
+from app.model.eth import IbetWST, IbetWSTDigestHelper
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
+    AddIbetWSTWhitelistRequest,
+    DeleteIbetWSTWhitelistRequest,
+    ForceBurnIbetWSTRequest,
+    GetIbetWSTWhitelistWithPersonalInfoResponse,
+    IbetWSTTransactionResponse,
     ListAllIssuedTokensQuery,
     ListAllIssuedTokensResponse,
     ListAllScheduledEventsQuery,
     ListAllScheduledEventsResponse,
     ListAllScheduledEventsSortItem,
+    RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse,
 )
-from app.utils.check_utils import address_is_valid_address, validate_headers
+from app.utils.check_utils import (
+    address_is_valid_address,
+    check_auth,
+    eoa_password_is_encrypted_value,
+    validate_headers,
+)
 from app.utils.docs_utils import get_routers_responses
+from app.utils.eth_contract_utils import EthWeb3
 from app.utils.fastapi_utils import json_response
+from config import IBET_WST_FEATURE_ENABLED, TZ
+from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(
     prefix="",
     tags=["token_common"],
 )
 
-local_tz = pytz.timezone(config.TZ)
+local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
 
 
@@ -252,3 +290,533 @@ async def list_all_scheduled_events(
         "scheduled_events": schedule_events,
     }
     return json_response(resp)
+
+
+# GET: /tokens/{token_address}/ibet_wst/whitelists
+@router.get(
+    "/tokens/{token_address}/ibet_wst/whitelists",
+    operation_id="RetrieveIbetWSTWhitelistAccountsWithPersonalInfo",
+    response_model=RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse,
+    responses=get_routers_responses(404, 422),
+)
+async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
+    db: DBAsyncSession,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+):
+    """
+    Retrieve the whitelist accounts of an IbetWST contract with personal information
+
+    - This endpoint retrieves the whitelist accounts of an IbetWST contract along with their personal information.
+    """
+
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    # Get whitelists
+    whitelist_list: Sequence[tuple[IDXEthIbetWSTWhitelist, IDXPersonalInfo]] = (
+        (
+            await db.execute(
+                select(IDXEthIbetWSTWhitelist, IDXPersonalInfo)
+                .where(
+                    IDXEthIbetWSTWhitelist.ibet_wst_address == token.ibet_wst_address
+                )
+                .join(
+                    Token,
+                    IDXEthIbetWSTWhitelist.ibet_wst_address == Token.ibet_wst_address,
+                )
+                .outerjoin(
+                    IDXPersonalInfo,
+                    and_(
+                        Token.issuer_address == IDXPersonalInfo.issuer_address,
+                        IDXEthIbetWSTWhitelist.st_account_address
+                        == IDXPersonalInfo.account_address,
+                    ),
+                )
+                .order_by(IDXEthIbetWSTWhitelist.created.desc())
+            )
+        )
+        .tuples()
+        .all()
+    )
+
+    # Response
+    account_list = []
+    for item in whitelist_list:
+        if item[1] is not None:
+            personal_info = item[1].json()
+            account_list.append(
+                {
+                    "st_account_address": item[0].st_account_address,
+                    "st_account_personal_info": personal_info["personal_info"],
+                    "sc_account_address_in": item[0].sc_account_address_in,
+                    "sc_account_address_out": item[0].sc_account_address_out,
+                }
+            )
+        else:
+            account_list.append(
+                {
+                    "st_account_address": item[0].st_account_address,
+                    "st_account_personal_info": None,
+                    "sc_account_address_in": item[0].sc_account_address_in,
+                    "sc_account_address_out": item[0].sc_account_address_out,
+                }
+            )
+
+    return json_response({"whitelist_accounts": account_list})
+
+
+# GET: /tokens/{token_address}/ibet_wst/whitelists/{account_address}
+@router.get(
+    "/tokens/{token_address}/ibet_wst/whitelists/{account_address}",
+    operation_id="GetIbetWSTWhitelistWithPersonalInfo",
+    response_model=GetIbetWSTWhitelistWithPersonalInfoResponse,
+    responses=get_routers_responses(),
+)
+async def get_ibet_wst_whitelist_with_personal_info(
+    db: DBAsyncSession,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    account_address: Annotated[EthereumAddress, Path(description="Account address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+):
+    """
+    Get IbetWST whitelist status for a specific account with personal information
+
+    - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+    """
+
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    # Get whitelist status
+    wst_contract = IbetWST(to_checksum_address(token.ibet_wst_address))
+    whitelist = await wst_contract.account_white_list(
+        to_checksum_address(account_address)
+    )
+
+    # Get personal information
+    personal_info: IDXPersonalInfo | None = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.issuer_address
+                    == to_checksum_address(issuer_address),
+                    IDXPersonalInfo.account_address
+                    == to_checksum_address(account_address),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+
+    return json_response(
+        {
+            "st_account_address": whitelist.st_account,
+            "st_account_personal_info": personal_info.personal_info
+            if personal_info
+            else None,
+            "sc_account_address_in": whitelist.sc_account_in,
+            "sc_account_address_out": whitelist.sc_account_out,
+            "listed": whitelist.listed,
+        }
+    )
+
+
+# POST: /tokens/{token_address}/ibet_wst/whitelists/add
+@router.post(
+    "/tokens/{token_address}/ibet_wst/whitelists/add",
+    operation_id="AddIbetWSTWhitelist",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(400, 404, 422),
+)
+async def add_ibet_wst_whitelist(
+    db: DBAsyncSession,
+    request: Request,
+    data: AddIbetWSTWhitelistRequest,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+    eoa_password: Annotated[Optional[str], Header(description="EOA passphrase")] = None,
+    auth_token: Annotated[
+        Optional[str], Header(description="JWT authentication token")
+    ] = None,
+):
+    """
+    Add an account to the IbetWST whitelist
+
+    - This endpoint allows an issuer to add an account to the whitelist of an IbetWST contract.
+    """
+
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    # - Check if the eoa_password or auth_token is valid
+    _account, decrypt_password = await check_auth(
+        request=request,
+        db=db,
+        issuer_address=to_checksum_address(issuer_address),
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+    )
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    # Generate IbetWST contract instance
+    contract = IbetWST(token.ibet_wst_address)
+
+    # Generate nonce
+    nonce = secrets.token_bytes(32)
+
+    # Get domain separator
+    domain_separator = await contract.domain_separator()
+
+    # Generate digest
+    digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
+        domain_separator=domain_separator,
+        st_account=data.st_account_address,  # ST Account to be added to whitelist
+        sc_account_in=data.sc_account_address_in,  # SC Account for deposits
+        sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
+        nonce=nonce,
+    )
+
+    # Sign the digest from the authorizer's private key
+    signature = EthWeb3.eth.account.unsafe_sign_hash(digest, private_key)
+
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = token.ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+        st_account=data.st_account_address,  # ST Account to be added to whitelist
+        sc_account_in=data.sc_account_address_in,  # SC Account for deposits
+        sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
+    )
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = to_checksum_address(issuer_address)
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=nonce.hex(),
+        v=signature.v,
+        r=signature.r.to_bytes(32).hex(),
+        s=signature.s.to_bytes(32).hex(),
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
+
+
+# POST: /tokens/{token_address}/ibet_wst/whitelists/delete
+@router.post(
+    "/tokens/{token_address}/ibet_wst/whitelists/delete",
+    operation_id="DeleteIbetWSTWhitelist",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(400, 404, 422),
+)
+async def delete_ibet_wst_whitelist(
+    db: DBAsyncSession,
+    request: Request,
+    data: DeleteIbetWSTWhitelistRequest,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+    eoa_password: Annotated[Optional[str], Header(description="EOA passphrase")] = None,
+    auth_token: Annotated[
+        Optional[str], Header(description="JWT authentication token")
+    ] = None,
+):
+    """
+    Delete an account from the IbetWST whitelist
+
+    - This endpoint allows an issuer to delete an account from the whitelist of an IbetWST contract.
+    """
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    # - Check if the eoa_password or auth_token is valid
+    _account, decrypt_password = await check_auth(
+        request=request,
+        db=db,
+        issuer_address=to_checksum_address(issuer_address),
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+    )
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+    if token.token_status == TokenStatus.PENDING:
+        raise InvalidParameterError("This token is temporarily unavailable")
+
+    # Generate IbetWST contract instance
+    contract = IbetWST(token.ibet_wst_address)
+
+    # Generate nonce
+    nonce = secrets.token_bytes(32)
+
+    # Get domain separator
+    domain_separator = await contract.domain_separator()
+
+    # Generate digest
+    digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
+        domain_separator=domain_separator,
+        st_account=data.st_account_address,  # Account to be deleted to whitelist
+        nonce=nonce,
+    )
+
+    # Sign the digest from the authorizer's private key
+    signature = EthWeb3.eth.account.unsafe_sign_hash(digest, private_key)
+
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = token.ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
+        st_account=data.st_account_address,  # Account to be deleted to whitelist
+    )
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = to_checksum_address(issuer_address)
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=nonce.hex(),
+        v=signature.v,
+        r=signature.r.to_bytes(32).hex(),
+        s=signature.s.to_bytes(32).hex(),
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})
+
+
+# POST: /tokens/{token_address}/ibet_wst/positions/force_burn
+@router.post(
+    "/tokens/{token_address}/ibet_wst/positions/force_burn",
+    operation_id="ForceBurnIbetWSTPosition",
+    response_model=IbetWSTTransactionResponse,
+    responses=get_routers_responses(400, 404, 422),
+)
+async def force_burn_ibet_wst_position(
+    db: DBAsyncSession,
+    request: Request,
+    data: ForceBurnIbetWSTRequest,
+    token_address: Annotated[EthereumAddress, Path(description="Token address")],
+    issuer_address: Annotated[str, Header(description="Issuer address")],
+    eoa_password: Annotated[Optional[str], Header(description="EOA passphrase")] = None,
+    auth_token: Annotated[
+        Optional[str], Header(description="JWT authentication token")
+    ] = None,
+):
+    """
+    Force burn an IbetWST position for a specific account
+
+    - This endpoint allows an issuer to force burn an IbetWST position for a specific account.
+    """
+
+    # Check if IBET_WST feature is enabled
+    if IBET_WST_FEATURE_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Authentication
+    # - Check if the eoa_password or auth_token is valid
+    issuer_account, decrypt_password = await check_auth(
+        request=request,
+        db=db,
+        issuer_address=to_checksum_address(issuer_address),
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Get private key
+    keyfile_json = issuer_account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+    )
+
+    # Get Token
+    token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == to_checksum_address(issuer_address),
+                    Token.token_address == to_checksum_address(token_address),
+                    Token.token_status != TokenStatus.FAILED,
+                    Token.ibet_wst_address.is_not(None),
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if token is None:
+        raise HTTPException(status_code=404, detail="Token not found")
+    if token.token_status == TokenStatus.PENDING:
+        raise InvalidParameterError("This token is temporarily unavailable")
+
+    # Generate IbetWST contract instance
+    contract = IbetWST(token.ibet_wst_address)
+
+    # Generate nonce
+    nonce = secrets.token_bytes(32)
+
+    # Get domain separator
+    domain_separator = await contract.domain_separator()
+
+    # Generate digest
+    digest = IbetWSTDigestHelper.generate_force_burn_from_digest(
+        domain_separator=domain_separator,
+        account_address=data.account_address,  # Account to force burn
+        value=data.value,  # Amount to force burn
+        nonce=nonce,
+    )
+
+    # Sign the digest from the authorizer's private key
+    signature = EthWeb3.eth.account.unsafe_sign_hash(digest, private_key)
+
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = EthIbetWSTTx()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.FORCE_BURN
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = token.ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsForceBurn(
+        account=data.account_address,  # Account to force burn
+        value=data.value,  # Amount to force burn
+    )
+    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+    wst_tx.authorizer = to_checksum_address(issuer_address)
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=nonce.hex(),
+        v=signature.v,
+        r=signature.r.to_bytes(32).hex(),
+        s=signature.s.to_bytes(32).hex(),
+    )
+    db.add(wst_tx)
+    await db.commit()
+
+    return json_response({"tx_id": tx_id})

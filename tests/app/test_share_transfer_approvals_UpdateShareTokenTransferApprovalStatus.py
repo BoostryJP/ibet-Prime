@@ -27,13 +27,6 @@ from sqlalchemy import select
 
 import config
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token_escrow import (
-    ApproveTransferParams as EscrowApproveTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    ApproveTransferParams,
-    CancelTransferParams,
-)
 from app.model.db import (
     Account,
     AuthToken,
@@ -46,8 +39,15 @@ from app.model.db import (
     TransferApprovalHistory,
     TransferApprovalOperationType,
 )
+from app.model.ibet.tx_params.ibet_security_token_escrow import (
+    ApproveTransferParams as EscrowApproveTransferParams,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    ApproveTransferParams,
+    CancelTransferParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestUpdateShareTokenTransferApprovalStatus:
@@ -76,7 +76,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -92,7 +92,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -150,7 +150,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -175,9 +175,9 @@ class TestUpdateShareTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=ApproveTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=ApproveTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
         approval_op_list: list[TransferApprovalHistory] = (
@@ -216,7 +216,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -232,7 +232,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -291,7 +291,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
-            target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+            target="app.model.ibet.exchange.IbetSecurityTokenEscrow.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -316,9 +316,9 @@ class TestUpdateShareTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=EscrowApproveTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=EscrowApproveTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
         approval_op_list: list[TransferApprovalHistory] = (
@@ -357,7 +357,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_2_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -373,7 +373,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -431,7 +431,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -456,9 +456,9 @@ class TestUpdateShareTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=CancelTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=CancelTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
         cancel_op_list: list[TransferApprovalHistory] = (
@@ -496,7 +496,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -518,7 +518,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -576,7 +576,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -601,9 +601,9 @@ class TestUpdateShareTokenTransferApprovalStatus:
         }
 
         mock_transfer.assert_called_once_with(
-            data=ApproveTransferParams(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY,
+            tx_params=ApproveTransferParams(**_expected),
+            tx_sender=issuer_address,
+            tx_sender_key=ANY,
         )
 
     ###########################################################################
@@ -647,7 +647,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # missing body: operation_type
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
 
@@ -679,7 +679,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # invalid value: body
     @pytest.mark.asyncio
     async def test_error_1_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
 
@@ -747,7 +747,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # not account
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         id = 10
@@ -774,7 +774,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # invalid password
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -810,7 +810,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # token
     @pytest.mark.asyncio
     async def test_error_3_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -846,7 +846,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # transfer approval
     @pytest.mark.asyncio
     async def test_error_3_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -862,7 +862,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -891,7 +891,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # processing Token
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -908,7 +908,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -937,7 +937,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # already approved
     @pytest.mark.asyncio
     async def test_error_4_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -953,7 +953,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1003,7 +1003,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # canceled application
     @pytest.mark.asyncio
     async def test_error_4_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1019,7 +1019,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1069,7 +1069,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # escrow has not been finished yet
     @pytest.mark.asyncio
     async def test_error_4_4(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1085,7 +1085,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1133,7 +1133,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # application that cannot be canceled
     @pytest.mark.asyncio
     async def test_error_4_5(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1149,7 +1149,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1197,7 +1197,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # This operation is duplicated
     @pytest.mark.asyncio
     async def test_error_4_6(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1213,7 +1213,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1269,12 +1269,12 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # IbetSecurityTokenInterface.approve_transfer
     # raise SendTransactionError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+        "app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
     async def test_error_5_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1290,7 +1290,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1370,7 +1370,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # return fail with Revert
     @pytest.mark.asyncio
     async def test_error_5_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1386,7 +1386,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1444,11 +1444,11 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             side_effect=ContractRevertError("110902"),
         )
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -1479,12 +1479,12 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # IbetSecurityTokenEscrow.approve_transfer
     # raise SendTransactionError
     @mock.patch(
-        "app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+        "app.model.ibet.exchange.IbetSecurityTokenEscrow.approve_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
     async def test_error_5_3(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1500,7 +1500,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1581,7 +1581,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # return fail with Revert
     @pytest.mark.asyncio
     async def test_error_5_4(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1597,7 +1597,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1656,7 +1656,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
-            target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+            target="app.model.ibet.exchange.IbetSecurityTokenEscrow.approve_transfer",
             side_effect=ContractRevertError("110902"),
         )
 
@@ -1684,12 +1684,12 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # IbetSecurityTokenInterface.cancel_transfer
     # raise SendTransactionError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+        "app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
     async def test_error_6_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1705,7 +1705,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1785,7 +1785,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # return fail with Revert
     @pytest.mark.asyncio
     async def test_error_6_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1801,7 +1801,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1859,7 +1859,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.cancel_transfer",
             side_effect=ContractRevertError("110802"),
         )
 
@@ -1886,7 +1886,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # personal information for from_address is not registered
     @pytest.mark.asyncio
     async def test_error_7_1(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1902,7 +1902,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -1928,7 +1928,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 
@@ -1955,7 +1955,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
     # personal information for to_address is not registered
     @pytest.mark.asyncio
     async def test_error_7_2(self, async_client, async_db):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
         # prepare data
@@ -1971,7 +1971,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         id = 10
@@ -2013,7 +2013,7 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
-            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            target="app.model.ibet.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1}),
         )
 

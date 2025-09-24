@@ -32,7 +32,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListAllShareTokenHolders:
@@ -47,7 +47,7 @@ class TestListAllShareTokenHolders:
     # 0 record
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -62,7 +62,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -85,7 +85,7 @@ class TestListAllShareTokenHolders:
     # - Holder's extra info is not set
     @pytest.mark.asyncio
     async def test_normal_2_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -102,7 +102,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: Position
@@ -213,7 +213,7 @@ class TestListAllShareTokenHolders:
     # - Holder's extra info is set
     @pytest.mark.asyncio
     async def test_normal_2_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -230,7 +230,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: Position
@@ -352,7 +352,7 @@ class TestListAllShareTokenHolders:
     # Multi record
     @pytest.mark.asyncio
     async def test_normal_3_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -369,7 +369,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -621,7 +621,7 @@ class TestListAllShareTokenHolders:
     # Base query: key_manager_type
     @pytest.mark.asyncio
     async def test_normal_3_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -638,7 +638,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -743,7 +743,7 @@ class TestListAllShareTokenHolders:
     # Search filter: including_former_holder=None
     @pytest.mark.asyncio
     async def test_normal_4_1_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -760,7 +760,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -909,7 +909,7 @@ class TestListAllShareTokenHolders:
     # Search filter: including_former_holder=True
     @pytest.mark.asyncio
     async def test_normal_4_1_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -927,7 +927,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -1094,7 +1094,7 @@ class TestListAllShareTokenHolders:
     # Search filter: balance & "="
     @pytest.mark.asyncio
     async def test_normal_4_2_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -1111,7 +1111,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1297,7 +1297,7 @@ class TestListAllShareTokenHolders:
     # Search filter: balance & ">="
     @pytest.mark.asyncio
     async def test_normal_4_2_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -1314,7 +1314,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1527,7 +1527,7 @@ class TestListAllShareTokenHolders:
     # Search filter: balance & "<="
     @pytest.mark.asyncio
     async def test_normal_4_2_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -1544,7 +1544,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1757,7 +1757,7 @@ class TestListAllShareTokenHolders:
     # Search filter: pending_transfer & "="
     @pytest.mark.asyncio
     async def test_normal_4_3_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -1774,7 +1774,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -1960,7 +1960,7 @@ class TestListAllShareTokenHolders:
     # Search filter: pending_transfer & ">="
     @pytest.mark.asyncio
     async def test_normal_4_3_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -1977,7 +1977,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2190,7 +2190,7 @@ class TestListAllShareTokenHolders:
     # Search filter: pending_transfer & "<="
     @pytest.mark.asyncio
     async def test_normal_4_3_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -2207,7 +2207,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2420,7 +2420,7 @@ class TestListAllShareTokenHolders:
     # Search filter: locked & "="
     @pytest.mark.asyncio
     async def test_normal_4_4_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -2437,7 +2437,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2623,7 +2623,7 @@ class TestListAllShareTokenHolders:
     # Search filter: locked & ">="
     @pytest.mark.asyncio
     async def test_normal_4_4_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -2640,7 +2640,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -2853,7 +2853,7 @@ class TestListAllShareTokenHolders:
     # Search filter: locked & "<="
     @pytest.mark.asyncio
     async def test_normal_4_4_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -2871,7 +2871,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3122,7 +3122,7 @@ class TestListAllShareTokenHolders:
     # Search filter: balance + pending_transfer & "="
     @pytest.mark.asyncio
     async def test_normal_4_5_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -3139,7 +3139,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3328,7 +3328,7 @@ class TestListAllShareTokenHolders:
     # Search filter: balance + pending_transfer & ">="
     @pytest.mark.asyncio
     async def test_normal_4_5_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -3345,7 +3345,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3561,7 +3561,7 @@ class TestListAllShareTokenHolders:
     # Search filter: balance + pending_transfer & "<="
     @pytest.mark.asyncio
     async def test_normal_4_5_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -3578,7 +3578,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3794,7 +3794,7 @@ class TestListAllShareTokenHolders:
     # Search filter: holder_name
     @pytest.mark.asyncio
     async def test_normal_4_6(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -3811,7 +3811,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -3997,7 +3997,7 @@ class TestListAllShareTokenHolders:
     # Search filter: key_manager
     @pytest.mark.asyncio
     async def test_normal_4_7(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -4014,7 +4014,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4227,7 +4227,7 @@ class TestListAllShareTokenHolders:
     # Search filter: account_address
     @pytest.mark.asyncio
     async def test_normal_4_8(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -4244,7 +4244,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4430,7 +4430,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: created
     @pytest.mark.asyncio
     async def test_normal_5_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -4447,7 +4447,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4690,7 +4690,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: account_address
     @pytest.mark.asyncio
     async def test_normal_5_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -4707,7 +4707,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -4950,7 +4950,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: balance
     @pytest.mark.asyncio
     async def test_normal_5_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -4967,7 +4967,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -5210,7 +5210,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: pending_transfer
     @pytest.mark.asyncio
     async def test_normal_5_4(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -5227,7 +5227,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -5470,7 +5470,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: locked
     @pytest.mark.asyncio
     async def test_normal_5_5(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -5487,7 +5487,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -5730,7 +5730,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: balance + pending_transfer
     @pytest.mark.asyncio
     async def test_normal_5_6(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -5747,7 +5747,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -5990,7 +5990,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: holder_name
     @pytest.mark.asyncio
     async def test_normal_5_7(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -6008,7 +6008,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -6290,7 +6290,7 @@ class TestListAllShareTokenHolders:
     # Sort Item: key_manager
     @pytest.mark.asyncio
     async def test_normal_5_8(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -6308,7 +6308,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -6590,7 +6590,7 @@ class TestListAllShareTokenHolders:
     # Pagination
     @pytest.mark.asyncio
     async def test_normal_6_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -6607,7 +6607,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -6820,7 +6820,7 @@ class TestListAllShareTokenHolders:
     # Pagination (over offset)
     @pytest.mark.asyncio
     async def test_normal_6_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -6837,7 +6837,7 @@ class TestListAllShareTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: account_address_1
@@ -7024,7 +7024,7 @@ class TestListAllShareTokenHolders:
     # InvalidParameterError: issuer does not exist
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -7045,7 +7045,7 @@ class TestListAllShareTokenHolders:
     # HTTPException 404: token not found
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -7073,7 +7073,7 @@ class TestListAllShareTokenHolders:
     # InvalidParameterError: processing token
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
@@ -7084,7 +7084,7 @@ class TestListAllShareTokenHolders:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data

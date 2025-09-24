@@ -30,16 +30,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-)
 from app.model.db import (
     LedgerCreationRequest,
     LedgerCreationStatus,
     TokenType,
 )
-from app.utils.ledger_utils import (
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
+)
+from app.utils.ibet_ledger_utils import (
     finalize_ledger,
     sync_request_with_registered_personal_info,
 )

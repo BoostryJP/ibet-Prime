@@ -72,8 +72,8 @@ class LockEventCategory(StrEnum):
 
 class LockMessage(StrEnum):
     garnishment = "garnishment"
-    inheritance = "inheritance"
     force_lock = "force_lock"
+    ibet_wst_bridge = "ibet_wst_bridge"
 
 
 class LockDataMessage(BaseModel):
@@ -82,8 +82,8 @@ class LockDataMessage(BaseModel):
 
 class UnlockMessage(StrEnum):
     garnishment = "garnishment"
-    inheritance = "inheritance"
     force_unlock = "force_unlock"
+    ibet_wst_bridge = "ibet_wst_bridge"
 
 
 class UnlockDataMessage(BaseModel):

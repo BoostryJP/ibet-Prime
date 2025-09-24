@@ -24,7 +24,6 @@ import pytest
 from sqlalchemy import and_, select
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token import ForcedTransferParams
 from app.model.db import (
     Account,
     BulkTransfer,
@@ -35,9 +34,10 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
+from app.model.ibet.tx_params.ibet_security_token import ForcedTransferParams
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_bulk_transfer import Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -48,16 +48,16 @@ def processor(async_db):
 class TestProcessor:
     account_list = [
         {
-            "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"],
+            "address": default_eth_account("user1")["address"],
+            "keyfile": default_eth_account("user1")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"],
+            "address": default_eth_account("user2")["address"],
+            "keyfile": default_eth_account("user2")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"],
+            "address": default_eth_account("user3")["address"],
+            "keyfile": default_eth_account("user3")["keyfile_json"],
         },
     ]
 
@@ -127,7 +127,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.forced_transfer",
             return_value=None,
         ) as IbetStraightBondContract_transfer:
             await processor.process()
@@ -135,13 +135,13 @@ class TestProcessor:
 
         # Assertion
         IbetStraightBondContract_transfer.assert_called_with(
-            data=ForcedTransferParams(
+            tx_params=ForcedTransferParams(
                 from_address=_from_address["address"],
                 to_address=_to_address["address"],
                 amount=1,
             ),
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (
@@ -207,7 +207,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.forced_transfer",
+            target="app.model.ibet.token.IbetShareContract.forced_transfer",
             return_value=None,
         ) as IbetShareContract_transfer:
             await processor.process()
@@ -215,13 +215,13 @@ class TestProcessor:
 
         # Assertion
         IbetShareContract_transfer.assert_called_with(
-            data=ForcedTransferParams(
+            tx_params=ForcedTransferParams(
                 from_address=_from_address["address"],
                 to_address=_to_address["address"],
                 amount=1,
             ),
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (
@@ -267,7 +267,7 @@ class TestProcessor:
             token.issuer_address = _account["address"]
             token.abi = {}
             token.tx_hash = ""
-            token.version = TokenVersion.V_25_06
+            token.version = TokenVersion.V_25_09
             async_db.add(token)
 
         # Prepare data : BulkTransferUpload
@@ -298,7 +298,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.bulk_forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.bulk_forced_transfer",
             return_value=None,
         ) as IbetStraightBondContract_bulk_transfer:
             await processor.process()
@@ -306,7 +306,7 @@ class TestProcessor:
 
         # Assertion
         IbetStraightBondContract_bulk_transfer.assert_called_with(
-            data=[
+            tx_params=[
                 ForcedTransferParams(
                     from_address=_from_address["address"],
                     to_address=_to_address["address"],
@@ -323,8 +323,8 @@ class TestProcessor:
                     amount=1,
                 ),
             ],
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (
@@ -370,7 +370,7 @@ class TestProcessor:
             token.issuer_address = _account["address"]
             token.abi = {}
             token.tx_hash = ""
-            token.version = TokenVersion.V_25_06
+            token.version = TokenVersion.V_25_09
             async_db.add(token)
 
         # Prepare data : BulkTransferUpload
@@ -401,7 +401,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.bulk_forced_transfer",
+            target="app.model.ibet.token.IbetShareContract.bulk_forced_transfer",
             return_value=None,
         ) as IbetShareContract_bulk_transfer:
             await processor.process()
@@ -409,7 +409,7 @@ class TestProcessor:
 
         # Assertion
         IbetShareContract_bulk_transfer.assert_called_with(
-            data=[
+            tx_params=[
                 ForcedTransferParams(
                     from_address=_from_address["address"],
                     to_address=_to_address["address"],
@@ -426,8 +426,8 @@ class TestProcessor:
                     amount=1,
                 ),
             ],
-            tx_from=_account["address"],
-            private_key=ANY,
+            tx_sender=_account["address"],
+            tx_sender_key=ANY,
         )
 
         _bulk_transfer_upload = (
@@ -540,7 +540,7 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_transfer = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.forced_transfer",
             return_value=None,
         )
         processing_issuer = patch(
@@ -681,7 +681,7 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_transfer = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.forced_transfer",
             return_value=None,
         )
         processing_issuer = patch(
@@ -876,7 +876,7 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_transfer = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.forced_transfer",
             side_effect=SendTransactionError(),
         )
 
@@ -966,7 +966,7 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_transfer = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.forced_transfer",
             side_effect=ContractRevertError(code_msg="120601"),
         )
 
@@ -1043,7 +1043,7 @@ class TestProcessor:
         token.issuer_address = _account["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BulkTransferUpload
@@ -1072,7 +1072,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.bulk_forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.bulk_forced_transfer",
             side_effect=SendTransactionError(),
         ):
             await processor.process()
@@ -1119,7 +1119,7 @@ class TestProcessor:
         token.issuer_address = _account["address"]
         token.abi = {}
         token.tx_hash = ""
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BulkTransferUpload
@@ -1148,7 +1148,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.bulk_forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.bulk_forced_transfer",
             side_effect=ContractRevertError(code_msg="120601"),
         ):
             await processor.process()
@@ -1215,7 +1215,7 @@ class TestProcessor:
 
         # mock
         IbetStraightBondContract_transfer = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.forced_transfer",
+            target="app.model.ibet.token.IbetStraightBondContract.forced_transfer",
             return_value=None,
         )
 

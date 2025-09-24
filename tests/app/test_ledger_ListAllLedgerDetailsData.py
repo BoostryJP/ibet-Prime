@@ -22,7 +22,7 @@ from datetime import datetime
 import pytest
 
 from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListAllLedgerDetailsData:
@@ -37,7 +37,7 @@ class TestListAllLedgerDetailsData:
     # set issuer-address
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -48,7 +48,7 @@ class TestListAllLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
@@ -154,7 +154,7 @@ class TestListAllLedgerDetailsData:
     # set issuer-address
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -165,7 +165,7 @@ class TestListAllLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
@@ -268,7 +268,7 @@ class TestListAllLedgerDetailsData:
     # limit-offset
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -279,7 +279,7 @@ class TestListAllLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _details_data_1_1 = LedgerDetailsData()
@@ -409,7 +409,7 @@ class TestListAllLedgerDetailsData:
     # set issuer-address
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -423,7 +423,7 @@ class TestListAllLedgerDetailsData:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -474,7 +474,7 @@ class TestListAllLedgerDetailsData:
     # Processing Token
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -486,7 +486,7 @@ class TestListAllLedgerDetailsData:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()

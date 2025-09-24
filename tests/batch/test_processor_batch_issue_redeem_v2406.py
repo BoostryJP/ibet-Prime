@@ -28,14 +28,6 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_share import (
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    RedeemParams as IbetShareRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    RedeemParams as IbetStraightBondRedeemParams,
-)
 from app.model.db import (
     Account,
     BatchIssueRedeem,
@@ -45,9 +37,17 @@ from app.model.db import (
     NotificationType,
     TokenType,
 )
+from app.model.ibet.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_batch_issue_redeem import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -72,7 +72,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -83,7 +83,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -117,7 +117,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
             await processor.process()
@@ -125,11 +125,11 @@ class TestProcessor:
 
         # Assertion: contract
         IbetStraightBondContract_additional_issue.assert_called_with(
-            data=IbetStraightBondAdditionalIssueParams(
+            tx_params=IbetStraightBondAdditionalIssueParams(
                 account_address=target_address, amount=target_amount
             ),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB
@@ -179,7 +179,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -190,7 +190,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -224,7 +224,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.redeem",
+            target="app.model.ibet.token.IbetStraightBondContract.redeem",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_redeem:
             await processor.process()
@@ -232,11 +232,11 @@ class TestProcessor:
 
         # Assertion: contract
         IbetStraightBondContract_redeem.assert_called_with(
-            data=IbetStraightBondRedeemParams(
+            tx_params=IbetStraightBondRedeemParams(
                 account_address=target_address, amount=target_amount
             ),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB
@@ -286,7 +286,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_3(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -297,7 +297,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -331,7 +331,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.additional_issue",
+            target="app.model.ibet.token.IbetShareContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetShareContract_additional_issue:
             await processor.process()
@@ -339,11 +339,11 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_additional_issue.assert_called_with(
-            data=IbetShareAdditionalIssueParams(
+            tx_params=IbetShareAdditionalIssueParams(
                 account_address=target_address, amount=target_amount
             ),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB
@@ -393,7 +393,7 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_4(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
@@ -404,7 +404,7 @@ class TestProcessor:
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -438,7 +438,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetShareContract.redeem",
+            target="app.model.ibet.token.IbetShareContract.redeem",
             return_value="mock_tx_hash",
         ) as IbetShareContract_redeem:
             await processor.process()
@@ -446,11 +446,11 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_redeem.assert_called_with(
-            data=IbetShareRedeemParams(
+            tx_params=IbetShareRedeemParams(
                 account_address=target_address, amount=target_amount
             ),
-            tx_from=issuer_address,
-            private_key=issuer_pk,
+            tx_sender=issuer_address,
+            tx_sender_key=issuer_pk,
         )
 
         # Assertion: DB
@@ -503,12 +503,12 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -535,7 +535,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
             await processor.process()
@@ -590,14 +590,14 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_2(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("wrong_password")  # wrong password
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -631,7 +631,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             return_value="mock_tx_hash",
         ) as IbetStraightBondContract_additional_issue:
             await processor.process()
@@ -686,14 +686,14 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_3(self, processor, async_db, caplog):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -734,7 +734,7 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
             side_effect=SendTransactionError(),
         ):
             await processor.process()
@@ -790,14 +790,14 @@ class TestProcessor:
         self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
     ):
         # Test settings
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
         issuer_eoa_password = E2EEUtils.encrypt("password")
 
         token_address = "test_token_address"
 
-        target_account = config_eth_account("user2")
+        target_account = default_eth_account("user2")
         target_address = target_account["address"]
         target_amount = 10
 
@@ -850,11 +850,11 @@ class TestProcessor:
         # mock
         with (
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+                target="app.model.ibet.token.IbetStraightBondContract.additional_issue",
                 side_effect=ContractRevertError("999999"),
             ),
             patch(
-                target="app.model.blockchain.token.IbetShareContract.additional_issue",
+                target="app.model.ibet.token.IbetShareContract.additional_issue",
                 side_effect=ContractRevertError("999999"),
             ),
         ):

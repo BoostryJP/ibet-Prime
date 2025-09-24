@@ -25,10 +25,10 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token import ForceUnlockParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_security_token import ForceUnlockParams
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestForceUnlock:
@@ -42,19 +42,19 @@ class TestForceUnlock:
     # <Normal_1_1>
     # Authorization by eoa-password
     # message is not set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_1_1(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -71,7 +71,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -97,7 +97,7 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            tx_params=ForceUnlockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -108,8 +108,8 @@ class TestForceUnlock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -118,19 +118,19 @@ class TestForceUnlock:
     # <Normal_1_2>
     # Authorization by eoa-password
     # -message is set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_1_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -147,7 +147,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -174,7 +174,7 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            tx_params=ForceUnlockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -185,8 +185,8 @@ class TestForceUnlock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -194,19 +194,19 @@ class TestForceUnlock:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -229,7 +229,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -252,7 +252,7 @@ class TestForceUnlock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceUnlockParams(
+            tx_params=ForceUnlockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -263,8 +263,8 @@ class TestForceUnlock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -422,12 +422,12 @@ class TestForceUnlock:
     async def test_error_1_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -466,12 +466,12 @@ class TestForceUnlock:
     async def test_error_1_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -513,12 +513,12 @@ class TestForceUnlock:
     async def test_error_1_6(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -555,10 +555,11 @@ class TestForceUnlock:
                 {
                     "type": "enum",
                     "loc": ["body", "message"],
-                    "msg": "Input should be 'garnishment', 'inheritance' or 'force_unlock'",
+                    "msg": "Input should be 'garnishment', "
+                    "'force_unlock' or 'ibet_wst_bridge'",
                     "input": "invalid_message",
                     "ctx": {
-                        "expected": "'garnishment', 'inheritance' or 'force_unlock'"
+                        "expected": "'garnishment', 'force_unlock' or 'ibet_wst_bridge'"
                     },
                 }
             ],
@@ -571,12 +572,12 @@ class TestForceUnlock:
     async def test_error_2_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -611,12 +612,12 @@ class TestForceUnlock:
     async def test_error_2_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -659,12 +660,12 @@ class TestForceUnlock:
     async def test_error_3_1(self, async_client, async_db):
         account_address = "invalid_address"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -681,7 +682,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -716,12 +717,12 @@ class TestForceUnlock:
     async def test_error_3_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -764,12 +765,12 @@ class TestForceUnlock:
     async def test_error_3_3(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -787,7 +788,7 @@ class TestForceUnlock:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -818,19 +819,19 @@ class TestForceUnlock:
     # <Error_4>
     # ContractRevertError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
+        "app.model.ibet.token.IbetSecurityTokenInterface.force_unlock",
         MagicMock(side_effect=ContractRevertError(code_msg="111201")),
     )
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -847,7 +848,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -878,19 +879,19 @@ class TestForceUnlock:
     # <Error_5>
     # SendTransactionError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
+        "app.model.ibet.token.IbetSecurityTokenInterface.force_unlock",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
-        _recipient_address = config_eth_account("user3")["address"]
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -907,7 +908,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

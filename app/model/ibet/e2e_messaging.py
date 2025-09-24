@@ -1,0 +1,185 @@
+"""
+Copyright BOOSTRY Co., Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+See the License for the specific language governing permissions and
+limitations under the License.
+
+SPDX-License-Identifier: Apache-2.0
+"""
+
+import base64
+import json
+import secrets
+
+import boto3
+from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto.Util.Padding import pad
+from web3.exceptions import TimeExhausted
+
+from app.exceptions import ContractRevertError, SendTransactionError
+from app.model import EthereumAddress
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from config import (
+    AWS_KMS_GENERATE_RANDOM_ENABLED,
+    AWS_REGION_NAME,
+    CHAIN_ID,
+    TX_GAS_LIMIT,
+)
+
+
+class E2EMessaging:
+    """E2EMessaging contract"""
+
+    def __init__(self, contract_address: str):
+        self.contract_address = contract_address
+
+    async def send_message(
+        self,
+        to_address: str,
+        message: str,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
+    ):
+        """
+        Send Message
+
+        :param to_address: Recipient address
+        :param message: Message to send
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Private key of the transaction sender
+        """
+        contract = AsyncContractUtils.get_contract(
+            contract_name="E2EMessaging", contract_address=self.contract_address
+        )
+        try:
+            tx = await contract.functions.sendMessage(
+                to_address, message
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_sender,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                tx, tx_sender_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    async def send_message_external(
+        self,
+        to_address: str,
+        _type: str,
+        message_org: str,
+        to_rsa_public_key: str,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
+    ):
+        """
+        Send Message(Format message for external system)
+
+        :param to_address: Recipient address
+        :param _type: Message type
+        :param message_org: Original message to send
+        :param to_rsa_public_key: RSA public key of the recipient
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Private key of the transaction sender
+        """
+
+        # Encrypt message with AES-256-CBC
+        if AWS_KMS_GENERATE_RANDOM_ENABLED:
+            kms = boto3.client(service_name="kms", region_name=AWS_REGION_NAME)
+            result = kms.generate_random(NumberOfBytes=AES.block_size * 2)
+            aes_key = result["Plaintext"]
+            result = kms.generate_random(NumberOfBytes=AES.block_size)
+            aes_iv = result["Plaintext"]
+        else:
+            aes_key = secrets.token_bytes(AES.block_size * 2)
+            aes_iv = secrets.token_bytes(AES.block_size)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        pad_message = pad(message_org.encode("utf-8"), AES.block_size)
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
+
+        # Encrypt AES key with RSA
+        rsa_key = RSA.import_key(to_rsa_public_key)
+        rsa_cipher = PKCS1_OAEP.new(rsa_key)
+        cipher_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
+
+        # Create formatted message
+        message_dict = {
+            "type": _type,
+            "text": {
+                "cipher_key": cipher_key,
+                "message": encrypted_message,
+            },
+        }
+        message = json.dumps(message_dict)
+
+        # Send message
+        tx_hash, tx_receipt = await E2EMessaging(self.contract_address).send_message(
+            to_address=to_address,
+            message=message,
+            tx_sender=tx_sender,
+            tx_sender_key=tx_sender_key,
+        )
+        return tx_hash, tx_receipt
+
+    async def set_public_key(
+        self,
+        public_key: str,
+        key_type: str,
+        tx_sender: EthereumAddress,
+        tx_sender_key: bytes,
+    ):
+        """
+        Set Public Key
+
+        :param public_key: Public key to set
+        :param key_type: Type of the public key (e.g., RSA)
+        :param tx_sender: Transaction sender address
+        :param tx_sender_key: Private key of the transaction sender
+        """
+        contract = AsyncContractUtils.get_contract(
+            contract_name="E2EMessaging", contract_address=self.contract_address
+        )
+        try:
+            tx = await contract.functions.setPublicKey(
+                public_key, key_type
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_sender,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                tx, tx_sender_key
+            )
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)

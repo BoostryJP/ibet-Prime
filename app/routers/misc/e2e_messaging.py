@@ -42,13 +42,13 @@ from app.exceptions import (
     InvalidParameterError,
     SendTransactionError,
 )
-from app.model.blockchain import E2EMessaging
 from app.model.db import (
     E2EMessagingAccount,
     E2EMessagingAccountRsaKey,
     IDXE2EMessaging,
     TransactionLock,
 )
+from app.model.ibet import E2EMessaging
 from app.model.schema import (
     E2EMessagingAccountChangeEOAPasswordRequest,
     E2EMessagingAccountChangeRSAPassphraseRequest,
@@ -59,10 +59,10 @@ from app.model.schema import (
     ListAllE2EMessagesQuery,
     ListAllE2EMessagingResponse,
 )
-from app.utils.contract_utils import AsyncContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -141,8 +141,8 @@ async def create_e2e_messaging_account(
         tx_hash, _ = await E2EMessaging(E2E_MESSAGING_CONTRACT_ADDRESS).set_public_key(
             public_key=rsa_public_key,
             key_type="RSA4096",
-            tx_from=addr,
-            private_key=private_key,
+            tx_sender=addr,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")

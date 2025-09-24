@@ -37,10 +37,10 @@ from app.model.schema import (
     TxDataListResponse,
     TxDataResponse,
 )
-from app.utils.contract_utils import AsyncContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import Web3Wrapper
 from config import BC_EXPLORER_ENABLED
 
 LOG = log.get_logger()

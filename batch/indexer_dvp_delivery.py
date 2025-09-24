@@ -36,7 +36,6 @@ from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
     Account,
     DeliveryStatus,
@@ -53,8 +52,9 @@ from app.model.db import (
     TokenStatus,
     TokenType,
 )
-from app.utils.contract_utils import AsyncContractUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch import free_malloc
 from batch.utils import batch_log
 from config import (
@@ -142,6 +142,7 @@ class Processor:
 
                 # Insert notification events
                 await self.__insert_notification_events(db_session)
+                self.notification_events = []
 
                 await db_session.commit()
         finally:
@@ -615,7 +616,7 @@ class Processor:
         :return: None
         """
         # Verify account exists
-        _buyer = (
+        _buyer: Account | None = (
             await db_session.scalars(
                 select(Account)
                 .where(
@@ -627,7 +628,7 @@ class Processor:
                 .limit(1)
             )
         ).first()
-        _seller = (
+        _seller: Account | None = (
             await db_session.scalars(
                 select(Account)
                 .where(
@@ -639,14 +640,18 @@ class Processor:
                 .limit(1)
             )
         ).first()
-        _agent = await db_session.scalars(
-            select(DVPAgentAccount).where(
-                and_(
-                    DVPAgentAccount.account_address == agent_address,
-                    DVPAgentAccount.is_deleted == False,
+        _agent: DVPAgentAccount | None = (
+            await db_session.scalars(
+                select(DVPAgentAccount)
+                .where(
+                    and_(
+                        DVPAgentAccount.account_address == agent_address,
+                        DVPAgentAccount.is_deleted == False,
+                    )
                 )
+                .limit(1)
             )
-        )
+        ).first()
         if _buyer is None and _seller is None and _agent is None:
             return
 
@@ -678,6 +683,9 @@ class Processor:
                 delivery.confirmed = False
                 delivery.valid = True
                 delivery.status = DeliveryStatus.DELIVERY_CREATED
+                delivery.dedicated_agent_id = (
+                    _agent.dedicated_agent_id if _agent is not None else None
+                )
         elif event_type == "Canceled":
             if delivery is not None:
                 delivery.cancel_blocktimestamp = datetime.fromtimestamp(

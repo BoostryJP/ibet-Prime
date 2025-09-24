@@ -23,18 +23,31 @@ from unittest import mock
 import pytest
 
 from app.model.db import (
+    BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
     BatchIssueRedeemUpload,
+    IDXPersonalInfo,
+    PersonalInfoDataSource,
     Token,
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # target API endpoint
     base_url = "/bond/tokens/{}/redeem/batch"
+
+    upload_id_list = [
+        "0c961f7d-e1ad-40e5-988b-cca3d6009643",
+        "0e778f46-864e-4ec0-b566-21bd31cf63ff",
+    ]
+
+    account_list = [
+        {"address": default_eth_account("user1")["address"], "amount": 1},
+        {"address": default_eth_account("user2")["address"], "amount": 2},
+    ]
 
     ###########################################################################
     # Normal Case
@@ -44,7 +57,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # 0 record
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -55,7 +68,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -69,11 +82,11 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
             "uploads": [],
         }
 
-    # <Normal Case 2>
-    # 1 record
+    # <Normal Case 2_1>
+    # 1 record 1 result(No personal information)
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+    async def test_normal_2_1(self, async_client, async_db):
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -84,17 +97,40 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
-        redeem_upload1.upload_id = str(uuid.uuid4())
+        redeem_upload1.upload_id = self.upload_id_list[0]
         redeem_upload1.token_address = token_address
         redeem_upload1.issuer_address = issuer_address
         redeem_upload1.token_type = TokenType.IBET_STRAIGHT_BOND
         redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM
         redeem_upload1.processed = False
         async_db.add(redeem_upload1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[0]["address"]
+        redeem_record.amount = self.account_list[0]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = "other_issuer_address"
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_1)
 
         await async_db.commit()
 
@@ -112,6 +148,543 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": [
+                        {
+                            "account_address": self.account_list[0]["address"],
+                            "amount": self.account_list[0]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": None,
+                                "address": None,
+                                "birth": None,
+                                "email": None,
+                                "is_corporate": None,
+                                "name": None,
+                                "postal_code": None,
+                                "tax_category": None,
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
+    # <Normal Case 2_2>
+    # 1 record 1 result(With personal information)
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client, async_db):
+        issuer_account = default_eth_account("user1")
+        issuer_address = issuer_account["address"]
+        token_address = "token_address_test"
+
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        async_db.add(token)
+
+        redeem_upload1 = BatchIssueRedeemUpload()
+        redeem_upload1.upload_id = self.upload_id_list[0]
+        redeem_upload1.token_address = token_address
+        redeem_upload1.issuer_address = issuer_address
+        redeem_upload1.token_type = TokenType.IBET_STRAIGHT_BOND
+        redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM
+        redeem_upload1.processed = True
+        async_db.add(redeem_upload1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[0]["address"]
+        redeem_record.amount = self.account_list[0]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = issuer_address
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_1)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(self.base_url.format(token_address), headers={})
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
+            "uploads": [
+                {
+                    "issuer_address": issuer_address,
+                    "processed": True,
+                    "token_address": "token_address_test",
+                    "token_type": "IbetStraightBond",
+                    "batch_id": mock.ANY,
+                    "created": mock.ANY,
+                    "results": [
+                        {
+                            "account_address": self.account_list[0]["address"],
+                            "amount": self.account_list[0]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": "key_manager_test1",
+                                "name": "name_test1",
+                                "postal_code": "postal_code_test1",
+                                "address": "address_test1",
+                                "email": "email_test1",
+                                "birth": "birth_test1",
+                                "is_corporate": False,
+                                "tax_category": 10,
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
+    # <Normal Case 2_3>
+    # 1 record multiple result
+    @pytest.mark.asyncio
+    async def test_normal_2_3(self, async_client, async_db):
+        issuer_account = default_eth_account("user1")
+        issuer_address = issuer_account["address"]
+        token_address = "token_address_test"
+
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        async_db.add(token)
+
+        redeem_upload1 = BatchIssueRedeemUpload()
+        redeem_upload1.upload_id = self.upload_id_list[0]
+        redeem_upload1.token_address = token_address
+        redeem_upload1.issuer_address = issuer_address
+        redeem_upload1.token_type = TokenType.IBET_STRAIGHT_BOND
+        redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM
+        redeem_upload1.processed = True
+        async_db.add(redeem_upload1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[0]["address"]
+        redeem_record.amount = self.account_list[0]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = issuer_address
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[1]["address"]
+        redeem_record.amount = self.account_list[1]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_2 = IDXPersonalInfo()
+        idx_personal_info_2.account_address = self.account_list[1]["address"]
+        idx_personal_info_2.issuer_address = "other_issuer_address"
+        idx_personal_info_2._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_2.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_2)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(self.base_url.format(token_address), headers={})
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
+            "uploads": [
+                {
+                    "issuer_address": issuer_address,
+                    "processed": True,
+                    "token_address": "token_address_test",
+                    "token_type": "IbetStraightBond",
+                    "batch_id": mock.ANY,
+                    "created": mock.ANY,
+                    "results": [
+                        {
+                            "account_address": self.account_list[0]["address"],
+                            "amount": self.account_list[0]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": "key_manager_test1",
+                                "name": "name_test1",
+                                "postal_code": "postal_code_test1",
+                                "address": "address_test1",
+                                "email": "email_test1",
+                                "birth": "birth_test1",
+                                "is_corporate": False,
+                                "tax_category": 10,
+                            },
+                        },
+                        {
+                            "account_address": self.account_list[1]["address"],
+                            "amount": self.account_list[1]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": None,
+                                "address": None,
+                                "birth": None,
+                                "email": None,
+                                "is_corporate": None,
+                                "name": None,
+                                "postal_code": None,
+                                "tax_category": None,
+                            },
+                        },
+                    ],
+                }
+            ],
+        }
+
+    # <Normal Case 2_4>
+    # 1 record(Issuer specified) 1 result(No personal information)
+    @pytest.mark.asyncio
+    async def test_normal_2_4(self, async_client, async_db):
+        issuer_account = default_eth_account("user1")
+        issuer_address = issuer_account["address"]
+        token_address = "token_address_test"
+
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        async_db.add(token)
+
+        redeem_upload1 = BatchIssueRedeemUpload()
+        redeem_upload1.upload_id = self.upload_id_list[0]
+        redeem_upload1.token_address = token_address
+        redeem_upload1.issuer_address = issuer_address
+        redeem_upload1.token_type = TokenType.IBET_STRAIGHT_BOND
+        redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM
+        redeem_upload1.processed = False
+        async_db.add(redeem_upload1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[0]["address"]
+        redeem_record.amount = self.account_list[0]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = "other_issuer_address"
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_1)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(token_address),
+            headers={"issuer-address": issuer_address},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
+            "uploads": [
+                {
+                    "issuer_address": issuer_address,
+                    "processed": False,
+                    "token_address": "token_address_test",
+                    "token_type": "IbetStraightBond",
+                    "batch_id": mock.ANY,
+                    "created": mock.ANY,
+                    "results": [
+                        {
+                            "account_address": self.account_list[0]["address"],
+                            "amount": self.account_list[0]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": None,
+                                "address": None,
+                                "birth": None,
+                                "email": None,
+                                "is_corporate": None,
+                                "name": None,
+                                "postal_code": None,
+                                "tax_category": None,
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
+    # <Normal Case 2_5>
+    # 1 record(Issuer specified) 1 result(With personal information)
+    @pytest.mark.asyncio
+    async def test_normal_2_5(self, async_client, async_db):
+        issuer_account = default_eth_account("user1")
+        issuer_address = issuer_account["address"]
+        token_address = "token_address_test"
+
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        async_db.add(token)
+
+        redeem_upload1 = BatchIssueRedeemUpload()
+        redeem_upload1.upload_id = self.upload_id_list[0]
+        redeem_upload1.token_address = token_address
+        redeem_upload1.issuer_address = issuer_address
+        redeem_upload1.token_type = TokenType.IBET_STRAIGHT_BOND
+        redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM
+        redeem_upload1.processed = True
+        async_db.add(redeem_upload1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[0]["address"]
+        redeem_record.amount = self.account_list[0]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = issuer_address
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_1)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(token_address),
+            headers={"issuer-address": issuer_address},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
+            "uploads": [
+                {
+                    "issuer_address": issuer_address,
+                    "processed": True,
+                    "token_address": "token_address_test",
+                    "token_type": "IbetStraightBond",
+                    "batch_id": mock.ANY,
+                    "created": mock.ANY,
+                    "results": [
+                        {
+                            "account_address": self.account_list[0]["address"],
+                            "amount": self.account_list[0]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": "key_manager_test1",
+                                "name": "name_test1",
+                                "postal_code": "postal_code_test1",
+                                "address": "address_test1",
+                                "email": "email_test1",
+                                "birth": "birth_test1",
+                                "is_corporate": False,
+                                "tax_category": 10,
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
+    # <Normal Case 2_6>
+    # 1 record(Issuer specified) multiple result(With personal information)
+    @pytest.mark.asyncio
+    async def test_normal_2_6(self, async_client, async_db):
+        issuer_account = default_eth_account("user1")
+        issuer_address = issuer_account["address"]
+        token_address = "token_address_test"
+
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        async_db.add(token)
+
+        redeem_upload1 = BatchIssueRedeemUpload()
+        redeem_upload1.upload_id = self.upload_id_list[0]
+        redeem_upload1.token_address = token_address
+        redeem_upload1.issuer_address = issuer_address
+        redeem_upload1.token_type = TokenType.IBET_STRAIGHT_BOND
+        redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM
+        redeem_upload1.processed = True
+        async_db.add(redeem_upload1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[0]["address"]
+        redeem_record.amount = self.account_list[0]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = issuer_address
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_1)
+
+        redeem_record = BatchIssueRedeem()
+        redeem_record.upload_id = self.upload_id_list[0]
+        redeem_record.account_address = self.account_list[1]["address"]
+        redeem_record.amount = self.account_list[1]["amount"]
+        redeem_record.status = 1
+        async_db.add(redeem_record)
+
+        idx_personal_info_2 = IDXPersonalInfo()
+        idx_personal_info_2.account_address = self.account_list[1]["address"]
+        idx_personal_info_2.issuer_address = "other_issuer_address"
+        idx_personal_info_2._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        idx_personal_info_2.data_source = PersonalInfoDataSource.ON_CHAIN
+        async_db.add(idx_personal_info_2)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(token_address),
+            headers={"issuer-address": issuer_address},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
+            "uploads": [
+                {
+                    "issuer_address": issuer_address,
+                    "processed": True,
+                    "token_address": "token_address_test",
+                    "token_type": "IbetStraightBond",
+                    "batch_id": mock.ANY,
+                    "created": mock.ANY,
+                    "results": [
+                        {
+                            "account_address": self.account_list[0]["address"],
+                            "amount": self.account_list[0]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": "key_manager_test1",
+                                "name": "name_test1",
+                                "postal_code": "postal_code_test1",
+                                "address": "address_test1",
+                                "email": "email_test1",
+                                "birth": "birth_test1",
+                                "is_corporate": False,
+                                "tax_category": 10,
+                            },
+                        },
+                        {
+                            "account_address": self.account_list[1]["address"],
+                            "amount": self.account_list[1]["amount"],
+                            "status": 1,
+                            "personal_information": {
+                                "key_manager": None,
+                                "address": None,
+                                "birth": None,
+                                "email": None,
+                                "is_corporate": None,
+                                "name": None,
+                                "postal_code": None,
+                                "tax_category": None,
+                            },
+                        },
+                    ],
                 }
             ],
         }
@@ -120,7 +693,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Multi record
     @pytest.mark.asyncio
     async def test_normal_3_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -132,7 +705,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -196,6 +769,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -204,6 +778,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -212,6 +787,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -220,6 +796,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
             ],
         }
@@ -228,7 +805,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Multi record (Issuer specified)
     @pytest.mark.asyncio
     async def test_normal_3_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -240,7 +817,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -307,6 +884,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -315,6 +893,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
             ],
         }
@@ -323,7 +902,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Multi record (status)
     @pytest.mark.asyncio
     async def test_normal_3_3(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -335,7 +914,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -402,6 +981,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -410,6 +990,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -418,6 +999,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
             ],
         }
@@ -426,7 +1008,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Pagination
     @pytest.mark.asyncio
     async def test_normal_4(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -438,7 +1020,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -505,6 +1087,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -513,6 +1096,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
             ],
         }
@@ -521,7 +1105,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # Sort
     @pytest.mark.asyncio
     async def test_normal_5(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -533,7 +1117,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -600,6 +1184,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -608,6 +1193,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -616,6 +1202,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -624,6 +1211,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
                     "token_type": "IbetStraightBond",
                     "batch_id": mock.ANY,
                     "created": mock.ANY,
+                    "results": mock.ANY,
                 },
             ],
         }
@@ -637,7 +1225,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # query(invalid value)
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -649,7 +1237,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

@@ -34,13 +34,15 @@ class IDXTransferSourceEventType(StrEnum):
     TRANSFER = "Transfer"
     UNLOCK = "Unlock"
     FORCE_UNLOCK = "ForceUnlock"
+    FORCE_CHANGE_LOCKED_ACCOUNT = "ForceChangeLockedAccount"
+    REALLOCATION = "Reallocation"
 
 
 class DataMessage(BaseModel):
     message: Literal[
         "garnishment",
-        "inheritance",
         "force_unlock",
+        "ibet_wst_bridge",
     ]
 
 
@@ -60,19 +62,23 @@ class IDXTransfer(Base):
     to_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # transfer amount
     amount: Mapped[int | None] = mapped_column(BigInteger)
-    # Source Event (IDXTransferSourceEventType)
-    source_event: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    # Source Event
+    source_event: Mapped[IDXTransferSourceEventType] = mapped_column(
+        String(50), nullable=False, index=True
+    )
     # Data
-    #   source_event = "Transfer"
+    #   source_event = "Transfer", "Reallocation"
     #     => None
-    #   source_event = "Unlock"
+    #   source_event = "Unlock", "ForceUnlock", "ForceChangeLockedAccount"
     #     =>  DataMessage
     data: Mapped[dict | None] = mapped_column(JSON)
     # Message
-    #   source_event = "Transfer"
+    #   source_event = "Transfer", "Reallocation"
     #     => None
-    #   source_event = "Unlock"
-    #     => "force_unlock", "garnishment" or "inheritance"
+    #   source_event = "Unlock", "ForceUnlock"
+    #     => "force_unlock", "garnishment"
+    #   source_event = "ForceChangeLockedAccount"
+    #     => "ibet_wst_bridge"
     message: Mapped[str | None] = mapped_column(String(50), index=True)
     # block timestamp
     block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)

@@ -23,7 +23,7 @@ import pytest
 from sqlalchemy import select
 
 from app.model.db import Notification, NotificationType
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestDeleteNotification:
@@ -38,9 +38,9 @@ class TestDeleteNotification:
     # Non filtered
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
 
         # prepare data
@@ -191,7 +191,7 @@ class TestDeleteNotification:
     # notification does not exist
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
         # request target API

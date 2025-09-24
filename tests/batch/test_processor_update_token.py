@@ -25,12 +25,6 @@ import pytest
 from sqlalchemy import select
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     UTXO,
     Account,
@@ -42,9 +36,15 @@ from app.model.db import (
     TokenVersion,
     UpdateToken,
 )
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_update_token import Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -61,7 +61,7 @@ class TestProcessor:
     # Issuing(IbetShare, IbetStraightBond)
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -85,7 +85,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -126,7 +126,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -188,19 +188,19 @@ class TestProcessor:
         }
         with (
             patch(
-                target="app.model.blockchain.token.IbetShareContract.update",
+                target="app.model.ibet.token.IbetShareContract.update",
                 return_value=None,
             ) as IbetShareContract_update,
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                target="app.model.ibet.token.IbetStraightBondContract.update",
                 return_value=None,
             ) as IbetStraightBondContract_update,
             patch(
-                target="app.model.blockchain.token_list.TokenListContract.register",
+                target="app.model.ibet.token_list.TokenListContract.register",
                 return_value=None,
             ) as TokenListContract_register,
             patch(
-                target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+                target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
                 return_value=mock_block,
             ) as ContractUtils_get_block_by_transaction_hash,
         ):
@@ -210,7 +210,7 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                data=IbetShareUpdateParams(
+                tx_params=IbetShareUpdateParams(
                     cancellation_date=None,
                     dividend_record_date=None,
                     dividend_payment_date=None,
@@ -226,12 +226,12 @@ class TestProcessor:
                     transfer_approval_required=True,
                     is_canceled=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                data=IbetStraightBondUpdateParams(
+                tx_params=IbetStraightBondUpdateParams(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,
@@ -245,8 +245,8 @@ class TestProcessor:
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             TokenListContract_register.assert_has_calls(
@@ -254,14 +254,14 @@ class TestProcessor:
                     call(
                         token_address=_token_address_1,
                         token_template=TokenType.IBET_SHARE,
-                        tx_from=_issuer_address,
-                        private_key=ANY,
+                        tx_sender=_issuer_address,
+                        tx_sender_key=ANY,
                     ),
                     call(
                         token_address=_token_address_2,
                         token_template=TokenType.IBET_STRAIGHT_BOND,
-                        tx_from=_issuer_address,
-                        private_key=ANY,
+                        tx_sender=_issuer_address,
+                        tx_sender_key=ANY,
                     ),
                 ]
             )
@@ -354,7 +354,7 @@ class TestProcessor:
     # Issuing: Account does not exist
     @pytest.mark.asyncio
     async def test_error_1(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -376,7 +376,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -414,7 +414,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -580,7 +580,7 @@ class TestProcessor:
     # Issuing: Fail to get the private key
     @pytest.mark.asyncio
     async def test_error_2(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -602,7 +602,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -640,7 +640,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -806,7 +806,7 @@ class TestProcessor:
     # Issuing: Send transaction error(token update)
     @pytest.mark.asyncio
     async def test_error_3(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -828,7 +828,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -866,7 +866,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -923,11 +923,11 @@ class TestProcessor:
 
         with (
             patch(
-                target="app.model.blockchain.token.IbetShareContract.update",
+                target="app.model.ibet.token.IbetShareContract.update",
                 rside_effect=SendTransactionError(),
             ),
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                target="app.model.ibet.token.IbetStraightBondContract.update",
                 side_effect=SendTransactionError(),
             ),
         ):
@@ -1046,7 +1046,7 @@ class TestProcessor:
     # Issuing: Send transaction error(TokenList register)
     @pytest.mark.asyncio
     async def test_error_4(self, processor, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address_1 = "token_address_test_1"
@@ -1068,7 +1068,7 @@ class TestProcessor:
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
         _token_1.token_status = 0
-        _token_1.version = TokenVersion.V_25_06
+        _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
         _update_token_1 = UpdateToken()
@@ -1106,7 +1106,7 @@ class TestProcessor:
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
         _token_2.token_status = 0
-        _token_2.version = TokenVersion.V_25_06
+        _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
         _update_token_2 = UpdateToken()
@@ -1163,15 +1163,15 @@ class TestProcessor:
 
         with (
             patch(
-                target="app.model.blockchain.token.IbetShareContract.update",
+                target="app.model.ibet.token.IbetShareContract.update",
                 return_value=None,
             ) as IbetShareContract_update,
             patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.update",
+                target="app.model.ibet.token.IbetStraightBondContract.update",
                 return_value=None,
             ) as IbetStraightBondContract_update,
             patch(
-                target="app.model.blockchain.token_list.TokenListContract.register",
+                target="app.model.ibet.token_list.TokenListContract.register",
                 side_effect=SendTransactionError(),
             ),
         ):
@@ -1181,7 +1181,7 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                data=IbetShareUpdateParams(
+                tx_params=IbetShareUpdateParams(
                     cancellation_date=None,
                     dividend_record_date=None,
                     dividend_payment_date=None,
@@ -1196,12 +1196,12 @@ class TestProcessor:
                     transfer_approval_required=True,
                     is_canceled=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                data=IbetStraightBondUpdateParams(
+                tx_params=IbetStraightBondUpdateParams(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,
@@ -1214,8 +1214,8 @@ class TestProcessor:
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
                 ),
-                tx_from=_issuer_address,
-                private_key=ANY,
+                tx_sender=_issuer_address,
+                tx_sender_key=ANY,
             )
 
             # assertion(DB)

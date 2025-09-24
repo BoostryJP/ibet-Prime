@@ -32,13 +32,6 @@ from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     Account,
     IDXTransferApproval,
@@ -49,12 +42,19 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_contract_utils import ContractUtils
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch.indexer_transfer_approval import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -105,14 +105,14 @@ async def deploy_bond_token_contract(
     bond_contrat = IbetStraightBondContract()
     token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
     await bond_contrat.update(
-        data=IbetStraightBondUpdateParams(
+        tx_params=IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
         ),
-        tx_from=address,
-        private_key=private_key,
+        tx_sender=address,
+        tx_sender_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
@@ -139,14 +139,14 @@ async def deploy_share_token_contract(
     share_contract = IbetShareContract()
     token_address, _, _ = await share_contract.create(arguments, address, private_key)
     await share_contract.update(
-        data=IbetShareUpdateParams(
+        tx_params=IbetShareUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
         ),
-        tx_from=address,
-        private_key=private_key,
+        tx_sender=address,
+        tx_sender_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetShare", token_address)
@@ -161,8 +161,8 @@ class TestProcessor:
     # No event log
     #   - Token not yet issued
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, async_db, personal_info_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Token(processing token)
@@ -173,7 +173,7 @@ class TestProcessor:
         token_1.abi = {}
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         await async_db.commit()
@@ -202,8 +202,8 @@ class TestProcessor:
     # No event log
     #   - Issued tokens but no events have occurred.
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, async_db, personal_info_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -213,7 +213,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             transfer_approval_required=True,
         )
         token_address_1 = token_contract_1.address
@@ -223,7 +223,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -234,7 +234,7 @@ class TestProcessor:
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_25_06
+        token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -269,13 +269,13 @@ class TestProcessor:
     #   - ibetSecurityToken: ApplyForTransfer
     # -> One notification
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, async_db, personal_info_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2_1(self, processor, async_db, ibet_personal_info_contract):
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -292,7 +292,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             transfer_approval_required=True,
         )
         token_address_1 = token_contract_1.address
@@ -302,7 +302,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -313,7 +313,7 @@ class TestProcessor:
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_25_06
+        token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -405,13 +405,13 @@ class TestProcessor:
     # Cancel from issuer
     #   -> No notification
     @pytest.mark.asyncio
-    async def test_normal_2_2_1(self, processor, async_db, personal_info_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2_2_1(self, processor, async_db, ibet_personal_info_contract):
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -428,7 +428,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             transfer_approval_required=True,
         )
         token_address_1 = token_contract_1.address
@@ -438,7 +438,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -546,13 +546,13 @@ class TestProcessor:
     # Cancel from applicant
     #   -> One notification
     @pytest.mark.asyncio
-    async def test_normal_2_2_2(self, processor, async_db, personal_info_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2_2_2(self, processor, async_db, ibet_personal_info_contract):
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -569,7 +569,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             transfer_approval_required=True,
         )
         token_address_1 = token_contract_1.address
@@ -579,7 +579,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -686,13 +686,13 @@ class TestProcessor:
     #   - ibetSecurityToken: ApproveTransfer (from issuer)
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2_3(self, processor, async_db, personal_info_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2_3(self, processor, async_db, ibet_personal_info_contract):
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -709,7 +709,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             transfer_approval_required=True,
         )
         token_address_1 = token_contract_1.address
@@ -719,7 +719,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -832,20 +832,20 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Account
@@ -859,7 +859,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=True,
         )
@@ -870,7 +870,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -986,20 +986,20 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Account
@@ -1013,7 +1013,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=True,
         )
@@ -1024,7 +1024,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -1035,7 +1035,7 @@ class TestProcessor:
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
-        token_2.version = TokenVersion.V_25_06
+        token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -1162,20 +1162,20 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Account
@@ -1189,7 +1189,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=True,
         )
@@ -1200,7 +1200,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -1323,20 +1323,20 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Account
@@ -1350,7 +1350,7 @@ class TestProcessor:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=True,
         )
@@ -1361,7 +1361,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BlockNumber
@@ -1518,11 +1518,11 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
         escrow_contract = ibet_security_token_escrow_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -1539,7 +1539,7 @@ class TestProcessor:
         token_contract1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=escrow_contract.address,
             transfer_approval_required=False,
         )
@@ -1550,7 +1550,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         await async_db.commit()
@@ -1567,7 +1567,7 @@ class TestProcessor:
         token_contract2 = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=escrow_contract.address,
             transfer_approval_required=False,
         )
@@ -1578,7 +1578,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
-        token_2.version = TokenVersion.V_25_06
+        token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
         await async_db.commit()
@@ -1603,10 +1603,10 @@ class TestProcessor:
         self,
         main_func,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
@@ -1621,7 +1621,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, personal_info_contract.address
+            issuer_address, issuer_private_key, ibet_personal_info_contract.address
         )
         token_address = token_contract.address
         token = Token()
@@ -1630,7 +1630,7 @@ class TestProcessor:
         token.issuer_address = issuer_address
         token.abi = token_contract.abi
         token.tx_hash = "tx_hash"
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

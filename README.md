@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-25.6-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-25.9-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -23,7 +23,7 @@ English | [日本語](./README_JA.md)
 ## Dependencies
 
 - [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.12
-- [PostgreSQL](https://www.postgresql.org/) - version 16
+- [PostgreSQL](https://www.postgresql.org/) - version 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
   - We use [hardhat network](https://hardhat.org/hardhat-network/) for local development and unit testing, and we use the latest version.
@@ -102,7 +102,7 @@ The main environment variables are as follows.
     <tr>
         <td>WEB3_HTTP_PROVIDER</td>
         <td>False</td>
-        <td nowrap>Web3 provider</td>
+        <td nowrap>Web3 provider for ibet network</td>
         <td>http://localhost:8545</td>
     </tr>
     <tr>
@@ -124,16 +124,52 @@ The main environment variables are as follows.
         <td>0x0000000000000000000000000000000000000000</td>
     </tr>
     <tr>
+        <td>TZ</td>
+        <td>False</td>
+        <td nowrap>Timezone</td>
+        <td>Asia/Tokyo</td>
+    </tr>
+    <tr>
+        <td>ETH_WEB3_HTTP_PROVIDER</td>
+        <td>False</td>
+        <td nowrap>Web3 provider for Ethereum network</td>
+        <td>http://localhost:8545</td>
+    </tr>
+    <tr>
+        <td>DEDICATED_OFFCHAIN_TX_MODE</td>
+        <td>False</td>
+        <td nowrap>Boot mode for off-chain transaction dedicated server</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
+        <td>DEDICATED_DVP_AGENT_MODE</td>
+        <td>False</td>
+        <td nowrap>Boot mode for DvP agent dedicated server</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
+        <td>IBET_WST_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Weather to use IbetWST features</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>DVP_AGENT_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Whether to use DVP agent features</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
         <td>BC_EXPLORER_ENABLED</td>
         <td>False</td>
         <td nowrap>Whether to use the BC Explorer</td>
         <td>0(not use) / 1(use)</td>
     </tr>
     <tr>
-        <td>TZ</td>
+        <td>FREEZE_LOG_FEATURE_ENABLED</td>
         <td>False</td>
-        <td nowrap>Timezone</td>
-        <td>Asia/Tokyo</td>
+        <td nowrap>Whether to use the "FreezeLog" features</td>
+        <td>0(not use) / 1(use)</td>
     </tr>
 </table>
 

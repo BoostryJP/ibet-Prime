@@ -23,7 +23,6 @@ from unittest.mock import call
 
 import pytest
 
-from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     IDXPersonalInfo,
     Ledger,
@@ -34,7 +33,8 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from app.model.ibet import IbetStraightBondContract
+from tests.account_config import default_eth_account
 
 
 class TestRetrieveLedgerHistory:
@@ -49,7 +49,7 @@ class TestRetrieveLedgerHistory:
     # Set issue-address in the header
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -62,7 +62,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -299,7 +299,7 @@ class TestRetrieveLedgerHistory:
     # Do not set issue-address in the header
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -312,7 +312,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -547,7 +547,7 @@ class TestRetrieveLedgerHistory:
     # - ledger detail contains None value in "name" and "value": some_personal_info_not_registered = True
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -561,7 +561,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -827,7 +827,7 @@ class TestRetrieveLedgerHistory:
     # token.require_personal_info_registered = True
     @pytest.mark.asyncio
     async def test_normal_3_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -841,7 +841,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -996,10 +996,10 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = True
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
         personal_get_info_mock = mock.patch(
-            "app.model.blockchain.PersonalInfoContract.get_info"
+            "app.model.ibet.PersonalInfoContract.get_info"
         )
 
         # request target API
@@ -1144,7 +1144,7 @@ class TestRetrieveLedgerHistory:
     # token.require_personal_info_registered = True
     @pytest.mark.asyncio
     async def test_normal_3_2(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -1158,7 +1158,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -1310,10 +1310,10 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = True
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
         personal_get_info_mock = mock.patch(
-            "app.model.blockchain.PersonalInfoContract.get_info"
+            "app.model.ibet.PersonalInfoContract.get_info"
         )
 
         # request target API
@@ -1457,7 +1457,7 @@ class TestRetrieveLedgerHistory:
     # Personal information has not been indexed yet
     @pytest.mark.asyncio
     async def test_normal_3_3(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -1470,7 +1470,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -1566,7 +1566,7 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = False
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
 
         # request target API
@@ -1645,7 +1645,7 @@ class TestRetrieveLedgerHistory:
     #   - address_1 is issuer's address
     @pytest.mark.asyncio
     async def test_normal_3_4(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         personal_info_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"
@@ -1657,7 +1657,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -1753,7 +1753,7 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = False
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
 
         # request target API
@@ -1836,7 +1836,7 @@ class TestRetrieveLedgerHistory:
     #   - address_2 has personal info in the DB
     @pytest.mark.asyncio
     async def test_normal_3_5(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -1850,7 +1850,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -2015,10 +2015,10 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = True
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
         personal_get_info_mock = mock.patch(
-            "app.model.blockchain.PersonalInfoContract.get_info"
+            "app.model.ibet.PersonalInfoContract.get_info"
         )
 
         # request target API
@@ -2164,7 +2164,7 @@ class TestRetrieveLedgerHistory:
     # Test `currency` backward compatibility
     @pytest.mark.asyncio
     async def test_normal_4(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -2177,7 +2177,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()
@@ -2415,7 +2415,7 @@ class TestRetrieveLedgerHistory:
     # latest_flg != 1
     @pytest.mark.asyncio
     async def test_normal_5_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -2662,7 +2662,7 @@ class TestRetrieveLedgerHistory:
     # latest_flg == 1
     @pytest.mark.asyncio
     async def test_normal_5_2(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -2808,7 +2808,7 @@ class TestRetrieveLedgerHistory:
         token.issuer_address = issuer_address
         token.require_personal_info_registered = False
         token_get_mock = mock.patch(
-            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+            "app.model.ibet.IbetStraightBondContract.get", return_value=token
         )
 
         # request target API
@@ -2965,7 +2965,7 @@ class TestRetrieveLedgerHistory:
     # Parameter Error(latest_flg less)
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -2999,7 +2999,7 @@ class TestRetrieveLedgerHistory:
     # Parameter Error(latest_flg greater)
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -3034,7 +3034,7 @@ class TestRetrieveLedgerHistory:
     # set issuer-address
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -3048,7 +3048,7 @@ class TestRetrieveLedgerHistory:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -3097,7 +3097,7 @@ class TestRetrieveLedgerHistory:
     # Processing Token
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -3109,7 +3109,7 @@ class TestRetrieveLedgerHistory:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -3136,7 +3136,7 @@ class TestRetrieveLedgerHistory:
     # Ledger Not Found
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
@@ -3147,7 +3147,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -3174,7 +3174,7 @@ class TestRetrieveLedgerHistory:
     # Response data includes over 64-bit range int
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
@@ -3187,7 +3187,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _ledger_1 = Ledger()

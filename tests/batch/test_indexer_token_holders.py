@@ -28,13 +28,6 @@ from sqlalchemy import and_, select
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     Token,
     TokenHolder,
@@ -43,10 +36,17 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
+from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_token_holders import LOG, Processor, main
 from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 from tests.contract_utils import (
     IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
@@ -117,14 +117,14 @@ async def deploy_bond_token_contract(
     bond_contrat = IbetStraightBondContract()
     token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
     await bond_contrat.update(
-        data=IbetStraightBondUpdateParams(
+        tx_params=IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
         ),
-        tx_from=address,
-        private_key=private_key,
+        tx_sender=address,
+        tx_sender_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
@@ -151,14 +151,14 @@ async def deploy_share_token_contract(
     share_contract = IbetShareContract()
     token_address, _, _ = await share_contract.create(arguments, address, private_key)
     await share_contract.update(
-        data=IbetShareUpdateParams(
+        tx_params=IbetShareUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
         ),
-        tx_from=address,
-        private_key=private_key,
+        tx_sender=address,
+        tx_sender_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetShare", token_address)
@@ -181,20 +181,20 @@ def token_holders_list(
 class TestProcessor:
     account_list = [
         {
-            "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"],
+            "address": default_eth_account("user1")["address"],
+            "keyfile": default_eth_account("user1")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"],
+            "address": default_eth_account("user2")["address"],
+            "keyfile": default_eth_account("user2")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"],
+            "address": default_eth_account("user3")["address"],
+            "keyfile": default_eth_account("user3")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user4")["address"],
-            "keyfile": config_eth_account("user4")["keyfile_json"],
+            "address": default_eth_account("user4")["address"],
+            "keyfile": default_eth_account("user4")["keyfile_json"],
         },
     ]
 
@@ -214,20 +214,20 @@ class TestProcessor:
     # - Lock
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, processor, async_db, personal_info_contract, ibet_exchange_contract
+        self, processor, async_db, ibet_personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -237,7 +237,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -248,23 +248,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -469,7 +469,7 @@ class TestProcessor:
         other_token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -598,25 +598,26 @@ class TestProcessor:
     # - ForceLock
     # - Unlock
     # - ForceUnlock
+    # - ForceChangeLockedAccount
     @pytest.mark.asyncio
     async def test_normal_2(
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -626,7 +627,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=False,
         )
@@ -637,23 +638,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -747,13 +748,13 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 1500, ""],
+            [issuer_address, 2000, ""],
         )
         STContractUtils.force_lock(
             token_contract.address,
             issuer_address,
             issuer_private_key,
-            [issuer_address, user_address_1, 1500, ""],
+            [issuer_address, user_address_1, 2000, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
@@ -767,7 +768,14 @@ class TestProcessor:
             issuer_private_key,
             [issuer_address, user_address_1, user_address_2, 1500, ""],
         )
-        # user1: 10000 user2: 20000
+        STContractUtils.force_change_locked_account(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, user_address_2, 500, ""],
+        )
+        # user1: 9000 user2: 20000
+        # user1(locked): 500, user2(locked): 500
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -819,10 +827,10 @@ class TestProcessor:
             )
         ).first()
 
-        assert user1_record.hold_balance == 10000
-        assert user1_record.locked_balance == 0
+        assert user1_record.hold_balance == 9000
+        assert user1_record.locked_balance == 500
         assert user2_record.hold_balance == 20000
-        assert user2_record.locked_balance == 0
+        assert user2_record.locked_balance == 500
 
         assert (
             len(
@@ -849,20 +857,20 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -872,7 +880,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=False,
         )
@@ -883,23 +891,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -1048,20 +1056,20 @@ class TestProcessor:
     # - Lock
     @pytest.mark.asyncio
     async def test_normal_4(
-        self, processor, async_db, personal_info_contract, ibet_exchange_contract
+        self, processor, async_db, ibet_personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1071,7 +1079,7 @@ class TestProcessor:
         token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -1082,23 +1090,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -1303,19 +1311,19 @@ class TestProcessor:
         other_token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -1446,25 +1454,26 @@ class TestProcessor:
     # - ForceLock
     # - Unlock
     # - ForceUnlock
+    # - ForceChangeLockedAccount
     @pytest.mark.asyncio
     async def test_normal_5(
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1474,7 +1483,7 @@ class TestProcessor:
         token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=False,
         )
@@ -1485,23 +1494,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -1595,13 +1604,13 @@ class TestProcessor:
             token_contract.address,
             user_address_1,
             user_pk_1,
-            [issuer_address, 1500, ""],
+            [issuer_address, 2000, ""],
         )
         STContractUtils.force_lock(
             token_contract.address,
             issuer_address,
             issuer_private_key,
-            [issuer_address, user_address_1, 1500, ""],
+            [issuer_address, user_address_1, 2000, ""],
         )
         STContractUtils.unlock(
             token_contract.address,
@@ -1615,7 +1624,14 @@ class TestProcessor:
             issuer_private_key,
             [issuer_address, user_address_1, user_address_2, 1500, ""],
         )
-        # user1: 10000 user2: 20000
+        STContractUtils.force_change_locked_account(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, user_address_1, user_address_2, 500, ""],
+        )
+        # user1: 9000, user2: 20000
+        # user1(locked): 500, user2(locked): 500
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -1667,10 +1683,10 @@ class TestProcessor:
             )
         ).first()
 
-        assert user1_record.hold_balance == 10000
-        assert user1_record.locked_balance == 0
+        assert user1_record.hold_balance == 9000
+        assert user1_record.locked_balance == 500
         assert user2_record.hold_balance == 20000
-        assert user2_record.locked_balance == 0
+        assert user2_record.locked_balance == 500
 
         assert (
             len(
@@ -1697,20 +1713,20 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_security_token_escrow_contract,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1720,7 +1736,7 @@ class TestProcessor:
         token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
             transfer_approval_required=False,
         )
@@ -1731,23 +1747,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -1893,7 +1909,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1905,17 +1921,17 @@ class TestProcessor:
             (LOG.name, logging.DEBUG, "There are no pending collect batch")
         )
 
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -1925,7 +1941,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -1936,23 +1952,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -2018,23 +2034,23 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
 
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -2044,7 +2060,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -2055,23 +2071,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -2217,22 +2233,22 @@ class TestProcessor:
     # Batch does not index former holder who has no balance at the target block number.
     @pytest.mark.asyncio
     async def test_normal_9(
-        self, processor, async_db, personal_info_contract, ibet_exchange_contract
+        self, processor, async_db, ibet_personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
         issuer_address = _user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_user_1["keyfile_json"],
             password="password".encode("utf-8"),
         )
-        _user_2 = config_eth_account("user2")
+        _user_2 = default_eth_account("user2")
         user_address_1 = _user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=_user_2["keyfile_json"],
             password="password".encode("utf-8"),
         )
-        _user_3 = config_eth_account("user3")
+        _user_3 = default_eth_account("user3")
         user_address_2 = _user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=_user_3["keyfile_json"],
@@ -2243,7 +2259,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -2254,23 +2270,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],
@@ -2385,7 +2401,7 @@ class TestProcessor:
         self,
         processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2393,7 +2409,7 @@ class TestProcessor:
         current_block_number = 20000000 - 1
         checkpoint_block_number = 10000000 - 1
 
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
         issuer_address = _user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_user_1["keyfile_json"],
@@ -2404,7 +2420,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -2415,7 +2431,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Insert collection record with above token and checkpoint block number
@@ -2492,7 +2508,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2511,7 +2527,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2566,22 +2582,22 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_pk_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -2591,7 +2607,7 @@ class TestProcessor:
         token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=exchange_contract.address,
             transfer_approval_required=False,
         )
@@ -2602,23 +2618,23 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_1,
             user_pk_1,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             user_address_2,
             user_pk_2,
             [issuer_address, ""],
         )
         PersonalInfoContractTestUtils.register(
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             issuer_address,
             issuer_private_key,
             [issuer_address, ""],

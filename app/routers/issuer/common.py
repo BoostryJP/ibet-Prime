@@ -24,13 +24,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import log
 from app.database import DBAsyncSession
 from app.exceptions import ServiceUnavailableError
-from app.model.db import Node
+from app.model.db import EthereumNode, Node
 from app.model.schema import BlockNumberResponse, E2EEResponse
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
-from app.utils.web3_utils import AsyncWeb3Wrapper
-from config import E2EE_REQUEST_ENABLED
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
+from config import E2EE_REQUEST_ENABLED, IBET_WST_FEATURE_ENABLED
 
 web3 = AsyncWeb3Wrapper()
 
@@ -60,14 +60,26 @@ async def e2e_encryption_key():
     responses=get_routers_responses(ServiceUnavailableError),
 )
 async def service_health_check(db: DBAsyncSession):
-    """Service health check"""
+    """Service health check
+
+    Check following services are available:
+    - Database
+    - ibet Node
+    - Ethereum Node (if IbetWST feature is enabled)
+    - E2EE Setting
+    """
     errors = []
 
     try:
-        # Check DB Connection
+        # Check database is available
         await db.connection()
-        # Check Ethereum Block Synchronization
-        await __check_ethereum(errors, db)
+        # Check ibet node is synced
+        await __check_ibet_node_is_synced(errors, db)
+
+        if IBET_WST_FEATURE_ENABLED:
+            # Check ethereum node is synced
+            await __check_ethereum_node_is_synced(errors, db)
+
     except Exception as err:
         LOG.exception(err)
         errors.append("Can't connect to database")
@@ -85,12 +97,26 @@ async def service_health_check(db: DBAsyncSession):
     return
 
 
-async def __check_ethereum(errors: list, db: AsyncSession):
+async def __check_ibet_node_is_synced(errors: list, db: AsyncSession):
+    """Check if ibet node is synced"""
     _node = (
         await db.scalars(select(Node).where(Node.is_synced == True).limit(1))
     ).first()
     if _node is None:
-        msg = "Ethereum node's block synchronization is down"
+        msg = "ibet node is down"
+        LOG.error(msg)
+        errors.append(msg)
+
+
+async def __check_ethereum_node_is_synced(errors: list, db: AsyncSession):
+    """Check if ethereum node is synced"""
+    _node = (
+        await db.scalars(
+            select(EthereumNode).where(EthereumNode.is_synced == True).limit(1)
+        )
+    ).first()
+    if _node is None:
+        msg = "ethereum node is down"
         LOG.error(msg)
         errors.append(msg)
 

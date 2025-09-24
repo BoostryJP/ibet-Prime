@@ -32,7 +32,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRedeemBondsInBatch:
@@ -47,11 +47,11 @@ class TestRedeemBondsInBatch:
     # One data
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -68,7 +68,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -112,12 +112,12 @@ class TestRedeemBondsInBatch:
     # Multiple data
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
-        test_account_2 = config_eth_account("user3")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
+        test_account_2 = default_eth_account("user3")["address"]
 
         token_address = "token_address_test"
 
@@ -134,7 +134,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -191,7 +191,7 @@ class TestRedeemBondsInBatch:
     # RequestValidationError: value is not a valid list
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
@@ -210,7 +210,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -244,7 +244,7 @@ class TestRedeemBondsInBatch:
     # RequestValidationError: account_address is not a valid address
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
@@ -263,7 +263,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -298,11 +298,11 @@ class TestRedeemBondsInBatch:
     # RequestValidationError: amount is not greater than or equal to 1
     @pytest.mark.asyncio
     async def test_error_1_3_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -319,7 +319,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -354,11 +354,11 @@ class TestRedeemBondsInBatch:
     # RequestValidationError: amount is less than or equal to 100000000
     @pytest.mark.asyncio
     async def test_error_1_3_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -375,7 +375,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -410,11 +410,11 @@ class TestRedeemBondsInBatch:
     # RequestValidationError: header field is required
     @pytest.mark.asyncio
     async def test_error_1_4(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -431,7 +431,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -460,11 +460,11 @@ class TestRedeemBondsInBatch:
     # RequestValidationError: eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
     async def test_error_1_5(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -481,7 +481,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -512,7 +512,7 @@ class TestRedeemBondsInBatch:
     # InvalidParameterError: list length must be at least one
     @pytest.mark.asyncio
     async def test_error_1_6(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
@@ -531,7 +531,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -558,11 +558,11 @@ class TestRedeemBondsInBatch:
     # AuthorizationError: issuer does not exist
     @pytest.mark.asyncio
     async def test_error_1_7_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -579,7 +579,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -606,11 +606,11 @@ class TestRedeemBondsInBatch:
     # AuthorizationError: password mismatch
     @pytest.mark.asyncio
     async def test_error_1_7_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -627,7 +627,7 @@ class TestRedeemBondsInBatch:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -655,11 +655,11 @@ class TestRedeemBondsInBatch:
     # NotFound: token not found
     @pytest.mark.asyncio
     async def test_error_1_8_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -695,11 +695,11 @@ class TestRedeemBondsInBatch:
     # InvalidParameterError: this token is temporarily unavailable
     @pytest.mark.asyncio
     async def test_error_1_8_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
 
-        test_account_1 = config_eth_account("user2")["address"]
+        test_account_1 = default_eth_account("user2")["address"]
 
         token_address = "token_address_test"
 
@@ -717,7 +717,7 @@ class TestRedeemBondsInBatch:
         token.token_address = token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

@@ -29,7 +29,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
@@ -44,7 +44,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # 0 record
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -55,7 +55,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -73,7 +73,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # 1 record
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -84,7 +84,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -120,7 +120,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # Multi record
     @pytest.mark.asyncio
     async def test_normal_3_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -132,7 +132,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -228,7 +228,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # Multi record (Issuer specified)
     @pytest.mark.asyncio
     async def test_normal_3_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -240,7 +240,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -323,7 +323,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # Multi record (status)
     @pytest.mark.asyncio
     async def test_normal_3_3(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -335,7 +335,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -426,7 +426,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # Pagination
     @pytest.mark.asyncio
     async def test_normal_4(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -438,7 +438,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -521,7 +521,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # Sort
     @pytest.mark.asyncio
     async def test_normal_5(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -533,7 +533,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -637,7 +637,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
     # query(invalid value)
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
 
@@ -649,7 +649,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

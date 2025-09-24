@@ -31,11 +31,6 @@ from web3.exceptions import TimeExhausted
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import SendTransactionError
-from app.model.blockchain.exchange import IbetSecurityTokenDVPNoWait
-from app.model.blockchain.tx_params.ibet_security_token_dvp import (
-    CreateDeliveryParams,
-    WithdrawPartialParams,
-)
 from app.model.db import (
     Account,
     DVPAsyncProcess,
@@ -44,8 +39,13 @@ from app.model.db import (
     DVPAsyncProcessStepTxStatus,
     DVPAsyncProcessType,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet.exchange import IbetSecurityTokenDVPNoWait
+from app.model.ibet.tx_params.ibet_security_token_dvp import (
+    CreateDeliveryParams,
+    WithdrawPartialParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
@@ -123,15 +123,15 @@ class Processor:
                 if record.process_type == DVPAsyncProcessType.CREATE_DELIVERY:
                     # 0) Deposit -> 1) CreateDelivery
                     tx_hash = await dvp_contract_nw.create_delivery(
-                        data=CreateDeliveryParams(
+                        tx_params=CreateDeliveryParams(
                             token_address=record.token_address,
                             buyer_address=record.buyer_address,
                             amount=record.amount,
                             agent_address=record.agent_address,
                             data=record.data,
                         ),
-                        tx_from=record.issuer_address,
-                        private_key=issuer_pk,
+                        tx_sender=record.issuer_address,
+                        tx_sender_key=issuer_pk,
                     )
                     record.step = 1
                     record.step_tx_hash = tx_hash
@@ -148,12 +148,12 @@ class Processor:
                     # 0) CancelDelivery, FinishDelivery, AbortDelivery
                     # -> 1) WithdrawPartial
                     tx_hash = await dvp_contract_nw.withdraw_partial(
-                        data=WithdrawPartialParams(
+                        tx_params=WithdrawPartialParams(
                             token_address=record.token_address,
                             value=record.amount,
                         ),
-                        tx_from=record.issuer_address,
-                        private_key=issuer_pk,
+                        tx_sender=record.issuer_address,
+                        tx_sender_key=issuer_pk,
                     )
                     record.step = 1
                     record.step_tx_hash = tx_hash
@@ -223,12 +223,12 @@ class Processor:
                     )
                     try:
                         tx_hash = await dvp_contract_nw.withdraw_partial(
-                            data=WithdrawPartialParams(
+                            tx_params=WithdrawPartialParams(
                                 token_address=record.token_address,
                                 value=record.amount,
                             ),
-                            tx_from=record.issuer_address,
-                            private_key=issuer_pk,
+                            tx_sender=record.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                         record.step_tx_status = DVPAsyncProcessStepTxStatus.FAILED
                         record.revert_tx_hash = tx_hash
@@ -318,12 +318,12 @@ class Processor:
                     )
                     try:
                         tx_hash = await dvp_contract_nw.withdraw_partial(
-                            data=WithdrawPartialParams(
+                            tx_params=WithdrawPartialParams(
                                 token_address=record.token_address,
                                 value=record.amount,
                             ),
-                            tx_from=record.issuer_address,
-                            private_key=issuer_pk,
+                            tx_sender=record.issuer_address,
+                            tx_sender_key=issuer_pk,
                         )
                         record.revert_tx_hash = tx_hash
                         record.revert_tx_status = DVPAsyncProcessRevertTxStatus.PENDING

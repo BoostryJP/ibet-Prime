@@ -21,21 +21,22 @@ import hashlib
 from unittest.mock import patch
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import and_, select
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain import IbetShareContract, PersonalInfoContract
 from app.model.db import (
     Account,
     AuthToken,
     IDXPersonalInfo,
+    IDXPersonalInfoHistory,
     Token,
     TokenType,
     TokenVersion,
 )
+from app.model.ibet import IbetShareContract, PersonalInfoContract
 from app.model.schema import PersonalInfoDataSource
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRegisterShareTokenHolderPersonalInfo:
@@ -50,11 +51,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # data_source = on_chain
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -72,7 +73,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -83,15 +84,15 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -143,11 +144,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # data_source = off_chain
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -165,7 +166,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -176,15 +177,15 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -241,15 +242,42 @@ class TestRegisterShareTokenHolderPersonalInfo:
             }
             assert _off_personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN
 
+            _personal_info_history = (
+                await async_db.scalars(
+                    select(IDXPersonalInfoHistory)
+                    .where(
+                        and_(
+                            IDXPersonalInfoHistory.issuer_address == _issuer_address,
+                            IDXPersonalInfoHistory.account_address
+                            == _test_account_address,
+                        )
+                    )
+                    .limit(1)
+                )
+            ).first()
+            assert _personal_info_history.id is not None
+            assert _personal_info_history.issuer_address == _issuer_address
+            assert _personal_info_history.account_address == _test_account_address
+            assert _personal_info_history.personal_info == {
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "address": "test_address",
+                "postal_code": "test_postal_code",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+
     # <Normal_2_1>
     # Optional items
     @pytest.mark.asyncio
     async def test_normal_2_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -267,7 +295,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -278,15 +306,15 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -331,11 +359,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # Nullable items
     @pytest.mark.asyncio
     async def test_normal_2_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -353,7 +381,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -364,15 +392,15 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -424,11 +452,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # Authorization by auth-token
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -452,7 +480,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -463,15 +491,15 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value=None,
         )
 
@@ -528,11 +556,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # headers and body required
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -565,11 +593,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # personal_info
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -614,11 +642,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # personal_info.account_address is invalid
     @pytest.mark.asyncio
     async def test_error_1_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -664,7 +692,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # issuer_address
     @pytest.mark.asyncio
     async def test_error_1_4(self, async_client, async_db):
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -709,11 +737,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # eoa-password not encrypted
     @pytest.mark.asyncio
     async def test_error_1_5(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -758,11 +786,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # data_source
     @pytest.mark.asyncio
     async def test_error_1_6(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -809,11 +837,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # issuer does not exist
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -851,11 +879,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # password mismatch
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -902,11 +930,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # token not found
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -953,11 +981,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # processing token
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -976,7 +1004,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1013,11 +1041,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # SendTransactionError
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -1035,7 +1063,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1046,15 +1074,15 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             side_effect=SendTransactionError(),
         )
 
@@ -1095,11 +1123,11 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # PersonalInfoExceedsSizeLimit
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -1117,7 +1145,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -1128,15 +1156,15 @@ class TestRegisterShareTokenHolderPersonalInfo:
             "personal_info_contract_address"
         )
         IbetShareContract_get = patch(
-            target="app.model.blockchain.token.IbetShareContract.get",
+            target="app.model.ibet.token.IbetShareContract.get",
             return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            target="app.model.ibet.personal_info.PersonalInfoContract.__init__",
             return_value=None,
         )
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             side_effect=SendTransactionError(),
         )
 

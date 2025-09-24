@@ -29,7 +29,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
@@ -47,24 +47,24 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
 
     account_list = [
         {
-            "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"],
+            "address": default_eth_account("user1")["address"],
+            "keyfile": default_eth_account("user1")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"],
+            "address": default_eth_account("user2")["address"],
+            "keyfile": default_eth_account("user2")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"],
+            "address": default_eth_account("user3")["address"],
+            "keyfile": default_eth_account("user3")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user4")["address"],
-            "keyfile": config_eth_account("user4")["keyfile_json"],
+            "address": default_eth_account("user4")["address"],
+            "keyfile": default_eth_account("user4")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user5")["address"],
-            "keyfile": config_eth_account("user5")["keyfile_json"],
+            "address": default_eth_account("user5")["address"],
+            "keyfile": default_eth_account("user5")["keyfile_json"],
         },
     ]
 
@@ -75,11 +75,11 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
 
-        _test_account = config_eth_account("user2")
+        _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -97,7 +97,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -186,7 +186,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
     # RequestValidationError: issuer_address
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        test_account = config_eth_account("user2")
+        test_account = default_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -213,7 +213,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
     # Batch not found
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        test_account = config_eth_account("user2")
+        test_account = default_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 

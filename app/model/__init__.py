@@ -24,6 +24,8 @@ from pydantic import WrapValidator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from web3 import Web3
 
+from config import ZERO_ADDRESS
+
 
 def ethereum_address_validator(
     value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
@@ -38,6 +40,27 @@ def ethereum_address_validator(
 
 
 EthereumAddress = Annotated[str, WrapValidator(ethereum_address_validator)]
+
+
+def checksum_ethereum_address_validator(
+    value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
+):
+    """Validator for ethereum address in checksum format"""
+    if value is not None:
+        if not isinstance(value, str):
+            raise ValueError("value must be of string")
+        if not Web3.is_address(value):
+            raise ValueError("invalid ethereum address")
+        if not Web3.to_checksum_address(value) == value:
+            raise ValueError("ethereum address must be in checksum format")
+        if value == ZERO_ADDRESS:
+            raise ValueError("ethereum address must not be zero address")
+    return value
+
+
+ChecksumEthereumAddress = Annotated[
+    str, WrapValidator(checksum_ethereum_address_validator)
+]
 
 
 def datetime_string_validator(

@@ -25,10 +25,10 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain.tx_params.ibet_security_token import ForceLockParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_security_token import ForceLockParams
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestForceLock:
@@ -42,18 +42,18 @@ class TestForceLock:
     # <Normal_1_1>
     # Authorization by eoa-password
     # - message is not set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_1(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -70,7 +70,7 @@ class TestForceLock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -95,7 +95,7 @@ class TestForceLock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceLockParams(
+            tx_params=ForceLockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -105,8 +105,8 @@ class TestForceLock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -115,18 +115,18 @@ class TestForceLock:
     # <Normal_1_2>
     # Authorization by eoa-password
     # - message is set
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -143,7 +143,7 @@ class TestForceLock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -169,7 +169,7 @@ class TestForceLock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceLockParams(
+            tx_params=ForceLockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -179,8 +179,8 @@ class TestForceLock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -188,18 +188,18 @@ class TestForceLock:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_lock")
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_2(
         self, IbetSecurityTokenInterface_mock, async_client, async_db
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -222,7 +222,7 @@ class TestForceLock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -244,7 +244,7 @@ class TestForceLock:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data=ForceLockParams(
+            tx_params=ForceLockParams(
                 **{
                     "lock_address": _lock_address,
                     "account_address": account_address,
@@ -254,8 +254,8 @@ class TestForceLock:
                     ),
                 }
             ),
-            tx_from=_admin_address,
-            private_key=ANY,
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -396,11 +396,11 @@ class TestForceLock:
     async def test_error_1_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -438,11 +438,11 @@ class TestForceLock:
     async def test_error_1_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -483,11 +483,11 @@ class TestForceLock:
     async def test_error_1_6(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -521,11 +521,14 @@ class TestForceLock:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "enum",
-                    "loc": ["body", "message"],
-                    "msg": "Input should be 'garnishment', 'inheritance' or 'force_lock'",
+                    "ctx": {
+                        "expected": "'garnishment', 'force_lock' or 'ibet_wst_bridge'"
+                    },
                     "input": "invalid_message",
-                    "ctx": {"expected": "'garnishment', 'inheritance' or 'force_lock'"},
+                    "loc": ["body", "message"],
+                    "msg": "Input should be 'garnishment', "
+                    "'force_lock' or 'ibet_wst_bridge'",
+                    "type": "enum",
                 }
             ],
         }
@@ -537,11 +540,11 @@ class TestForceLock:
     async def test_error_2_1(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -575,11 +578,11 @@ class TestForceLock:
     async def test_error_2_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -621,11 +624,11 @@ class TestForceLock:
     async def test_error_3_1(self, async_client, async_db):
         account_address = "invalid_address"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -642,7 +645,7 @@ class TestForceLock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -676,11 +679,11 @@ class TestForceLock:
     async def test_error_3_2(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -722,11 +725,11 @@ class TestForceLock:
     async def test_error_3_3(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -744,7 +747,7 @@ class TestForceLock:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -777,11 +780,11 @@ class TestForceLock:
     async def test_error_4(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -828,18 +831,18 @@ class TestForceLock:
     # <Error_5>
     # ContractRevertError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_lock",
+        "app.model.ibet.token.IbetSecurityTokenInterface.force_lock",
         MagicMock(side_effect=ContractRevertError(code_msg="121601")),
     )
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -856,7 +859,7 @@ class TestForceLock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -886,18 +889,18 @@ class TestForceLock:
     # <Error_6>
     # SendTransactionError
     @mock.patch(
-        "app.model.blockchain.token.IbetSecurityTokenInterface.force_lock",
+        "app.model.ibet.token.IbetSecurityTokenInterface.force_lock",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
         account_address = "0x1234567890123456789012345678900000000000"
 
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _lock_address = config_eth_account("user2")["address"]
+        _lock_address = default_eth_account("user2")["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -914,7 +917,7 @@ class TestForceLock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

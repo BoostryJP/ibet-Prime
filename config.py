@@ -92,7 +92,7 @@ ACCESS_LOGFILE = os.environ.get("ACCESS_LOGFILE") or "/dev/stdout"
 
 
 ####################################################
-# Blockchain monitoring settings
+# Blockchain monitoring settings (ibet network)
 ####################################################
 # Block synchronization monitoring interval [sec]
 BLOCK_SYNC_STATUS_SLEEP_INTERVAL = (
@@ -127,12 +127,6 @@ else:
 # Average block generation interval
 EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 0.1))
 
-# Maximum message size for name registration for ibet PersonalInfo contract:
-#   ( key bit length / 8 ) - ( 2 * hash function output length + 2 ) = 1238
-#   key bit length: 10240
-#   hash function output length: 20
-PERSONAL_INFO_MESSAGE_SIZE_LIMIT = int((10240 / 8) - (2 * 20 + 2))
-
 
 ####################################################
 # Web3 settings
@@ -161,8 +155,8 @@ WEB3_REQUEST_RETRY_COUNT = (
 WEB3_REQUEST_WAIT_TIME = (
     int(os.environ.get("WEB3_REQUEST_WAIT_TIME"))
     if os.environ.get("WEB3_REQUEST_WAIT_TIME")
-    else BLOCK_SYNC_STATUS_SLEEP_INTERVAL
-)  # Same batch interval
+    else 3
+)
 
 
 ####################################################
@@ -284,7 +278,6 @@ ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = (
     else 10
 )
 
-
 ####################################################
 # Password settings
 ####################################################
@@ -329,29 +322,18 @@ EOA_PASSWORD_CHECK_ENABLED = (
     False if os.environ.get("EOA_PASSWORD_CHECK_ENABLED") == "0" else True
 )
 
-# End-to-End Encryption (RSA)
-# NOTE:
-# about E2EE_RSA_RESOURCE_MODE
-# - 0:File, Set the file path to E2EE_RSA_RESOURCE.
-# - 1:AWS SecretsManager, Set the SecretsManagerARN to E2EE_RSA_RESOURCE.
-if "pytest" in sys.modules:  # for unit test
-    E2EE_RSA_RESOURCE_MODE = (
-        int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
-        if os.environ.get("E2EE_RSA_RESOURCE_MODE")
-        else 0
-    )
-    E2EE_RSA_RESOURCE = (
-        os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
-    )
-    E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE") or "password"
-elif (
-    "alembic" in sys.modules or "manage.py" in sys.argv[0] or APP_ENV == "local"
-):  # for migration or local
-    E2EE_RSA_RESOURCE_MODE = (
-        int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
-        if os.environ.get("E2EE_RSA_RESOURCE_MODE")
-        else 0
-    )
+# End-to-End Encryption (E2EE) settings
+#   E2EE_RSA_RESOURCE_MODE:
+#   - 0: File. Set the file path to E2EE_RSA_RESOURCE.
+#   - 1: AWS Secrets Manager. Set the Secrets Manager ARN to E2EE_RSA_RESOURCE.
+if (
+    "pytest" in sys.modules
+    or "alembic" in sys.modules
+    or "manage.py" in sys.argv[0]
+    or APP_ENV == "local"
+):
+    # For unit test / migration / local development
+    E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE", 0))
     E2EE_RSA_RESOURCE = (
         os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
     )
@@ -364,17 +346,29 @@ E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" el
 
 
 ####################################################
+# Dedicated Off-chain Transaction Mode
+# - Boot mode for off-chain transaction dedicated server
+####################################################
+DEDICATED_OFFCHAIN_TX_MODE = (
+    True if os.environ.get("DEDICATED_OFFCHAIN_TX_MODE") == "1" else False
+)
+
+
+####################################################
+# Dedicated DVP Agent Mode
+# - Boot mode for DvP agent dedicated server
+####################################################
+DEDICATED_DVP_AGENT_MODE = (
+    True if os.environ.get("DEDICATED_DVP_AGENT_MODE") == "1" else False
+)
+DEDICATED_DVP_AGENT_ID = os.environ.get("DEDICATED_DVP_AGENT_ID")
+
+
+####################################################
 # Settings for the "BlockchainExplorer"
 ####################################################
 BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
 
-
-####################################################
-# Settings for the "SealedTx" feature
-####################################################
-DEDICATED_SEALED_TX_MODE = (
-    True if os.environ.get("DEDICATED_SEALED_TX_MODE") == "1" else False
-)
 
 ####################################################
 # Settings for the "FreezeLog" feature
@@ -398,6 +392,25 @@ DVP_AGENT_FEATURE_ENABLED = (
 DVP_DATA_ENCRYPTION_MODE = os.environ.get("DVP_DATA_ENCRYPTION_MODE") or None
 DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
 
+####################################################
+# Settings for the "IbetWST" feature
+####################################################
+IBET_WST_FEATURE_ENABLED = (
+    True if os.environ.get("IBET_WST_FEATURE_ENABLED") == "1" else False
+)
+
+# IbetWST Bridge
+IBET_WST_BRIDGE_INTERVAL = (
+    int(os.environ.get("IBET_WST_BRIDGE_INTERVAL"))
+    if os.environ.get("IBET_WST_BRIDGE_INTERVAL")
+    else 10
+)
+IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE = (
+    int(os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE"))
+    if os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE")
+    else 10000
+)
+
 ######################################################
 # O11y Settings
 ######################################################
@@ -413,6 +426,12 @@ AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
 AWS_KMS_GENERATE_RANDOM_ENABLED = (
     True if os.environ.get("AWS_KMS_GENERATE_RANDOM_ENABLED") == "1" else False
 )
+
+# Maximum message size for name registration for ibet PersonalInfo contract:
+#   ( key bit length / 8 ) - ( 2 * hash function output length + 2 ) = 1238
+#   key bit length: 10240
+#   hash function output length: 20
+PERSONAL_INFO_MESSAGE_SIZE_LIMIT = int((10240 / 8) - (2 * 20 + 2))
 
 # File Upload
 # NOTE: (Reference information) WSGI server and app used by ibet-Prime has no request body size limit.

@@ -35,12 +35,12 @@ from sqlalchemy import and_, desc, func, select
 import config
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError, SendTransactionError
-from app.model.blockchain.exchange import IbetSecurityTokenDVP
-from app.model.blockchain.tx_params.ibet_security_token_dvp import (
+from app.model.db import DVPAgentAccount, IDXDelivery, TransactionLock
+from app.model.ibet.exchange import IbetSecurityTokenDVP
+from app.model.ibet.tx_params.ibet_security_token_dvp import (
     AbortDeliveryParams,
     FinishDeliveryParams,
 )
-from app.model.db import DVPAgentAccount, IDXDelivery, TransactionLock
 from app.model.schema import (
     AbortDVPDeliveryRequest,
     CreateDVPAgentAccountRequest,
@@ -57,6 +57,8 @@ from app.utils.fastapi_utils import json_response
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
+    DEDICATED_DVP_AGENT_ID,
+    DEDICATED_DVP_AGENT_MODE,
     E2EE_REQUEST_ENABLED,
     EOA_PASSWORD_PATTERN,
     EOA_PASSWORD_PATTERN_MSG,
@@ -108,6 +110,7 @@ async def create_account(
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     _account.is_deleted = False
+    _account.dedicated_agent_id = DEDICATED_DVP_AGENT_ID
     db.add(_account)
 
     # Insert initial transaction execution management record
@@ -134,9 +137,18 @@ async def create_account(
 async def list_all_accounts(db: DBAsyncSession):
     """List all DVP-Payment Agent accounts"""
 
-    _accounts: Sequence[DVPAgentAccount] = (
-        await db.scalars(select(DVPAgentAccount))
-    ).all()
+    if DEDICATED_DVP_AGENT_MODE:
+        _accounts: Sequence[DVPAgentAccount] = (
+            await db.scalars(
+                select(DVPAgentAccount).where(
+                    DVPAgentAccount.dedicated_agent_id == DEDICATED_DVP_AGENT_ID
+                )
+            )
+        ).all()
+    else:
+        _accounts: Sequence[DVPAgentAccount] = (
+            await db.scalars(select(DVPAgentAccount))
+        ).all()
 
     account_list = [
         {
@@ -162,13 +174,27 @@ async def delete_account(
     """Logically delete an DVP-Payment Agent Account"""
 
     # Search for an account
-    _account: DVPAgentAccount | None = (
-        await db.scalars(
-            select(DVPAgentAccount)
-            .where(DVPAgentAccount.account_address == account_address)
-            .limit(1)
-        )
-    ).first()
+    if DEDICATED_DVP_AGENT_MODE:
+        _account: DVPAgentAccount | None = (
+            await db.scalars(
+                select(DVPAgentAccount)
+                .where(
+                    and_(
+                        DVPAgentAccount.account_address == account_address,
+                        DVPAgentAccount.dedicated_agent_id == DEDICATED_DVP_AGENT_ID,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+    else:
+        _account: DVPAgentAccount | None = (
+            await db.scalars(
+                select(DVPAgentAccount)
+                .where(DVPAgentAccount.account_address == account_address)
+                .limit(1)
+            )
+        ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
@@ -200,13 +226,27 @@ async def change_eoa_password(
     """Change Agent's EOA Password"""
 
     # Search for an account
-    _account: DVPAgentAccount | None = (
-        await db.scalars(
-            select(DVPAgentAccount)
-            .where(DVPAgentAccount.account_address == account_address)
-            .limit(1)
-        )
-    ).first()
+    if DEDICATED_DVP_AGENT_MODE:
+        _account: DVPAgentAccount | None = (
+            await db.scalars(
+                select(DVPAgentAccount)
+                .where(
+                    and_(
+                        DVPAgentAccount.account_address == account_address,
+                        DVPAgentAccount.dedicated_agent_id == DEDICATED_DVP_AGENT_ID,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+    else:
+        _account: DVPAgentAccount | None = (
+            await db.scalars(
+                select(DVPAgentAccount)
+                .where(DVPAgentAccount.account_address == account_address)
+                .limit(1)
+            )
+        ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
@@ -262,12 +302,21 @@ async def list_all_dvp_agent_deliveries(
     request_query: Annotated[ListAllDVPAgentDeliveriesQuery, Query()],
 ):
     """List all DVP deliveries for paying agent"""
-    stmt = select(IDXDelivery).where(
-        and_(
-            IDXDelivery.exchange_address == exchange_address,
-            IDXDelivery.agent_address == request_query.agent_address,
+    if DEDICATED_DVP_AGENT_MODE:
+        stmt = select(IDXDelivery).where(
+            and_(
+                IDXDelivery.exchange_address == exchange_address,
+                IDXDelivery.agent_address == request_query.agent_address,
+                IDXDelivery.dedicated_agent_id == DEDICATED_DVP_AGENT_ID,
+            )
         )
-    )
+    else:
+        stmt = select(IDXDelivery).where(
+            and_(
+                IDXDelivery.exchange_address == exchange_address,
+                IDXDelivery.agent_address == request_query.agent_address,
+            )
+        )
     total = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(IDXDelivery).order_by(None)
     )
@@ -415,88 +464,70 @@ async def update_dvp_agent_delivery(
 ):
     """Finish/Abort DVP delivery"""
 
+    # Search for agent account
+    if DEDICATED_DVP_AGENT_MODE:
+        agent_account: DVPAgentAccount | None = (
+            await db.scalars(
+                select(DVPAgentAccount)
+                .where(
+                    and_(
+                        DVPAgentAccount.account_address == data.account_address,
+                        DVPAgentAccount.dedicated_agent_id == DEDICATED_DVP_AGENT_ID,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+    else:
+        agent_account: DVPAgentAccount | None = (
+            await db.scalars(
+                select(DVPAgentAccount)
+                .where(DVPAgentAccount.account_address == data.account_address)
+                .limit(1)
+            )
+        ).first()
+    if agent_account is None:
+        raise HTTPException(status_code=404, detail="agent account is not exists")
+
+    # Authentication
+    eoa_password = (
+        E2EEUtils.decrypt(data.eoa_password)
+        if E2EE_REQUEST_ENABLED
+        else data.eoa_password
+    )
+    correct_eoa_pass = E2EEUtils.decrypt(agent_account.eoa_password)
+    if eoa_password != correct_eoa_pass:
+        raise InvalidParameterError("password mismatch")
+
+    # Get private key
+    keyfile_json = agent_account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json, password=correct_eoa_pass.encode("utf-8")
+    )
+
     match data.operation_type:
         case "Finish":
-            # Search for agent account
-            agent_account: DVPAgentAccount | None = (
-                await db.scalars(
-                    select(DVPAgentAccount)
-                    .where(DVPAgentAccount.account_address == data.account_address)
-                    .limit(1)
-                )
-            ).first()
-            if agent_account is None:
-                raise HTTPException(
-                    status_code=404, detail="agent account is not exists"
-                )
-
-            # Authentication
-            eoa_password = (
-                E2EEUtils.decrypt(data.eoa_password)
-                if E2EE_REQUEST_ENABLED
-                else data.eoa_password
-            )
-            correct_eoa_pass = E2EEUtils.decrypt(agent_account.eoa_password)
-            if eoa_password != correct_eoa_pass:
-                raise InvalidParameterError("password mismatch")
-
-            # Get private key
-            keyfile_json = agent_account.keyfile
-            private_key = decode_keyfile_json(
-                raw_keyfile_json=keyfile_json, password=correct_eoa_pass.encode("utf-8")
-            )
-
-            # Cancel delivery
+            # Finish delivery
             dvp_contract = IbetSecurityTokenDVP(contract_address=exchange_address)
             try:
                 _data = {"delivery_id": delivery_id}
                 await dvp_contract.finish_delivery(
-                    data=FinishDeliveryParams(**_data),
-                    tx_from=agent_account.account_address,
-                    private_key=private_key,
+                    tx_params=FinishDeliveryParams(**_data),
+                    tx_sender=agent_account.account_address,
+                    tx_sender_key=private_key,
                 )
             except SendTransactionError:
                 raise SendTransactionError("failed to finish delivery")
             return
-
         case "Abort":
-            # Search for agent account
-            agent_account: DVPAgentAccount | None = (
-                await db.scalars(
-                    select(DVPAgentAccount)
-                    .where(DVPAgentAccount.account_address == data.account_address)
-                    .limit(1)
-                )
-            ).first()
-            if agent_account is None:
-                raise HTTPException(
-                    status_code=404, detail="agent account is not exists"
-                )
-
-            # Authentication
-            eoa_password = (
-                E2EEUtils.decrypt(data.eoa_password)
-                if E2EE_REQUEST_ENABLED
-                else data.eoa_password
-            )
-            correct_eoa_pass = E2EEUtils.decrypt(agent_account.eoa_password)
-            if eoa_password != correct_eoa_pass:
-                raise InvalidParameterError("password mismatch")
-
-            # Get private key
-            keyfile_json = agent_account.keyfile
-            private_key = decode_keyfile_json(
-                raw_keyfile_json=keyfile_json, password=correct_eoa_pass.encode("utf-8")
-            )
-
-            # Cancel delivery
+            # Abort delivery
             dvp_contract = IbetSecurityTokenDVP(contract_address=exchange_address)
             try:
                 _data = {"delivery_id": delivery_id}
                 await dvp_contract.abort_delivery(
-                    data=AbortDeliveryParams(**_data),
-                    tx_from=agent_account.account_address,
-                    private_key=private_key,
+                    tx_params=AbortDeliveryParams(**_data),
+                    tx_sender=agent_account.account_address,
+                    tx_sender_key=private_key,
                 )
             except SendTransactionError:
                 raise SendTransactionError("failed to abort delivery")

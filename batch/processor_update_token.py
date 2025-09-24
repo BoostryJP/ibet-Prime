@@ -36,17 +36,6 @@ from app.exceptions import (
     SendTransactionError,
     ServiceUnavailableError,
 )
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract,
-    TokenListContract,
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     UTXO,
     Account,
@@ -57,8 +46,19 @@ from app.model.db import (
     TokenType,
     UpdateToken,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet import (
+    IbetShareContract,
+    IbetStraightBondContract,
+    TokenListContract,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
 from batch.utils.signal_handler import setup_signal_handler
@@ -161,9 +161,9 @@ class Processor:
                             arguments=_update_token.arguments,
                         )
                         await IbetShareContract(_update_token.token_address).update(
-                            data=_update_data,
-                            tx_from=_update_token.issuer_address,
-                            private_key=private_key,
+                            tx_params=_update_data,
+                            tx_sender=_update_token.issuer_address,
+                            tx_sender_key=private_key,
                         )
                         token_template = TokenType.IBET_SHARE.value
 
@@ -176,9 +176,9 @@ class Processor:
                         await IbetStraightBondContract(
                             _update_token.token_address
                         ).update(
-                            data=_update_data,
-                            tx_from=_update_token.issuer_address,
-                            private_key=private_key,
+                            tx_params=_update_data,
+                            tx_sender=_update_token.issuer_address,
+                            tx_sender_key=private_key,
                         )
                         token_template = TokenType.IBET_STRAIGHT_BOND.value
 
@@ -187,8 +187,8 @@ class Processor:
                         await TokenListContract(TOKEN_LIST_CONTRACT_ADDRESS).register(
                             token_address=_update_token.token_address,
                             token_template=token_template,
-                            tx_from=_update_token.issuer_address,
-                            private_key=private_key,
+                            tx_sender=_update_token.issuer_address,
+                            tx_sender_key=private_key,
                         )
 
                         # Insert initial position data

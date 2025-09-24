@@ -22,8 +22,8 @@ from unittest import mock
 import pytest
 import pytz
 
-from app.model.blockchain import IbetStraightBondContract
-from app.model.db import Token, TokenType, TokenVersion
+from app.model.db import IbetWSTVersion, Token, TokenType, TokenVersion
+from app.model.ibet import IbetStraightBondContract
 from config import TZ
 
 
@@ -38,7 +38,7 @@ class TestRetrieveBondToken:
 
     # <Normal_1>
     # not exist Additional info
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_1(self, mock_get, async_client, async_db):
         # prepare data
@@ -48,7 +48,11 @@ class TestRetrieveBondToken:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = "eth_token_address_test1"
         async_db.add(token)
 
         await async_db.commit()
@@ -157,7 +161,11 @@ class TestRetrieveBondToken:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_25_06,
+            "contract_version": TokenVersion.V_25_09,
+            "ibet_wst_activated": True,
+            "ibet_wst_version": IbetWSTVersion.V_1,
+            "ibet_wst_deployed": True,
+            "ibet_wst_address": "eth_token_address_test1",
         }
 
         assert resp.status_code == 200
@@ -165,7 +173,7 @@ class TestRetrieveBondToken:
 
     # <Normal_2>
     # exist Additional info
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(self, mock_get, async_client, async_db):
         # prepare data
@@ -175,7 +183,11 @@ class TestRetrieveBondToken:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = "eth_token_address_test1"
         async_db.add(token)
 
         await async_db.commit()
@@ -284,7 +296,11 @@ class TestRetrieveBondToken:
             "token_status": 1,
             "transfer_approval_required": True,
             "memo": "memo_test1",
-            "contract_version": TokenVersion.V_25_06,
+            "contract_version": TokenVersion.V_25_09,
+            "ibet_wst_activated": True,
+            "ibet_wst_version": IbetWSTVersion.V_1,
+            "ibet_wst_deployed": True,
+            "ibet_wst_address": "eth_token_address_test1",
         }
 
         assert resp.status_code == 200
@@ -318,7 +334,7 @@ class TestRetrieveBondToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

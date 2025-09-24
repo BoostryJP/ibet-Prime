@@ -32,7 +32,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRetrieveBondTokenHolder:
@@ -48,7 +48,7 @@ class TestRetrieveBondTokenHolder:
     # locked_position is None
     @pytest.mark.asyncio
     async def test_normal_1_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -65,7 +65,7 @@ class TestRetrieveBondTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: Personal Info
@@ -128,7 +128,7 @@ class TestRetrieveBondTokenHolder:
     # locked_position is None
     @pytest.mark.asyncio
     async def test_normal_1_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -145,7 +145,7 @@ class TestRetrieveBondTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: Position
@@ -219,7 +219,7 @@ class TestRetrieveBondTokenHolder:
     # locked_position is not None
     @pytest.mark.asyncio
     async def test_normal_1_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -236,7 +236,7 @@ class TestRetrieveBondTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # prepare data: Position
@@ -330,7 +330,7 @@ class TestRetrieveBondTokenHolder:
     # PersonalInfo not registry
     @pytest.mark.asyncio
     async def test_normal_2_1(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -346,7 +346,7 @@ class TestRetrieveBondTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -401,7 +401,7 @@ class TestRetrieveBondTokenHolder:
     # PersonalInfo is partially registered
     @pytest.mark.asyncio
     async def test_normal_2_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -417,7 +417,7 @@ class TestRetrieveBondTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -487,7 +487,7 @@ class TestRetrieveBondTokenHolder:
     # Holder's extra information is set
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -503,7 +503,7 @@ class TestRetrieveBondTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -600,7 +600,7 @@ class TestRetrieveBondTokenHolder:
     # InvalidParameterError: issuer does not exist
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -622,7 +622,7 @@ class TestRetrieveBondTokenHolder:
     # HTTPException 404: token not found
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -651,7 +651,7 @@ class TestRetrieveBondTokenHolder:
     # InvalidParameterError: processing token
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        user = config_eth_account("user1")
+        user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
@@ -668,7 +668,7 @@ class TestRetrieveBondTokenHolder:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()

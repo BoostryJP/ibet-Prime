@@ -21,7 +21,7 @@ import math
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Annotated, Optional, Self
+from typing import Annotated, Literal, Optional, Self
 
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -85,6 +85,10 @@ class IbetStraightBondCreate(BaseModel):
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
 
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
+
     @field_validator("base_fx_rate")
     @classmethod
     def base_fx_rate_6_decimal_places(cls, v):
@@ -143,6 +147,10 @@ class IbetStraightBondUpdate(BaseModel):
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
     memo: Optional[str] = Field(default=None, max_length=10000)
+
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
 
     @field_validator("base_fx_rate")
     @classmethod
@@ -229,6 +237,10 @@ class IbetShareCreate(BaseModel):
     transfer_approval_required: Optional[bool] = None
     is_canceled: Optional[bool] = None
 
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
+
     @field_validator("dividends")
     @classmethod
     def dividends_13_decimal_places(cls, v):
@@ -259,6 +271,10 @@ class IbetShareUpdate(BaseModel):
     principal_value: Optional[int] = Field(default=None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool] = None
     memo: Optional[str] = Field(default=None, max_length=10000)
+
+    activate_ibet_wst: Optional[Literal[True]] = Field(
+        default=None, description="Activate IbetWST"
+    )
 
     @field_validator("is_canceled")
     @classmethod
@@ -521,17 +537,29 @@ class TokenAddressResponse(BaseModel):
 class IbetStraightBondResponse(IbetStraightBond):
     """ibet Straight Bond schema (Response)"""
 
-    issue_datetime: str
-    token_status: Optional[TokenStatus]
-    contract_version: IbetStraightBondContractVersion
+    issue_datetime: str = Field(..., description="Issue datetime (ISO 8601 format)")
+    token_status: Optional[TokenStatus] = Field(..., description="Token deploy status")
+    contract_version: IbetStraightBondContractVersion = Field(
+        ..., description="Contract version"
+    )
+    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
+    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
+    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
 
 
 class IbetShareResponse(IbetShare):
     """ibet Share schema (Response)"""
 
-    issue_datetime: str
-    token_status: Optional[TokenStatus]
-    contract_version: IbetShareContractVersion
+    issue_datetime: str = Field(..., description="Issue datetime (ISO 8601 format)")
+    token_status: Optional[TokenStatus] = Field(..., description="Token deploy status")
+    contract_version: IbetShareContractVersion = Field(
+        ..., description="Contract version"
+    )
+    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
+    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
+    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
 
 
 class TokenOperationLogResponse(BaseModel):

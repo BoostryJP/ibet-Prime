@@ -17,12 +17,14 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from unittest import mock
+
 import pytest
 from sqlalchemy import select
 
 from app.model.db import DVPAgentAccount
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestChangeDVPAgentAccountPassword:
@@ -34,9 +36,10 @@ class TestChangeDVPAgentAccountPassword:
     ###########################################################################
 
     # <Normal_1>
+    # DEDICATED_DVP_AGENT_MODE = False (default)
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_password = "password"
@@ -72,6 +75,51 @@ class TestChangeDVPAgentAccountPassword:
         ).first()
         assert E2EEUtils.decrypt(dvp_agent_account_af.eoa_password) == new_password
 
+    # <Normal_2>
+    # DEDICATED_DVP_AGENT_MODE = True
+    @pytest.mark.asyncio
+    @mock.patch("app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_MODE", True)
+    @mock.patch(
+        "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_0"
+    )
+    async def test_normal_2(self, async_client, async_db):
+        user_1 = default_eth_account("user1")
+        user_address_1 = user_1["address"]
+        user_keyfile_1 = user_1["keyfile_json"]
+        old_password = "password"
+        new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
+
+        # Prepare data
+        dvp_agent_account = DVPAgentAccount()
+        dvp_agent_account.account_address = user_address_1
+        dvp_agent_account.keyfile = user_keyfile_1
+        dvp_agent_account.eoa_password = E2EEUtils.encrypt(old_password)
+        dvp_agent_account.dedicated_agent_id = "test_agent_0"
+        async_db.add(dvp_agent_account)
+
+        await async_db.commit()
+
+        # Request target api
+        req_param = {
+            "old_eoa_password": E2EEUtils.encrypt(old_password),
+            "eoa_password": E2EEUtils.encrypt(new_password),
+        }
+        resp = await async_client.post(
+            self.base_url.format(account_address=user_address_1), json=req_param
+        )
+
+        # Assertion
+        assert resp.status_code == 200
+
+        dvp_agent_account_af = (
+            await async_db.scalars(
+                select(DVPAgentAccount)
+                .where(DVPAgentAccount.account_address == user_address_1)
+                .limit(1)
+            )
+        ).first()
+        assert E2EEUtils.decrypt(dvp_agent_account_af.eoa_password) == new_password
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -81,7 +129,7 @@ class TestChangeDVPAgentAccountPassword:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api
@@ -115,7 +163,7 @@ class TestChangeDVPAgentAccountPassword:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api
@@ -154,7 +202,7 @@ class TestChangeDVPAgentAccountPassword:
     # -> NotFound
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         old_password = "password"
         new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
@@ -180,7 +228,7 @@ class TestChangeDVPAgentAccountPassword:
     # -> InvalidParameterError
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_password = "password"

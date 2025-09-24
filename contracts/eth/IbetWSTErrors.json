@@ -1,0 +1,44 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "accountAddress",
+          "type": "address"
+        }
+      ],
+      "name": "AccountNotWhitelisted",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "TradeRequestIsNotAcceptable",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "TradeRequestNotAcceptableByCaller",
+      "type": "error"
+    }
+  ],
+  "bytecode": "",
+  "deployedBytecode": ""
+}

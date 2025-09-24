@@ -21,8 +21,8 @@ from unittest import mock
 
 import pytest
 
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import IDXLockedPosition, Token, TokenType, TokenVersion
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 
 
 class TestAppRoutersLockedPositions:
@@ -46,7 +46,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -70,7 +70,7 @@ class TestAppRoutersLockedPositions:
 
     # Normal_2_1
     # Bond
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2_1(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -93,7 +93,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _token = Token()
@@ -102,7 +102,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Locked Position
@@ -172,7 +172,7 @@ class TestAppRoutersLockedPositions:
 
     # Normal_2_2
     # Share
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -193,7 +193,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _token = Token()
@@ -202,7 +202,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Locked Position
@@ -287,7 +287,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Locked Position
@@ -320,7 +320,7 @@ class TestAppRoutersLockedPositions:
     # Normal_3_2
     # Records not subject to extraction
     # token_status == 2
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_2(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -343,7 +343,7 @@ class TestAppRoutersLockedPositions:
         _token.tx_hash = ""
         _token.abi = {}
         _token.token_status = 2
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _token = Token()
@@ -352,7 +352,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Locked Position
@@ -405,7 +405,7 @@ class TestAppRoutersLockedPositions:
 
     # Normal_4
     # issuer_address is not None
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_4(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -428,7 +428,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _token = Token()
@@ -437,7 +437,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Locked Position
@@ -493,7 +493,7 @@ class TestAppRoutersLockedPositions:
 
     # Normal_5
     # Search filter: token type
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -515,7 +515,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _token = Token()
@@ -524,7 +524,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Locked Position
@@ -578,7 +578,7 @@ class TestAppRoutersLockedPositions:
 
     # Normal_6
     # Pagination
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_6(
         self, mock_IbetStraightBondContract_get, async_client, async_db
@@ -600,7 +600,7 @@ class TestAppRoutersLockedPositions:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Locked Position

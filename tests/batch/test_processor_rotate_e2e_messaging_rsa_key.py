@@ -29,18 +29,18 @@ from sqlalchemy import select
 
 import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_messaging_rsa_key
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet import E2EMessaging
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.processor_rotate_e2e_messaging_rsa_key import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, e2e_messaging_contract):
+def processor(async_db, ibet_e2e_messaging_contract):
     processor_rotate_e2e_messaging_rsa_key.E2E_MESSAGING_CONTRACT_ADDRESS = (
-        e2e_messaging_contract.address
+        ibet_e2e_messaging_contract.address
     )
     log = logging.getLogger("background")
     default_log_level = LOG.level
@@ -60,7 +60,7 @@ class TestProcessor:
     # E2E messaging account is not exists
     @pytest.mark.asyncio
     async def test_normal_1_1(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -89,7 +89,7 @@ class TestProcessor:
     # E2E messaging account is not auto generated
     @pytest.mark.asyncio
     async def test_normal_1_2(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -138,7 +138,7 @@ class TestProcessor:
     # Last generation is within the interval
     @pytest.mark.asyncio
     async def test_normal_1_3(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -186,14 +186,14 @@ class TestProcessor:
     # <Normal_2>
     # auto generate and rotate
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_keyfile_2 = user_2["keyfile_json"]
         user_private_key_2 = decode_keyfile_json(
@@ -269,14 +269,14 @@ class TestProcessor:
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
-            target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+            target="app.model.ibet.e2e_messaging.E2EMessaging.set_public_key",
             side_effect=[
                 ("tx_5", {"blockNumber": 12345}),
                 ("tx_6", {"blockNumber": 12350}),
             ],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
@@ -308,14 +308,14 @@ class TestProcessor:
                     call(
                         public_key=ANY,
                         key_type="RSA4096",
-                        tx_from=user_address_2,
-                        private_key=user_private_key_2,
+                        tx_sender=user_address_2,
+                        tx_sender_key=user_private_key_2,
                     ),
                     call(
                         public_key=ANY,
                         key_type="RSA4096",
-                        tx_from=user_address_1,
-                        private_key=user_private_key_1,
+                        tx_sender=user_address_1,
+                        tx_sender_key=user_private_key_1,
                     ),
                 ]
             )
@@ -389,7 +389,7 @@ class TestProcessor:
     # Could not get the EOA private key
     @pytest.mark.asyncio
     async def test_error_1(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
 
@@ -433,8 +433,8 @@ class TestProcessor:
     # <Error_2>
     # Failed to send transaction
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_2(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
@@ -467,7 +467,7 @@ class TestProcessor:
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
-            target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+            target="app.model.ibet.e2e_messaging.E2EMessaging.set_public_key",
             side_effect=SendTransactionError(),
         )
 
@@ -480,8 +480,8 @@ class TestProcessor:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=user_address_1,
-                private_key=user_private_key_1,
+                tx_sender=user_address_1,
+                tx_sender_key=user_private_key_1,
             )
 
         _rsa_key_list = (
@@ -500,10 +500,10 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        e2e_messaging_contract,
+        ibet_e2e_messaging_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
@@ -536,7 +536,7 @@ class TestProcessor:
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
-            target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+            target="app.model.ibet.e2e_messaging.E2EMessaging.set_public_key",
             side_effect=ContractRevertError("999999"),
         )
 
@@ -549,8 +549,8 @@ class TestProcessor:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=user_address_1,
-                private_key=user_private_key_1,
+                tx_sender=user_address_1,
+                tx_sender_key=user_private_key_1,
             )
 
         _rsa_key_list = (

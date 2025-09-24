@@ -33,26 +33,26 @@ from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import batch.indexer_e2e_messaging as indexer_e2e_messaging
-from app.model.blockchain import E2EMessaging
 from app.model.db import (
     E2EMessagingAccount,
     E2EMessagingAccountRsaKey,
     IDXE2EMessaging,
     IDXE2EMessagingBlockNumber,
 )
+from app.model.ibet import E2EMessaging
 from app.utils.e2ee_utils import E2EEUtils
 from batch.indexer_e2e_messaging import Processor
 from config import WEB3_HTTP_PROVIDER
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, e2e_messaging_contract):
+def processor(async_db, ibet_e2e_messaging_contract):
     indexer_e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS = (
-        e2e_messaging_contract.address
+        ibet_e2e_messaging_contract.address
     )
     return Processor()
 
@@ -166,10 +166,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Single event logs
     # not generated RSA key after send
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2_1(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -190,7 +190,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str = json.dumps(message)
 
         sending_tx_hash, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
             _type,
@@ -249,10 +249,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Single event logs
     # generated RSA key after send
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2_2(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -273,7 +273,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str = json.dumps(message)
 
         sending_tx_hash, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
             _type,
@@ -373,12 +373,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_3>
     # Multi event logs
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_3(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_3 = user_3["address"]
         user_private_key_3 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
@@ -405,7 +405,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str_1 = json.dumps(message)
 
         sending_tx_hash_1, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
             _type_1,
@@ -425,7 +425,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str_2 = json.dumps(message)
 
         sending_tx_hash_2, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_2,
             _type_2,
@@ -444,7 +444,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str_3 = "テスト太郎1,東京都1"
 
         sending_tx_hash_3, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
             _type_3,
@@ -463,7 +463,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str_4 = "a" * 5000
 
         sending_tx_hash_4, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_2,
             _type_4,
@@ -558,15 +558,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_4>
     # Not target message
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_4(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         user_address_3 = user_3["address"]
 
         # Prepare data : E2EMessagingAccount
@@ -584,7 +584,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str = json.dumps(message)
 
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_3,  # not target
             _type,
@@ -634,10 +634,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # not json
     @pytest.mark.asyncio
-    async def test_error_1_1(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_1(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -652,7 +652,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         message = "test"
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -691,10 +691,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `type` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_2(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_2(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -726,7 +726,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -765,10 +765,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_3(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_3(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -787,7 +787,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -826,10 +826,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text` max length over
     @pytest.mark.asyncio
-    async def test_error_1_4(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_4(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -859,7 +859,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -898,10 +898,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text.cipher_key` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_5(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_5(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -930,7 +930,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -969,10 +969,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text.message` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_6(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_6(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1000,7 +1000,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -1037,10 +1037,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # decoded `text.message` max length over
     @pytest.mark.asyncio
-    async def test_error_1_7(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_7(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1070,7 +1070,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -1108,10 +1108,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # RSA key does not exists
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_2(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1132,7 +1132,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message_message_str = json.dumps(message)
 
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
             _type,
@@ -1178,10 +1178,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` is not AES key
     @pytest.mark.asyncio
-    async def test_error_3_1(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_3_1(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1208,7 +1208,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -1247,10 +1247,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` does not encrypt with RSA key
     @pytest.mark.asyncio
-    async def test_error_3_2(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_3_2(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1278,7 +1278,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -1317,10 +1317,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` encrypted other RSA key
     @pytest.mark.asyncio
-    async def test_error_3_3(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_3_3(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1353,7 +1353,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -1392,10 +1392,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.message` does not encrypt
     @pytest.mark.asyncio
-    async def test_error_3_4(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_3_4(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1419,7 +1419,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
@@ -1458,10 +1458,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.message` encrypted other AES key
     @pytest.mark.asyncio
-    async def test_error_3_5(self, processor, async_db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_3_5(self, processor, async_db, ibet_e2e_messaging_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
@@ -1492,7 +1492,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             }
         )
         _, sending_tx_receipt = await E2EMessaging(
-            e2e_messaging_contract.address
+            ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 

@@ -40,9 +40,9 @@ from app.model.db import (
     IDXE2EMessaging,
     IDXE2EMessagingBlockNumber,
 )
-from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch import free_malloc
 from batch.utils import batch_log
 from config import (

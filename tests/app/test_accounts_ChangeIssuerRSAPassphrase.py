@@ -25,7 +25,7 @@ from sqlalchemy import select
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
 from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestChangeIssuerRSAPassphrase:
@@ -42,7 +42,7 @@ class TestChangeIssuerRSAPassphrase:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
         _rsa_public_key = _account["rsa_public_key"]
@@ -98,7 +98,7 @@ class TestChangeIssuerRSAPassphrase:
     # parameter error(required body)
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
         # request target API
@@ -122,7 +122,7 @@ class TestChangeIssuerRSAPassphrase:
     # parameter error(required field)
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
         # request target API
@@ -157,7 +157,7 @@ class TestChangeIssuerRSAPassphrase:
     # parameter error(not decrypt)
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_password = "password"
         _new_password = self.valid_password
@@ -223,7 +223,7 @@ class TestChangeIssuerRSAPassphrase:
     # old password mismatch
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
         _rsa_public_key = _account["rsa_public_key"]
@@ -261,7 +261,7 @@ class TestChangeIssuerRSAPassphrase:
     # password policy
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        _account = config_eth_account("user1")
+        _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
         _rsa_public_key = _account["rsa_public_key"]

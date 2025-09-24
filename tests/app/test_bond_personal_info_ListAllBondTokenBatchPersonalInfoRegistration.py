@@ -28,7 +28,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListAllBondTokenBatchPersonalInfoRegistration:
@@ -52,7 +52,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # 0 record
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -64,7 +64,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -86,7 +86,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # multi records
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -98,7 +98,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -144,7 +144,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # filter by status
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -156,7 +156,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -198,7 +198,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # pagination
     @pytest.mark.asyncio
     async def test_normal_4(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -210,7 +210,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -252,7 +252,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # sort
     @pytest.mark.asyncio
     async def test_normal_5(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -264,7 +264,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -315,7 +315,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # RequestValidationError: issuer_address
     @pytest.mark.asyncio
     async def test_error_1(self, async_client, async_db):
-        _issuer_account = config_eth_account("user1")
+        _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -327,7 +327,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -356,10 +356,10 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # token not found
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        _issuer_account_1 = config_eth_account("user1")
+        _issuer_account_1 = default_eth_account("user1")
         _issuer_address_1 = _issuer_account_1["address"]
 
-        _issuer_account_2 = config_eth_account("user2")
+        _issuer_account_2 = default_eth_account("user2")
         _issuer_address_2 = _issuer_account_2["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
@@ -371,7 +371,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address_2
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

@@ -28,8 +28,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import Account, Token, TokenStatus, TokenType
+from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from batch import free_malloc
 from batch.utils import batch_log
 from config import INDEXER_SYNC_INTERVAL

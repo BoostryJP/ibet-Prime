@@ -31,7 +31,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRetrieveDVPDelivery:
@@ -39,8 +39,8 @@ class TestRetrieveDVPDelivery:
     base_url = "/settlement/dvp/{exchange_address}/delivery/{delivery_id}"
 
     account_list = [
-        {"address": config_eth_account("user1")["address"], "amount": 1},
-        {"address": config_eth_account("user2")["address"], "amount": 2},
+        {"address": default_eth_account("user1")["address"], "amount": 1},
+        {"address": default_eth_account("user2")["address"], "amount": 2},
     ]
 
     ###########################################################################
@@ -68,7 +68,7 @@ class TestRetrieveDVPDelivery:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -216,7 +216,7 @@ class TestRetrieveDVPDelivery:
         _token.issuer_address = issuer_address
         _token.token_address = token_address_1
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: IDXPersonalInfo

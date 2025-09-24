@@ -26,10 +26,10 @@ import pytest
 from sqlalchemy import select
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey, TransactionLock
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet import E2EMessaging
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from config import (
     E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE,
     E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG,
@@ -51,7 +51,7 @@ class TestCreateE2EMessagingAccount:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, e2e_messaging_contract):
+    async def test_normal_1(self, async_client, async_db, ibet_e2e_messaging_contract):
         _accounts_before = (await async_db.scalars(select(E2EMessagingAccount))).all()
         _rsa_key_before = (
             await async_db.scalars(select(E2EMessagingAccountRsaKey))
@@ -60,7 +60,7 @@ class TestCreateE2EMessagingAccount:
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
-            target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+            target="app.model.ibet.e2e_messaging.E2EMessaging.set_public_key",
             side_effect=[
                 (
                     "0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -69,7 +69,7 @@ class TestCreateE2EMessagingAccount:
             ],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
@@ -83,7 +83,7 @@ class TestCreateE2EMessagingAccount:
         with (
             mock.patch(
                 "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
-                e2e_messaging_contract.address,
+                ibet_e2e_messaging_contract.address,
             ),
             mock_E2EMessaging_set_public_key,
             mock_ContractUtils_get_block_by_transaction_hash,
@@ -96,8 +96,8 @@ class TestCreateE2EMessagingAccount:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=resp.json()["account_address"],
-                private_key=ANY,
+                tx_sender=resp.json()["account_address"],
+                tx_sender_key=ANY,
             )
             AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -152,7 +152,7 @@ class TestCreateE2EMessagingAccount:
     # <Normal_2>
     # use AWS KMS
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, e2e_messaging_contract):
+    async def test_normal_2(self, async_client, async_db, ibet_e2e_messaging_contract):
         _accounts_before = (await async_db.scalars(select(E2EMessagingAccount))).all()
         _rsa_key_before = (
             await async_db.scalars(select(E2EMessagingAccountRsaKey))
@@ -169,7 +169,7 @@ class TestCreateE2EMessagingAccount:
             target="boto3.client", side_effect=[KMSClientMock()]
         )
         mock_E2EMessaging_set_public_key = mock.patch(
-            target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+            target="app.model.ibet.e2e_messaging.E2EMessaging.set_public_key",
             side_effect=[
                 (
                     "0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -178,7 +178,7 @@ class TestCreateE2EMessagingAccount:
             ],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
@@ -195,7 +195,7 @@ class TestCreateE2EMessagingAccount:
             ),
             mock.patch(
                 "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
-                e2e_messaging_contract.address,
+                ibet_e2e_messaging_contract.address,
             ),
             mock_boto3_client,
             mock_E2EMessaging_set_public_key,
@@ -214,8 +214,8 @@ class TestCreateE2EMessagingAccount:
             E2EMessaging.set_public_key.assert_called_with(
                 public_key=ANY,
                 key_type="RSA4096",
-                tx_from=resp.json()["account_address"],
-                private_key=ANY,
+                tx_sender=resp.json()["account_address"],
+                tx_sender_key=ANY,
             )
             AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -439,11 +439,11 @@ class TestCreateE2EMessagingAccount:
     # <Error_3>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+        "app.model.ibet.e2e_messaging.E2EMessaging.set_public_key",
         MagicMock(side_effect=SendTransactionError),
     )
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, e2e_messaging_contract):
+    async def test_error_3(self, async_client, async_db, ibet_e2e_messaging_contract):
         # request target api
         req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
         resp = await async_client.post(self.base_url, json=req_param)

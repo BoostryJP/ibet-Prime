@@ -32,7 +32,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestAppRoutersBondBulkTransferPOST:
@@ -43,14 +43,14 @@ class TestAppRoutersBondBulkTransferPOST:
     # Normal Case
     ###########################################################################
 
-    admin_account = config_eth_account("user1")
+    admin_account = default_eth_account("user1")
     admin_address = admin_account["address"]
     admin_keyfile = admin_account["keyfile_json"]
 
-    from_address_account = config_eth_account("user2")
+    from_address_account = default_eth_account("user2")
     from_address = from_address_account["address"]
 
-    to_address_account = config_eth_account("user3")
+    to_address_account = default_eth_account("user3")
     to_address = to_address_account["address"]
 
     req_tokens = [
@@ -83,7 +83,7 @@ class TestAppRoutersBondBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = {}
-            _token.version = TokenVersion.V_25_06
+            _token.version = TokenVersion.V_25_09
             async_db.add(_token)
 
         await async_db.commit()
@@ -178,7 +178,7 @@ class TestAppRoutersBondBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = {}
-            _token.version = TokenVersion.V_25_06
+            _token.version = TokenVersion.V_25_09
             async_db.add(_token)
 
         await async_db.commit()
@@ -628,7 +628,7 @@ class TestAppRoutersBondBulkTransferPOST:
         _token.token_address = self.req_tokens[0]
         _token.abi = {}
         _token.token_status = 0
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()

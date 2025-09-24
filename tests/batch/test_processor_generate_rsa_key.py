@@ -25,7 +25,7 @@ from sqlalchemy import select
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_generate_rsa_key import Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -41,13 +41,13 @@ class TestProcessor:
     # <Normal_1>
     @pytest.mark.asyncio
     async def test_normal_1(self, processor, async_db):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         keyfile_1 = user_1["keyfile_json"]
         eoa_password_1 = E2EEUtils.encrypt("password_user1")
         rsa_passphrase_1 = E2EEUtils.encrypt("passphrase_user1")
 
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         issuer_address_2 = user_2["address"]
         keyfile_2 = user_2["keyfile_json"]
         eoa_password_2 = E2EEUtils.encrypt("password_user2")
@@ -55,12 +55,12 @@ class TestProcessor:
         rsa_public_key_2 = user_2["rsa_public_key"]
         rsa_passphrase_2 = E2EEUtils.encrypt("passphrase_user2")
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         issuer_address_3 = user_3["address"]
         keyfile_3 = user_3["keyfile_json"]
         eoa_password_3 = E2EEUtils.encrypt("password_user3")
 
-        user_4 = config_eth_account("user4")
+        user_4 = default_eth_account("user4")
         issuer_address_4 = user_4["address"]
         keyfile_4 = user_4["keyfile_json"]
         eoa_password_4 = E2EEUtils.encrypt("password_user4")

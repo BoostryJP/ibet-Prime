@@ -24,9 +24,23 @@ from .base import Base
 
 
 class Node(Base):
-    """Ethereum Node Information"""
+    """Ibet node information"""
 
     __tablename__ = "node"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # endpoint uri(http[s]://domain:port)
+    endpoint_uri: Mapped[str | None] = mapped_column(String(267))
+    # connect priority(top priority is lower number)
+    priority: Mapped[int | None] = mapped_column(Integer)
+    # node synchronized status
+    is_synced: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+
+class EthereumNode(Base):
+    """Ethereum node information"""
+
+    __tablename__ = "ethereum_node"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # endpoint uri(http[s]://domain:port)

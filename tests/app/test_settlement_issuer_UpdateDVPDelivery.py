@@ -23,10 +23,6 @@ from datetime import UTC, datetime
 import pytest
 from eth_keyfile import decode_keyfile_json
 
-from app.model.blockchain import IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.model.db import (
     Account,
     AuthToken,
@@ -37,10 +33,14 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetStraightBondContract
+from app.model.ibet.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 async def deploy_bond_token_contract(
@@ -66,14 +66,14 @@ async def deploy_bond_token_contract(
     bond_contrat = IbetStraightBondContract()
     token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
     await bond_contrat.update(
-        data=IbetStraightBondUpdateParams(
+        tx_params=IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
             transfer_approval_required=transfer_approval_required,
         ),
-        tx_from=address,
-        private_key=private_key,
+        tx_sender=address,
+        tx_sender_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
@@ -94,21 +94,21 @@ class TestUpdateDVPDelivery:
     async def test_normal_1_1(
         self,
         ibet_security_token_dvp_contract,
-        personal_info_contract,
+        ibet_personal_info_contract,
         async_client,
         async_db,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         agent_address = user_3["address"]
 
         # prepare data
@@ -127,7 +127,7 @@ class TestUpdateDVPDelivery:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
@@ -136,7 +136,7 @@ class TestUpdateDVPDelivery:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -211,21 +211,21 @@ class TestUpdateDVPDelivery:
     async def test_normal_1_2(
         self,
         ibet_security_token_dvp_contract,
-        personal_info_contract,
+        ibet_personal_info_contract,
         async_client,
         async_db,
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
-        user_2 = config_eth_account("user2")
+        user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
-        user_3 = config_eth_account("user3")
+        user_3 = default_eth_account("user3")
         agent_address = user_3["address"]
 
         # prepare data
@@ -244,7 +244,7 @@ class TestUpdateDVPDelivery:
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             tradable_exchange_contract_address=ibet_security_token_dvp_contract.address,
         )
         token = Token()
@@ -253,7 +253,7 @@ class TestUpdateDVPDelivery:
         token.issuer_address = issuer_address
         token.token_address = token_contract_1.address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         auth_token = AuthToken()
@@ -338,7 +338,7 @@ class TestUpdateDVPDelivery:
     async def test_error_1_1(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -414,7 +414,7 @@ class TestUpdateDVPDelivery:
     async def test_error_1_3(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -460,7 +460,7 @@ class TestUpdateDVPDelivery:
     async def test_error_2_1(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -471,7 +471,7 @@ class TestUpdateDVPDelivery:
         token.issuer_address = issuer_address
         token.token_address = "0x0000000000000000000000000000000000000000"
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -506,7 +506,7 @@ class TestUpdateDVPDelivery:
     async def test_error_2_2(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        user_1 = config_eth_account("user1")
+        user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         _keyfile = user_1["keyfile_json"]
 
@@ -548,7 +548,7 @@ class TestUpdateDVPDelivery:
     async def test_error_3(
         self, async_client, async_db, ibet_security_token_dvp_contract
     ):
-        issuer = config_eth_account("user1")
+        issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         _keyfile = issuer["keyfile_json"]
 

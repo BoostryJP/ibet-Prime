@@ -27,10 +27,6 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.blockchain import IbetShareContract
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
 from app.model.db import (
     Account,
     BatchRegisterPersonalInfo,
@@ -42,10 +38,14 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.model.ibet import IbetShareContract
+from app.model.ibet.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from batch.processor_batch_register_personal_info import LOG, Processor
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
@@ -62,24 +62,24 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 class TestProcessor:
     account_list = [
         {
-            "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"],
+            "address": default_eth_account("user1")["address"],
+            "keyfile": default_eth_account("user1")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"],
+            "address": default_eth_account("user2")["address"],
+            "keyfile": default_eth_account("user2")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"],
+            "address": default_eth_account("user3")["address"],
+            "keyfile": default_eth_account("user3")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user4")["address"],
-            "keyfile": config_eth_account("user4")["keyfile_json"],
+            "address": default_eth_account("user4")["address"],
+            "keyfile": default_eth_account("user4")["keyfile_json"],
         },
         {
-            "address": config_eth_account("user5")["address"],
-            "keyfile": config_eth_account("user5")["keyfile_json"],
+            "address": default_eth_account("user5")["address"],
+            "keyfile": default_eth_account("user5")["keyfile_json"],
         },
     ]
 
@@ -125,14 +125,14 @@ class TestProcessor:
             arguments, address, private_key
         )
         await share_contract.update(
-            data=IbetShareUpdateParams(
+            tx_params=IbetShareUpdateParams(
                 transferable=True,
                 personal_info_contract_address=personal_info_contract_address,
                 tradable_exchange_contract_address=tradable_exchange_contract_address,
                 transfer_approval_required=transfer_approval_required,
             ),
-            tx_from=address,
-            private_key=private_key,
+            tx_sender=address,
+            tx_sender_key=private_key,
         )
 
         return ContractUtils.get_contract("IbetShare", token_address)
@@ -145,7 +145,7 @@ class TestProcessor:
     # 0 Batch Task
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, processor: Processor, async_db, personal_info_contract
+        self, processor: Processor, async_db, ibet_personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -161,7 +161,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -170,14 +170,14 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         await async_db.commit()
 
         # mock
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value="mock_tx_hash",
         )
 
@@ -192,7 +192,7 @@ class TestProcessor:
     # Multiple upload / Multiple Register
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, processor: Processor, async_db, personal_info_contract
+        self, processor: Processor, async_db, ibet_personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -208,7 +208,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -217,7 +217,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -255,7 +255,7 @@ class TestProcessor:
 
         # mock
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value="mock_tx_hash",
         )
 
@@ -299,7 +299,7 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_3(
-        self, processor: Processor, async_db, personal_info_contract
+        self, processor: Processor, async_db, ibet_personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -316,7 +316,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -325,7 +325,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -363,7 +363,7 @@ class TestProcessor:
 
         # mock
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value="mock_tx_hash",
         )
         processing_issuer = patch(
@@ -460,7 +460,7 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_4(
-        self, processor: Processor, async_db, personal_info_contract
+        self, processor: Processor, async_db, ibet_personal_info_contract
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -477,7 +477,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -486,7 +486,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -522,7 +522,7 @@ class TestProcessor:
 
         # mock
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value="mock_tx_hash",
         )
         processing_issuer = patch(
@@ -610,7 +610,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -620,7 +620,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -629,7 +629,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -662,7 +662,7 @@ class TestProcessor:
 
         # mock
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             return_value="mock_tx_hash",
         )
 
@@ -720,7 +720,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -737,7 +737,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -746,7 +746,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -783,7 +783,7 @@ class TestProcessor:
 
         # mock
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             side_effect=SendTransactionError(),
         )
 
@@ -853,7 +853,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -870,7 +870,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -879,7 +879,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -916,7 +916,7 @@ class TestProcessor:
 
         # mock
         PersonalInfoContract_register_info = patch(
-            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            target="app.model.ibet.personal_info.PersonalInfoContract.register_info",
             side_effect=ContractRevertError("999999"),
         )
 
@@ -986,7 +986,7 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db,
-        personal_info_contract,
+        ibet_personal_info_contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -1018,7 +1018,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Prepare data : Token
         token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, personal_info_contract.address
+            _account["address"], issuer_private_key, ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -1027,7 +1027,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
-        token_1.version = TokenVersion.V_25_06
+        token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

@@ -30,7 +30,6 @@ from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
-from app.model.blockchain import IbetShareContract
 from app.model.db import (
     Account,
     Token,
@@ -39,10 +38,11 @@ from app.model.db import (
     TokenUpdateOperationLog,
     TokenVersion,
 )
+from app.model.ibet import IbetShareContract
 from app.model.schema import IbetShareCreate
-from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from app.utils.ibet_contract_utils import ContractUtils
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -93,6 +93,8 @@ async def deploy_share_token_contract(
         transfer_approval_required=transfer_approval_required,  # update
         is_canceled=True,  # update
     ).__dict__
+
+    token_create_param.pop("activate_ibet_wst")
 
     token_update_operation_log = TokenUpdateOperationLog()
     token_update_operation_log.issuer_address = address
@@ -156,7 +158,7 @@ async def deploy_share_token_contract(
     return contract, token_create_param
 
 
-@mock.patch("app.model.blockchain.token.TX_GAS_LIMIT", 8000000)
+@mock.patch("app.model.ibet.token.TX_GAS_LIMIT", 8000000)
 class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # target API endpoint
     base_url = "/share/tokens/{}/history"
@@ -214,8 +216,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_1(self, async_client, async_db, ibet_personal_info_contract):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
 
@@ -232,7 +234,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -257,8 +259,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_2>
     # Multiple record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_2(self, async_client, async_db, ibet_personal_info_contract):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -271,7 +273,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -288,7 +290,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -363,8 +365,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_3_1>
     # Search filter: trigger
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_3_1(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -377,7 +381,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -394,7 +398,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -467,8 +471,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_3_2>
     # Search filter: modified_contents
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_3_2(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -481,7 +487,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -498,7 +504,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -554,8 +560,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_3_3>
     # Search filter: created_from
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_3_3(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -568,7 +576,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             created=datetime(2023, 5, 1, tzinfo=timezone("UTC")),
         )
         _token_address = token_contract.address
@@ -586,7 +594,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -664,8 +672,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_3_4>
     # Search filter: created_to
     @pytest.mark.asyncio
-    async def test_normal_3_4(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_3_4(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -678,7 +688,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
             created=datetime(2023, 5, 1, tzinfo=timezone("UTC")),
         )
         _token_address = token_contract.address
@@ -696,7 +706,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -770,8 +780,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_4_1>
     # Sort Order
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_4_1(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -784,7 +796,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -801,7 +813,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -880,8 +892,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_4_2>
     # Sort Item
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_4_2(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -894,7 +908,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -911,7 +925,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -991,8 +1005,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_5_1>
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_5_1(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_5_1(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -1005,7 +1021,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -1022,7 +1038,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -1082,8 +1098,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_5_2>
     # Pagination (over offset)
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, async_client, async_db, personal_info_contract):
-        test_account = config_eth_account("user1")
+    async def test_normal_5_2(
+        self, async_client, async_db, ibet_personal_info_contract
+    ):
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=test_account["keyfile_json"],
@@ -1096,7 +1114,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
             async_db,
             _issuer_address,
             issuer_private_key,
-            personal_info_contract.address,
+            ibet_personal_info_contract.address,
         )
         _token_address = token_contract.address
 
@@ -1113,7 +1131,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()

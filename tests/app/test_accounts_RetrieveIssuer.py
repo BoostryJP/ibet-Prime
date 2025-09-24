@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 
 from app.model.db import Account, AccountRsaStatus
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestRetrieveIssuer:
@@ -35,7 +35,7 @@ class TestRetrieveIssuer:
     # rsa_public_key is None
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
@@ -61,7 +61,7 @@ class TestRetrieveIssuer:
     # rsa_public_key is not None
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        _admin_account = config_eth_account("user1")
+        _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
         _admin_rsa_public_key = _admin_account["rsa_public_key"]

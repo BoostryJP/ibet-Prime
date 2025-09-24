@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-25.6-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-25.9-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -24,7 +24,7 @@
 ## 依存
 
 - [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.12
-- [PostgreSQL](https://www.postgresql.org/) - バージョン 16
+- [PostgreSQL](https://www.postgresql.org/) - バージョン 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。
   - 最新の [hardhat network](https://hardhat.org/hardhat-network/) をローカル開発およびユニットテストで利用しています。
@@ -103,7 +103,7 @@ $ npm install
     <tr>
         <td>WEB3_HTTP_PROVIDER</td>
         <td>False</td>
-        <td nowrap>Web3 プロバイダー</td>
+        <td nowrap>ibet ネットワーク用 Web3 プロバイダー</td>
         <td>http://localhost:8545</td>
     </tr>
     <tr>
@@ -125,16 +125,52 @@ $ npm install
         <td>0x0000000000000000000000000000000000000000</td>
     </tr>
     <tr>
+        <td>TZ</td>
+        <td>False</td>
+        <td nowrap>タイムゾーン</td>
+        <td>Asia/Tokyo</td>
+    </tr>
+    <tr>
+        <td>ETH_WEB3_HTTP_PROVIDER</td>
+        <td>False</td>
+        <td nowrap>Ethereum ネットワーク用 Web3 プロバイダー</td>
+        <td>http://localhost:8545</td>
+    </tr>
+    <tr>
+        <td>DEDICATED_OFFCHAIN_TX_MODE</td>
+        <td>False</td>
+        <td nowrap>OffchainTx 専用サーバーの起動モード</td>
+        <td>0(利用しない) / 1(利用する)</td>
+    </tr>
+    <tr>
+        <td>DEDICATED_DVP_AGENT_MODE</td>
+        <td>False</td>
+        <td nowrap>DVPエージェント専用サーバーの起動モード</td>
+        <td>0(利用しない) / 1(利用する)</td>
+    </tr>
+    <tr>
+        <td>IBET_WST_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>IbetWST関連機能の利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
+    </tr>
+    <tr>
+        <td>DVP_AGENT_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>DVPエージェント関連機能の利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
+    </tr>
+    <tr>
         <td>BC_EXPLORER_ENABLED</td>
         <td>False</td>
         <td nowrap>BCエクスプローラの機能を利用有無</td>
         <td>0（利用しない） / 1（利用する）</td>
     </tr>
     <tr>
-        <td>TZ</td>
+        <td>FREEZE_LOG_FEATURE_ENABLED</td>
         <td>False</td>
-        <td nowrap>タイムゾーン</td>
-        <td>Asia/Tokyo</td>
+        <td nowrap>FreezeLog関連機能の利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
     </tr>
 </table>
 

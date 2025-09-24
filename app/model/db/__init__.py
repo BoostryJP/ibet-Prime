@@ -48,6 +48,43 @@ from .dvp import (
 )
 from .e2e_messaging_account import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from .freeze_log_account import FreezeLogAccount
+from .ibet_wst import (
+    EthIbetWSTTx,
+    EthToIbetBridgeTx,
+    EthToIbetBridgeTxStatus,
+    EthToIbetBridgeTxType,
+    IbetBridgeTxParamsForceChangeLockedAccount,
+    IbetBridgeTxParamsForceUnlock,
+    IbetWSTAuthorization,
+    IbetWSTBridgeSyncedBlockNumber,
+    IbetWSTEventLogAccountWhiteListAdded,
+    IbetWSTEventLogAccountWhiteListDeleted,
+    IbetWSTEventLogBurn,
+    IbetWSTEventLogMint,
+    IbetWSTEventLogTradeAccepted,
+    IbetWSTEventLogTradeCancelled,
+    IbetWSTEventLogTradeRejected,
+    IbetWSTEventLogTradeRequested,
+    IbetWSTEventLogTransfer,
+    IbetWSTTxParamsAcceptTrade,
+    IbetWSTTxParamsAddAccountWhiteList,
+    IbetWSTTxParamsBurn,
+    IbetWSTTxParamsCancelTrade,
+    IbetWSTTxParamsDeleteAccountWhiteList,
+    IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsForceBurn,
+    IbetWSTTxParamsMint,
+    IbetWSTTxParamsRejectTrade,
+    IbetWSTTxParamsRequestTrade,
+    IbetWSTTxParamsTransfer,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
+    IDXEthIbetWSTTrade,
+    IDXEthIbetWSTTradeBlockNumber,
+    IDXEthIbetWSTTradeState,
+    IDXEthIbetWSTWhitelist,
+)
 from .idx_block_data import IDXBlockData, IDXBlockDataBlockNumber
 from .idx_dvp_delivery import DeliveryStatus, IDXDelivery, IDXDeliveryBlockNumber
 from .idx_e2e_messaging import IDXE2EMessaging, IDXE2EMessagingBlockNumber
@@ -93,7 +130,7 @@ from .ledger import (
     LedgerDetailsTemplate,
     LedgerTemplate,
 )
-from .node import Node
+from .node import EthereumNode, Node
 from .notification import Notification, NotificationType
 from .scheduled_events import ScheduledEvents, ScheduledEventType
 from .token import (

@@ -22,10 +22,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.model.blockchain import FreezeLogContract
 from app.model.db import FreezeLogAccount
+from app.model.ibet import FreezeLogContract
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestUpdateFreezeLog:
@@ -39,8 +39,8 @@ class TestUpdateFreezeLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_1(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -56,7 +56,7 @@ class TestUpdateFreezeLog:
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             # Record new log
             resp_new = await async_client.post(
@@ -83,7 +83,7 @@ class TestUpdateFreezeLog:
         assert resp.status_code == 200
 
         _, _, log_message_af = await FreezeLogContract(
-            log_account, freeze_log_contract.address
+            log_account, ibet_freeze_log_contract.address
         ).get_log(
             log_index=log_index,
         )
@@ -92,8 +92,8 @@ class TestUpdateFreezeLog:
     # <Normal_2>
     # E2EE_REQUEST_ENABLED = False
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_normal_2(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -118,7 +118,7 @@ class TestUpdateFreezeLog:
             ),
             mock.patch(
                 "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-                freeze_log_contract.address,
+                ibet_freeze_log_contract.address,
             ),
         ):
             # Record new log
@@ -146,7 +146,7 @@ class TestUpdateFreezeLog:
         assert resp.status_code == 200
 
         _, _, log_message_af = await FreezeLogContract(
-            log_account, freeze_log_contract.address
+            log_account, ibet_freeze_log_contract.address
         ).get_log(
             log_index=log_index,
         )
@@ -160,8 +160,8 @@ class TestUpdateFreezeLog:
     # Missing required fields
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_1(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -177,7 +177,7 @@ class TestUpdateFreezeLog:
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             # Record new log
             resp_new = await async_client.post(
@@ -226,8 +226,8 @@ class TestUpdateFreezeLog:
     # Invalid ethereum address: account_address
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_2(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -243,7 +243,7 @@ class TestUpdateFreezeLog:
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             # Record new log
             resp_new = await async_client.post(
@@ -285,8 +285,8 @@ class TestUpdateFreezeLog:
     # Password is not encrypted
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_1_3(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -302,7 +302,7 @@ class TestUpdateFreezeLog:
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             # Record new log
             resp_new = await async_client.post(
@@ -344,14 +344,14 @@ class TestUpdateFreezeLog:
     # Log account is not exists
     # -> NotFound
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_2(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         password = "password"
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             # Update log
             resp = await async_client.post(
@@ -374,8 +374,8 @@ class TestUpdateFreezeLog:
     # Password mismatch
     # -> InvalidParameterError
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_3(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -391,7 +391,7 @@ class TestUpdateFreezeLog:
 
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-            freeze_log_contract.address,
+            ibet_freeze_log_contract.address,
         ):
             # Update log
             resp = await async_client.post(
@@ -413,8 +413,8 @@ class TestUpdateFreezeLog:
     # <Error_4>
     # SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db, freeze_log_contract):
-        user_1 = config_eth_account("user1")
+    async def test_error_4(self, async_client, async_db, ibet_freeze_log_contract):
+        user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         password = "password"
@@ -430,12 +430,12 @@ class TestUpdateFreezeLog:
 
         with (
             mock.patch(
-                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                "app.utils.ibet_contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=Exception("tx error")),
             ),
             mock.patch(
                 "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
-                freeze_log_contract.address,
+                ibet_freeze_log_contract.address,
             ),
         ):
             # Update log

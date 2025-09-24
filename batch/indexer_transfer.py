@@ -25,6 +25,7 @@ from typing import Sequence
 
 import uvloop
 from eth_utils import to_checksum_address
+from hexbytes import HexBytes
 from pydantic import ValidationError
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -41,8 +42,8 @@ from app.model.db import (
     Token,
     TokenStatus,
 )
-from app.utils.contract_utils import AsyncContractEventsView, AsyncContractUtils
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractEventsView, AsyncContractUtils
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch import free_malloc
 from batch.utils import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
@@ -186,6 +187,7 @@ class Processor:
         await self.__sync_transfer(db_session, block_from, block_to)
         await self.__sync_unlock(db_session, block_from, block_to)
         await self.__sync_force_unlock(db_session, block_from, block_to)
+        await self.__sync_force_change_locked_account(db_session, block_from, block_to)
 
     async def __sync_transfer(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -207,25 +209,55 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    transaction_hash = event["transactionHash"].to_0x_hex()
-                    block_timestamp = datetime.fromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
-                        UTC,
-                    ).replace(tzinfo=None)
                     if args["value"] > sys.maxsize:
+                        # If the value is larger than sys.maxsize, skip processing
                         pass
                     else:
-                        await self.__sink_on_transfer(
-                            db_session=db_session,
-                            transaction_hash=transaction_hash,
-                            token_address=to_checksum_address(token.address),
-                            from_address=args["from"],
-                            to_address=args["to"],
-                            amount=args["value"],
-                            source_event=IDXTransferSourceEventType.TRANSFER,
-                            data_str=None,
-                            block_timestamp=block_timestamp,
-                        )
+                        transaction_hash = event["transactionHash"].to_0x_hex()
+                        block_timestamp = datetime.fromtimestamp(
+                            (await web3.eth.get_block(event["blockNumber"]))[
+                                "timestamp"
+                            ],
+                            UTC,
+                        ).replace(tzinfo=None)
+
+                        # Judge whether the transfer is a reallocation
+                        is_reallocation = False
+                        tx = await AsyncContractUtils.get_transaction(transaction_hash)
+                        tx_data: HexBytes | None = tx.get("input")
+                        # Check if the transaction data contains the reallocation marker("c0ffee00")
+                        if "c0ffee00" in tx_data.hex():
+                            try:
+                                raw_call_data = tx_data.hex().split("c0ffee00", 1)[1]
+                                call_data = json.loads(bytes.fromhex(raw_call_data))
+                                if call_data.get("purpose") == "Reallocation":
+                                    is_reallocation = True
+                            except (ValueError, json.JSONDecodeError):
+                                pass
+                        if is_reallocation:
+                            await self.__sink_on_transfer(
+                                db_session=db_session,
+                                transaction_hash=transaction_hash,
+                                token_address=to_checksum_address(token.address),
+                                from_address=args["from"],
+                                to_address=args["to"],
+                                amount=args["value"],
+                                source_event=IDXTransferSourceEventType.REALLOCATION,
+                                data_str=None,
+                                block_timestamp=block_timestamp,
+                            )
+                        else:
+                            await self.__sink_on_transfer(
+                                db_session=db_session,
+                                transaction_hash=transaction_hash,
+                                token_address=to_checksum_address(token.address),
+                                from_address=args["from"],
+                                to_address=args["to"],
+                                amount=args["value"],
+                                source_event=IDXTransferSourceEventType.TRANSFER,
+                                data_str=None,
+                                block_timestamp=block_timestamp,
+                            )
             except Exception:
                 raise
 
@@ -315,6 +347,52 @@ class Processor:
                                 to_address=to_address,
                                 amount=args["value"],
                                 source_event=IDXTransferSourceEventType.FORCE_UNLOCK,
+                                data_str=data_str,
+                                block_timestamp=block_timestamp,
+                            )
+            except Exception:
+                raise
+
+    async def __sync_force_change_locked_account(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
+        """Synchronize ForceChangeLockedAccount events
+
+        :param db_session: database session
+        :param block_from: from block number
+        :param block_to: to block number
+        :return: None
+        """
+        for token in self.token_list.values():
+            try:
+                events = await AsyncContractUtils.get_event_logs(
+                    contract=token,
+                    event="ForceChangeLockedAccount",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+                for event in events:
+                    args = event["args"]
+                    transaction_hash = event["transactionHash"].to_0x_hex()
+                    block_timestamp = datetime.fromtimestamp(
+                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
+                        UTC,
+                    ).replace(tzinfo=None)
+                    if args["value"] > sys.maxsize:
+                        pass
+                    else:
+                        from_address = args.get("beforeAccountAddress", ZERO_ADDRESS)
+                        to_address = args.get("afterAccountAddress", ZERO_ADDRESS)
+                        data_str = args.get("data", "")
+                        if from_address != to_address:
+                            await self.__sink_on_transfer(
+                                db_session=db_session,
+                                transaction_hash=transaction_hash,
+                                token_address=to_checksum_address(token.address),
+                                from_address=from_address,
+                                to_address=to_address,
+                                amount=args["value"],
+                                source_event=IDXTransferSourceEventType.FORCE_CHANGE_LOCKED_ACCOUNT,
                                 data_str=data_str,
                                 block_timestamp=block_timestamp,
                             )

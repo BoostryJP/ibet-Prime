@@ -69,7 +69,7 @@ class TestGetTxData:
         token.issuer_address = ""
         token.token_address = token_info.get("token_address")
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         session.add(token)
         await session.commit()
 

@@ -23,8 +23,8 @@ from unittest.mock import ANY, AsyncMock
 
 import pytest
 
-from app.model.blockchain import IbetShareContract
 from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
+from app.model.ibet import IbetShareContract
 
 
 class TestListShareTokenLockUnlockEvents:
@@ -55,7 +55,7 @@ class TestListShareTokenLockUnlockEvents:
         _token.tx_hash = ""
         _token.abi = {}
         _token.token_status = token_status
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Token
@@ -66,7 +66,7 @@ class TestListShareTokenLockUnlockEvents:
         _token.tx_hash = ""
         _token.abi = {}
         _token.token_status = token_status
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         # prepare data: Lock events
@@ -211,7 +211,7 @@ class TestListShareTokenLockUnlockEvents:
         _token.type = TokenType.IBET_SHARE
         _token.tx_hash = ""
         _token.abi = {}
-        _token.version = TokenVersion.V_25_06
+        _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
         await async_db.commit()
@@ -235,7 +235,7 @@ class TestListShareTokenLockUnlockEvents:
 
     # Normal_2
     # Multiple record
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data
@@ -266,7 +266,7 @@ class TestListShareTokenLockUnlockEvents:
     # Normal_3
     # Records not subject to extraction
     # token_status
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_3(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data
@@ -286,7 +286,7 @@ class TestListShareTokenLockUnlockEvents:
 
     # Normal_4
     # issuer_address is not None
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_4(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data
@@ -317,7 +317,7 @@ class TestListShareTokenLockUnlockEvents:
 
     # Normal_5_1
     # Search filter: category
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_1(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data
@@ -343,7 +343,7 @@ class TestListShareTokenLockUnlockEvents:
 
     # Normal_5_2
     # Search filter: account_address
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_2(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data
@@ -369,7 +369,7 @@ class TestListShareTokenLockUnlockEvents:
 
     # Normal_5_3
     # Search filter: lock_address
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_3(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data
@@ -395,7 +395,7 @@ class TestListShareTokenLockUnlockEvents:
 
     # Normal_5_4
     # Search filter: recipient_address
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_4(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data
@@ -505,7 +505,7 @@ class TestListShareTokenLockUnlockEvents:
 
         # request target api
         with mock.patch(
-            "app.model.blockchain.token.IbetShareContract.get",
+            "app.model.ibet.token.IbetShareContract.get",
             AsyncMock(side_effect=data),
         ):
             resp = await async_client.get(
@@ -522,7 +522,7 @@ class TestListShareTokenLockUnlockEvents:
 
     # Normal_7
     # Pagination
-    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
     async def test_normal_7(self, mock_IbetShareContract_get, async_client, async_db):
         # prepare data

@@ -22,7 +22,7 @@ from typing import Dict
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
-from app.utils.contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -167,6 +167,21 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.forceUnlock(*args).build_transaction(
+            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+        )
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def force_change_locked_account(
+        contract_address: str, tx_from: str, private_key: str, args: list
+    ):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address,
+        )
+        tx = security_token_contract.functions.forceChangeLockedAccount(
+            *args
+        ).build_transaction(
             {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)

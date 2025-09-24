@@ -35,15 +35,6 @@ from app.exceptions import (
     OperationNotSupportedVersionError,
     SendTransactionError,
 )
-from app.model.blockchain import (
-    IbetSecurityTokenInterface,
-    IbetShareContract,
-    IbetStraightBondContract,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
-    ForceLockParams,
-    ForceUnlockParams,
-)
 from app.model.db import (
     IDXLock,
     IDXLockedPosition,
@@ -53,6 +44,15 @@ from app.model.db import (
     TokenStatus,
     TokenType,
     TokenVersion,
+)
+from app.model.ibet import (
+    IbetSecurityTokenInterface,
+    IbetShareContract,
+    IbetStraightBondContract,
+)
+from app.model.ibet.tx_params.ibet_security_token import (
+    ForceLockParams,
+    ForceUnlockParams,
 )
 from app.model.schema import (
     ForceLockRequest,
@@ -595,9 +595,9 @@ async def force_lock(
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_lock(
-            data=ForceLockParams(**lock_data),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=ForceLockParams(**lock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except ContractRevertError:
         raise
@@ -687,9 +687,9 @@ async def force_unlock(
     }
     try:
         await IbetSecurityTokenInterface(data.token_address).force_unlock(
-            data=ForceUnlockParams(**unlock_data),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=ForceUnlockParams(**unlock_data),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except ContractRevertError:
         raise

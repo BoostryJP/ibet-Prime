@@ -1,5 +1,6 @@
 user1:
   address: "0xeD6ef822d2cc46a8D7CfDb8A4b7BcF7E9B95F946"
+  private_key: "26c27bb6c4b42114f246bbf60c98adabddd28c7d80ec99da3efcb16860af9cee"
   password: "password"
   keyfile_json: |-
     {
@@ -182,6 +183,7 @@ user1:
     -----END PUBLIC KEY-----
 user2:
   address: "0x3Ec9E2880285FAC4fF92514754924E5d0E6264Cb"
+  private_key: "603e7e39059fa842f9ba0a5a1689c8d616e8e628d6e7a591bd863d7565d2272c"
   password: "password"
   keyfile_json: |-
     {
@@ -364,6 +366,7 @@ user2:
     -----END PUBLIC KEY-----
 user3:
   address: "0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB"
+  private_key: "dbe67c7bf8bec4baeea7af1a1c5ddfe0bdd05bf31ebd9e014c544d2cf8305941"
   password: "password"
   keyfile_json: |-
     {
@@ -546,6 +549,7 @@ user3:
     -----END PUBLIC KEY-----
 user4:
   address: "0xC195574baDAA5d8410bd58968591E26a4aB8C5d2"
+  private_key: "265ead0ba105301cb7b13831aa179a5ba9259b33aedefbbb8c4a174d04e3bea7"
   password: "password"
   keyfile_json: |-
     {
@@ -728,6 +732,7 @@ user4:
     -----END PUBLIC KEY-----
 user5:
   address: "0x07Ff56207a0Dc2e7585B311897B24DB27b4Edac5"
+  private_key: "172a71a1445958933c244c9b65b90c74f39b91661efedb6e961aa12d42c7330d"
   password: "password"
   keyfile_json: |-
     {

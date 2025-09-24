@@ -54,7 +54,7 @@ from app.model.schema.base import KeyManagerType, ValueOperator
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
-from app.utils.web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 
 web3 = AsyncWeb3Wrapper()
 

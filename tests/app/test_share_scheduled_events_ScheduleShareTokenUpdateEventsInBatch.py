@@ -33,7 +33,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestScheduleShareTokenUpdateEventsBatch:
@@ -48,7 +48,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # Multiple Records
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -66,7 +66,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -178,7 +178,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # - Empty list
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -224,7 +224,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # - Invalid parameters
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -278,7 +278,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # - validate_headers
     @pytest.mark.asyncio
     async def test_error_1_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -324,7 +324,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # - issuer_address does not exist
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -357,7 +357,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # - password mismatch
     @pytest.mark.asyncio
     async def test_error_2_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -375,7 +375,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -409,7 +409,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # - Token not found
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -452,7 +452,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # - Processing token
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -471,7 +471,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -514,7 +514,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     )
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db, update_data):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"

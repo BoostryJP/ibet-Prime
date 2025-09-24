@@ -95,6 +95,8 @@ class IDXDelivery(Base):
     status: Mapped[int] = mapped_column(
         BigInteger, nullable=False, default=DeliveryStatus.DELIVERY_CREATED
     )
+    # Dedicated Agent ID
+    dedicated_agent_id: Mapped[str | None] = mapped_column(String(100))
 
     def json(self):
         return {

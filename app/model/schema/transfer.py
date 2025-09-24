@@ -41,6 +41,8 @@ class TransferSourceEventType(StrEnum):
     Transfer = "Transfer"
     Unlock = "Unlock"
     ForceUnlock = "ForceUnlock"
+    ForceChangeLockedAccount = "ForceChangeLockedAccount"
+    Reallocation = "Reallocation"
 
 
 class TransferApprovalStatus(IntEnum):
@@ -64,25 +66,33 @@ class TransferBase(BaseModel):
 
 
 class Transfer(TransferBase):
-    source_event: Literal[TransferSourceEventType.Transfer] = Field(
-        description="Source Event"
-    )
+    """Transfer data for Transfer, Reallocation events
+
+    - Source Event: Transfer, Reallocation
+    """
+
+    source_event: Literal[
+        TransferSourceEventType.Transfer, TransferSourceEventType.Reallocation
+    ] = Field(description="Source Event")
     data: None = Field(description="Event data")
 
 
-class UnlockTransferDataMessage(BaseModel):
-    message: Literal[
-        "garnishment",
-        "inheritance",
-        "force_unlock",
-    ]
+class TransferDataMessage(BaseModel):
+    message: Literal["garnishment", "force_unlock", "ibet_wst_bridge"]
 
 
-class UnlockTransfer(TransferBase):
+class TransferWithMessage(TransferBase):
+    """Transfer data for Unlock, ForceUnlock, ForceChangeLockedAccount events
+
+    - Source Event: Unlock, ForceUnlock, ForceChangeLockedAccount
+    """
+
     source_event: Literal[
-        TransferSourceEventType.Unlock, TransferSourceEventType.ForceUnlock
+        TransferSourceEventType.Unlock,
+        TransferSourceEventType.ForceUnlock,
+        TransferSourceEventType.ForceChangeLockedAccount,
     ] = Field(description="Source Event")
-    data: UnlockTransferDataMessage | dict = Field(description="Event data")
+    data: TransferDataMessage | dict = Field(description="Event data")
 
 
 ############################
@@ -124,7 +134,7 @@ class ListTransferHistoryQuery(BasePaginationQuery):
     )
     data: Optional[str] = Field(None, description="source event data")
     message: Optional[
-        Literal["garnishment"] | Literal["inheritance"] | Literal["force_unlock"]
+        Literal["garnishment"] | Literal["force_unlock"] | Literal["ibet_wst_bridge"]
     ] = Field(None, description="message field in source event data")
 
     sort_item: Optional[ListTransferHistorySortItem] = Field(
@@ -186,7 +196,7 @@ class TransferHistoryResponse(BaseModel):
     """transfer history"""
 
     result_set: ResultSet
-    transfer_history: List[Transfer | UnlockTransfer]
+    transfer_history: List[Transfer | TransferWithMessage]
 
 
 class TransferApprovalResponse(BaseModel):

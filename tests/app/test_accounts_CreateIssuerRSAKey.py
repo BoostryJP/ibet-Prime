@@ -27,7 +27,7 @@ from config import (
     PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG,
     ZERO_ADDRESS,
 )
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestCreateIssuerRSAKey:
@@ -45,7 +45,7 @@ class TestCreateIssuerRSAKey:
     # RSA Create
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
 
         _account_before = Account()
         _account_before.issuer_address = _user_1["address"]
@@ -85,8 +85,8 @@ class TestCreateIssuerRSAKey:
     # RSA Change
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
-        _user_2 = config_eth_account("user2")
+        _user_1 = default_eth_account("user1")
+        _user_2 = default_eth_account("user2")
 
         _account_before = Account()
         _account_before.issuer_address = _user_1["address"]
@@ -145,7 +145,7 @@ class TestCreateIssuerRSAKey:
     # RSA Create(default passphrase)
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
 
         _account_before = Account()
         _account_before.issuer_address = _user_1["address"]
@@ -211,7 +211,7 @@ class TestCreateIssuerRSAKey:
     # Parameter Error: rsa_passphrase
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
 
         req_param = {"rsa_passphrase": "test"}
 
@@ -239,7 +239,7 @@ class TestCreateIssuerRSAKey:
     # Not Exists Account
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
 
         _account = Account()
         _account.issuer_address = _user_1["address"]
@@ -255,7 +255,7 @@ class TestCreateIssuerRSAKey:
 
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
-        _user_2 = config_eth_account("user2")
+        _user_2 = default_eth_account("user2")
         resp = await async_client.post(
             self.base_url.format(_user_2["address"]), json=req_param
         )
@@ -271,7 +271,7 @@ class TestCreateIssuerRSAKey:
     # now Generating RSA(CREATING)
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
 
         _account = Account()
         _account.issuer_address = _user_1["address"]
@@ -299,7 +299,7 @@ class TestCreateIssuerRSAKey:
     # now Generating RSA(CHANGING)
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
 
         _account = Account()
         _account.issuer_address = _user_1["address"]
@@ -330,7 +330,7 @@ class TestCreateIssuerRSAKey:
     # Passphrase Policy Violation
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        _user_1 = config_eth_account("user1")
+        _user_1 = default_eth_account("user1")
 
         _account = Account()
         _account.issuer_address = _user_1["address"]

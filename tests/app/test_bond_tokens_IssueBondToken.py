@@ -21,6 +21,7 @@ import hashlib
 import random
 import string
 from datetime import UTC, datetime
+from unittest import mock
 from unittest.mock import ANY, patch
 
 import pytest
@@ -30,12 +31,14 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.blockchain import TokenListContract
-from app.model.blockchain.token import IbetStraightBondContract
 from app.model.db import (
     UTXO,
     Account,
     AuthToken,
+    EthIbetWSTTx,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
     IDXPosition,
     Token,
     TokenType,
@@ -43,9 +46,11 @@ from app.model.db import (
     TokenVersion,
     UpdateToken,
 )
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.ibet import TokenListContract
+from app.model.ibet.token import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -63,7 +68,7 @@ class TestIssueBondToken:
     # create only
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -78,7 +83,7 @@ class TestIssueBondToken:
 
         # mock
         IbetStraightBondContract_create = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.create",
+            target="app.model.ibet.token.IbetStraightBondContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -86,11 +91,11 @@ class TestIssueBondToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -137,14 +142,14 @@ class TestIssueBondToken:
                     "",
                     "purpose_test1",
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_STRAIGHT_BOND,
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             await AsyncContractUtils.get_block_by_transaction_hash(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -157,6 +162,7 @@ class TestIssueBondToken:
             token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
+
             token_1 = token_after[0]
             assert token_1.id == 1
             assert token_1.type == TokenType.IBET_STRAIGHT_BOND
@@ -168,7 +174,9 @@ class TestIssueBondToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
+            assert token_1.ibet_wst_activated is None
+            assert token_1.ibet_wst_version is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
@@ -196,11 +204,14 @@ class TestIssueBondToken:
             assert operation_log.type == TokenType.IBET_STRAIGHT_BOND
             assert operation_log.operation_category == "Issue"
 
+            ibet_wst_tx = (await async_db.scalars(select(EthIbetWSTTx))).all()
+            assert len(ibet_wst_tx) == 0
+
     # <Normal_2>
     # include updates
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -215,7 +226,7 @@ class TestIssueBondToken:
 
         # mock
         IbetStraightBondContract_create = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.create",
+            target="app.model.ibet.token.IbetStraightBondContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -223,7 +234,7 @@ class TestIssueBondToken:
             ),
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -262,6 +273,7 @@ class TestIssueBondToken:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
+                "activate_ibet_wst": None,
             }
             resp = await async_client.post(
                 self.apiurl,
@@ -287,8 +299,8 @@ class TestIssueBondToken:
                     "return_amount_test1",
                     "purpose_test1",
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             await AsyncContractUtils.get_block_by_transaction_hash(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -301,6 +313,7 @@ class TestIssueBondToken:
             token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
+
             token_1 = token_after[0]
             assert token_1.id == 1
             assert token_1.type == TokenType.IBET_STRAIGHT_BOND
@@ -312,7 +325,9 @@ class TestIssueBondToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
+            assert token_1.ibet_wst_activated is None
+            assert token_1.ibet_wst_version is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position is None
@@ -331,11 +346,14 @@ class TestIssueBondToken:
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
 
+            ibet_wst_tx = (await async_db.scalars(select(EthIbetWSTTx))).all()
+            assert len(ibet_wst_tx) == 0
+
     # <Normal_3>
     # Authorization by auth token
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -356,7 +374,7 @@ class TestIssueBondToken:
 
         # mock
         IbetStraightBondContract_create = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.create",
+            target="app.model.ibet.token.IbetStraightBondContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -364,11 +382,11 @@ class TestIssueBondToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
@@ -415,14 +433,14 @@ class TestIssueBondToken:
                     "",
                     "purpose_test1",
                 ],
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_STRAIGHT_BOND,
-                tx_from=test_account["address"],
-                private_key=ANY,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
             )
             await AsyncContractUtils.get_block_by_transaction_hash(
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -435,6 +453,7 @@ class TestIssueBondToken:
             token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
+
             token_1 = token_after[0]
             assert token_1.id == 1
             assert token_1.type == TokenType.IBET_STRAIGHT_BOND
@@ -446,7 +465,9 @@ class TestIssueBondToken:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
-            assert token_1.version == TokenVersion.V_25_06
+            assert token_1.version == TokenVersion.V_25_09
+            assert token_1.ibet_wst_activated is None
+            assert token_1.ibet_wst_version is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
@@ -473,6 +494,168 @@ class TestIssueBondToken:
             assert operation_log.token_address == "contract_address_test1"
             assert operation_log.type == TokenType.IBET_STRAIGHT_BOND
             assert operation_log.operation_category == "Issue"
+
+            ibet_wst_tx = (await async_db.scalars(select(EthIbetWSTTx))).all()
+            assert len(ibet_wst_tx) == 0
+
+    # <Normal_4>
+    # Activate IbetWST
+    @mock.patch(
+        "app.routers.issuer.bond.ETH_MASTER_ACCOUNT_ADDRESS",
+        "0x1234567890123456789012345678901234567890",
+    )
+    @pytest.mark.asyncio
+    async def test_normal_4(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        token_before = (await async_db.scalars(select(Token))).all()
+
+        # mock
+        IbetStraightBondContract_create = patch(
+            target="app.model.ibet.token.IbetStraightBondContract.create",
+            return_value=(
+                "contract_address_test1",
+                "abi_test1",
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+            ),
+        )
+        TokenListContract_register = patch(
+            target="app.model.ibet.token_list.TokenListContract.register",
+            return_value=None,
+        )
+        ContractUtils_get_block_by_transaction_hash = patch(
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            return_value={
+                "number": 12345,
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
+            },
+        )
+
+        with (
+            IbetStraightBondContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "total_supply": 10000,
+                "face_value": 200,
+                "face_value_currency": "JPY",
+                "redemption_date": "20231231",
+                "redemption_value": 200,
+                "redemption_value_currency": "JPY",
+                "purpose": "purpose_test1",
+                "activate_ibet_wst": True,  # Activate IbetWST
+            }
+            resp = await async_client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"],
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
+            )
+
+            # assertion
+            IbetStraightBondContract.create.assert_called_with(
+                args=[
+                    "name_test1",
+                    "",
+                    10000,
+                    200,
+                    "JPY",
+                    "20231231",
+                    200,
+                    "JPY",
+                    "",
+                    "",
+                    "purpose_test1",
+                ],
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
+            )
+            TokenListContract.register.assert_called_with(
+                token_address="contract_address_test1",
+                token_template=TokenType.IBET_STRAIGHT_BOND,
+                tx_sender=test_account["address"],
+                tx_sender_key=ANY,
+            )
+            await AsyncContractUtils.get_block_by_transaction_hash(
+                tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
+
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
+            assert resp.json()["token_status"] == 1
+
+            token_after = (await async_db.scalars(select(Token))).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_STRAIGHT_BOND
+            assert (
+                token_1.tx_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
+            assert token_1.token_status == 1
+            assert token_1.version == TokenVersion.V_25_09
+            assert token_1.ibet_wst_activated is True
+            assert token_1.ibet_wst_version == IbetWSTVersion.V_1
+
+            position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
+            assert position.exchange_balance == 0
+            assert position.exchange_commitment == 0
+            assert position.pending_transfer == 0
+
+            utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
+            assert (
+                utxo.transaction_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
+            assert utxo.account_address == test_account["address"]
+            assert utxo.token_address == "contract_address_test1"
+            assert utxo.amount == req_param["total_supply"]
+            assert utxo.block_number == 12345
+            assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
+
+            operation_log = (
+                await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
+            ).first()
+            assert operation_log.token_address == "contract_address_test1"
+            assert operation_log.type == TokenType.IBET_STRAIGHT_BOND
+            assert operation_log.operation_category == "Issue"
+
+            ibet_wst_tx = (await async_db.scalars(select(EthIbetWSTTx))).all()
+            assert len(ibet_wst_tx) == 1
+            ibet_wst_tx_1 = ibet_wst_tx[0]
+            assert ibet_wst_tx_1.tx_type == IbetWSTTxType.DEPLOY
+            assert ibet_wst_tx_1.version == IbetWSTVersion.V_1
+            assert ibet_wst_tx_1.status == IbetWSTTxStatus.PENDING
+            assert ibet_wst_tx_1.tx_params == {
+                "name": "name_test1",
+                "initial_owner": test_account["address"],
+            }
+            assert (
+                ibet_wst_tx_1.tx_sender == "0x1234567890123456789012345678901234567890"
+            )
 
     ###########################################################################
     # Error Case
@@ -516,7 +699,7 @@ class TestIssueBondToken:
     #  - personal_info_contract_address
     @pytest.mark.asyncio
     async def test_error_2_1(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -688,7 +871,7 @@ class TestIssueBondToken:
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
     async def test_error_2_3(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
+        test_account_1 = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -777,7 +960,7 @@ class TestIssueBondToken:
     # min value
     @pytest.mark.asyncio
     async def test_error_2_5(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -859,7 +1042,7 @@ class TestIssueBondToken:
     # max value or max length
     @pytest.mark.asyncio
     async def test_error_2_6(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # request target api
         req_param = {
@@ -1056,8 +1239,8 @@ class TestIssueBondToken:
     # Not Exists Address
     @pytest.mark.asyncio
     async def test_error_3_1(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
+        test_account_1 = default_eth_account("user1")
+        test_account_2 = default_eth_account("user2")
 
         # prepare data
         account = Account()
@@ -1101,7 +1284,7 @@ class TestIssueBondToken:
     # Password Mismatch
     @pytest.mark.asyncio
     async def test_error_3_2(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
+        test_account_1 = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -1146,8 +1329,8 @@ class TestIssueBondToken:
     # IbetStraightBondContract.create
     @pytest.mark.asyncio
     async def test_error_4_1(self, async_client, async_db):
-        test_account_1 = config_eth_account("user1")
-        test_account_2 = config_eth_account("user2")
+        test_account_1 = default_eth_account("user1")
+        test_account_2 = default_eth_account("user2")
 
         # prepare data
         account = Account()
@@ -1160,7 +1343,7 @@ class TestIssueBondToken:
 
         # mock
         IbetStraightBondContract_create = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.create",
+            target="app.model.ibet.token.IbetStraightBondContract.create",
             side_effect=SendTransactionError(),
         )
 
@@ -1199,7 +1382,7 @@ class TestIssueBondToken:
     # TokenListContract.register
     @pytest.mark.asyncio
     async def test_error_4_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
@@ -1212,7 +1395,7 @@ class TestIssueBondToken:
 
         # mock
         IbetStraightBondContract_create = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.create",
+            target="app.model.ibet.token.IbetStraightBondContract.create",
             return_value=(
                 "contract_address_test1",
                 "abi_test1",
@@ -1220,7 +1403,7 @@ class TestIssueBondToken:
             ),
         )
         TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
+            target="app.model.ibet.token_list.TokenListContract.register",
             side_effect=SendTransactionError(),
         )
 

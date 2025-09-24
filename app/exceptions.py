@@ -22,7 +22,7 @@ from typing import Literal
 from fastapi import status
 from pydantic import BaseModel
 
-from app.utils.contract_error_code import REVERT_CODE_MAP, error_code_msg
+from app.utils.ibet_contract_error import REVERT_CODE_MAP, error_code_msg
 
 
 class AppError(Exception):
@@ -122,6 +122,30 @@ class BatchPersonalInfoRegistrationValidationError(BadRequestError):
     def __init__(self, detail: InvalidUploadErrorDetail):
         self.record_error_details = detail
         super().__init__(detail)
+
+
+class IbetWSTInsufficientBalanceError(BadRequestError):
+    """
+    Insufficient balance for IbetWST token transfer
+    """
+
+    code = 13
+
+
+class ERC20InsufficientAllowanceError(BadRequestError):
+    """
+    Insufficient allowance for ERC20 token transfer
+    """
+
+    code = 14
+
+
+class IbetWSTAccountNotWhitelistedError(BadRequestError):
+    """
+    IbetWST account is not whitelisted for transfer operations
+    """
+
+    code = 15
 
 
 class OperationNotAllowedStateError(BadRequestError):

@@ -23,7 +23,7 @@ from unittest import mock
 import pytest
 
 from app.model.db import IDXPersonalInfo, PersonalInfoDataSource
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestListTokenHoldersPersonalInfo:
@@ -38,7 +38,7 @@ class TestListTokenHoldersPersonalInfo:
     # 0 record
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         # request target API
@@ -60,7 +60,7 @@ class TestListTokenHoldersPersonalInfo:
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
 
@@ -119,7 +119,7 @@ class TestListTokenHoldersPersonalInfo:
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_3(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -242,7 +242,7 @@ class TestListTokenHoldersPersonalInfo:
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_4_1_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -338,7 +338,7 @@ class TestListTokenHoldersPersonalInfo:
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_4_1_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -448,7 +448,7 @@ class TestListTokenHoldersPersonalInfo:
     # Search filter: account_address
     @pytest.mark.asyncio
     async def test_normal_4_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -561,7 +561,7 @@ class TestListTokenHoldersPersonalInfo:
     # Search filter: created_from, created_to
     @pytest.mark.asyncio
     async def test_normal_4_3(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -675,7 +675,7 @@ class TestListTokenHoldersPersonalInfo:
     # Search filter: modified_from, modified_to
     @pytest.mark.asyncio
     async def test_normal_4_4(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -790,7 +790,7 @@ class TestListTokenHoldersPersonalInfo:
     # - sort_order: DESC
     @pytest.mark.asyncio
     async def test_normal_5_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -932,7 +932,7 @@ class TestListTokenHoldersPersonalInfo:
     # - sort_order: ASC
     @pytest.mark.asyncio
     async def test_normal_5_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -1065,7 +1065,7 @@ class TestListTokenHoldersPersonalInfo:
     # - sort_order: ASC
     @pytest.mark.asyncio
     async def test_normal_5_3(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -1206,7 +1206,7 @@ class TestListTokenHoldersPersonalInfo:
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
     async def test_normal_6(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
         account_address2 = "account_address2"
@@ -1318,7 +1318,7 @@ class TestListTokenHoldersPersonalInfo:
     # RequestValidationError: created_from, created_to, modified_from, modified_to
     @pytest.mark.asyncio
     async def test_error_1_1(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         # request target API
@@ -1374,7 +1374,7 @@ class TestListTokenHoldersPersonalInfo:
     # RequestValidationError: sort_item, sort_order
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client, async_db):
-        issuer_account = config_eth_account("user1")
+        issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 
         # request target API

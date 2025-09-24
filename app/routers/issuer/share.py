@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 import uuid
+from collections import defaultdict
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated, List, Optional, Sequence
@@ -64,23 +65,6 @@ from app.exceptions import (
     SendTransactionError,
     TokenNotExistError,
 )
-from app.model.blockchain import (
-    IbetSecurityTokenEscrow,
-    IbetShareContract,
-    PersonalInfoContract,
-    TokenListContract,
-)
-from app.model.blockchain.tx_params.ibet_security_token_escrow import (
-    ApproveTransferParams as EscrowApproveTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    AdditionalIssueParams,
-    ApproveTransferParams,
-    CancelTransferParams,
-    ForcedTransferParams,
-    RedeemParams,
-    UpdateParams,
-)
 from app.model.db import (
     UTXO,
     Account,
@@ -92,17 +76,24 @@ from app.model.db import (
     BatchRegisterPersonalInfoUploadStatus,
     BulkTransfer,
     BulkTransferUpload,
+    EthIbetWSTTx,
+    IbetWSTTxParamsDeploy,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
     IDXIssueRedeem,
     IDXIssueRedeemEventType,
     IDXIssueRedeemSortItem,
     IDXLock,
     IDXLockedPosition,
     IDXPersonalInfo,
+    IDXPersonalInfoHistory,
     IDXPosition,
     IDXTransfer,
     IDXTransferApproval,
     IDXTransferApprovalsSortItem,
     IDXUnlock,
+    PersonalInfoEventType,
     ScheduledEvents,
     Token,
     TokenHolderExtraInfo,
@@ -114,6 +105,23 @@ from app.model.db import (
     TransferApprovalHistory,
     TransferApprovalOperationType,
     UpdateToken,
+)
+from app.model.ibet import (
+    IbetSecurityTokenEscrow,
+    IbetShareContract,
+    PersonalInfoContract,
+    TokenListContract,
+)
+from app.model.ibet.tx_params.ibet_security_token_escrow import (
+    ApproveTransferParams as EscrowApproveTransferParams,
+)
+from app.model.ibet.tx_params.ibet_share import (
+    AdditionalIssueParams,
+    ApproveTransferParams,
+    CancelTransferParams,
+    ForcedTransferParams,
+    RedeemParams,
+    UpdateParams,
 )
 from app.model.schema import (
     BatchIssueRedeemUploadIdResponse,
@@ -146,6 +154,7 @@ from app.model.schema import (
     ListAllTokenLockEventsResponse,
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
+    ListBatchIssueRedeemUploadResponseWithResult,
     ListBatchRegisterPersonalInfoUploadResponse,
     ListBulkTransferQuery,
     ListBulkTransferUploadQuery,
@@ -178,9 +187,10 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     validate_headers,
 )
-from app.utils.contract_utils import AsyncContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
+from app.utils.ibet_contract_utils import AsyncContractUtils
+from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(
     prefix="/share",
@@ -257,7 +267,7 @@ async def issue_share_token(
     ]
     try:
         contract_address, abi, tx_hash = await IbetShareContract().create(
-            args=arguments, tx_from=issuer_address, private_key=private_key
+            args=arguments, tx_sender=issuer_address, tx_sender_key=private_key
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -301,8 +311,8 @@ async def issue_share_token(
             await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=contract_address,
                 token_template=TokenType.IBET_SHARE,
-                tx_from=issuer_address,
-                private_key=private_key,
+                tx_sender=issuer_address,
+                tx_sender_key=private_key,
             )
         except SendTransactionError:
             raise SendTransactionError("failed to register token address token list")
@@ -340,7 +350,24 @@ async def issue_share_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
-    _token.version = TokenVersion.V_25_06
+    _token.version = TokenVersion.V_25_09
+    if token.activate_ibet_wst:
+        tx_id = str(uuid.uuid4())
+        # Activate IbetWST
+        _token.ibet_wst_activated = True
+        _token.ibet_wst_version = IbetWSTVersion.V_1
+        _token.ibet_wst_tx_id = tx_id
+        # Register IbetWST transaction
+        _ibet_wst_tx = EthIbetWSTTx()
+        _ibet_wst_tx.tx_id = tx_id
+        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+        _ibet_wst_tx.version = IbetWSTVersion.V_1
+        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+        _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name=token.name, initial_owner=issuer_address
+        )
+        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+        db.add(_ibet_wst_tx)
     db.add(_token)
 
     # Register operation log
@@ -395,15 +422,24 @@ async def list_all_share_tokens(
 
     share_tokens = []
     for token in tokens:
-        # Get contract data
+        # Get response data from contract
         share_token = (await IbetShareContract(token.token_address).get()).__dict__
-        issue_datetime_utc = pytz.timezone("UTC").localize(token.created)
-        share_token["issue_datetime"] = issue_datetime_utc.astimezone(
-            local_tz
-        ).isoformat()
+        share_token.pop("contract_name")
+
+        # Set other response items
+        share_token["issue_datetime"] = (
+            pytz.timezone("UTC")
+            .localize(token.created)
+            .astimezone(local_tz)
+            .isoformat()
+        )
         share_token["token_status"] = token.token_status
         share_token["contract_version"] = token.version
-        share_token.pop("contract_name")
+        share_token["ibet_wst_activated"] = True if token.ibet_wst_activated else False
+        share_token["ibet_wst_version"] = token.ibet_wst_version
+        share_token["ibet_wst_deployed"] = True if token.ibet_wst_deployed else False
+        share_token["ibet_wst_address"] = token.ibet_wst_address
+
         share_tokens.append(share_token)
 
     return json_response(share_tokens)
@@ -439,13 +475,20 @@ async def retrieve_share_token(
     if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    # Get contract data
+    # Get response data from contract
     share_token = (await IbetShareContract(token_address).get()).__dict__
-    issue_datetime_utc = pytz.timezone("UTC").localize(_token.created)
-    share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
+    share_token.pop("contract_name")
+
+    # Set other response items
+    share_token["issue_datetime"] = (
+        pytz.timezone("UTC").localize(_token.created).astimezone(local_tz).isoformat()
+    )
     share_token["token_status"] = _token.token_status
     share_token["contract_version"] = _token.version
-    share_token.pop("contract_name")
+    share_token["ibet_wst_activated"] = True if _token.ibet_wst_activated else False
+    share_token["ibet_wst_version"] = _token.ibet_wst_version
+    share_token["ibet_wst_deployed"] = True if _token.ibet_wst_deployed else False
+    share_token["ibet_wst_address"] = _token.ibet_wst_address
 
     return json_response(share_token)
 
@@ -525,24 +568,67 @@ async def update_share_token(
                 f"the operation is not supported in {_token.version}"
             )
 
+    if _token.version < TokenVersion.V_25_09:
+        if update_data.activate_ibet_wst is not None:
+            raise OperationNotSupportedVersionError(
+                f"the operation is not supported in {_token.version}"
+            )
+
     # Send transaction
     try:
         token_contract = IbetShareContract(token_address)
         original_contents = (await token_contract.get()).__dict__
+        tx_params = UpdateParams(
+            cancellation_date=update_data.cancellation_date,
+            dividend_record_date=update_data.dividend_record_date,
+            dividend_payment_date=update_data.dividend_payment_date,
+            dividends=update_data.dividends,
+            tradable_exchange_contract_address=update_data.tradable_exchange_contract_address,
+            personal_info_contract_address=update_data.personal_info_contract_address,
+            require_personal_info_registered=update_data.require_personal_info_registered,
+            transferable=update_data.transferable,
+            status=update_data.status,
+            is_offering=update_data.is_offering,
+            contact_information=update_data.contact_information,
+            privacy_policy=update_data.privacy_policy,
+            transfer_approval_required=update_data.transfer_approval_required,
+            principal_value=update_data.principal_value,
+            is_canceled=update_data.is_canceled,
+            memo=update_data.memo,
+        )
         await token_contract.update(
-            data=UpdateParams(**update_data.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=tx_params,
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
+
+    # Activate IbetWST
+    if update_data.activate_ibet_wst and not _token.ibet_wst_activated:
+        tx_id = str(uuid.uuid4())
+        _token.ibet_wst_activated = True
+        _token.ibet_wst_version = IbetWSTVersion.V_1
+        _token.ibet_wst_tx_id = tx_id
+
+        # Register IbetWST transaction
+        _ibet_wst_tx = EthIbetWSTTx()
+        _ibet_wst_tx.tx_id = tx_id
+        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+        _ibet_wst_tx.version = IbetWSTVersion.V_1
+        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+        _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+            name=token_contract.name, initial_owner=issuer_address
+        )
+        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+        db.add(_ibet_wst_tx)
 
     # Register operation log
     operation_log = TokenUpdateOperationLog()
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
     operation_log.type = TokenType.IBET_SHARE
-    operation_log.arguments = update_data.model_dump(exclude_none=True)
+    operation_log.arguments = tx_params.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
     operation_log.operation_category = TokenUpdateOperationCategory.UPDATE
     db.add(operation_log)
@@ -808,9 +894,9 @@ async def issuer_additional_share(
     # Send transaction
     try:
         await IbetShareContract(token_address).additional_issue(
-            data=AdditionalIssueParams(**data.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=AdditionalIssueParams(**data.model_dump()),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -1230,9 +1316,9 @@ async def redeem_share(
     # Send transaction
     try:
         await IbetShareContract(token_address).redeem(
-            data=RedeemParams(**data.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=RedeemParams(**data.model_dump()),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -1244,7 +1330,7 @@ async def redeem_share(
 @router.get(
     "/tokens/{token_address}/redeem/batch",
     operation_id="ListAllBatchShareRedemption",
-    response_model=ListBatchIssueRedeemUploadResponse,
+    response_model=ListBatchIssueRedeemUploadResponseWithResult,
     responses=get_routers_responses(422),
 )
 async def list_all_batch_share_redemption(
@@ -1295,10 +1381,69 @@ async def list_all_batch_share_redemption(
         stmt = stmt.offset(get_query.offset)
 
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
+    upload_ids = [_upload.upload_id for _upload in _upload_list]
 
+    # Get issuer_address from token_address
+    if issuer_address is None:
+        _token: Token | None = (
+            await db.scalars(
+                select(Token).where(Token.token_address == token_address).limit(1)
+            )
+        ).first()
+        if _token is not None:
+            issuer_address = _token.issuer_address
+
+    # Get Batch Records
+    record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = []
+    if upload_ids:
+        record_list = (
+            (
+                await db.execute(
+                    select(BatchIssueRedeem, IDXPersonalInfo)
+                    .outerjoin(
+                        IDXPersonalInfo,
+                        and_(
+                            BatchIssueRedeem.account_address
+                            == IDXPersonalInfo.account_address,
+                            IDXPersonalInfo.issuer_address == issuer_address,
+                        ),
+                    )
+                    .where(BatchIssueRedeem.upload_id.in_(upload_ids))
+                )
+            )
+            .tuples()
+            .all()
+        )
+
+    # Group records by upload_id
+    record_list_by_upload_id = defaultdict(list)
+    for record in record_list:
+        record_list_by_upload_id[record[0].upload_id].append(record)
+
+    personal_info_default = {
+        "key_manager": None,
+        "name": None,
+        "postal_code": None,
+        "address": None,
+        "email": None,
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None,
+    }
     uploads = []
     for _upload in _upload_list:
         created_utc = pytz.timezone("UTC").localize(_upload.created)
+        results = [
+            {
+                "account_address": record[0].account_address,
+                "amount": record[0].amount,
+                "status": record[0].status,
+                "personal_information": (
+                    record[1].personal_info if record[1] else personal_info_default
+                ),
+            }
+            for record in record_list_by_upload_id[_upload.upload_id]
+        ]
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
@@ -1307,6 +1452,7 @@ async def list_all_batch_share_redemption(
                 "token_address": _upload.token_address,
                 "processed": _upload.processed,
                 "created": created_utc.astimezone(local_tz).isoformat(),
+                "results": results,
             }
         )
 
@@ -2582,12 +2728,20 @@ async def register_share_token_holder_personal_info(
         }
     )
     if personal_info.data_source == PersonalInfoDataSource.OFF_CHAIN:
+        # Add off-chain personal info
         _off_personal_info = IDXPersonalInfo()
         _off_personal_info.issuer_address = issuer_address
         _off_personal_info.account_address = personal_info.account_address
         _off_personal_info.personal_info = input_personal_info
         _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
         await db.merge(_off_personal_info)
+        # Add personal info history
+        _personal_info_history = IDXPersonalInfoHistory()
+        _personal_info_history.issuer_address = issuer_address
+        _personal_info_history.account_address = personal_info.account_address
+        _personal_info_history.event_type = PersonalInfoEventType.REGISTER
+        _personal_info_history.personal_info = input_personal_info
+        db.add(_personal_info_history)
         await db.commit()
     else:
         # Check the length of personal info content
@@ -3165,9 +3319,9 @@ async def transfer_share_token_ownership(
 
     try:
         await IbetShareContract(token.token_address).forced_transfer(
-            data=ForcedTransferParams(**token.model_dump()),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_params=ForcedTransferParams(**token.model_dump()),
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -3957,9 +4111,9 @@ async def update_share_token_transfer_approval_status(
                 }
                 try:
                     await IbetShareContract(token_address).approve_transfer(
-                        data=ApproveTransferParams(**_data),
-                        tx_from=issuer_address,
-                        private_key=private_key,
+                        tx_params=ApproveTransferParams(**_data),
+                        tx_sender=issuer_address,
+                        tx_sender_key=private_key,
                     )
                 except ContractRevertError:
                     # If approveTransfer end with revert,
@@ -3967,9 +4121,9 @@ async def update_share_token_transfer_approval_status(
                     # After cancelTransfer, ContractRevertError is returned.
                     try:
                         await IbetShareContract(token_address).cancel_transfer(
-                            data=CancelTransferParams(**_data),
-                            tx_from=issuer_address,
-                            private_key=private_key,
+                            tx_params=CancelTransferParams(**_data),
+                            tx_sender=issuer_address,
+                            tx_sender_key=private_key,
                         )
                     except ContractRevertError:
                         raise
@@ -3982,9 +4136,9 @@ async def update_share_token_transfer_approval_status(
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
                 try:
                     await escrow.approve_transfer(
-                        data=EscrowApproveTransferParams(**_data),
-                        tx_from=issuer_address,
-                        private_key=private_key,
+                        tx_params=EscrowApproveTransferParams(**_data),
+                        tx_sender=issuer_address,
+                        tx_sender_key=private_key,
                     )
                 except ContractRevertError:
                     # If approveTransfer end with revert, error should be thrown immediately.
@@ -3995,9 +4149,9 @@ async def update_share_token_transfer_approval_status(
             _data = {"application_id": _transfer_approval.application_id, "data": now}
             try:
                 await IbetShareContract(token_address).cancel_transfer(
-                    data=CancelTransferParams(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
+                    tx_params=CancelTransferParams(**_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
             except ContractRevertError:
                 # If cancelTransfer end with revert, error should be thrown immediately.

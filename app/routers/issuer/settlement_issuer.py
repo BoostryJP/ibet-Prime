@@ -34,12 +34,6 @@ from sqlalchemy.orm import aliased
 import config
 from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError, SendTransactionError
-from app.model.blockchain.exchange import IbetSecurityTokenDVP
-from app.model.blockchain.token import IbetSecurityTokenInterface
-from app.model.blockchain.tx_params.ibet_security_token import (
-    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_security_token_dvp import CancelDeliveryParams
 from app.model.db import (
     DVPAsyncProcess,
     DVPAsyncProcessStatus,
@@ -50,6 +44,12 @@ from app.model.db import (
     Token,
     TokenStatus,
 )
+from app.model.ibet.exchange import IbetSecurityTokenDVP
+from app.model.ibet.token import IbetSecurityTokenInterface
+from app.model.ibet.tx_params.ibet_security_token import (
+    ForcedTransferParams as IbetSecurityTokenForcedTransferParams,
+)
+from app.model.ibet.tx_params.ibet_security_token_dvp import CancelDeliveryParams
 from app.model.schema import (
     CancelDVPDeliveryRequest,
     CreateDVPDeliveryRequest,
@@ -315,13 +315,13 @@ async def create_dvp_delivery(
         tx_hash = await IbetSecurityTokenInterface(
             create_req.token_address
         ).forced_transfer(
-            data=IbetSecurityTokenForcedTransferParams(
+            tx_params=IbetSecurityTokenForcedTransferParams(
                 from_address=issuer_address,
                 to_address=exchange_address,
                 amount=create_req.amount,
             ),
-            tx_from=issuer_address,
-            private_key=private_key,
+            tx_sender=issuer_address,
+            tx_sender_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -571,9 +571,9 @@ async def update_dvp_delivery(
             try:
                 _data = {"delivery_id": delivery_id}
                 await dvp_contract.cancel_delivery(
-                    data=CancelDeliveryParams(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
+                    tx_params=CancelDeliveryParams(**_data),
+                    tx_sender=issuer_address,
+                    tx_sender_key=private_key,
                 )
             except SendTransactionError:
                 raise SendTransactionError("failed to cancel delivery")

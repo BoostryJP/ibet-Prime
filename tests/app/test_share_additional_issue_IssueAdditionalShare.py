@@ -24,10 +24,10 @@ from unittest.mock import ANY, MagicMock
 import pytest
 
 from app.exceptions import SendTransactionError
-from app.model.blockchain.tx_params.ibet_share import AdditionalIssueParams
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.ibet.tx_params.ibet_share import AdditionalIssueParams
 from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import config_eth_account
+from tests.account_config import default_eth_account
 
 
 class TestIssueAdditionalShare:
@@ -40,10 +40,10 @@ class TestIssueAdditionalShare:
 
     # <Normal_1>
     # Authorization by eoa-password
-    @mock.patch("app.model.blockchain.token.IbetShareContract.additional_issue")
+    @mock.patch("app.model.ibet.token.IbetShareContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_1(self, IbetShareContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -61,7 +61,7 @@ class TestIssueAdditionalShare:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -82,9 +82,9 @@ class TestIssueAdditionalShare:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=AdditionalIssueParams(**req_param),
-            tx_from=_issuer_address,
-            private_key=ANY,
+            tx_params=AdditionalIssueParams(**req_param),
+            tx_sender=_issuer_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -92,10 +92,10 @@ class TestIssueAdditionalShare:
 
     # <Normal_2>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetShareContract.additional_issue")
+    @mock.patch("app.model.ibet.token.IbetShareContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_2(self, IbetShareContract_mock, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -119,7 +119,7 @@ class TestIssueAdditionalShare:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -140,9 +140,9 @@ class TestIssueAdditionalShare:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=AdditionalIssueParams(**req_param),
-            tx_from=_issuer_address,
-            private_key=ANY,
+            tx_params=AdditionalIssueParams(**req_param),
+            tx_sender=_issuer_address,
+            tx_sender_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -185,7 +185,7 @@ class TestIssueAdditionalShare:
     # RequestValidationError: account_address, amount(min)
     @pytest.mark.asyncio
     async def test_error_2(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -223,7 +223,7 @@ class TestIssueAdditionalShare:
     # RequestValidationError: amount(max)
     @pytest.mark.asyncio
     async def test_error_3(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -254,7 +254,7 @@ class TestIssueAdditionalShare:
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
     async def test_error_4(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
@@ -284,7 +284,7 @@ class TestIssueAdditionalShare:
     # RequestValidationError: eoa-password(not decrypt)
     @pytest.mark.asyncio
     async def test_error_5(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -296,7 +296,7 @@ class TestIssueAdditionalShare:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -328,7 +328,7 @@ class TestIssueAdditionalShare:
     # issuer does not exist
     @pytest.mark.asyncio
     async def test_error_6(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -340,7 +340,7 @@ class TestIssueAdditionalShare:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -368,7 +368,7 @@ class TestIssueAdditionalShare:
     # password mismatch
     @pytest.mark.asyncio
     async def test_error_7(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -403,7 +403,7 @@ class TestIssueAdditionalShare:
     # token not found
     @pytest.mark.asyncio
     async def test_error_8(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -438,7 +438,7 @@ class TestIssueAdditionalShare:
     # Processing token
     @pytest.mark.asyncio
     async def test_error_9(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -457,7 +457,7 @@ class TestIssueAdditionalShare:
         token.token_address = _token_address
         token.abi = {}
         token.token_status = 0
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
@@ -483,12 +483,12 @@ class TestIssueAdditionalShare:
     # <Error_10>
     # Send Transaction Error
     @mock.patch(
-        "app.model.blockchain.token.IbetShareContract.additional_issue",
+        "app.model.ibet.token.IbetShareContract.additional_issue",
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
     async def test_error_10(self, async_client, async_db):
-        test_account = config_eth_account("user1")
+        test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
@@ -506,7 +506,7 @@ class TestIssueAdditionalShare:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.version = TokenVersion.V_25_06
+        token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
