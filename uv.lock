@@ -659,7 +659,7 @@ wheels = [
 
 [[package]]
 name = "ibet-prime"
-version = "25.9"
+version = "25.12"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },

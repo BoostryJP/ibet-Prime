@@ -139,7 +139,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="25.9",
+    version="25.12",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
