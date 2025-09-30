@@ -39,10 +39,10 @@ from app.exceptions import (
     ServiceUnavailableError,
 )
 from app.log import LOG, output_access_log
+from app.routers.common import common, e2ee
 from app.routers.issuer import (
     account,
     bond,
-    common,
     file,
     ledger,
     notification,
@@ -188,10 +188,12 @@ if DEDICATED_OFFCHAIN_TX_MODE:
 
 elif DEDICATED_DVP_AGENT_MODE:
     if DVP_AGENT_FEATURE_ENABLED:
+        app.include_router(e2ee.router)
         app.include_router(settlement_agent.router)
 
 else:
     app.include_router(common.router)
+    app.include_router(e2ee.router)
     app.include_router(account.router)
     app.include_router(bond.router)
     app.include_router(e2e_messaging.router)
