@@ -26,10 +26,6 @@ from app.utils.fastapi_utils import json_response
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from config import E2EE_REQUEST_ENABLED
 
-web3 = AsyncWeb3Wrapper()
-
-LOG = log.get_logger()
-
 router = APIRouter(tags=["common"])
 
 
