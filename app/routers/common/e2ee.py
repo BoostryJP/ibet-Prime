@@ -19,11 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 
 from fastapi import APIRouter
 
-from app import log
 from app.model.schema import E2EEResponse
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
-from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from config import E2EE_REQUEST_ENABLED
 
 router = APIRouter(tags=["common"])
