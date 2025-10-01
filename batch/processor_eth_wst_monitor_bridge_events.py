@@ -136,9 +136,26 @@ class BridgeEventViewer:
         return logs
 
 
-class BridgeMessage(BaseModel):
+class BridgeMessageMint(BaseModel):
     """
-    Message format for IbetWST bridge operations.
+    Message format for IbetWST mint operations.
+    """
+
+    message: Literal["ibet_wst_bridge"]
+    network: Literal["ethereum"] = "ethereum"
+
+
+class BridgeMessageBurn(BaseModel):
+    """
+    Message format for IbetWST burn operations.
+    """
+
+    message: Literal["ibet_wst_bridge"]
+
+
+class BridgeMessageTransfer(BaseModel):
+    """
+    Message format for IbetWST transfer operations.
     """
 
     message: Literal["ibet_wst_bridge"]
@@ -384,7 +401,7 @@ class WSTBridgeMonitoringProcessor:
                     continue
                 try:
                     # Skip if the data is not a valid BridgeMessage
-                    BridgeMessage(**json.loads(args["data"]))
+                    bridge_message_mint = BridgeMessageMint(**json.loads(args["data"]))
                 except (json.JSONDecodeError, ValidationError, TypeError):
                     continue
 
@@ -428,25 +445,27 @@ class WSTBridgeMonitoringProcessor:
 
                     # Insert transaction record
                     tx_id = str(uuid.uuid4())
-                    wst_tx = EthIbetWSTTx()
-                    wst_tx.tx_id = tx_id
-                    wst_tx.tx_type = IbetWSTTxType.MINT
-                    wst_tx.version = IbetWSTVersion.V_1
-                    wst_tx.status = IbetWSTTxStatus.PENDING
-                    wst_tx.ibet_wst_address = wst_address
-                    wst_tx.tx_params = IbetWSTTxParamsMint(
-                        to_address=args["accountAddress"],
-                        value=args["value"],
-                    )
-                    wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-                    wst_tx.authorizer = issuer.issuer_address
-                    wst_tx.authorization = IbetWSTAuthorization(
-                        nonce=nonce.hex(),
-                        v=signature.v,
-                        r=signature.r.to_bytes(32).hex(),
-                        s=signature.s.to_bytes(32).hex(),
-                    )
-                    db_session.add(wst_tx)
+                    if bridge_message_mint.network == "ethereum":
+                        wst_tx = EthIbetWSTTx()
+                        wst_tx.tx_id = tx_id
+                        wst_tx.tx_type = IbetWSTTxType.MINT
+                        wst_tx.version = IbetWSTVersion.V_1
+                        wst_tx.status = IbetWSTTxStatus.PENDING
+                        wst_tx.ibet_wst_address = wst_address
+                        wst_tx.tx_params = IbetWSTTxParamsMint(
+                            to_address=args["accountAddress"],
+                            value=args["value"],
+                        )
+                        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+                        wst_tx.authorizer = issuer.issuer_address
+                        wst_tx.authorization = IbetWSTAuthorization(
+                            nonce=nonce.hex(),
+                            v=signature.v,
+                            r=signature.r.to_bytes(32).hex(),
+                            s=signature.s.to_bytes(32).hex(),
+                        )
+                        db_session.add(wst_tx)
+
                     LOG.info(
                         f"Minting IbetWST: {wst_address}, to={args['accountAddress']}, value={args['value']}, tx_id={tx_id}"
                     )
@@ -479,7 +498,7 @@ class WSTBridgeMonitoringProcessor:
                     account_address=args["from"],
                     recipient_address=args["from"],
                     value=args["value"],
-                    data=BridgeMessage(message="ibet_wst_bridge").model_dump(),
+                    data=BridgeMessageBurn(message="ibet_wst_bridge").model_dump(),
                 )
                 bridge_tx.tx_sender = bridge_event_viewer.issuer_address
                 db_session.add(bridge_tx)
@@ -513,7 +532,7 @@ class WSTBridgeMonitoringProcessor:
                     before_account_address=args["from"],
                     after_account_address=args["to"],
                     value=args["value"],
-                    data=BridgeMessage(message="ibet_wst_bridge").model_dump(),
+                    data=BridgeMessageTransfer(message="ibet_wst_bridge").model_dump(),
                 )
                 bridge_tx.tx_sender = bridge_event_viewer.issuer_address
                 db_session.add(bridge_tx)

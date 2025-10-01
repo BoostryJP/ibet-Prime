@@ -272,7 +272,7 @@ class TestProcessor:
             "skip process",  # skip eth_to_ibet
         ]
 
-    # Normal_3_1
+    # Normal_3_1_1
     # ibet -> eth bridge event is detected
     # - Check if the mint transaction record is registered
     @mock.patch(
@@ -289,7 +289,7 @@ class TestProcessor:
                             "accountAddress": user1["address"],
                             "lockAddress": issuer["address"],
                             "value": 1000,
-                            "data": '{"message": "ibet_wst_bridge"}',
+                            "data": '{"message": "ibet_wst_bridge", "network": "ethereum"}',
                         }
                     }
                 ],  # __process_mint
@@ -305,7 +305,124 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_1(self, processor, async_db, caplog):
+    async def test_normal_3_1_1(self, processor, async_db, caplog):
+        # Generate empty block
+        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        eth_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        latest_block_ibet = await processor.get_latest_block_number("ibetfin")
+        latest_block_eth = await processor.get_latest_block_number("ethereum")
+
+        # Prepare test data
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.token_address = self.ibet_token_address_1
+        token.issuer_address = self.issuer["address"]
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = self.ibet_token_abi
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_deployed = True
+        token.ibet_wst_address = self.ibet_wst_address_1
+        async_db.add(token)
+
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Check IbetWSTBridgeSyncedBlockNumber
+        synced_block_ibet = (
+            await async_db.scalars(
+                select(IbetWSTBridgeSyncedBlockNumber)
+                .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
+                .limit(1)
+            )
+        ).first()
+        assert synced_block_ibet.latest_block_number == latest_block_ibet
+
+        synced_block_eth = (
+            await async_db.scalars(
+                select(IbetWSTBridgeSyncedBlockNumber)
+                .where(IbetWSTBridgeSyncedBlockNumber.network == "ethereum")
+                .limit(1)
+            )
+        ).first()
+        assert synced_block_eth.latest_block_number == latest_block_eth
+
+        # Check EthIbetWSTTx
+        eth_tx_list: Sequence[EthIbetWSTTx] = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(
+                    EthIbetWSTTx.status == IbetWSTTxStatus.PENDING
+                )
+            )
+        ).all()
+        assert len(eth_tx_list) == 1
+        eth_tx = eth_tx_list[0]
+        assert eth_tx.tx_id is not None
+        assert eth_tx.tx_type == IbetWSTTxType.MINT
+        assert eth_tx.version == IbetWSTVersion.V_1
+        assert eth_tx.status == IbetWSTTxStatus.PENDING
+        assert eth_tx.ibet_wst_address == self.ibet_wst_address_1
+        assert eth_tx.tx_params == {
+            "to_address": self.user1["address"],
+            "value": 1000,
+        }
+        assert eth_tx.tx_sender == self.relayer["address"]
+        assert eth_tx.authorizer == self.issuer["address"]
+        assert eth_tx.authorization == {
+            "nonce": mock.ANY,
+            "v": mock.ANY,
+            "r": mock.ANY,
+            "s": mock.ANY,
+        }
+
+        # Check EthToIbetBridgeTx
+        ibet_tx_list: Sequence[EthToIbetBridgeTx] = (
+            await async_db.scalars(select(EthToIbetBridgeTx))
+        ).all()
+        assert len(ibet_tx_list) == 0
+
+    # Normal_3_1_2
+    # ibet -> eth bridge event is detected
+    # - Check if the mint transaction record is registered
+    @mock.patch(
+        "batch.processor_eth_wst_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
+        relayer["address"],
+    )
+    @mock.patch(
+        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
+        AsyncMock(
+            side_effect=[
+                [
+                    {
+                        "args": {
+                            "accountAddress": user1["address"],
+                            "lockAddress": issuer["address"],
+                            "value": 1000,
+                            "data": '{"message": "ibet_wst_bridge"}',  # network not specified
+                        }
+                    }
+                ],  # __process_mint
+            ]
+        ),
+    )
+    @mock.patch(
+        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
+        AsyncMock(
+            side_effect=[
+                [],  # __process_burn
+                [],  # __process_transfer
+            ]
+        ),
+    )
+    async def test_normal_3_1_2(self, processor, async_db, caplog):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         eth_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
