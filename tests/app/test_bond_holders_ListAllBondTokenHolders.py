@@ -2859,6 +2859,8 @@ class TestListAllBondTokenHolders:
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
+        await async_db.commit()
+
         # prepare data: account_address_1
         idx_position_1 = IDXPosition()
         idx_position_1.token_address = _token_address
@@ -2906,6 +2908,8 @@ class TestListAllBondTokenHolders:
         idx_personal_info_1.data_source = PersonalInfoDataSource.ON_CHAIN
         async_db.add(idx_personal_info_1)
 
+        await async_db.commit()
+
         # prepare data: account_address_2
         idx_position_2 = IDXPosition()
         idx_position_2.token_address = _token_address
@@ -2937,6 +2941,8 @@ class TestListAllBondTokenHolders:
         idx_locked_position.modified = datetime(2023, 10, 24, 2, 20, 0)
         async_db.add(idx_locked_position)
 
+        await async_db.commit()
+
         # prepare data: account_address_3
         idx_position_3 = IDXPosition()
         idx_position_3.token_address = _token_address
@@ -2967,6 +2973,8 @@ class TestListAllBondTokenHolders:
         idx_locked_position.value = 15
         idx_locked_position.modified = datetime(2023, 10, 24, 5, 0, 0)
         async_db.add(idx_locked_position)
+
+        await async_db.commit()
 
         # Other locked position
         _locked_position = IDXLockedPosition()

@@ -23,7 +23,7 @@
 
 ## 依存
 
-- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.12
+- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.13
 - [PostgreSQL](https://www.postgresql.org/) - バージョン 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。

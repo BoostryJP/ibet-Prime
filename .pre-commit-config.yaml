@@ -5,4 +5,4 @@ repos:
       - id: ruff-format
         name: ruff-format
         entry: make format
-        language_version: python3.12
+        language_version: python3.13

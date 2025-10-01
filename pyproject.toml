@@ -7,25 +7,25 @@ authors = [
 ]
 license = {text = "Apache License, Version 2.0"}
 readme = "README.md"
-requires-python = "==3.12.9"
+requires-python = "==3.13.7"
 dependencies = [
     "alembic<2.0.0,>=1.14.0",
     "boto3~=1.37.9",
     "coincurve~=21.0.0",
     "eth-keyfile==0.9.1",
     "eth-utils~=5.3.0",
-    "fastapi~=0.116.1",
+    "fastapi~=0.118.0",
     "gunicorn~=23.0.0",
-    "orjson~=3.10.18",
+    "orjson~=3.11.3",
     "psycopg[c]<4.0.0,>=3.2.0",
-    "pycryptodome~=3.22",
+    "pycryptodome~=3.23",
     "pydantic~=2.11.4",
     "pytz~=2025.2",
     "shared-memory-dict~=0.7.2",
     "web3==7.8.0",
     "httpx<1.0.0,>=0.27.0",
     "sqlalchemy[asyncio]<3.0.0,>=2.0.40",
-    "uvicorn[standard]~=0.34.2",
+    "uvicorn[standard]~=0.37.0",
     "uvloop~=0.21.0",
     "memray<2.0.0,>=1.14.0",
     "py-spy>=0.4.0",
