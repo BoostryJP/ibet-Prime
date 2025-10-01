@@ -25,31 +25,18 @@ from app import log
 from app.database import DBAsyncSession
 from app.exceptions import ServiceUnavailableError
 from app.model.db import EthereumNode, Node
-from app.model.schema import BlockNumberResponse, E2EEResponse
+from app.model.schema import BlockNumberResponse
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
-from config import E2EE_REQUEST_ENABLED, IBET_WST_FEATURE_ENABLED
+from config import IBET_WST_FEATURE_ENABLED
 
 web3 = AsyncWeb3Wrapper()
 
 LOG = log.get_logger()
 
 router = APIRouter(tags=["common"])
-
-
-# GET: /e2ee
-@router.get("/e2ee", operation_id="GetE2EEncryptionKey", response_model=E2EEResponse)
-async def e2e_encryption_key():
-    """Get E2EE public key"""
-
-    if not E2EE_REQUEST_ENABLED:
-        return json_response({"public_key": None})
-
-    _, public_key = E2EEUtils.get_key()
-
-    return json_response({"public_key": public_key})
 
 
 # GET: /healthcheck
