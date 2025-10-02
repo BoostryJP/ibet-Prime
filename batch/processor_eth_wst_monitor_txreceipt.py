@@ -201,17 +201,17 @@ async def reflect_unfinalized_tx(
                     account_address=event["args"]["accountAddress"],
                 )
                 await db_session.merge(wst_tx)
-            # Delete from whitelist table
-            await db_session.execute(
-                delete(IDXEthIbetWSTWhitelist).where(
-                    and_(
-                        IDXEthIbetWSTWhitelist.ibet_wst_address
-                        == wst_tx.ibet_wst_address,
-                        IDXEthIbetWSTWhitelist.st_account_address
-                        == event["args"]["accountAddress"],
+                # Delete from whitelist table
+                await db_session.execute(
+                    delete(IDXEthIbetWSTWhitelist).where(
+                        and_(
+                            IDXEthIbetWSTWhitelist.ibet_wst_address
+                            == wst_tx.ibet_wst_address,
+                            IDXEthIbetWSTWhitelist.st_account_address
+                            == event["args"]["accountAddress"],
+                        )
                     )
                 )
-            )
         case _:
             return
 
@@ -311,17 +311,17 @@ async def finalize_tx(
                     account_address=event["args"]["accountAddress"],
                 )
                 await db_session.merge(wst_tx)
-            # Delete from whitelist table
-            await db_session.execute(
-                delete(IDXEthIbetWSTWhitelist).where(
-                    and_(
-                        IDXEthIbetWSTWhitelist.ibet_wst_address
-                        == wst_tx.ibet_wst_address,
-                        IDXEthIbetWSTWhitelist.st_account_address
-                        == event["args"]["accountAddress"],
+                # Delete from whitelist table
+                await db_session.execute(
+                    delete(IDXEthIbetWSTWhitelist).where(
+                        and_(
+                            IDXEthIbetWSTWhitelist.ibet_wst_address
+                            == wst_tx.ibet_wst_address,
+                            IDXEthIbetWSTWhitelist.st_account_address
+                            == event["args"]["accountAddress"],
+                        )
                     )
                 )
-            )
         case IbetWSTTxType.TRANSFER:
             # Update the IbetWST transaction with the event log
             ibet_wst = IbetWST(wst_tx.ibet_wst_address)
