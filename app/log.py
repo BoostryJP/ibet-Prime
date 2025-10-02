@@ -39,6 +39,8 @@ logging.getLogger("web3.manager.RequestManager").addHandler(logging.NullHandler(
 logging.getLogger("pyroscope").setLevel(logging.ERROR)
 logging.getLogger("py_spy").setLevel(logging.ERROR)
 logging.getLogger("opentelemetry").setLevel(logging.ERROR)
+logging.getLogger("boto3").setLevel(logging.WARNING)
+logging.getLogger("botocore").setLevel(logging.WARNING)
 
 INFO_FORMAT = "[%(asctime)s] {}[%(process)d] [%(levelname)s] %(message)s"
 DEBUG_FORMAT = "[%(asctime)s] {}[%(process)d] [%(levelname)s] %(message)s [in %(pathname)s:%(lineno)d]"
