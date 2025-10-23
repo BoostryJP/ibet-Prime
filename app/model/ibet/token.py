@@ -1623,6 +1623,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     _dividend_info,
                 ) = [task.result() for task in tasks]
             except ExceptionGroup:
+                LOG.warning("Failed to get ibet token attributes")
                 raise ServiceUnavailableError from None
 
             self.dividends = float(
