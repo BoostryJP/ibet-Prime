@@ -951,6 +951,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     self.is_redeemed,
                 ) = [task.result() for task in tasks]
             except ExceptionGroup:
+                LOG.warning("Failed to get ibet token attributes")
                 raise ServiceUnavailableError from None
 
             self.interest_rate = float(Decimal(str(_interest_rate)) * Decimal("0.0001"))
@@ -1622,6 +1623,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     _dividend_info,
                 ) = [task.result() for task in tasks]
             except ExceptionGroup:
+                LOG.warning("Failed to get ibet token attributes")
                 raise ServiceUnavailableError from None
 
             self.dividends = float(

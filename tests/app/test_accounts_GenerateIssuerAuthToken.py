@@ -497,7 +497,8 @@ class TestGenerateIssuerAuthToken:
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 3, "title": "AuthTokenAlreadyExistsError"}
+            "meta": {"code": 3, "title": "AuthTokenAlreadyExistsError"},
+            "detail": "",
         }
 
     # Error_6_2
@@ -536,5 +537,6 @@ class TestGenerateIssuerAuthToken:
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 3, "title": "AuthTokenAlreadyExistsError"}
+            "meta": {"code": 3, "title": "AuthTokenAlreadyExistsError"},
+            "detail": "",
         }

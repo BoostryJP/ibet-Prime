@@ -62,14 +62,12 @@ async def service_health_check(db: DBAsyncSession):
         await db.connection()
         # Check ibet node is synced
         await __check_ibet_node_is_synced(errors, db)
-
+        # Check ethereum node is synced
         if IBET_WST_FEATURE_ENABLED:
-            # Check ethereum node is synced
             await __check_ethereum_node_is_synced(errors, db)
-
     except Exception as err:
         LOG.exception(err)
-        errors.append("Can't connect to database")
+        errors.append("Cannot connect to the data source")
 
     # Check E2EE Setting
     try:
