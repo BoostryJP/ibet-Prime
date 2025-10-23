@@ -343,7 +343,8 @@ async def service_unavailable_error_handler(
     request: Request, exc: ServiceUnavailableError
 ):
     meta = {"code": exc.code, "title": exc.__class__.__name__}
+    detail = exc.args[0] if len(exc.args) > 0 else None
     return JSONResponse(
         status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+        content=jsonable_encoder({"meta": meta, "detail": detail}),
     )
