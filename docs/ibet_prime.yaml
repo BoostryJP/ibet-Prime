@@ -13,20 +13,6 @@ paths:
       responses:
         '200':
           description: Successful Response
-  /e2ee:
-    get:
-      tags:
-        - common
-      summary: E2E Encryption Key
-      description: Get E2EE public key
-      operationId: GetE2EEncryptionKey
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/E2EEResponse'
   /healthcheck:
     get:
       tags:
@@ -70,6 +56,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServiceUnavailableErrorResponse'
+  /e2ee:
+    get:
+      tags:
+        - common
+      summary: E2E Encryption Key
+      description: Get E2EE public key
+      operationId: GetE2EEncryptionKey
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E2EEResponse'
   /accounts:
     get:
       tags:
