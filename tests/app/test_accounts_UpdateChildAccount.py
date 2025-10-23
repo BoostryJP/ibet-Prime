@@ -274,5 +274,6 @@ class TestUpdateChildAccount:
         # Assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 11, "title": "PersonalInfoExceedsSizeLimit"}
+            "meta": {"code": 11, "title": "PersonalInfoExceedsSizeLimit"},
+            "detail": "",
         }

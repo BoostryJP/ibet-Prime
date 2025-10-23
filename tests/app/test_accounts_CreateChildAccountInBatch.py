@@ -260,7 +260,8 @@ class TestCreateChildAccountInBatch:
         # Assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 10, "title": "OperationNotPermittedForOlderIssuers"}
+            "meta": {"code": 10, "title": "OperationNotPermittedForOlderIssuers"},
+            "detail": "",
         }
 
     # <Error_4>

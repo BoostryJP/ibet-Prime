@@ -282,17 +282,11 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
 @app.exception_handler(BadRequestError)
 async def bad_request_error_handler(request: Request, exc: BadRequestError):
     meta = {"code": exc.code, "title": exc.__class__.__name__}
-
-    if len(exc.args) > 0:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-        )
-    else:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=jsonable_encoder({"meta": meta}),
-        )
+    detail = exc.args[0] if len(exc.args) > 0 else ""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder({"meta": meta, "detail": detail}),
+    )
 
 
 # 400:ContractRevertError
@@ -309,9 +303,10 @@ async def contract_revert_error_handler(request: Request, exc: ContractRevertErr
 @app.exception_handler(AuthorizationError)
 async def authorization_error_handler(request: Request, exc: AuthorizationError):
     meta = {"code": 1, "title": "AuthorizationError"}
+    detail = exc.args[0] if len(exc.args) > 0 else ""
     return JSONResponse(
         status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+        content=jsonable_encoder({"meta": meta, "detail": detail}),
     )
 
 
@@ -343,7 +338,8 @@ async def service_unavailable_error_handler(
     request: Request, exc: ServiceUnavailableError
 ):
     meta = {"code": exc.code, "title": exc.__class__.__name__}
+    detail = exc.args[0] if len(exc.args) > 0 else ""
     return JSONResponse(
         status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+        content=jsonable_encoder({"meta": meta, "detail": detail}),
     )
