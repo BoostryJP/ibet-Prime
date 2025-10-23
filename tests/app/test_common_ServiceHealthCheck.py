@@ -147,6 +147,6 @@ class TestServiceHealthCheck:
         assert resp.json() == {
             "meta": {"code": 1, "title": "ServiceUnavailableError"},
             "detail": [
-                "Can't connect to database",
+                "Cannot connect to the data source",
             ],
         }
