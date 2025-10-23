@@ -351,7 +351,8 @@ class TestAddIbetWSTWhitelist:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"}
+            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"},
+            "detail": "",
         }
 
     # <Error_3_2>
@@ -427,5 +428,6 @@ class TestAddIbetWSTWhitelist:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"}
+            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"},
+            "detail": "",
         }
