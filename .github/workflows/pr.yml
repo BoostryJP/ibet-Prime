@@ -37,13 +37,13 @@ jobs:
       - name: run unit test using postgres
         run: docker compose run -e TEST_TARGET="${{ matrix.test_target }}" ibet-prime-postgres
       - run: mv cov/.coverage cov/.coverage-${{ strategy.job-index }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: .coverage-${{ strategy.job-index }}
           path: cov/.coverage-${{ strategy.job-index }}
           include-hidden-files: true
       - run: mv cov/pytest.xml cov/pytest-${{ strategy.job-index }}.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: pytest-${{ strategy.job-index }}
           path: cov/pytest-${{ strategy.job-index }}.xml
