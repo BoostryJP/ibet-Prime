@@ -64,7 +64,7 @@ jobs:
         run: |
           sudo chown runner:docker /home/runner/work/ibet-Prime/ibet-Prime/cov
           sudo chmod 777 /home/runner/work/ibet-Prime/ibet-Prime/cov
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           pattern: '.coverage-*'
           path: cov/
@@ -73,7 +73,7 @@ jobs:
         run: docker compose run -w /app/ibet-Prime/cov ibet-prime-postgres bash --login -c 'uv run coverage combine .coverage-*'
       - name: generate coverage xml file
         run: docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'uv run coverage xml --data-file=cov/.coverage -o cov/coverage.xml'
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           pattern: 'pytest-*'
           path: cov/
