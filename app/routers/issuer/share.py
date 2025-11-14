@@ -364,7 +364,7 @@ async def issue_share_token(
         _ibet_wst_tx.version = IbetWSTVersion.V_1
         _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
         _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=token.name, initial_owner=issuer_address
+            name=token.wst_name, initial_owner=issuer_address
         )
         _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
         db.add(_ibet_wst_tx)
