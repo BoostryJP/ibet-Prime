@@ -10,4 +10,5 @@
 .DS_Store
 .cov/
 .venv
+.env
 Dockerfile

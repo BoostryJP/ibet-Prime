@@ -21,7 +21,15 @@ import configparser
 import os
 import sys
 
+from dotenv import load_dotenv
+
 SERVER_NAME = "ibet-Prime"
+
+
+######################################################
+# Environment Setup
+######################################################
+load_dotenv()
 
 ####################################################
 # Basic settings
