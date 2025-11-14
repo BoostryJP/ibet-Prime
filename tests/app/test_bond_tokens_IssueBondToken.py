@@ -274,6 +274,7 @@ class TestIssueBondToken:
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
                 "activate_ibet_wst": None,
+                "wst_name": None,
             }
             resp = await async_client.post(
                 self.apiurl,
@@ -556,6 +557,7 @@ class TestIssueBondToken:
                 "redemption_value_currency": "JPY",
                 "purpose": "purpose_test1",
                 "activate_ibet_wst": True,  # Activate IbetWST
+                "wst_name": "wst_name_test1",
             }
             resp = await async_client.post(
                 self.apiurl,
@@ -650,7 +652,7 @@ class TestIssueBondToken:
             assert ibet_wst_tx_1.version == IbetWSTVersion.V_1
             assert ibet_wst_tx_1.status == IbetWSTTxStatus.PENDING
             assert ibet_wst_tx_1.tx_params == {
-                "name": "name_test1",
+                "name": "wst_name_test1",
                 "initial_owner": test_account["address"],
             }
             assert (
@@ -1232,6 +1234,60 @@ class TestIssueBondToken:
                     "'^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
                     "type": "string_pattern_mismatch",
                 },
+            ],
+        }
+
+    # <Error_2_8>
+    # Validation Error
+    # wst_name when activate_ibet_wst is True
+    @pytest.mark.asyncio
+    async def test_error_2_8(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 10000,
+            "face_value": 200,
+            "face_value_currency": "JPY",
+            "redemption_date": "20211231",
+            "redemption_value": 4000,
+            "return_date": "20211231",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+            "activate_ibet_wst": True,
+        }
+        resp = await async_client.post(
+            self.apiurl,
+            json=req_param,
+            headers={"issuer-address": test_account["address"]},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["body"],
+                    "msg": "Value error, wst_name is required when activate_ibet_wst is true",
+                    "input": {
+                        "name": "name_test1",
+                        "symbol": "symbol_test1",
+                        "total_supply": 10000,
+                        "face_value": 200,
+                        "face_value_currency": "JPY",
+                        "redemption_date": "20211231",
+                        "redemption_value": 4000,
+                        "return_date": "20211231",
+                        "return_amount": "return_amount_test1",
+                        "purpose": "purpose_test1",
+                        "activate_ibet_wst": True,
+                    },
+                    "ctx": {"error": {}},
+                }
             ],
         }
 

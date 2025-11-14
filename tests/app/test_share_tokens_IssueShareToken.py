@@ -411,6 +411,7 @@ class TestIssueShareToken:
                 "principal_value": 1000,
                 "is_canceled": True,
                 "activate_ibet_wst": None,
+                "wst_name": None,
             }
             resp = await async_client.post(
                 self.apiurl,
@@ -861,6 +862,7 @@ class TestIssueShareToken:
                 "cancellation_date": "20221231",
                 "principal_value": 1000,
                 "activate_ibet_wst": True,  # Activate IbetWST
+                "wst_name": "wst_name_test1",
             }
             resp = await async_client.post(
                 self.apiurl,
@@ -959,7 +961,7 @@ class TestIssueShareToken:
             assert ibet_wst_tx_1.version == IbetWSTVersion.V_1
             assert ibet_wst_tx_1.status == IbetWSTTxStatus.PENDING
             assert ibet_wst_tx_1.tx_params == {
-                "name": "name_test1",
+                "name": "wst_name_test1",
                 "initial_owner": test_account["address"],
             }
             assert (
@@ -1389,6 +1391,58 @@ class TestIssueShareToken:
                     "msg": "Input should be ''",
                     "type": "literal_error",
                 },
+            ],
+        }
+
+    # <Error_2_7>
+    # Validation Error
+    # wst_name when activate_ibet_wst is True
+    @pytest.mark.asyncio
+    async def test_error_2_7(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": 1000,
+            "total_supply": 10000,
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231",
+            "principal_value": 1000,
+            "activate_ibet_wst": True,
+        }
+        resp = await async_client.post(
+            self.apiurl,
+            json=req_param,
+            headers={"issuer-address": test_account["address"]},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["body"],
+                    "msg": "Value error, wst_name is required when activate_ibet_wst is true",
+                    "input": {
+                        "name": "name_test1",
+                        "symbol": "symbol_test1",
+                        "issue_price": 1000,
+                        "total_supply": 10000,
+                        "dividends": 123.45,
+                        "dividend_record_date": "20211231",
+                        "dividend_payment_date": "20211231",
+                        "cancellation_date": "20221231",
+                        "principal_value": 1000,
+                        "activate_ibet_wst": True,
+                    },
+                    "ctx": {"error": {}},
+                }
             ],
         }
 

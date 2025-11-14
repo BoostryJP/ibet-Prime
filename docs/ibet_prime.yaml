@@ -14576,6 +14576,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Wst Name
+          description: IbetWST name
       type: object
       required:
         - name
@@ -14986,6 +14993,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Wst Name
+          description: IbetWST name
       type: object
       title: IbetShareUpdate
       description: ibet Share schema (Update)
@@ -15308,6 +15322,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Wst Name
+          description: IbetWST name
       type: object
       required:
         - name
@@ -15813,6 +15834,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Wst Name
+          description: IbetWST name
       type: object
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)

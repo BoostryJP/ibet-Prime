@@ -106,6 +106,7 @@ async def deploy_bond_token_contract(
 
     token_create_param.pop("image_url")
     token_create_param.pop("activate_ibet_wst")
+    token_create_param.pop("wst_name")
 
     token_update_operation_log = TokenUpdateOperationLog()
     token_update_operation_log.issuer_address = address

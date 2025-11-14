@@ -146,6 +146,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "m" * 10000,
             "activate_ibet_wst": True,
+            "wst_name": "wst_name_test",
         }
         resp = await async_client.post(
             self.base_url.format(_token_address),
@@ -185,7 +186,7 @@ class TestUpdateBondToken:
         assert ibet_wst_tx.tx_type == IbetWSTTxType.DEPLOY
         assert ibet_wst_tx.version == IbetWSTVersion.V_1
         assert ibet_wst_tx.tx_params == {
-            "name": "token.name",
+            "name": "wst_name_test",
             "initial_owner": _issuer_address,
         }
         assert ibet_wst_tx.tx_sender == "0x1234567890123456789012345678901234567890"
@@ -1191,6 +1192,35 @@ class TestUpdateBondToken:
             ],
         }
 
+    # <Error_1_10>
+    # RequestValidationError: wst_name
+    # wst_name is required when activate_ibet_wst is True
+    @pytest.mark.asyncio
+    async def test_error_1_10(self, async_client, async_db):
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {"activate_ibet_wst": True}
+        resp = await async_client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={"issuer-address": ""},
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["body"],
+                    "msg": "Value error, wst_name is required when activate_ibet_wst is true",
+                    "input": {"activate_ibet_wst": True},
+                    "ctx": {"error": {}},
+                }
+            ],
+        }
+
     # <Error_2>
     # RequestValidationError: headers and body required
     @pytest.mark.asyncio
@@ -1777,6 +1807,7 @@ class TestUpdateBondToken:
         # request target API
         req_param = {
             "activate_ibet_wst": True,
+            "wst_name": "wst_name_test",
         }
         resp = await async_client.post(
             self.base_url.format(_token_address),
