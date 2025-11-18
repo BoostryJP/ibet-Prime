@@ -53,6 +53,7 @@ class TestRetrieveBondToken:
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_deployed = True
         token.ibet_wst_address = "eth_token_address_test1"
+        token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
 
         await async_db.commit()
@@ -166,6 +167,7 @@ class TestRetrieveBondToken:
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
             "ibet_wst_address": "eth_token_address_test1",
+            "ibet_wst_name": "ibet_wst_name_test1",
         }
 
         assert resp.status_code == 200
@@ -188,6 +190,7 @@ class TestRetrieveBondToken:
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_deployed = True
         token.ibet_wst_address = "eth_token_address_test1"
+        token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
 
         await async_db.commit()
@@ -301,6 +304,7 @@ class TestRetrieveBondToken:
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
             "ibet_wst_address": "eth_token_address_test1",
+            "ibet_wst_name": "ibet_wst_name_test1",
         }
 
         assert resp.status_code == 200

@@ -66,6 +66,7 @@ class TestListAllBondTokens:
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_deployed = True
         token.ibet_wst_address = "eth_token_address_test1"
+        token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
         await async_db.commit()
         _issue_datetime = (
@@ -176,6 +177,7 @@ class TestListAllBondTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_name": "ibet_wst_name_test1",
             }
         ]
 
@@ -204,6 +206,7 @@ class TestListAllBondTokens:
         token_1.ibet_wst_version = IbetWSTVersion.V_1
         token_1.ibet_wst_deployed = True
         token_1.ibet_wst_address = "eth_token_address_test1"
+        token_1.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token_1)
         await async_db.commit()
         _issue_datetime_1 = (
@@ -382,6 +385,7 @@ class TestListAllBondTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_name": "ibet_wst_name_test1",
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -432,6 +436,7 @@ class TestListAllBondTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             },
         ]
 
@@ -603,6 +608,7 @@ class TestListAllBondTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             }
         ]
 
@@ -817,6 +823,7 @@ class TestListAllBondTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -867,6 +874,7 @@ class TestListAllBondTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             },
         ]
 

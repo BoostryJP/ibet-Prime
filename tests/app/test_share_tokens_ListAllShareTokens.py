@@ -65,6 +65,7 @@ class TestListAllShareTokens:
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_deployed = True
         token.ibet_wst_address = "eth_token_address_test1"
+        token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
         await async_db.commit()
 
@@ -138,6 +139,7 @@ class TestListAllShareTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_name": "ibet_wst_name_test1",
             }
         ]
 
@@ -165,6 +167,7 @@ class TestListAllShareTokens:
         token_1.ibet_wst_version = IbetWSTVersion.V_1
         token_1.ibet_wst_deployed = True
         token_1.ibet_wst_address = "eth_token_address_test1"
+        token_1.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token_1)
         await async_db.commit()
 
@@ -285,6 +288,7 @@ class TestListAllShareTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_name": "ibet_wst_name_test1",
             },
             {
                 "issuer_address": issuer_address_2,
@@ -316,6 +320,7 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             },
         ]
 
@@ -445,6 +450,7 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             }
         ]
 
@@ -600,6 +606,7 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             },
             {
                 "issuer_address": issuer_address_1,
@@ -631,6 +638,7 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_name": None,
             },
         ]
 
