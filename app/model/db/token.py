@@ -84,6 +84,8 @@ class Token(Base):
     ibet_wst_deployed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     # IbetWST contract address
     ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
+    # IbetWST name
+    ibet_wst_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
 
 class TokenAttrUpdate(Base):

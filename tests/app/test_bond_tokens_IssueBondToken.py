@@ -177,6 +177,7 @@ class TestIssueBondToken:
             assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is None
             assert token_1.ibet_wst_version is None
+            assert token_1.ibet_wst_name is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
@@ -274,7 +275,7 @@ class TestIssueBondToken:
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
                 "activate_ibet_wst": None,
-                "wst_name": None,
+                "ibet_wst_name": None,
             }
             resp = await async_client.post(
                 self.apiurl,
@@ -329,6 +330,7 @@ class TestIssueBondToken:
             assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is None
             assert token_1.ibet_wst_version is None
+            assert token_1.ibet_wst_name is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position is None
@@ -469,6 +471,7 @@ class TestIssueBondToken:
             assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is None
             assert token_1.ibet_wst_version is None
+            assert token_1.ibet_wst_name is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
@@ -557,7 +560,7 @@ class TestIssueBondToken:
                 "redemption_value_currency": "JPY",
                 "purpose": "purpose_test1",
                 "activate_ibet_wst": True,  # Activate IbetWST
-                "wst_name": "wst_name_test1",
+                "ibet_wst_name": "ibet_wst_name_test1",
             }
             resp = await async_client.post(
                 self.apiurl,
@@ -618,6 +621,7 @@ class TestIssueBondToken:
             assert token_1.version == TokenVersion.V_25_09
             assert token_1.ibet_wst_activated is True
             assert token_1.ibet_wst_version == IbetWSTVersion.V_1
+            assert token_1.ibet_wst_name == "ibet_wst_name_test1"
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
             assert position.token_address == "contract_address_test1"
@@ -652,7 +656,7 @@ class TestIssueBondToken:
             assert ibet_wst_tx_1.version == IbetWSTVersion.V_1
             assert ibet_wst_tx_1.status == IbetWSTTxStatus.PENDING
             assert ibet_wst_tx_1.tx_params == {
-                "name": "wst_name_test1",
+                "name": "ibet_wst_name_test1",
                 "initial_owner": test_account["address"],
             }
             assert (
@@ -1239,7 +1243,7 @@ class TestIssueBondToken:
 
     # <Error_2_8>
     # Validation Error
-    # wst_name when activate_ibet_wst is True
+    # ibet_wst_name when activate_ibet_wst is True
     @pytest.mark.asyncio
     async def test_error_2_8(self, async_client, async_db):
         test_account = default_eth_account("user1")
@@ -1272,7 +1276,7 @@ class TestIssueBondToken:
                 {
                     "type": "value_error",
                     "loc": ["body"],
-                    "msg": "Value error, wst_name is required when activate_ibet_wst is true",
+                    "msg": "Value error, ibet_wst_name is required when activate_ibet_wst is true",
                     "input": {
                         "name": "name_test1",
                         "symbol": "symbol_test1",

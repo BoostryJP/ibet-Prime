@@ -14576,12 +14576,12 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
-        wst_name:
+        ibet_wst_name:
           anyOf:
             - type: string
               maxLength: 100
             - type: 'null'
-          title: Wst Name
+          title: Ibet Wst Name
           description: IbetWST name
       type: object
       required:
@@ -14707,6 +14707,12 @@ components:
             - type: 'null'
           title: Ibet Wst Address
           description: IbetWST contract address
+        ibet_wst_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       required:
         - issuer_address
@@ -14738,6 +14744,7 @@ components:
         - ibet_wst_version
         - ibet_wst_deployed
         - ibet_wst_address
+        - ibet_wst_name
       title: IbetShareResponse
       description: ibet Share schema (Response)
     IbetShareScheduledUpdate:
@@ -14993,12 +15000,12 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
-        wst_name:
+        ibet_wst_name:
           anyOf:
             - type: string
               maxLength: 100
             - type: 'null'
-          title: Wst Name
+          title: Ibet Wst Name
           description: IbetWST name
       type: object
       title: IbetShareUpdate
@@ -15322,12 +15329,12 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
-        wst_name:
+        ibet_wst_name:
           anyOf:
             - type: string
               maxLength: 100
             - type: 'null'
-          title: Wst Name
+          title: Ibet Wst Name
           description: IbetWST name
       type: object
       required:
@@ -15474,6 +15481,12 @@ components:
             - type: 'null'
           title: Ibet Wst Address
           description: IbetWST contract address
+        ibet_wst_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       required:
         - issuer_address
@@ -15511,6 +15524,7 @@ components:
         - ibet_wst_version
         - ibet_wst_deployed
         - ibet_wst_address
+        - ibet_wst_name
       title: IbetStraightBondResponse
       description: ibet Straight Bond schema (Response)
     IbetStraightBondScheduledUpdate:
@@ -15834,12 +15848,12 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
-        wst_name:
+        ibet_wst_name:
           anyOf:
             - type: string
               maxLength: 100
             - type: 'null'
-          title: Wst Name
+          title: Ibet Wst Name
           description: IbetWST name
       type: object
       title: IbetStraightBondUpdate
