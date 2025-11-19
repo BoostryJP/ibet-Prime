@@ -45,7 +45,7 @@ class DeliveryStatus(IntEnum):
 
 
 class DVPDeliveryData(BaseModel):
-    delivery_type: Literal["offering", "primary"]
+    delivery_type: Literal["offering", "primary", "secondary"]
     trade_date: str
     settlement_date: str
     settlement_service_account_id: str
