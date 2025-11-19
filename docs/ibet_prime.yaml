@@ -13272,6 +13272,7 @@ components:
           enum:
             - offering
             - primary
+            - secondary
           title: Delivery Type
         trade_date:
           type: string
