@@ -133,6 +133,46 @@ except AttributeError:
     thread_local.EthWeb3 = EthWeb3
 
 
+class EthTxUtils:
+    @staticmethod
+    async def suggest_fees(reward_percentile: int = 50):
+        """
+        A function that returns recommended maxFeePerGas and maxPriorityFeePerGas for EIP-1559.
+
+        :param reward_percentile: Percentile of priority fee to consider from past blocks (0-100)
+        :return: Dictionary with maxFeePerGas, maxPriorityFeePerGas, and baseFee
+        """
+
+        latest_block = await EthWeb3.eth.get_block("latest")
+        base_fee = latest_block["baseFeePerGas"]  # wei
+
+        # Get fee history
+        fee_history = await EthWeb3.eth.fee_history(5, "latest", [reward_percentile])
+
+        # Extract priority fees from fee history
+        history_priority = [r[0] for r in fee_history["reward"]]
+
+        # Calculate moving average of priority fees
+        if len(history_priority) == 0:
+            est_priority = 0
+        else:
+            est_priority = int(sum(history_priority) / len(history_priority))
+
+        # Set a minimum priority fee of 0.02 gwei
+        min_priority = EthWeb3.to_wei(0.02, "gwei")
+        priority_fee = max(est_priority, min_priority)
+
+        # Calculate max fee
+        # - Set max_fee as double the base fee plus the priority fee
+        max_fee = base_fee * 2 + priority_fee
+
+        return {
+            "baseFee": base_fee,
+            "maxFeePerGas": max_fee,
+            "maxPriorityFeePerGas": priority_fee,
+        }
+
+
 class EthAsyncContractEventsView:
     def __init__(self, address: str, contract_events: AsyncContractEvents) -> None:
         self._address = address
