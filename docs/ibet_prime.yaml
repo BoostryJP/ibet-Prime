@@ -11083,25 +11083,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListAllDVPAgentDeliveriesResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / 
-            Contract Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}:
     post:
       tags:
