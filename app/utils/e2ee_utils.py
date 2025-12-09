@@ -55,9 +55,7 @@ class E2EEUtils:
         if crypto_data.get("public_key") is None:
             return data
 
-        rsa_key = RSA.importKey(
-            crypto_data.get("public_key"), passphrase=E2EE_RSA_PASSPHRASE
-        )
+        rsa_key = RSA.importKey(crypto_data.get("public_key"))
         cipher = PKCS1_OAEP.new(rsa_key)
         encrypt_data = cipher.encrypt(data.encode("utf-8"))
         base64_data = base64.encodebytes(encrypt_data)
