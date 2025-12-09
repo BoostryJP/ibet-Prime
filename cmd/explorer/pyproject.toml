@@ -2,7 +2,7 @@
 authors = [
     {name = "BOOSTRY Co., Ltd.", email = "dev@boostry.co.jp"},
 ]
-requires-python = "==3.13.7"
+requires-python = "==3.13.11"
 dependencies = []
 name = "ibet-prime-explorer"
 version = "0.1.0"

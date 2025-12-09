@@ -34,8 +34,8 @@ dependencies = [
     "python-dotenv>=1.1.1",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest<9.0.0,>=8.3.2",
     "pytest-cov<7.0.0,>=6.0.0",
     "pyyaml<7.0,>=6.0",
