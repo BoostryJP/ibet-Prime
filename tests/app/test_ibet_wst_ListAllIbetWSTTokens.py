@@ -95,6 +95,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
         await async_db.commit()
 
@@ -162,6 +163,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_1,
                     "ibet_wst_address": self.ibet_wst_address_1,
+                    "ibet_wst_name": "TestIbetWST1",
                     "ibet_token_address": self.ibet_token_address_1,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": token_attr,
@@ -186,6 +188,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
         await async_db.commit()
 
@@ -234,6 +237,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_1,
                     "ibet_wst_address": self.ibet_wst_address_1,
+                    "ibet_wst_name": "TestIbetWST1",
                     "ibet_token_address": self.ibet_token_address_1,
                     "ibet_token_type": TokenType.IBET_SHARE,
                     "ibet_token_attributes": token_attr,
@@ -264,6 +268,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -275,6 +280,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         await async_db.commit()
@@ -371,6 +377,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_2,
                     "ibet_wst_address": self.ibet_wst_address_2,
+                    "ibet_wst_name": "TestIbetWST2",
                     "ibet_token_address": self.ibet_token_address_2,
                     "ibet_token_type": TokenType.IBET_SHARE,
                     "ibet_token_attributes": share_token_attr,
@@ -379,6 +386,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_1,
                     "ibet_wst_address": self.ibet_wst_address_1,
+                    "ibet_wst_name": "TestIbetWST1",
                     "ibet_token_address": self.ibet_token_address_1,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": bond_token_attr,
@@ -404,6 +412,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -415,6 +424,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         await async_db.commit()
@@ -486,6 +496,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_1,
                     "ibet_wst_address": self.ibet_wst_address_1,
+                    "ibet_wst_name": "TestIbetWST1",
                     "ibet_token_address": self.ibet_token_address_1,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": bond_1_attr,
@@ -509,6 +520,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -520,6 +532,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         await async_db.commit()
@@ -571,6 +584,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_2,
                     "ibet_wst_address": self.ibet_wst_address_2,
+                    "ibet_wst_name": "TestIbetWST2",
                     "ibet_token_address": self.ibet_token_address_2,
                     "ibet_token_type": TokenType.IBET_SHARE,
                     "ibet_token_attributes": share_token_attr,
@@ -594,6 +608,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -605,6 +620,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         await async_db.commit()
@@ -656,6 +672,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_2,
                     "ibet_wst_address": self.ibet_wst_address_2,
+                    "ibet_wst_name": "TestIbetWST2",
                     "ibet_token_address": self.ibet_token_address_2,
                     "ibet_token_type": TokenType.IBET_SHARE,
                     "ibet_token_attributes": share_token_attr,
@@ -679,6 +696,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -690,6 +708,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         await async_db.commit()
@@ -739,6 +758,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_2,
                     "ibet_wst_address": self.ibet_wst_address_2,
+                    "ibet_wst_name": "TestIbetWST2",
                     "ibet_token_address": self.ibet_token_address_2,
                     "ibet_token_type": TokenType.IBET_SHARE,
                     "ibet_token_attributes": share_token_attr,
@@ -764,6 +784,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -775,6 +796,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         await async_db.commit()
@@ -892,6 +914,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_1,
                     "ibet_wst_address": self.ibet_wst_address_1,
+                    "ibet_wst_name": "TestIbetWST1",
                     "ibet_token_address": self.ibet_token_address_1,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": bond_1_attr,
@@ -900,6 +923,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_2,
                     "ibet_wst_address": self.ibet_wst_address_2,
+                    "ibet_wst_name": "TestIbetWST2",
                     "ibet_token_address": self.ibet_token_address_2,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": bond_2_attr,
@@ -925,6 +949,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -936,6 +961,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         await async_db.commit()
@@ -1053,6 +1079,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_1,
                     "ibet_wst_address": self.ibet_wst_address_1,
+                    "ibet_wst_name": "TestIbetWST1",
                     "ibet_token_address": self.ibet_token_address_1,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": bond_1_attr,
@@ -1061,6 +1088,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_2,
                     "ibet_wst_address": self.ibet_wst_address_2,
+                    "ibet_wst_name": "TestIbetWST2",
                     "ibet_token_address": self.ibet_token_address_2,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": bond_2_attr,
@@ -1085,6 +1113,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
         _token = Token()
@@ -1096,6 +1125,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
         _token = Token()
@@ -1107,6 +1137,7 @@ class TestListAllIbetWSTTokens:
         _token.version = TokenVersion.V_25_09
         _token.ibet_wst_deployed = True
         _token.ibet_wst_address = self.ibet_wst_address_3
+        _token.ibet_wst_name = "TestIbetWST3"
         async_db.add(_token)
 
         await async_db.commit()
@@ -1176,6 +1207,7 @@ class TestListAllIbetWSTTokens:
                 {
                     "issuer_address": self.issuer_address_2,
                     "ibet_wst_address": self.ibet_wst_address_2,
+                    "ibet_wst_name": "TestIbetWST2",
                     "ibet_token_address": self.ibet_token_address_2,
                     "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
                     "ibet_token_attributes": bond_2_attr,

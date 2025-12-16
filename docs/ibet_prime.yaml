@@ -16075,6 +16075,10 @@ components:
           type: string
           title: Ibet Wst Address
           description: IbetWST contract address
+        ibet_wst_name:
+          type: string
+          title: Ibet Wst Name
+          description: IbetWST name
         ibet_token_address:
           type: string
           title: Ibet Token Address
@@ -16096,6 +16100,7 @@ components:
       required:
         - issuer_address
         - ibet_wst_address
+        - ibet_wst_name
         - ibet_token_address
         - ibet_token_type
         - ibet_token_attributes
