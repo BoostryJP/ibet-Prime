@@ -43,6 +43,7 @@ class IbetWSTToken(BaseModel):
 
     issuer_address: str = Field(description="Issuer address")
     ibet_wst_address: str = Field(description="IbetWST contract address")
+    ibet_wst_name: str = Field(description="IbetWST name")
     ibet_token_address: str = Field(description="ibet token contract address")
     ibet_token_type: TokenType = Field(description="ibet token type")
     ibet_token_attributes: IbetStraightBond | IbetShare = Field(
