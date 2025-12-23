@@ -14,7 +14,7 @@ dependencies = [
     "coincurve~=21.0.0",
     "eth-keyfile==0.9.1",
     "eth-utils~=5.3.0",
-    "fastapi~=0.118.0",
+    "fastapi~=0.124.4",
     "gunicorn~=23.0.0",
     "orjson~=3.11.3",
     "psycopg[c]<4.0.0,>=3.2.0",
