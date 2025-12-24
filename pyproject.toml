@@ -124,7 +124,7 @@ ibet-prime-settlement = { path = "cmd/settlement", editable = true}
 [project.optional-dependencies]
 ibet-explorer = [
     "ibet-prime-explorer",
-    "textual~=0.44.1",
+    "textual~=6.11.0",
     "async-cache~=1.1.1",
     "aiohttp~=3.12.15",
 ]
