@@ -140,6 +140,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "is_canceled": True,
             "memo": "m" * 10000,
             "activate_ibet_wst": True,
+            "ibet_wst_name": "ibet_wst_name_test",
         }
         resp = await async_client.post(
             self.base_url.format(_token_address),
@@ -171,6 +172,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert token_af.ibet_wst_activated is True
         assert token_af.ibet_wst_version == IbetWSTVersion.V_1
         assert token_af.ibet_wst_tx_id is not None
+        assert token_af.ibet_wst_name == "ibet_wst_name_test"
 
         ibet_wst_tx: EthIbetWSTTx = (
             await async_db.scalars(select(EthIbetWSTTx).limit(1))
@@ -179,7 +181,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert ibet_wst_tx.tx_type == IbetWSTTxType.DEPLOY
         assert ibet_wst_tx.version == IbetWSTVersion.V_1
         assert ibet_wst_tx.tx_params == {
-            "name": "token.name",
+            "name": "ibet_wst_name_test",
             "initial_owner": _issuer_address,
         }
         assert ibet_wst_tx.tx_sender == "0x1234567890123456789012345678901234567890"
@@ -1377,6 +1379,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         # request target API
         req_param = {
             "activate_ibet_wst": True,
+            "ibet_wst_name": "ibet_wst_name_test",
         }
         resp = await async_client.post(
             self.base_url.format(_token_address),
@@ -1392,4 +1395,37 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.json() == {
             "meta": {"code": 6, "title": "OperationNotSupportedVersionError"},
             "detail": "the operation is not supported in 25_06",
+        }
+
+    # <Error_19>
+    # RequestValidationError: ibet_wst_name
+    # ibet_wst_name is required when activate_ibet_wst is True
+    @pytest.mark.asyncio
+    async def test_error_19(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {
+            "activate_ibet_wst": True,
+        }
+        resp = await async_client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={"issuer-address": _issuer_address},
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["body"],
+                    "msg": "Value error, ibet_wst_name is required when activate_ibet_wst is true",
+                    "input": {"activate_ibet_wst": True},
+                    "ctx": {"error": {}},
+                }
+            ],
         }

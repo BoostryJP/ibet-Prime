@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-25.9-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-25.12-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -23,7 +23,7 @@
 
 ## 依存
 
-- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.12
+- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.13
 - [PostgreSQL](https://www.postgresql.org/) - バージョン 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。

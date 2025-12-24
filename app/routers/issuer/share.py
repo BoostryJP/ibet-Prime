@@ -357,6 +357,7 @@ async def issue_share_token(
         _token.ibet_wst_activated = True
         _token.ibet_wst_version = IbetWSTVersion.V_1
         _token.ibet_wst_tx_id = tx_id
+        _token.ibet_wst_name = token.ibet_wst_name
         # Register IbetWST transaction
         _ibet_wst_tx = EthIbetWSTTx()
         _ibet_wst_tx.tx_id = tx_id
@@ -364,7 +365,7 @@ async def issue_share_token(
         _ibet_wst_tx.version = IbetWSTVersion.V_1
         _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
         _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=token.name, initial_owner=issuer_address
+            name=token.ibet_wst_name, initial_owner=issuer_address
         )
         _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
         db.add(_ibet_wst_tx)
@@ -439,6 +440,7 @@ async def list_all_share_tokens(
         share_token["ibet_wst_version"] = token.ibet_wst_version
         share_token["ibet_wst_deployed"] = True if token.ibet_wst_deployed else False
         share_token["ibet_wst_address"] = token.ibet_wst_address
+        share_token["ibet_wst_name"] = token.ibet_wst_name
 
         share_tokens.append(share_token)
 
@@ -489,6 +491,7 @@ async def retrieve_share_token(
     share_token["ibet_wst_version"] = _token.ibet_wst_version
     share_token["ibet_wst_deployed"] = True if _token.ibet_wst_deployed else False
     share_token["ibet_wst_address"] = _token.ibet_wst_address
+    share_token["ibet_wst_name"] = _token.ibet_wst_name
 
     return json_response(share_token)
 
@@ -610,6 +613,7 @@ async def update_share_token(
         _token.ibet_wst_activated = True
         _token.ibet_wst_version = IbetWSTVersion.V_1
         _token.ibet_wst_tx_id = tx_id
+        _token.ibet_wst_name = update_data.ibet_wst_name
 
         # Register IbetWST transaction
         _ibet_wst_tx = EthIbetWSTTx()
@@ -618,7 +622,7 @@ async def update_share_token(
         _ibet_wst_tx.version = IbetWSTVersion.V_1
         _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
         _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=token_contract.name, initial_owner=issuer_address
+            name=update_data.ibet_wst_name, initial_owner=issuer_address
         )
         _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
         db.add(_ibet_wst_tx)

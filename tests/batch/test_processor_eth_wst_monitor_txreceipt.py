@@ -152,7 +152,7 @@ class TestProcessor:
             f"Transaction receipt not found, skipping processing: id={tx_id}",
         ]
 
-    # Normal_3_1
+    # Normal_3_1_1
     # - TxReceipt: exists(success)
     # - Not finalized
     @mock.patch(
@@ -170,7 +170,7 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
-    async def test_normal_3_1(self, processor, async_db, caplog):
+    async def test_normal_3_1_1(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -208,6 +208,207 @@ class TestProcessor:
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+        ]
+
+    # Normal_3_1_2
+    # - TxReceipt: exists(success)
+    # - Not finalized: tx_type = ADD_WHITELIST
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
+                "gasUsed": 21000,
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=0),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        MagicMock(
+            return_value=[
+                {
+                    "args": {
+                        "accountAddress": user1["address"],
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_3_1_2(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+            st_account=self.user1["address"],
+            sc_account_in=self.user2["address"],
+            sc_account_out=self.user2["address"],
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
+        assert wst_tx_af.finalized is False
+        assert (
+            wst_tx_af.ibet_wst_address == "0x9876543210abCDef1234567890AbcDef12345678"
+        )
+
+        # Verify that the whitelist entry has been created
+        idx_whitelist: IDXEthIbetWSTWhitelist = (
+            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+        ).first()
+        assert idx_whitelist is not None
+        assert (
+            idx_whitelist.ibet_wst_address
+            == "0x9876543210abCDef1234567890AbcDef12345678"
+        )
+        assert idx_whitelist.st_account_address == self.user1["address"]
+        assert idx_whitelist.sc_account_address_in == self.user2["address"]
+        assert idx_whitelist.sc_account_address_out == self.user2["address"]
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=add_whitelist",
+            f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
+        ]
+
+    # Normal_3_1_3
+    # - TxReceipt: exists(success)
+    # - Not finalized: tx_type = DELETE_WHITELIST
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        AsyncMock(
+            return_value={
+                "status": 1,
+                "blockNumber": 100,
+                "contractAddress": "0x9876543210abCDef1234567890AbcDef12345678",
+                "gasUsed": 21000,
+            }
+        ),
+    )
+    @mock.patch(
+        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        AsyncMock(return_value=0),
+    )
+    @mock.patch(
+        "web3.contract.base_contract.BaseContractEvent.process_receipt",
+        MagicMock(
+            return_value=[
+                {
+                    "args": {
+                        "accountAddress": user1["address"],
+                    },
+                }
+            ]
+        ),
+    )
+    async def test_normal_3_1_3(self, processor, async_db, caplog):
+        tx_id = str(uuid.uuid4())
+
+        # Prepare test data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.token_address = "0x1234567890abcdef1234567890abcdef12345678"
+        token.issuer_address = self.issuer["address"]
+        token.abi = {}
+        token.tx_hash = ""
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_tx_id = tx_id
+        token.ibet_wst_deployed = False
+        token.ibet_wst_address = None
+        async_db.add(token)
+
+        wst_tx = EthIbetWSTTx()
+        wst_tx.tx_id = tx_id
+        wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
+        wst_tx.version = IbetWSTVersion.V_1
+        wst_tx.status = IbetWSTTxStatus.SENT
+        wst_tx.tx_hash = self.tx_hash
+        wst_tx.ibet_wst_address = "0x9876543210abCDef1234567890AbcDef12345678"
+        wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
+            st_account=self.user1["address"],
+        )
+        wst_tx.tx_sender = self.eth_master["address"]
+        wst_tx.finalized = False
+        async_db.add(wst_tx)
+
+        idx_whitelist = IDXEthIbetWSTWhitelist(
+            ibet_wst_address=wst_tx.ibet_wst_address,
+            st_account_address=self.user1["address"],
+            sc_account_address_in=self.user2["address"],
+            sc_account_address_out=self.user2["address"],
+        )
+        async_db.add(idx_whitelist)
+        await async_db.commit()
+
+        # Execute batch
+        await processor.run()
+        async_db.expire_all()
+
+        # Verify that the status and block number have been updated
+        wst_tx_af = (
+            await async_db.scalars(
+                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+            )
+        ).first()
+        assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
+        assert wst_tx_af.block_number == 100
+        assert wst_tx_af.gas_used == 21000
+        assert wst_tx_af.finalized is False
+        assert (
+            wst_tx_af.ibet_wst_address == "0x9876543210abCDef1234567890AbcDef12345678"
+        )
+
+        # Verify that the whitelist entry has been deleted
+        idx_whitelist_af = (
+            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+        ).first()
+        assert idx_whitelist_af is None
+
+        assert caplog.messages == [
+            f"Monitor transaction: id={tx_id}, type=delete_whitelist",
             f"Transaction succeeded: id={tx_id}, block_number=100, gas_used=21000",
         ]
 

@@ -317,7 +317,8 @@ class TestCancelIbetWSTTrade:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 13, "title": "IbetWSTInsufficientBalanceError"}
+            "meta": {"code": 13, "title": "IbetWSTInsufficientBalanceError"},
+            "detail": "",
         }
 
     # <Error_4>
@@ -400,5 +401,6 @@ class TestCancelIbetWSTTrade:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 14, "title": "ERC20InsufficientAllowanceError"}
+            "meta": {"code": 14, "title": "ERC20InsufficientAllowanceError"},
+            "detail": "",
         }

@@ -146,7 +146,7 @@ async def list_all_ibet_wst_tokens(
         stmt = stmt.offset(get_query.offset)
 
     # Execute Query
-    issued_tokens = (await db.scalars(stmt)).all()
+    issued_tokens: Sequence[Token] = (await db.scalars(stmt)).all()
 
     # Get Token Attributes
     tokens = []
@@ -167,6 +167,7 @@ async def list_all_ibet_wst_tokens(
             {
                 "issuer_address": _token.issuer_address,
                 "ibet_wst_address": _token.ibet_wst_address,
+                "ibet_wst_name": _token.ibet_wst_name,
                 "ibet_token_address": _token.token_address,
                 "ibet_token_type": _token.type,
                 "ibet_token_attributes": token_attr.__dict__,

@@ -88,6 +88,9 @@ class IbetStraightBondCreate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_name: Optional[str] = Field(
+        default=None, max_length=100, description="IbetWST name"
+    )
 
     @field_validator("base_fx_rate")
     @classmethod
@@ -122,6 +125,16 @@ class IbetStraightBondCreate(BaseModel):
             )
         return v
 
+    @model_validator(mode="after")
+    @classmethod
+    def ibet_wst_name_required_if_activated(cls, v: Self):
+        if v.activate_ibet_wst:
+            if v.ibet_wst_name is None:
+                raise ValueError(
+                    "ibet_wst_name is required when activate_ibet_wst is true"
+                )
+        return v
+
 
 class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
@@ -150,6 +163,9 @@ class IbetStraightBondUpdate(BaseModel):
 
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
+    )
+    ibet_wst_name: Optional[str] = Field(
+        default=None, max_length=100, description="IbetWST name"
     )
 
     @field_validator("base_fx_rate")
@@ -188,6 +204,16 @@ class IbetStraightBondUpdate(BaseModel):
             raise ValueError(
                 "list length of interest_payment_date must be less than 13"
             )
+        return v
+
+    @model_validator(mode="after")
+    @classmethod
+    def ibet_wst_name_required_if_activated(cls, v: Self):
+        if v.activate_ibet_wst:
+            if v.ibet_wst_name is None:
+                raise ValueError(
+                    "ibet_wst_name is required when activate_ibet_wst is true"
+                )
         return v
 
 
@@ -240,6 +266,9 @@ class IbetShareCreate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_name: Optional[str] = Field(
+        default=None, max_length=100, description="IbetWST name"
+    )
 
     @field_validator("dividends")
     @classmethod
@@ -249,6 +278,16 @@ class IbetShareCreate(BaseModel):
             int_data = int(Decimal(str(v)) * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
+        return v
+
+    @model_validator(mode="after")
+    @classmethod
+    def ibet_wst_name_required_if_activated(cls, v: Self):
+        if v.activate_ibet_wst:
+            if v.ibet_wst_name is None:
+                raise ValueError(
+                    "ibet_wst_name is required when activate_ibet_wst is true"
+                )
         return v
 
 
@@ -275,6 +314,9 @@ class IbetShareUpdate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_name: Optional[str] = Field(
+        default=None, max_length=100, description="IbetWST name"
+    )
 
     @field_validator("is_canceled")
     @classmethod
@@ -300,6 +342,16 @@ class IbetShareUpdate(BaseModel):
             if v.dividend_record_date is None or v.dividend_payment_date is None:
                 raise ValueError(
                     "all items are required to update the dividend information"
+                )
+        return v
+
+    @model_validator(mode="after")
+    @classmethod
+    def ibet_wst_name_required_if_activated(cls, v: Self):
+        if v.activate_ibet_wst:
+            if v.ibet_wst_name is None:
+                raise ValueError(
+                    "ibet_wst_name is required when activate_ibet_wst is true"
                 )
         return v
 
@@ -546,6 +598,7 @@ class IbetStraightBondResponse(IbetStraightBond):
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
     ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
     ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
+    ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")
 
 
 class IbetShareResponse(IbetShare):
@@ -560,6 +613,7 @@ class IbetShareResponse(IbetShare):
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
     ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
     ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
+    ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")
 
 
 class TokenOperationLogResponse(BaseModel):

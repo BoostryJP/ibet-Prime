@@ -19,13 +19,25 @@ SPDX-License-Identifier: Apache-2.0
 
 import hashlib
 import json
+import uuid
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.db import (
+    Account,
+    AuthToken,
+    EthIbetWSTTx,
+    IbetWSTTxParamsBurn,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+    IbetWSTVersion,
+    Token,
+    TokenType,
+    TokenVersion,
+)
 from app.model.ibet.tx_params.ibet_security_token import ForceUnlockParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
@@ -117,7 +129,7 @@ class TestForceUnlock:
 
     # <Normal_1_2>
     # Authorization by eoa-password
-    # -message is set
+    # message is set
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_1_2(
@@ -248,6 +260,99 @@ class TestForceUnlock:
             self.test_url.format(account_address=account_address),
             json=req_param,
             headers={"issuer-address": _admin_address, "auth-token": "test_auth_token"},
+        )
+
+        # assertion
+        IbetSecurityTokenInterface_mock.assert_any_call(
+            tx_params=ForceUnlockParams(
+                **{
+                    "lock_address": _lock_address,
+                    "account_address": account_address,
+                    "recipient_address": _recipient_address,
+                    "value": 10,
+                    "data": json.dumps(
+                        {"message": "force_unlock"}, separators=(",", ":")
+                    ),
+                }
+            ),
+            tx_sender=_admin_address,
+            tx_sender_key=ANY,
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+    # <Normal_3>
+    # Success case: When an executed IbetWST Burn transaction exists
+    @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
+    @pytest.mark.asyncio
+    async def test_normal_3(
+        self, IbetSecurityTokenInterface_mock, async_client, async_db
+    ):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        _admin_account = default_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+        _ibet_wst_address = "0x1234567890abcdef1234567890abcdef12345678"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_address = _ibet_wst_address
+        async_db.add(token)
+
+        tx_id = str(uuid.uuid4())
+        eth_ibet_wst_tx = EthIbetWSTTx()
+        eth_ibet_wst_tx.tx_id = tx_id
+        eth_ibet_wst_tx.tx_type = IbetWSTTxType.BURN
+        eth_ibet_wst_tx.version = IbetWSTVersion.V_1
+        eth_ibet_wst_tx.status = IbetWSTTxStatus.SUCCEEDED
+        eth_ibet_wst_tx.ibet_wst_address = _ibet_wst_address
+        eth_ibet_wst_tx.tx_params = IbetWSTTxParamsBurn(
+            from_address=account_address, value=10
+        )
+        eth_ibet_wst_tx.tx_sender = _admin_address
+        eth_ibet_wst_tx.authorizer = account_address
+        eth_ibet_wst_tx.finalized = True
+        async_db.add(eth_ibet_wst_tx)
+
+        await async_db.commit()
+
+        # mock
+        IbetSecurityTokenInterface_mock.side_effect = [None]
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
+            "recipient_address": _recipient_address,
+            "value": 10,
+        }
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -814,6 +919,81 @@ class TestForceUnlock:
         assert resp.json() == {
             "meta": {"code": 1, "title": "InvalidParameterError"},
             "detail": "this token is temporarily unavailable",
+        }
+
+    # <Error_3_4>
+    # InvalidParameterError
+    # When there is a pending IbetWST Burn transaction
+    @pytest.mark.asyncio
+    async def test_error_3_4(self, async_client, async_db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        _admin_account = default_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+        _ibet_wst_address = "0x1234567890abcdef1234567890abcdef12345678"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_activated = True
+        token.ibet_wst_address = _ibet_wst_address
+        async_db.add(token)
+
+        tx_id = str(uuid.uuid4())
+        eth_ibet_wst_tx = EthIbetWSTTx()
+        eth_ibet_wst_tx.tx_id = tx_id
+        eth_ibet_wst_tx.tx_type = IbetWSTTxType.BURN
+        eth_ibet_wst_tx.version = IbetWSTVersion.V_1
+        eth_ibet_wst_tx.status = IbetWSTTxStatus.SUCCEEDED
+        eth_ibet_wst_tx.ibet_wst_address = _ibet_wst_address
+        eth_ibet_wst_tx.tx_params = IbetWSTTxParamsBurn(
+            from_address=account_address, value=10
+        )
+        eth_ibet_wst_tx.tx_sender = _admin_address
+        eth_ibet_wst_tx.authorizer = account_address
+        eth_ibet_wst_tx.finalized = False  # not finalized
+        async_db.add(eth_ibet_wst_tx)
+
+        await async_db.commit()
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
+            "recipient_address": _recipient_address,
+            "value": 10,
+        }
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "There is a pending ibetWST Burn or ForceBurn transaction for this account",
         }
 
     # <Error_4>

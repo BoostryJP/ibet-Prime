@@ -39,10 +39,10 @@ from app.exceptions import (
     ServiceUnavailableError,
 )
 from app.log import LOG, output_access_log
+from app.routers.common import common, e2ee
 from app.routers.issuer import (
     account,
     bond,
-    common,
     file,
     ledger,
     notification,
@@ -139,7 +139,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="25.9",
+    version="25.12",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -188,10 +188,12 @@ if DEDICATED_OFFCHAIN_TX_MODE:
 
 elif DEDICATED_DVP_AGENT_MODE:
     if DVP_AGENT_FEATURE_ENABLED:
+        app.include_router(e2ee.router)
         app.include_router(settlement_agent.router)
 
 else:
     app.include_router(common.router)
+    app.include_router(e2ee.router)
     app.include_router(account.router)
     app.include_router(bond.router)
     app.include_router(e2e_messaging.router)
@@ -280,17 +282,11 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
 @app.exception_handler(BadRequestError)
 async def bad_request_error_handler(request: Request, exc: BadRequestError):
     meta = {"code": exc.code, "title": exc.__class__.__name__}
-
-    if len(exc.args) > 0:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
-        )
-    else:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=jsonable_encoder({"meta": meta}),
-        )
+    detail = exc.args[0] if len(exc.args) > 0 else ""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder({"meta": meta, "detail": detail}),
+    )
 
 
 # 400:ContractRevertError
@@ -307,9 +303,10 @@ async def contract_revert_error_handler(request: Request, exc: ContractRevertErr
 @app.exception_handler(AuthorizationError)
 async def authorization_error_handler(request: Request, exc: AuthorizationError):
     meta = {"code": 1, "title": "AuthorizationError"}
+    detail = exc.args[0] if len(exc.args) > 0 else ""
     return JSONResponse(
         status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+        content=jsonable_encoder({"meta": meta, "detail": detail}),
     )
 
 
@@ -341,7 +338,8 @@ async def service_unavailable_error_handler(
     request: Request, exc: ServiceUnavailableError
 ):
     meta = {"code": exc.code, "title": exc.__class__.__name__}
+    detail = exc.args[0] if len(exc.args) > 0 else ""
     return JSONResponse(
         status_code=exc.status_code,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+        content=jsonable_encoder({"meta": meta, "detail": detail}),
     )

@@ -84,7 +84,6 @@ class Error405MetaModel(MetaModel):
 
 class Error405Model(BaseModel):
     meta: Error405MetaModel
-    detail: str
 
 
 class Error422MetaModel(MetaModel):

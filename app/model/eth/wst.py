@@ -28,7 +28,7 @@ from web3.types import Nonce
 
 from app.exceptions import SendTransactionError
 from app.model import EthereumAddress
-from app.utils.eth_contract_utils import EthAsyncContractUtils
+from app.utils.eth_contract_utils import EthAsyncContractUtils, EthTxUtils
 from config import ZERO_ADDRESS
 from eth_config import ETH_CHAIN_ID
 
@@ -848,6 +848,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to add the account to the whitelist
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.addAccountWhiteListWithAuthorization(
                 to_checksum_address(st_account),
                 to_checksum_address(sc_account_in),
@@ -861,6 +862,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 150000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -886,6 +889,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to delete the account from the whitelist
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.deleteAccountWhiteListWithAuthorization(
                 to_checksum_address(st_account),
                 authorization.nonce,
@@ -897,6 +901,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 80000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -924,6 +930,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to mint tokens
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.mintWithAuthorization(
                 to_checksum_address(to_address),
                 value,
@@ -936,6 +943,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 125000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -963,6 +972,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to burn tokens
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.burnWithAuthorization(
                 to_checksum_address(from_address),
                 value,
@@ -975,6 +985,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 82000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -1002,6 +1014,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to force burn tokens
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.forceBurnFromWithAuthorization(
                 to_checksum_address(account_address),
                 value,
@@ -1014,6 +1027,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 82000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -1047,6 +1062,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to transfer tokens
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.transferWithAuthorization(
                 to_checksum_address(from_address),
                 to_checksum_address(to_address),
@@ -1062,6 +1078,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 108000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -1095,6 +1113,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to receive tokens
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.receiveWithAuthorization(
                 to_checksum_address(from_address),
                 to_checksum_address(to_address),
@@ -1110,6 +1129,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 500000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -1181,6 +1202,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.requestTradeWithAuthorization(
                 to_checksum_address(seller_st_account),
                 to_checksum_address(buyer_st_account),
@@ -1197,6 +1219,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 324000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -1222,6 +1246,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to cancel the trade
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.cancelTradeWithAuthorization(
                 index,
                 authorization.nonce,
@@ -1233,6 +1258,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 113000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -1258,6 +1285,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to accept the trade
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.acceptTradeWithAuthorization(
                 index,
                 authorization.nonce,
@@ -1269,6 +1297,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 182000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction
@@ -1294,6 +1324,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to reject the trade
+            fees = await EthTxUtils.suggest_fees()
             tx = await self.contract.functions.rejectTradeWithAuthorization(
                 index,
                 authorization.nonce,
@@ -1305,6 +1336,8 @@ class IbetWST(ERC20):
                     "chainId": ETH_CHAIN_ID,
                     "from": to_checksum_address(tx_sender),
                     "gas": 113000,
+                    "maxFeePerGas": fees["maxFeePerGas"],
+                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
             )
             # Send the transaction

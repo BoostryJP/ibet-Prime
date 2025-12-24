@@ -28,6 +28,8 @@ def get_logger(process_name: str = None):
     logging.getLogger("pyroscope").setLevel(logging.ERROR)
     logging.getLogger("py_spy").setLevel(logging.ERROR)
     logging.getLogger("opentelemetry").setLevel(logging.ERROR)
+    logging.getLogger("boto3").setLevel(logging.WARNING)
+    logging.getLogger("botocore").setLevel(logging.WARNING)
 
     LOG_FORMAT = (
         f"[%(asctime)s] [{process_name}] [%(process)d] [%(levelname)s] %(message)s"

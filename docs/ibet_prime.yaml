@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: ibet Prime
   description: Security token management system for ibet network
-  version: '25.9'
+  version: '25.12'
 paths:
   /:
     get:
@@ -13,20 +13,6 @@ paths:
       responses:
         '200':
           description: Successful Response
-  /e2ee:
-    get:
-      tags:
-        - common
-      summary: E2E Encryption Key
-      description: Get E2EE public key
-      operationId: GetE2EEncryptionKey
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/E2EEResponse'
   /healthcheck:
     get:
       tags:
@@ -70,6 +56,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServiceUnavailableErrorResponse'
+  /e2ee:
+    get:
+      tags:
+        - common
+      summary: E2E Encryption Key
+      description: Get E2EE public key
+      operationId: GetE2EEncryptionKey
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E2EEResponse'
   /accounts:
     get:
       tags:
@@ -11083,25 +11083,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListAllDVPAgentDeliveriesResponse'
-        '404':
-          description: Not Found Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404Model'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error422Model'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / 
-            Contract Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}:
     post:
       tags:
@@ -13272,6 +13259,7 @@ components:
           enum:
             - offering
             - primary
+            - secondary
           title: Delivery Type
         trade_date:
           type: string
@@ -14576,6 +14564,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       required:
         - name
@@ -14700,6 +14695,12 @@ components:
             - type: 'null'
           title: Ibet Wst Address
           description: IbetWST contract address
+        ibet_wst_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       required:
         - issuer_address
@@ -14731,6 +14732,7 @@ components:
         - ibet_wst_version
         - ibet_wst_deployed
         - ibet_wst_address
+        - ibet_wst_name
       title: IbetShareResponse
       description: ibet Share schema (Response)
     IbetShareScheduledUpdate:
@@ -14986,6 +14988,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       title: IbetShareUpdate
       description: ibet Share schema (Update)
@@ -15308,6 +15317,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       required:
         - name
@@ -15453,6 +15469,12 @@ components:
             - type: 'null'
           title: Ibet Wst Address
           description: IbetWST contract address
+        ibet_wst_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       required:
         - issuer_address
@@ -15490,6 +15512,7 @@ components:
         - ibet_wst_version
         - ibet_wst_deployed
         - ibet_wst_address
+        - ibet_wst_name
       title: IbetStraightBondResponse
       description: ibet Straight Bond schema (Response)
     IbetStraightBondScheduledUpdate:
@@ -15813,6 +15836,13 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_name:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Ibet Wst Name
+          description: IbetWST name
       type: object
       title: IbetStraightBondUpdate
       description: ibet Straight Bond schema (Update)
@@ -16045,6 +16075,10 @@ components:
           type: string
           title: Ibet Wst Address
           description: IbetWST contract address
+        ibet_wst_name:
+          type: string
+          title: Ibet Wst Name
+          description: IbetWST name
         ibet_token_address:
           type: string
           title: Ibet Token Address
@@ -16066,6 +16100,7 @@ components:
       required:
         - issuer_address
         - ibet_wst_address
+        - ibet_wst_name
         - ibet_token_address
         - ibet_token_type
         - ibet_token_attributes

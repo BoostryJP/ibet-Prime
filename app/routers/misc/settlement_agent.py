@@ -294,7 +294,7 @@ async def change_eoa_password(
     "/dvp/agent/{exchange_address}/deliveries",
     operation_id="ListAllDVPAgentDeliveries",
     response_model=ListAllDVPAgentDeliveriesResponse,
-    responses=get_routers_responses(404, 422, InvalidParameterError),
+    responses=get_routers_responses(422),
 )
 async def list_all_dvp_agent_deliveries(
     db: DBAsyncSession,

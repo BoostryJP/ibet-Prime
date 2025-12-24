@@ -365,6 +365,7 @@ async def issue_bond_token(
         _token.ibet_wst_activated = True
         _token.ibet_wst_version = IbetWSTVersion.V_1
         _token.ibet_wst_tx_id = tx_id
+        _token.ibet_wst_name = token.ibet_wst_name
         # Register IbetWST transaction
         _ibet_wst_tx = EthIbetWSTTx()
         _ibet_wst_tx.tx_id = tx_id
@@ -372,7 +373,7 @@ async def issue_bond_token(
         _ibet_wst_tx.version = IbetWSTVersion.V_1
         _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
         _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=token.name, initial_owner=issuer_address
+            name=token.ibet_wst_name, initial_owner=issuer_address
         )
         _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
         db.add(_ibet_wst_tx)
@@ -455,6 +456,7 @@ async def list_all_bond_tokens(
         bond_token["ibet_wst_version"] = token.ibet_wst_version
         bond_token["ibet_wst_deployed"] = True if token.ibet_wst_deployed else False
         bond_token["ibet_wst_address"] = token.ibet_wst_address
+        bond_token["ibet_wst_name"] = token.ibet_wst_name
 
         bond_tokens.append(bond_token)
 
@@ -505,6 +507,7 @@ async def retrieve_bond_token(
     bond_token["ibet_wst_version"] = _token.ibet_wst_version
     bond_token["ibet_wst_deployed"] = True if _token.ibet_wst_deployed else False
     bond_token["ibet_wst_address"] = _token.ibet_wst_address
+    bond_token["ibet_wst_name"] = _token.ibet_wst_name
 
     return json_response(bond_token)
 
@@ -648,6 +651,7 @@ async def update_bond_token(
         _token.ibet_wst_activated = True
         _token.ibet_wst_version = IbetWSTVersion.V_1
         _token.ibet_wst_tx_id = tx_id
+        _token.ibet_wst_name = update_data.ibet_wst_name
 
         # Register IbetWST transaction
         _ibet_wst_tx = EthIbetWSTTx()
@@ -656,7 +660,7 @@ async def update_bond_token(
         _ibet_wst_tx.version = IbetWSTVersion.V_1
         _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
         _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=token_contract.name, initial_owner=issuer_address
+            name=update_data.ibet_wst_name, initial_owner=issuer_address
         )
         _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
         db.add(_ibet_wst_tx)

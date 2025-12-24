@@ -335,5 +335,6 @@ class TestBurnIbetWSTBalance:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 13, "title": "IbetWSTInsufficientBalanceError"}
+            "meta": {"code": 13, "title": "IbetWSTInsufficientBalanceError"},
+            "detail": "",
         }

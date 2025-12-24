@@ -425,14 +425,191 @@ class TestUpdateDVPDelivery:
     # Error Case
     ###########################################################################
 
-    # <Error_1>
+    # <Error_1_1>
+    # Invalid operation_type value
+    # -> RequestValidationError
+    @pytest.mark.asyncio
+    async def test_error_1_1(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
+        user_1 = default_eth_account("user1")
+        issuer_address = user_1["address"]
+        _keyfile = user_1["keyfile_json"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # request target API
+        req_param = {
+            "operation_type": "InvalidOperation",  # invalid value
+            "account_address": "0x0000000000000000000000000000000000000000",
+            "eoa_password": E2EEUtils.encrypt("password"),
+        }
+
+        resp = await async_client.post(
+            self.base_url.format(
+                exchange_address=ibet_security_token_dvp_contract.address, delivery_id=1
+            ),
+            json=req_param,
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "literal_error",
+                    "loc": ["body", "FinishDVPDeliveryRequest", "operation_type"],
+                    "msg": "Input should be 'Finish'",
+                    "input": "InvalidOperation",
+                    "ctx": {"expected": "'Finish'"},
+                },
+                {
+                    "type": "literal_error",
+                    "loc": ["body", "AbortDVPDeliveryRequest", "operation_type"],
+                    "msg": "Input should be 'Abort'",
+                    "input": "InvalidOperation",
+                    "ctx": {"expected": "'Abort'"},
+                },
+            ],
+        }
+
+    # <Error_1_2>
+    @pytest.mark.asyncio
+    async def test_error_1_2(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
+        user_1 = default_eth_account("user1")
+        issuer_address = user_1["address"]
+        _keyfile = user_1["keyfile_json"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # request target API
+        req_param = {
+            "operation_type": "Finish",
+            "account_address": "invalid_address",  # invalid address
+            "eoa_password": E2EEUtils.encrypt("password"),
+        }
+
+        resp = await async_client.post(
+            self.base_url.format(
+                exchange_address=ibet_security_token_dvp_contract.address, delivery_id=1
+            ),
+            json=req_param,
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["body", "FinishDVPDeliveryRequest", "account_address"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "invalid_address",
+                    "ctx": {"error": {}},
+                },
+                {
+                    "type": "literal_error",
+                    "loc": ["body", "AbortDVPDeliveryRequest", "operation_type"],
+                    "msg": "Input should be 'Abort'",
+                    "input": "Finish",
+                    "ctx": {"expected": "'Abort'"},
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["body", "AbortDVPDeliveryRequest", "account_address"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "invalid_address",
+                    "ctx": {"error": {}},
+                },
+            ],
+        }
+
+    # <Error_1_3>
+    # Not encrypted value for eoa_password
+    # -> RequestValidationError
+    @pytest.mark.asyncio
+    async def test_error_1_3(
+        self, async_client, async_db, ibet_security_token_dvp_contract
+    ):
+        user_1 = default_eth_account("user1")
+        issuer_address = user_1["address"]
+        _keyfile = user_1["keyfile_json"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # request target API
+        req_param = {
+            "operation_type": "Finish",
+            "account_address": "0x0000000000000000000000000000000000000000",
+            "eoa_password": "password",  # not encrypted value
+        }
+
+        resp = await async_client.post(
+            self.base_url.format(
+                exchange_address=ibet_security_token_dvp_contract.address, delivery_id=1
+            ),
+            json=req_param,
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["body", "FinishDVPDeliveryRequest", "eoa_password"],
+                    "msg": "Value error, eoa_password is not a Base64-encoded encrypted data",
+                    "input": "password",
+                    "ctx": {"error": {}},
+                },
+                {
+                    "type": "literal_error",
+                    "loc": ["body", "AbortDVPDeliveryRequest", "operation_type"],
+                    "msg": "Input should be 'Abort'",
+                    "input": "Finish",
+                    "ctx": {"expected": "'Abort'"},
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["body", "AbortDVPDeliveryRequest", "eoa_password"],
+                    "msg": "Value error, eoa_password is not a Base64-encoded encrypted data",
+                    "input": "password",
+                    "ctx": {"error": {}},
+                },
+            ],
+        }
+
+    # <Error_2>
     # DVP agent account not found
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "operation_type",
         ["Finish", "Abort"],
     )
-    async def test_error_1(
+    async def test_error_2(
         self, operation_type, async_client, async_db, ibet_security_token_dvp_contract
     ):
         user_1 = default_eth_account("user1")
@@ -452,7 +629,7 @@ class TestUpdateDVPDelivery:
         req_param = {
             "operation_type": operation_type,
             "account_address": "0x0000000000000000000000000000000000000000",
-            "eoa_password": "password",
+            "eoa_password": E2EEUtils.encrypt("password"),
         }
 
         resp = await async_client.post(
@@ -468,14 +645,14 @@ class TestUpdateDVPDelivery:
             "detail": "agent account is not exists",
         }
 
-    # <Error_2>
+    # <Error_3>
     # DVP agent password mismatch
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "operation_type",
         ["Finish", "Abort"],
     )
-    async def test_error_2(
+    async def test_error_3(
         self,
         operation_type,
         async_client,
@@ -543,14 +720,14 @@ class TestUpdateDVPDelivery:
             "detail": "password mismatch",
         }
 
-    # <Error_3>
+    # <Error_4>
     # Send Transaction Error
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "operation_type",
         ["Finish", "Abort"],
     )
-    async def test_error_3(
+    async def test_error_4(
         self,
         operation_type,
         async_client,

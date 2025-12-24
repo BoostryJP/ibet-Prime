@@ -650,7 +650,8 @@ class TestTransferIbetWST:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 13, "title": "IbetWSTInsufficientBalanceError"}
+            "meta": {"code": 13, "title": "IbetWSTInsufficientBalanceError"},
+            "detail": "",
         }
 
     # <Error_5_1>
@@ -723,7 +724,8 @@ class TestTransferIbetWST:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"}
+            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"},
+            "detail": "",
         }
 
     # <Error_5_2>
@@ -796,5 +798,6 @@ class TestTransferIbetWST:
         # Check response status code and content
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"}
+            "meta": {"code": 15, "title": "IbetWSTAccountNotWhitelistedError"},
+            "detail": "",
         }

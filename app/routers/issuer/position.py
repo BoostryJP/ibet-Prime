@@ -36,6 +36,8 @@ from app.exceptions import (
     SendTransactionError,
 )
 from app.model.db import (
+    EthIbetWSTTx,
+    IbetWSTTxType,
     IDXLock,
     IDXLockedPosition,
     IDXPosition,
@@ -656,7 +658,7 @@ async def force_unlock(
     )
 
     # Verify that the token is issued by the issuer_address
-    _token = (
+    _token: Token | None = (
         await db.scalars(
             select(Token)
             .where(
@@ -673,6 +675,33 @@ async def force_unlock(
         raise InvalidParameterError("token not found")
     if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Ensure that Burn or ForceBurn transactions for ibetWST are not in progress
+    # NOTE:
+    #   If a Burn or ForceBurn transaction for ibetWST is in progress,
+    #   executing a ForceUnlock transaction may result in an insufficient locked balance error
+    #   during the ForceUnlock transaction associated with the WST transaction.
+    if _token.ibet_wst_activated and _token.ibet_wst_address is not None:
+        _pending_wst_tx: EthIbetWSTTx | None = (
+            await db.scalars(
+                select(EthIbetWSTTx)
+                .where(
+                    and_(
+                        EthIbetWSTTx.tx_type.in_(
+                            [IbetWSTTxType.BURN, IbetWSTTxType.FORCE_BURN]
+                        ),
+                        EthIbetWSTTx.ibet_wst_address == _token.ibet_wst_address,
+                        EthIbetWSTTx.authorizer == account_address,
+                        EthIbetWSTTx.finalized == False,
+                    )
+                )
+                .limit(1)
+            )
+        ).first()
+        if _pending_wst_tx is not None:
+            raise InvalidParameterError(
+                "There is a pending ibetWST Burn or ForceBurn transaction for this account"
+            )
 
     # Force unlock
     unlock_message_data = UnlockDataMessage(message=data.message).model_dump_json(

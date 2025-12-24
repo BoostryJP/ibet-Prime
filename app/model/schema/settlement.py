@@ -45,7 +45,7 @@ class DeliveryStatus(IntEnum):
 
 
 class DVPDeliveryData(BaseModel):
-    delivery_type: Literal["offering", "primary"]
+    delivery_type: Literal["offering", "primary", "secondary"]
     trade_date: str
     settlement_date: str
     settlement_service_account_id: str
@@ -151,6 +151,13 @@ class FinishDVPDeliveryRequest(BaseModel):
     account_address: EthereumAddress = Field(..., description="Agent account address")
     eoa_password: str = Field(..., description="Agent account key file password")
 
+    @field_validator("eoa_password")
+    @classmethod
+    def eoa_password_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("eoa_password", v)
+        return v
+
 
 class AbortDVPDeliveryRequest(BaseModel):
     """DVP delivery abort schema (REQUEST)"""
@@ -158,6 +165,13 @@ class AbortDVPDeliveryRequest(BaseModel):
     operation_type: Literal["Abort"]
     account_address: EthereumAddress = Field(..., description="Agent account address")
     eoa_password: str = Field(..., description="Agent account key file password")
+
+    @field_validator("eoa_password")
+    @classmethod
+    def eoa_password_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("eoa_password", v)
+        return v
 
 
 ############################
