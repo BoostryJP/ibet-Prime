@@ -35,7 +35,7 @@ SPDX-License-Identifier: Apache-2.0
              class="text-indigo-400 hover:underline"
              hx-get="/blockchain_explorer/ui/tx/{{ t.hash }}"
              hx-target="#tx-detail"
-             hx-push-url="true">{{ t.hash[:10] }}…{{ t.hash[-8:] }}</a>
+             hx-push-url="/blockchain_explorer/ui?tx_hash={{ t.hash }}">{{ t.hash[:10] }}…{{ t.hash[-8:] }}</a>
           <button type="button"
                   class="px-2 py-0.5 text-xs rounded bg-gray-700 hover:bg-gray-600"
                   onclick="navigator.clipboard.writeText('{{ t.hash }}'); this.innerText='Copied'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
