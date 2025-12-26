@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import sys
 from typing import Annotated, Any, Dict, Sequence, Tuple
 
 from eth_utils import to_checksum_address
@@ -110,7 +111,7 @@ async def service_list_block_data(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    if max(total, get_query.limit or 0) > BLOCK_RESPONSE_LIMIT:
+    if min(total, get_query.limit or sys.maxsize) > BLOCK_RESPONSE_LIMIT:
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     block_data_tmp: Sequence[IDXBlockData] = (await db.scalars(stmt)).all()
@@ -205,7 +206,7 @@ async def service_list_tx_data(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    if max(total, get_query.limit or 0) > TX_RESPONSE_LIMIT:
+    if min(total, get_query.limit or sys.maxsize) > TX_RESPONSE_LIMIT:
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     tx_data_tmp: Sequence[IDXTxData] = (await db.scalars(stmt)).all()
