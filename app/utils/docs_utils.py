@@ -230,7 +230,15 @@ def custom_openapi(app):
                     return None
             return tmp_src
 
+        # Remove UI routes (block_explorer_ui) from OpenAPI docs
         paths = _get(openapi_schema, "paths")
+        if paths is not None:
+            remove_prefix = "/blockchain_explorer/ui"
+            for p in list(paths.keys()):
+                if p.startswith(remove_prefix):
+                    paths.pop(p, None)
+
+        # Modify responses
         if paths is not None:
             for path_info in paths.values():
                 for router in path_info.values():

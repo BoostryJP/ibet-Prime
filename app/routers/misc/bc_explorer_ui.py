@@ -1,0 +1,156 @@
+"""
+Copyright BOOSTRY Co., Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+See the License for the specific language governing permissions and
+limitations under the License.
+
+SPDX-License-Identifier: Apache-2.0
+"""
+
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
+
+from app.database import DBAsyncSession
+from app.model.schema import ListBlockDataQuery, ListTxDataQuery
+from config import BC_EXPLORER_ENABLED
+
+from . import bc_explorer
+
+router = APIRouter(prefix="/blockchain_explorer", tags=["[misc] blockchain_explorer"])
+
+templates = Jinja2Templates(directory="app/templates")
+
+
+@router.get(
+    "/ui",
+    summary="[ibet Blockchain Explorer] UI index",
+    response_class=HTMLResponse,
+)
+async def ui_index(request: Request):
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+    return templates.TemplateResponse(
+        "misc/bc_explorer/index.html", {"request": request}
+    )
+
+
+@router.get(
+    "/ui/blocks",
+    summary="[ibet Blockchain Explorer] UI partial: blocks list",
+    response_class=HTMLResponse,
+)
+async def ui_blocks(
+    request: Request,
+    db: DBAsyncSession,
+    get_query: Annotated[ListBlockDataQuery, Query()],
+):
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    result = await bc_explorer.service_list_block_data(db=db, get_query=get_query)
+    blocks = result.get("block_data", [])
+    rs = result.get("result_set", {})
+    return templates.TemplateResponse(
+        "misc/bc_explorer/blocks.html",
+        {
+            "request": request,
+            "blocks": blocks,
+            "count": rs.get("count", 0),
+            "offset": rs.get("offset", 0),
+            "limit": rs.get("limit", 0),
+            "total": rs.get("total", 0),
+        },
+    )
+
+
+@router.get(
+    "/ui/block/{block_number}",
+    summary="[ibet Blockchain Explorer] UI partial: block detail",
+    response_class=HTMLResponse,
+)
+async def ui_block_detail(
+    request: Request,
+    db: DBAsyncSession,
+    block_number: Annotated[int, Path(ge=0)],
+):
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    block = await bc_explorer.service_get_block_data(db=db, block_number=block_number)
+    return templates.TemplateResponse(
+        "misc/bc_explorer/block_detail.html",
+        {"request": request, "block": block},
+    )
+
+
+@router.get(
+    "/ui/txs",
+    summary="[ibet Blockchain Explorer] UI partial: tx list",
+    response_class=HTMLResponse,
+)
+async def ui_txs(
+    request: Request,
+    db: DBAsyncSession,
+    get_query: Annotated[ListTxDataQuery, Query()],
+):
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    result = await bc_explorer.service_list_tx_data(db=db, get_query=get_query)
+    txs = result.get("tx_data", [])
+    rs = result.get("result_set", {})
+    return templates.TemplateResponse(
+        "misc/bc_explorer/txs.html",
+        {
+            "request": request,
+            "txs": txs,
+            "count": rs.get("count", 0),
+            "offset": rs.get("offset", 0),
+            "limit": rs.get("limit", 0),
+            "total": rs.get("total", 0),
+        },
+    )
+
+
+@router.get(
+    "/ui/tx/{hash}",
+    summary="[ibet Blockchain Explorer] UI partial: tx detail",
+    response_class=HTMLResponse,
+)
+async def ui_tx_detail(
+    request: Request,
+    db: DBAsyncSession,
+    hash: Annotated[str, Path()],
+):
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    tx = await bc_explorer.service_get_tx_data(db=db, hash=hash)
+    return templates.TemplateResponse(
+        "misc/bc_explorer/tx_detail.html",
+        {"request": request, "tx": tx},
+    )
