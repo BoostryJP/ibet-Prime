@@ -16,3 +16,5 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+from .block_explorer_ui import router as block_explorer_ui

@@ -52,30 +52,12 @@ router = APIRouter(prefix="/blockchain_explorer", tags=["[misc] blockchain_explo
 
 
 # ------------------------------
-# [BC-Explorer] List Block data
+# Service layer (reusable by UI)
 # ------------------------------
-@router.get(
-    "/block_data",
-    summary="[ibet Blockchain Explorer] List block data",
-    operation_id="ListBlockData",
-    response_model=BlockDataListResponse,
-    responses=get_routers_responses(404, ResponseLimitExceededError),
-)
-async def list_block_data(
-    db: DBAsyncSession,
-    get_query: Annotated[ListBlockDataQuery, Query()],
-):
-    """
-    Returns a list of block data within the specified block number range.
-    The maximum number of search results is 1000.
-    """
-    if BC_EXPLORER_ENABLED is False:
-        raise HTTPException(
-            status_code=404, detail="This URL is not available in the current settings"
-        )
-
-    # NOTE: The more data, the slower the SELECT COUNT(1) query becomes.
-    #       To get total number of block data, latest block number where block data synced is used here.
+async def service_list_block_data(
+    db: DBAsyncSession, get_query: ListBlockDataQuery
+) -> Dict[str, Any]:
+    # NOTE: latest synced block number as total
     idx_block_data_block_number = (
         await db.scalars(
             select(IDXBlockDataBlockNumber)
@@ -84,17 +66,15 @@ async def list_block_data(
         )
     ).first()
     if idx_block_data_block_number is None:
-        return json_response(
-            {
-                "result_set": {
-                    "count": 0,
-                    "offset": get_query.offset,
-                    "limit": get_query.limit,
-                    "total": 0,
-                },
-                "block_data": [],
-            }
-        )
+        return {
+            "result_set": {
+                "count": 0,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
+                "total": 0,
+            },
+            "block_data": [],
+        }
 
     total = idx_block_data_block_number.latest_block_number + 1
 
@@ -148,41 +128,20 @@ async def list_block_data(
             }
         )
 
-    return json_response(
-        {
-            "result_set": {
-                "count": count,
-                "offset": get_query.offset,
-                "limit": get_query.limit,
-                "total": total,
-            },
-            "block_data": block_data,
-        }
-    )
+    return {
+        "result_set": {
+            "count": count,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
+            "total": total,
+        },
+        "block_data": block_data,
+    }
 
 
-# ------------------------------
-# [BC-Explorer] Retrieve Block data
-# ------------------------------
-@router.get(
-    "/block_data/{block_number}",
-    summary="[ibet Blockchain Explorer] Retrieve block data",
-    operation_id="GetBlockData",
-    response_model=BlockDataResponse,
-    responses=get_routers_responses(404),
-)
-async def get_block_data(
-    db: DBAsyncSession,
-    block_number: Annotated[int, Path(description="Block number", ge=0)],
-):
-    """
-    Returns block data in the specified block number.
-    """
-    if BC_EXPLORER_ENABLED is False:
-        raise HTTPException(
-            status_code=404, detail="This URL is not available in the current settings"
-        )
-
+async def service_get_block_data(
+    db: DBAsyncSession, block_number: int
+) -> Dict[str, Any]:
     block_data = (
         await db.scalars(
             select(IDXBlockData).where(IDXBlockData.number == block_number).limit(1)
@@ -191,53 +150,31 @@ async def get_block_data(
     if block_data is None:
         raise HTTPException(status_code=404, detail="block data not found")
 
-    return json_response(
-        {
-            "number": block_data.number,
-            "parent_hash": block_data.parent_hash,
-            "sha3_uncles": block_data.sha3_uncles,
-            "miner": block_data.miner,
-            "state_root": block_data.state_root,
-            "transactions_root": block_data.transactions_root,
-            "receipts_root": block_data.receipts_root,
-            "logs_bloom": block_data.logs_bloom,
-            "difficulty": block_data.difficulty,
-            "gas_limit": block_data.gas_limit,
-            "gas_used": block_data.gas_used,
-            "timestamp": block_data.timestamp,
-            "proof_of_authority_data": block_data.proof_of_authority_data,
-            "mix_hash": block_data.mix_hash,
-            "nonce": block_data.nonce,
-            "hash": block_data.hash,
-            "size": block_data.size,
-            "transactions": block_data.transactions,
-        }
-    )
+    return {
+        "number": block_data.number,
+        "parent_hash": block_data.parent_hash,
+        "sha3_uncles": block_data.sha3_uncles,
+        "miner": block_data.miner,
+        "state_root": block_data.state_root,
+        "transactions_root": block_data.transactions_root,
+        "receipts_root": block_data.receipts_root,
+        "logs_bloom": block_data.logs_bloom,
+        "difficulty": block_data.difficulty,
+        "gas_limit": block_data.gas_limit,
+        "gas_used": block_data.gas_used,
+        "timestamp": block_data.timestamp,
+        "proof_of_authority_data": block_data.proof_of_authority_data,
+        "mix_hash": block_data.mix_hash,
+        "nonce": block_data.nonce,
+        "hash": block_data.hash,
+        "size": block_data.size,
+        "transactions": block_data.transactions,
+    }
 
 
-# ------------------------------
-# [BC-Explorer] List Tx data
-# ------------------------------
-@router.get(
-    "/tx_data",
-    summary="[ibet Blockchain Explorer] List tx data",
-    operation_id="ListTxData",
-    response_model=TxDataListResponse,
-    responses=get_routers_responses(404, ResponseLimitExceededError),
-)
-async def list_tx_data(
-    db: DBAsyncSession,
-    get_query: Annotated[ListTxDataQuery, Query()],
-):
-    """
-    Returns a list of transactions by various search parameters.
-    The maximum number of search results is 10000.
-    """
-    if BC_EXPLORER_ENABLED is False:
-        raise HTTPException(
-            status_code=404, detail="This URL is not available in the current settings"
-        )
-
+async def service_list_tx_data(
+    db: DBAsyncSession, get_query: ListTxDataQuery
+) -> Dict[str, Any]:
     stmt = select(IDXTxData)
     total = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
@@ -285,17 +222,138 @@ async def list_tx_data(
             }
         )
 
-    return json_response(
-        {
-            "result_set": {
-                "count": count,
-                "offset": get_query.offset,
-                "limit": get_query.limit,
-                "total": total,
-            },
-            "tx_data": tx_data,
-        }
-    )
+    return {
+        "result_set": {
+            "count": count,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
+            "total": total,
+        },
+        "tx_data": tx_data,
+    }
+
+
+async def service_get_tx_data(db: DBAsyncSession, hash: str) -> Dict[str, Any]:
+    tx_data = (
+        await db.scalars(select(IDXTxData).where(IDXTxData.hash == hash).limit(1))
+    ).first()
+    if tx_data is None:
+        raise HTTPException(status_code=404, detail="block data not found")
+
+    contract_name: str | None = None
+    contract_function: str | None = None
+    contract_parameters: dict | None = None
+    token_contract = (
+        await db.scalars(
+            select(Token).where(Token.token_address == tx_data.to_address).limit(1)
+        )
+    ).first()
+    if token_contract is not None:
+        contract_name = token_contract.type
+        contract = AsyncContractUtils.get_contract(
+            contract_name=contract_name, contract_address=tx_data.to_address
+        )
+        decoded_input: Tuple["ContractFunction", Dict[str, Any]] = (
+            contract.decode_function_input(tx_data.input)
+        )
+        contract_function = decoded_input[0].fn_name
+        contract_parameters = decoded_input[1]
+
+    return {
+        "hash": tx_data.hash,
+        "block_hash": tx_data.block_hash,
+        "block_number": tx_data.block_number,
+        "transaction_index": tx_data.transaction_index,
+        "from_address": tx_data.from_address,
+        "to_address": tx_data.to_address,
+        "contract_name": contract_name,
+        "contract_function": contract_function,
+        "contract_parameters": contract_parameters,
+        "gas": tx_data.gas,
+        "gas_price": tx_data.gas_price,
+        "value": tx_data.value,
+        "nonce": tx_data.nonce,
+    }
+
+
+# ------------------------------
+# [BC-Explorer] List Block data
+# ------------------------------
+@router.get(
+    "/block_data",
+    summary="[ibet Blockchain Explorer] List block data",
+    operation_id="ListBlockData",
+    response_model=BlockDataListResponse,
+    responses=get_routers_responses(404, ResponseLimitExceededError),
+)
+async def list_block_data(
+    db: DBAsyncSession,
+    get_query: Annotated[ListBlockDataQuery, Query()],
+):
+    """
+    Returns a list of block data within the specified block number range.
+    The maximum number of search results is 1000.
+    """
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    result = await service_list_block_data(db=db, get_query=get_query)
+    return json_response(result)
+
+
+# ------------------------------
+# [BC-Explorer] Retrieve Block data
+# ------------------------------
+@router.get(
+    "/block_data/{block_number}",
+    summary="[ibet Blockchain Explorer] Retrieve block data",
+    operation_id="GetBlockData",
+    response_model=BlockDataResponse,
+    responses=get_routers_responses(404),
+)
+async def get_block_data(
+    db: DBAsyncSession,
+    block_number: Annotated[int, Path(description="Block number", ge=0)],
+):
+    """
+    Returns block data in the specified block number.
+    """
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    result = await service_get_block_data(db=db, block_number=block_number)
+    return json_response(result)
+
+
+# ------------------------------
+# [BC-Explorer] List Tx data
+# ------------------------------
+@router.get(
+    "/tx_data",
+    summary="[ibet Blockchain Explorer] List tx data",
+    operation_id="ListTxData",
+    response_model=TxDataListResponse,
+    responses=get_routers_responses(404, ResponseLimitExceededError),
+)
+async def list_tx_data(
+    db: DBAsyncSession,
+    get_query: Annotated[ListTxDataQuery, Query()],
+):
+    """
+    Returns a list of transactions by various search parameters.
+    The maximum number of search results is 10000.
+    """
+    if BC_EXPLORER_ENABLED is False:
+        raise HTTPException(
+            status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    result = await service_list_tx_data(db=db, get_query=get_query)
+    return json_response(result)
 
 
 # ------------------------------
@@ -319,47 +377,5 @@ async def get_tx_data(
             status_code=404, detail="This URL is not available in the current settings"
         )
 
-    # Search tx data
-    tx_data = (
-        await db.scalars(select(IDXTxData).where(IDXTxData.hash == hash).limit(1))
-    ).first()
-    if tx_data is None:
-        raise HTTPException(status_code=404, detail="block data not found")
-
-    # Decode contract input parameters
-    contract_name: str | None = None
-    contract_function: str | None = None
-    contract_parameters: dict | None = None
-    token_contract = (
-        await db.scalars(
-            select(Token).where(Token.token_address == tx_data.to_address).limit(1)
-        )
-    ).first()
-    if token_contract is not None:
-        contract_name = token_contract.type
-        contract = AsyncContractUtils.get_contract(
-            contract_name=contract_name, contract_address=tx_data.to_address
-        )
-        decoded_input: Tuple["ContractFunction", Dict[str, Any]] = (
-            contract.decode_function_input(tx_data.input)
-        )
-        contract_function = decoded_input[0].fn_name
-        contract_parameters = decoded_input[1]
-
-    return json_response(
-        {
-            "hash": tx_data.hash,
-            "block_hash": tx_data.block_hash,
-            "block_number": tx_data.block_number,
-            "transaction_index": tx_data.transaction_index,
-            "from_address": tx_data.from_address,
-            "to_address": tx_data.to_address,
-            "contract_name": contract_name,
-            "contract_function": contract_function,
-            "contract_parameters": contract_parameters,
-            "gas": tx_data.gas,
-            "gas_price": tx_data.gas_price,
-            "value": tx_data.value,
-            "nonce": tx_data.nonce,
-        }
-    )
+    result = await service_get_tx_data(db=db, hash=hash)
+    return json_response(result)

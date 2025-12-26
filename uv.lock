@@ -112,12 +112,6 @@ wheels = [
 ]
 
 [[package]]
-name = "async-cache"
-version = "1.1.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/73/6e/908402652bf7d8ab02fa204399d9517d247fb3a0926045a8c8a28708cd40/async-cache-1.1.1.tar.gz", hash = "sha256:81aa9ccd19fb06784aaf30bd5f2043dc0a23fc3e998b93d0c2c17d1af9803393", size = 3848, upload-time = "2021-07-03T18:24:36.769Z" }
-
-[[package]]
 name = "asyncpg"
 version = "0.30.0"
 source = { registry = "https://pypi.org/simple" }
@@ -735,12 +729,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-ibet-explorer = [
-    { name = "aiohttp" },
-    { name = "async-cache" },
-    { name = "ibet-prime-explorer" },
-    { name = "textual" },
-]
 settlement-cli = [
     { name = "ibet-prime-settlement" },
 ]
@@ -774,9 +762,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", marker = "extra == 'ibet-explorer'", specifier = "~=3.12.15" },
     { name = "alembic", specifier = ">=1.14.0,<2.0.0" },
-    { name = "async-cache", marker = "extra == 'ibet-explorer'", specifier = "~=1.1.1" },
     { name = "asyncpg", specifier = "~=0.30.0" },
     { name = "boto3", specifier = "~=1.37.9" },
     { name = "coincurve", specifier = "~=21.0.0" },
@@ -785,7 +771,6 @@ requires-dist = [
     { name = "fastapi", specifier = "~=0.124.4" },
     { name = "gunicorn", specifier = "~=23.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
-    { name = "ibet-prime-explorer", marker = "extra == 'ibet-explorer'", editable = "cmd/explorer" },
     { name = "ibet-prime-settlement", marker = "extra == 'settlement-cli'", editable = "cmd/settlement" },
     { name = "memray", specifier = ">=1.14.0,<2.0.0" },
     { name = "orjson", specifier = "~=3.11.3" },
@@ -797,13 +782,12 @@ requires-dist = [
     { name = "pytz", specifier = "~=2025.2" },
     { name = "shared-memory-dict", specifier = "~=0.7.2" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.40,<3.0.0" },
-    { name = "textual", marker = "extra == 'ibet-explorer'", specifier = "~=0.44.1" },
     { name = "typer", specifier = "~=0.15.2" },
     { name = "uvicorn", extras = ["standard"], specifier = "~=0.40.0" },
     { name = "uvloop", specifier = "~=0.21.0" },
     { name = "web3", specifier = "==7.8.0" },
 ]
-provides-extras = ["ibet-explorer", "settlement-cli"]
+provides-extras = ["settlement-cli"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -831,11 +815,6 @@ dev = [
     { name = "ruff", specifier = ">=0.5.4,<1.0.0" },
     { name = "textual-dev", specifier = ">=1.2.1,<2.0.0" },
 ]
-
-[[package]]
-name = "ibet-prime-explorer"
-version = "0.1.0"
-source = { editable = "cmd/explorer" }
 
 [[package]]
 name = "ibet-prime-settlement"

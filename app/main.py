@@ -54,6 +54,7 @@ from app.routers.issuer import (
 )
 from app.routers.misc import (
     bc_explorer,
+    block_explorer_ui,
     e2e_messaging,
     freeze_log,
     ibet_wst,
@@ -216,6 +217,7 @@ else:
 
     if BC_EXPLORER_ENABLED:
         app.include_router(bc_explorer.router)
+        app.include_router(block_explorer_ui)
 
     if FREEZE_LOG_FEATURE_ENABLED:
         app.include_router(freeze_log.router)
@@ -262,7 +264,7 @@ def convert_errors(
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content=jsonable_encoder({"meta": meta, "detail": convert_errors(exc)}),
     )
 
@@ -273,7 +275,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def query_validation_exception_handler(request: Request, exc: ValidationError):
     meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content=jsonable_encoder({"meta": meta, "detail": convert_errors(exc)}),
     )
 
