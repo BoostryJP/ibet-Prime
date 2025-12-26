@@ -54,7 +54,7 @@ from app.routers.issuer import (
 )
 from app.routers.misc import (
     bc_explorer,
-    block_explorer_ui,
+    bc_explorer_ui,
     e2e_messaging,
     freeze_log,
     ibet_wst,
@@ -217,7 +217,7 @@ else:
 
     if BC_EXPLORER_ENABLED:
         app.include_router(bc_explorer.router)
-        app.include_router(block_explorer_ui)
+        app.include_router(bc_explorer_ui.router)
 
     if FREEZE_LOG_FEATURE_ENABLED:
         app.include_router(freeze_log.router)
