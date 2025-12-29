@@ -11207,6 +11207,17 @@ paths:
             default: 0
             title: Sort Order
           description: 'Sort order (0: ASC, 1: DESC)'
+        - name: has_transactions
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            description: Return only blocks that contain one or more 
+              transactions
+            title: Has Transactions
+          description: Return only blocks that contain one or more transactions
       responses:
         '200':
           description: Successful Response
@@ -11291,15 +11302,13 @@ paths:
           description: Limit for pagination
         - name: block_number
           in: query
-          required: false
+          required: true
           schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: block number
+            type: integer
+            minimum: 0
+            description: block number(this affects total number)
             title: Block Number
-          description: block number
+          description: block number(this affects total number)
         - name: from_address
           in: query
           required: false

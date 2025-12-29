@@ -95,6 +95,14 @@ async def service_list_block_data(
     elif get_query.to_block_number is not None:
         stmt = stmt.where(IDXBlockData.number <= get_query.to_block_number)
 
+    # Blocks that contain one or more transactions
+    if get_query.has_transactions:
+        # Exclude NULL and empty array []
+        stmt = stmt.where(
+            IDXBlockData.transactions.is_not(None),
+            func.json_array_length(IDXBlockData.transactions) > 0,
+        )
+
     count = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(IDXBlockData).order_by(None)
     )
@@ -176,14 +184,12 @@ async def service_get_block_data(
 async def service_list_tx_data(
     db: DBAsyncSession, get_query: ListTxDataQuery
 ) -> Dict[str, Any]:
-    stmt = select(IDXTxData)
+    stmt = select(IDXTxData).where(IDXTxData.block_number == get_query.block_number)
     total = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
     )
 
     # Search Filter
-    if get_query.block_number is not None:
-        stmt = stmt.where(IDXTxData.block_number == get_query.block_number)
     if get_query.from_address is not None:
         stmt = stmt.where(
             IDXTxData.from_address == to_checksum_address(get_query.from_address)

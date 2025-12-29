@@ -95,10 +95,15 @@ class ListBlockDataQuery(BasePaginationQuery):
     sort_order: Optional[SortOrder] = Field(
         SortOrder.ASC, description=SortOrder.__doc__
     )
+    has_transactions: Optional[bool] = Field(
+        None, description="Return only blocks that contain one or more transactions"
+    )
 
 
 class ListTxDataQuery(BasePaginationQuery):
-    block_number: Optional[NonNegativeInt] = Field(None, description="block number")
+    block_number: NonNegativeInt = Field(
+        ..., description="block number(this affects total number)"
+    )
     from_address: Optional[EthereumAddress] = Field(None, description="tx from")
     to_address: Optional[EthereumAddress] = Field(None, description="tx to")
 

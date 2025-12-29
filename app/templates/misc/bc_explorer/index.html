@@ -69,6 +69,11 @@ SPDX-License-Identifier: Apache-2.0
                   <option value="0" {% if initial_block_query and initial_block_query.sort_order == 0 %}selected{% endif %}>Asc</option>
                 </select>
               </label>
+              <label class="w-32 text-sm inline-flex items-center gap-2 mt-6">
+                <input name="has_transactions" type="checkbox" value="true" {% if initial_block_query and initial_block_query.has_transactions %}checked{% endif %}
+                       class="rounded border border-gray-600 bg-gray-900 text-indigo-500 focus:ring-indigo-500" />
+                <span>Txs only</span>
+              </label>
               <button type="submit" class="ml-auto inline-flex items-center rounded bg-indigo-600 text-white px-3 py-1.5 text-sm hover:bg-indigo-500">Search</button>
             </form>
             <div id="block-list" class="text-gray-400 text-sm mt-3">Enter conditions and search.</div>
