@@ -49,6 +49,7 @@ async def ui_index(
     offset: Annotated[int | None, Query()] = 0,
     block_number: Annotated[int | None, Query()] = None,
     tx_hash: Annotated[str | None, Query()] = None,
+    has_transactions: Annotated[bool | None, Query()] = None,
 ):
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
@@ -64,6 +65,7 @@ async def ui_index(
                 "sort_order": sort_order,
                 "limit": limit,
                 "offset": offset,
+                "has_transactions": has_transactions,
             },
             "initial_block_number": block_number,
             "initial_tx_hash": tx_hash,
@@ -98,6 +100,7 @@ async def ui_blocks(
                     "sort_order": get_query.sort_order,
                     "limit": get_query.limit,
                     "offset": get_query.offset,
+                    "has_transactions": get_query.has_transactions,
                 },
                 "initial_block_number": None,
                 "initial_tx_hash": None,

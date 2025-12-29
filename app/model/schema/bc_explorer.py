@@ -95,6 +95,9 @@ class ListBlockDataQuery(BasePaginationQuery):
     sort_order: Optional[SortOrder] = Field(
         SortOrder.ASC, description=SortOrder.__doc__
     )
+    has_transactions: Optional[bool] = Field(
+        None, description="Return only blocks that contain one or more transactions"
+    )
 
 
 class ListTxDataQuery(BasePaginationQuery):

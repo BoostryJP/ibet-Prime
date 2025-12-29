@@ -95,6 +95,14 @@ async def service_list_block_data(
     elif get_query.to_block_number is not None:
         stmt = stmt.where(IDXBlockData.number <= get_query.to_block_number)
 
+    # Blocks that contain one or more transactions
+    if get_query.has_transactions:
+        # Exclude NULL and empty array []
+        stmt = stmt.where(
+            IDXBlockData.transactions.is_not(None),
+            func.json_array_length(IDXBlockData.transactions) > 0,
+        )
+
     count = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(IDXBlockData).order_by(None)
     )
