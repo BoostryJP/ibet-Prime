@@ -30,13 +30,18 @@ SPDX-License-Identifier: Apache-2.0
   </thead>
   <tbody>
     {% for b in blocks %}
-    <tr class="border-t border-gray-700">
+    <tr class="border-t border-gray-700" data-block-number="{{ b.number }}"
+        :class="{'bg-indigo-900/40': $store.explorer.selectedBlockNumber === {{ b.number }} }">
       <td class="px-3 py-2">
         <a href="#"
            class="text-indigo-400 hover:underline"
            hx-get="/blockchain_explorer/ui/txs?block_number={{ b.number }}"
            hx-target="#tx-list"
-           hx-push-url="true">{{ b.number }}</a>
+           hx-swap="innerHTML"
+           hx-indicator="#tx-list"
+           hx-push-url="/blockchain_explorer/ui?block_number={{ b.number }}"
+           @click.prevent="$dispatch('select-block', {{ b.number }})"
+        >{{ b.number }}</a>
       </td>
       <td class="px-3 py-2 text-gray-300" title="{{ b.hash }}">{{ b.hash[:10] }}…{{ b.hash[-8:] }}</td>
       <td class="px-3 py-2">{{ b.transactions|length }}</td>

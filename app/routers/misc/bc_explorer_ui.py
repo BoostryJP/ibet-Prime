@@ -40,13 +40,34 @@ templates = Jinja2Templates(directory="app/templates")
     summary="[ibet Blockchain Explorer] UI index",
     response_class=HTMLResponse,
 )
-async def ui_index(request: Request):
+async def ui_index(
+    request: Request,
+    from_block_number: Annotated[int | None, Query()] = None,
+    to_block_number: Annotated[int | None, Query()] = None,
+    sort_order: Annotated[int | None, Query()] = 1,
+    limit: Annotated[int | None, Query()] = 50,
+    offset: Annotated[int | None, Query()] = 0,
+    block_number: Annotated[int | None, Query()] = None,
+    tx_hash: Annotated[str | None, Query()] = None,
+):
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
     return templates.TemplateResponse(
-        "misc/bc_explorer/index.html", {"request": request}
+        "misc/bc_explorer/index.html",
+        {
+            "request": request,
+            "initial_block_query": {
+                "from_block_number": from_block_number,
+                "to_block_number": to_block_number,
+                "sort_order": sort_order,
+                "limit": limit,
+                "offset": offset,
+            },
+            "initial_block_number": block_number,
+            "initial_tx_hash": tx_hash,
+        },
     )
 
 
@@ -63,6 +84,24 @@ async def ui_blocks(
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    # If not HTMX request, render full UI with same query
+    if request.headers.get("HX-Request") != "true":
+        return templates.TemplateResponse(
+            "misc/bc_explorer/index.html",
+            {
+                "request": request,
+                "initial_block_query": {
+                    "from_block_number": get_query.from_block_number,
+                    "to_block_number": get_query.to_block_number,
+                    "sort_order": get_query.sort_order,
+                    "limit": get_query.limit,
+                    "offset": get_query.offset,
+                },
+                "initial_block_number": None,
+                "initial_tx_hash": None,
+            },
         )
 
     result = await bc_explorer.service_list_block_data(db=db, get_query=get_query)
@@ -96,6 +135,17 @@ async def ui_block_detail(
             status_code=404, detail="This URL is not available in the current settings"
         )
 
+    if request.headers.get("HX-Request") != "true":
+        return templates.TemplateResponse(
+            "misc/bc_explorer/index.html",
+            {
+                "request": request,
+                "initial_block_query": {},
+                "initial_block_number": block_number,
+                "initial_tx_hash": None,
+            },
+        )
+
     block = await bc_explorer.service_get_block_data(db=db, block_number=block_number)
     return templates.TemplateResponse(
         "misc/bc_explorer/block_detail.html",
@@ -116,6 +166,17 @@ async def ui_txs(
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    if request.headers.get("HX-Request") != "true":
+        return templates.TemplateResponse(
+            "misc/bc_explorer/index.html",
+            {
+                "request": request,
+                "initial_block_query": {},
+                "initial_block_number": get_query.block_number,
+                "initial_tx_hash": None,
+            },
         )
 
     result = await bc_explorer.service_list_tx_data(db=db, get_query=get_query)
@@ -147,6 +208,17 @@ async def ui_tx_detail(
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
+        )
+
+    if request.headers.get("HX-Request") != "true":
+        return templates.TemplateResponse(
+            "misc/bc_explorer/index.html",
+            {
+                "request": request,
+                "initial_block_query": {},
+                "initial_block_number": None,
+                "initial_tx_hash": hash,
+            },
         )
 
     tx = await bc_explorer.service_get_tx_data(db=db, hash=hash)
