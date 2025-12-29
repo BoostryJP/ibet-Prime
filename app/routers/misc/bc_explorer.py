@@ -184,14 +184,12 @@ async def service_get_block_data(
 async def service_list_tx_data(
     db: DBAsyncSession, get_query: ListTxDataQuery
 ) -> Dict[str, Any]:
-    stmt = select(IDXTxData)
+    stmt = select(IDXTxData).where(IDXTxData.block_number == get_query.block_number)
     total = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
     )
 
     # Search Filter
-    if get_query.block_number is not None:
-        stmt = stmt.where(IDXTxData.block_number == get_query.block_number)
     if get_query.from_address is not None:
         stmt = stmt.where(
             IDXTxData.from_address == to_checksum_address(get_query.from_address)

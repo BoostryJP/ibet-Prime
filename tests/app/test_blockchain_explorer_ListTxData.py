@@ -32,7 +32,7 @@ class TestListTxData:
     A_tx_1 = {
         "block_hash": "0x94670853c83f3c444d8515cbb9902c9e88b3619c27b9577714baaa07d35874ff",
         "block_number": 6791869,
-        "from_address": "0x30406Cd5f18DD87367B782b9D63b4d79F7f5eBb8",
+        "from_address": "0x8456ac4FEc4869A16ad5C3584306181Af6410682",
         "to_address": "0x1FBb27d6682aB47654f0150457B64F9A96C926d4",
         "gas": 6000000,
         "gas_price": 0,
@@ -44,9 +44,9 @@ class TestListTxData:
     }
     A_tx_2 = {
         "block_hash": "0x077e42cfe8bc9577b85a6347136c2d38a2b165e7b31bb340c33d302565b900b6",
-        "block_number": 6791871,
+        "block_number": 6791869,
         "from_address": "0x30406Cd5f18DD87367B782b9D63b4d79F7f5eBb8",
-        "to_address": "0x1FBb27d6682aB47654f0150457B64F9A96C926d4",
+        "to_address": "0xECeB9FdBd2CF677Be5fA8B1ceEb53e53D582f0Eb",
         "gas": 6000000,
         "gas_price": 0,
         "hash": "0x4ad0b5e395f8c7cc843ba9ffc8b86e6a8b0c71cb724c68b5842839954410892c",
@@ -102,6 +102,7 @@ class TestListTxData:
     ###########################################################################
 
     # Normal_1
+    # Query parameter: block_number(required)
     @pytest.mark.asyncio
     async def test_normal_1(self, async_client, async_db):
         await self.insert_tx_data(async_db, self.A_tx_1)
@@ -110,61 +111,12 @@ class TestListTxData:
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            resp = await async_client.get(self.apiurl)
-
-        # Assertion
-        assert resp.status_code == 200
-
-        response_data = resp.json()
-        assert response_data["result_set"] == {
-            "count": 3,
-            "offset": None,
-            "limit": None,
-            "total": 3,
-        }
-        assert response_data["tx_data"] == [
-            self.filter_response_item(self.B_tx_1),
-            self.filter_response_item(self.A_tx_2),
-            self.filter_response_item(self.A_tx_1),
-        ]
-
-    # Normal_2_1
-    # Query parameter: block_number
-    @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
-        await self.insert_tx_data(async_db, self.A_tx_1)
-        await self.insert_tx_data(async_db, self.A_tx_2)
-        await self.insert_tx_data(async_db, self.B_tx_1)
-
-        # Request target API
-        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            params = {"block_number": 6791871}
-            resp = await async_client.get(self.apiurl, params=params)
-
-        # Assertion
-        assert resp.status_code == 200
-
-        response_data = resp.json()
-        assert response_data["result_set"] == {
-            "count": 1,
-            "offset": None,
-            "limit": None,
-            "total": 3,
-        }
-        assert response_data["tx_data"] == [self.filter_response_item(self.A_tx_2)]
-
-    # Normal_2_2
-    # Query parameter: from_address
-    @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
-        await self.insert_tx_data(async_db, self.A_tx_1)
-        await self.insert_tx_data(async_db, self.A_tx_2)
-        await self.insert_tx_data(async_db, self.B_tx_1)
-
-        # Request target API
-        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            params = {"from_address": "0x30406cd5f18dd87367b782b9d63b4d79f7f5ebb8"}
-            resp = await async_client.get(self.apiurl, params=params)
+            resp = await async_client.get(
+                self.apiurl,
+                params={
+                    "block_number": self.A_tx_1["block_number"]
+                },  # Same block_number as A_tx_2
+            )
 
         # Assertion
         assert resp.status_code == 200
@@ -174,24 +126,27 @@ class TestListTxData:
             "count": 2,
             "offset": None,
             "limit": None,
-            "total": 3,
+            "total": 2,  # total matches the filtered result
         }
         assert response_data["tx_data"] == [
             self.filter_response_item(self.A_tx_2),
             self.filter_response_item(self.A_tx_1),
         ]
 
-    # Normal_2_3
-    # Query parameter: to_address
+    # Normal_2_1
+    # Query parameter: from_address(optional)
     @pytest.mark.asyncio
-    async def test_normal_2_3(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client, async_db):
         await self.insert_tx_data(async_db, self.A_tx_1)
         await self.insert_tx_data(async_db, self.A_tx_2)
         await self.insert_tx_data(async_db, self.B_tx_1)
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            params = {"to_address": "0xeceb9fdbd2cf677be5fa8b1ceeb53e53d582f0eb"}
+            params = {
+                "block_number": self.A_tx_2["block_number"],
+                "from_address": self.A_tx_2["from_address"],
+            }
             resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
@@ -202,9 +157,39 @@ class TestListTxData:
             "count": 1,
             "offset": None,
             "limit": None,
-            "total": 3,
+            "total": 2,
         }
-        assert response_data["tx_data"] == [self.filter_response_item(self.B_tx_1)]
+        assert response_data["tx_data"] == [
+            self.filter_response_item(self.A_tx_2),
+        ]
+
+    # Normal_2_2
+    # Query parameter: to_address(optional)
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client, async_db):
+        await self.insert_tx_data(async_db, self.A_tx_1)
+        await self.insert_tx_data(async_db, self.A_tx_2)
+        await self.insert_tx_data(async_db, self.B_tx_1)
+
+        # Request target API
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
+            params = {
+                "block_number": self.A_tx_2["block_number"],
+                "to_address": self.A_tx_2["to_address"],
+            }
+            resp = await async_client.get(self.apiurl, params=params)
+
+        # Assertion
+        assert resp.status_code == 200
+
+        response_data = resp.json()
+        assert response_data["result_set"] == {
+            "count": 1,
+            "offset": None,
+            "limit": None,
+            "total": 2,
+        }
+        assert response_data["tx_data"] == [self.filter_response_item(self.A_tx_2)]
 
     # Normal_3_1
     # Pagination: offset
@@ -216,7 +201,7 @@ class TestListTxData:
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            params = {"offset": 1}
+            params = {"block_number": self.A_tx_1["block_number"], "offset": 1}
             resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
@@ -224,13 +209,12 @@ class TestListTxData:
 
         response_data = resp.json()
         assert response_data["result_set"] == {
-            "count": 3,
+            "count": 2,
             "offset": 1,
             "limit": None,
-            "total": 3,
+            "total": 2,
         }
         assert response_data["tx_data"] == [
-            self.filter_response_item(self.A_tx_2),
             self.filter_response_item(self.A_tx_1),
         ]
 
@@ -244,7 +228,7 @@ class TestListTxData:
 
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            params = {"limit": 1}
+            params = {"block_number": self.A_tx_2["block_number"], "limit": 1}
             resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
@@ -252,12 +236,12 @@ class TestListTxData:
 
         response_data = resp.json()
         assert response_data["result_set"] == {
-            "count": 3,
+            "count": 2,
             "offset": None,
             "limit": 1,
-            "total": 3,
+            "total": 2,
         }
-        assert response_data["tx_data"] == [self.filter_response_item(self.B_tx_1)]
+        assert response_data["tx_data"] == [self.filter_response_item(self.A_tx_2)]
 
     ###########################################################################
     # Error
@@ -269,7 +253,10 @@ class TestListTxData:
     async def test_error_1(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
-            resp = await async_client.get(self.apiurl)
+            resp = await async_client.get(
+                self.apiurl,
+                params={"block_number": self.A_tx_1["block_number"]},
+            )
 
         # Assertion
         assert resp.status_code == 404
@@ -322,7 +309,11 @@ class TestListTxData:
     async def test_error_2_2(self, async_client, async_db):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
-            params = {"from_address": "abcd", "to_address": "abcd"}
+            params = {
+                "block_number": self.A_tx_1["block_number"],
+                "from_address": "abcd",
+                "to_address": "abcd",
+            }
             resp = await async_client.get(self.apiurl, params=params)
 
         # Assertion
@@ -358,9 +349,12 @@ class TestListTxData:
         # Request target API
         with (
             mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True),
-            mock.patch("app.routers.misc.bc_explorer.TX_RESPONSE_LIMIT", 2),
+            mock.patch("app.routers.misc.bc_explorer.TX_RESPONSE_LIMIT", 1),
         ):
-            resp = await async_client.get(self.apiurl)
+            resp = await async_client.get(
+                self.apiurl,
+                params={"block_number": self.A_tx_1["block_number"]},
+            )
 
         # Assertion
         assert resp.status_code == 400

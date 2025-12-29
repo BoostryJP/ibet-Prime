@@ -4934,7 +4934,7 @@ paths:
           required: false
           schema:
             anyOf:
-              - $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+              - $ref: '#/components/schemas/app__model__db__token__TokenType'
               - type: 'null'
             description: Token type
             title: Token Type
@@ -5001,7 +5001,7 @@ paths:
           required: false
           schema:
             anyOf:
-              - $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+              - $ref: '#/components/schemas/app__model__db__token__TokenType'
               - type: 'null'
             description: Token type
             title: Token Type
@@ -5078,7 +5078,7 @@ paths:
           required: false
           schema:
             anyOf:
-              - $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+              - $ref: '#/components/schemas/app__model__db__token__TokenType'
               - type: 'null'
             description: Token type
             title: Token Type
@@ -8409,7 +8409,7 @@ paths:
           required: false
           schema:
             anyOf:
-              - $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+              - $ref: '#/components/schemas/app__model__db__token__TokenType'
               - type: 'null'
             description: Token type
             title: Token Type
@@ -8490,7 +8490,7 @@ paths:
           required: false
           schema:
             anyOf:
-              - $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+              - $ref: '#/components/schemas/app__model__db__token__TokenType'
               - type: 'null'
             description: Token type
             title: Token Type
@@ -9925,7 +9925,7 @@ paths:
           required: false
           schema:
             anyOf:
-              - $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+              - $ref: '#/components/schemas/app__model__db__token__TokenType'
               - type: 'null'
             description: Token type
             title: Token Type
@@ -11302,15 +11302,13 @@ paths:
           description: Limit for pagination
         - name: block_number
           in: query
-          required: false
+          required: true
           schema:
-            anyOf:
-              - type: integer
-                minimum: 0
-              - type: 'null'
-            description: block number
+            type: integer
+            minimum: 0
+            description: block number(this affects total number)
             title: Block Number
-          description: block number
+          description: block number(this affects total number)
         - name: from_address
           in: query
           required: false
@@ -11911,7 +11909,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
       type: object
       required:
         - category
@@ -11981,7 +11979,7 @@ components:
           type: string
           title: Issuer Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         token_address:
           type: string
           title: Token Address
@@ -12028,7 +12026,7 @@ components:
           type: string
           title: Issuer Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         token_address:
           type: string
           title: Token Address
@@ -12418,7 +12416,7 @@ components:
           type: string
           title: Upload Id
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         token_address:
           anyOf:
             - type: string
@@ -12489,7 +12487,7 @@ components:
           title: Issuer Address
           description: Issuer account address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
           description: Token type
         token_address:
           anyOf:
@@ -12541,7 +12539,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
           description: Token type
         from_address:
           type: string
@@ -13012,7 +13010,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         ledger_id:
           type: integer
           title: Ledger Id
@@ -13304,7 +13302,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         seller_address:
           type: string
           title: Seller Address
@@ -16095,7 +16093,7 @@ components:
           title: Ibet Token Address
           description: ibet token contract address
         ibet_token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
           description: ibet token type
         ibet_token_attributes:
           anyOf:
@@ -16330,7 +16328,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         arguments:
           additionalProperties: true
           type: object
@@ -16449,7 +16447,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
           description: Token type
         created:
           type: string
@@ -16579,7 +16577,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         created:
           type: string
           format: date-time
@@ -17135,7 +17133,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
           description: Token type
         token_name:
           type: string
@@ -17199,7 +17197,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         lock_address:
           type: string
           title: Lock Address
@@ -17280,7 +17278,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
           description: Token type
         token_name:
           type: string
@@ -17694,7 +17692,7 @@ components:
           title: Token Address
           description: Token address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
           description: Token type
         token_name:
           type: string
@@ -18518,7 +18516,7 @@ components:
             - type: 'null'
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
       type: object
       required:
         - scheduled_event_id
@@ -18576,7 +18574,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         scheduled_datetime:
           type: string
           format: date-time
@@ -18655,7 +18653,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         scheduled_datetime:
           type: string
           format: date-time
@@ -19079,7 +19077,7 @@ components:
           title: Token Address
         token_type:
           anyOf:
-            - $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+            - $ref: '#/components/schemas/app__model__db__token__TokenType'
             - type: 'null'
       type: object
       required:
@@ -19648,7 +19646,7 @@ components:
           type: string
           title: Token Address
         token_type:
-          $ref: '#/components/schemas/app__model__schema__base__base__TokenType'
+          $ref: '#/components/schemas/app__model__db__token__TokenType'
         lock_address:
           type: string
           title: Lock Address
@@ -19822,7 +19820,7 @@ components:
         - 1
         - 2
       title: ValueOperator
-    app__model__schema__base__base__TokenType:
+    app__model__db__token__TokenType:
       type: string
       enum:
         - IbetStraightBond
