@@ -36,6 +36,7 @@ SPDX-License-Identifier: Apache-2.0
       <form class="flex items-center gap-2" @submit.prevent="openTxModalByHash($refs.headerTxHash.value)">
         <label for="header-txhash" class="sr-only">Transaction hash</label>
         <input id="header-txhash" x-ref="headerTxHash" type="text" placeholder="Tx hash (0x...)"
+               autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
                class="w-64 rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm" />
         <button type="submit" class="rounded bg-indigo-600 text-white px-2 py-1 text-xs hover:bg-indigo-500">Search</button>
       </form>
@@ -66,38 +67,38 @@ SPDX-License-Identifier: Apache-2.0
             <form class="flex flex-wrap gap-3 items-end"
                   hx-get="/blockchain_explorer/ui/blocks"
                   hx-target="#block-list"
-                  hx-push-url="true"
-                  hx-trigger="submit"
+                  hx-push-url="false"
+                  hx-trigger="load, input changed delay:2s from:.auto-search"
                   hx-sync="closest form:abort"
                   @submit="clearTxDetail()"
             >
               <label class="flex-1 text-sm">From#
                 <input name="from_block_number" type="number" min="0" placeholder="e.g. 0"
-                       value="{{ initial_block_query.from_block_number if initial_block_query and initial_block_query.from_block_number is not none }}"
-                       class="mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
+                       value="{{ (initial_block_query.from_block_number if initial_block_query and initial_block_query.from_block_number is not none else 0) }}"
+                       class="auto-search mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
               </label>
               <label class="flex-1 text-sm">To#
                 <input name="to_block_number" type="number" min="0" placeholder="e.g. 100"
-                       value="{{ initial_block_query.to_block_number if initial_block_query and initial_block_query.to_block_number is not none }}"
-                       class="mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
+                       value="{{ (initial_block_number if initial_block_number is not none else (initial_block_query.to_block_number if initial_block_query and initial_block_query.to_block_number is not none else latest_block_number)) }}"
+                       class="auto-search mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
               </label>
               <label class="w-24 text-sm">Limit
-                <input name="limit" type="number" min="1" max="1000" value="{{ initial_block_query.limit if initial_block_query and initial_block_query.limit is not none else 50 }}"
-                       class="mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
+                <input name="limit" type="number" min="1" max="1000" value="{{ initial_block_query.limit if initial_block_query and initial_block_query.limit is not none else 10 }}"
+                       class="auto-search mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
               </label>
               <label class="w-24 text-sm">Offset
                 <input name="offset" type="number" min="0" value="{{ initial_block_query.offset if initial_block_query and initial_block_query.offset is not none else 0 }}"
-                       class="mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
+                       class="auto-search mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm"/>
               </label>
               <label class="w-28 text-sm">Sort
-                <select name="sort_order" class="mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 px-2 py-1 text-sm">
+                <select name="sort_order" class="auto-search mt-1 w-full rounded border border-gray-600 bg-gray-900 text-gray-100 px-2 py-1 text-sm">
                   <option value="1" {% if initial_block_query and initial_block_query.sort_order != 0 %}selected{% endif %}>Desc</option>
                   <option value="0" {% if initial_block_query and initial_block_query.sort_order == 0 %}selected{% endif %}>Asc</option>
                 </select>
               </label>
               <label class="w-32 text-sm inline-flex items-center gap-2 mt-6">
                 <input name="has_transactions" type="checkbox" value="true" {% if initial_block_query and initial_block_query.has_transactions %}checked{% endif %}
-                       class="rounded border border-gray-600 bg-gray-900 text-indigo-500 focus:ring-indigo-500" />
+                       class="auto-search rounded border border-gray-600 bg-gray-900 text-indigo-500 focus:ring-indigo-500" />
                 <span>Txs only</span>
               </label>
               <button type="submit" class="ml-auto inline-flex items-center rounded bg-indigo-600 text-white px-3 py-1.5 text-sm hover:bg-indigo-500">Search</button>
@@ -148,6 +149,9 @@ SPDX-License-Identifier: Apache-2.0
             Alpine.store('explorer').selectedTxHash = hash;
           },
           openTxModalByHash(raw){
+            if (this.$refs.headerTxHash) {
+              this.$refs.headerTxHash.value = '';
+            }
             const hash = (raw || '').trim();
             if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) {
               const alertEl = document.getElementById('api-error-alert');
@@ -159,7 +163,6 @@ SPDX-License-Identifier: Apache-2.0
             Alpine.store('explorer').selectedTxHash = hash;
             Alpine.store('explorer').modalOpen = true;
             this.clearTxDetail();
-            try { history.pushState({}, '', `/blockchain_explorer/ui?tx_hash=${encodeURIComponent(hash)}`); } catch {}
             htmx.ajax('GET', `/blockchain_explorer/ui/tx/${hash}`, { target: '#modal-tx-detail' });
           },
         }));
@@ -167,4 +170,3 @@ SPDX-License-Identifier: Apache-2.0
     </script>
   </body>
 </html>
-

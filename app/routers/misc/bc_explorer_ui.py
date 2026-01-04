@@ -65,7 +65,7 @@ async def ui_index(
     from_block_number: Annotated[int | None, Query()] = None,
     to_block_number: Annotated[int | None, Query()] = None,
     sort_order: Annotated[int | None, Query()] = 1,
-    limit: Annotated[int | None, Query()] = 50,
+    limit: Annotated[int | None, Query()] = 10,
     offset: Annotated[int | None, Query()] = 0,
     block_number: Annotated[int | None, Query()] = None,
     tx_hash: Annotated[str | None, Query()] = None,
