@@ -26,17 +26,39 @@ SPDX-License-Identifier: Apache-2.0
     <script defer src="https://unpkg.com/alpinejs@3.15.x"></script>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="font-sans antialiased bg-gray-900 text-gray-100 p-4">
+  <body class="font-sans antialiased bg-gray-900 text-gray-100 p-4" x-data="explorerComponent()" :class="{ 'overflow-hidden': $store.explorer.modalOpen }">
     <!-- Inline error alert (hidden by default) -->
     <div id="api-error-alert" class="hidden mb-3 rounded border border-red-600 bg-red-700/40 px-3 py-2 text-sm text-red-100"></div>
 
-    <h1 class="text-xl font-semibold mb-1">ibet Blockchain Explorer</h1>
+    <div class="flex items-center justify-between mb-2">
+      <h1 class="text-xl font-semibold">ibet Blockchain Explorer</h1>
+      <!-- Header right compact search -->
+      <form class="flex items-center gap-2" @submit.prevent="openTxModalByHash($refs.headerTxHash.value)">
+        <label for="header-txhash" class="sr-only">Transaction hash</label>
+        <input id="header-txhash" x-ref="headerTxHash" type="text" placeholder="Tx hash (0x...)"
+               class="w-64 rounded border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-400 px-2 py-1 text-sm" />
+        <button type="submit" class="rounded bg-indigo-600 text-white px-2 py-1 text-xs hover:bg-indigo-500">Search</button>
+      </form>
+    </div>
+
     <!-- Latest block number display -->
     {% if latest_block_number is not none %}
     <div class="mb-4 text-sm text-gray-300">Latest synced block: <span class="inline-block rounded bg-indigo-700/60 px-2 py-0.5 font-mono">#{{ latest_block_number }}</span></div>
     {% endif %}
 
-    <div x-data="explorerComponent()" @select-block.window="handleSelectBlock($event.detail)" @select-tx.window="handleSelectTx($event.detail)">
+    <!-- Modal overlay for tx detail -->
+    <div x-cloak x-show="$store.explorer.modalOpen" x-transition.opacity class="fixed inset-0 bg-black/60 z-40" @click="$store.explorer.modalOpen=false" aria-hidden="true"></div>
+    <div x-cloak x-show="$store.explorer.modalOpen" class="fixed inset-0 z-50 flex items-start justify-center pt-10">
+      <div x-transition.scale.opacity class="w-full max-w-3xl rounded-md border border-gray-700 bg-gray-800 shadow-xl">
+        <div class="flex items-center justify-between px-3 py-2 border-b border-gray-700">
+          <div id="tx-modal-title" class="text-sm text-gray-300 truncate">Transaction detail</div>
+          <button type="button" class="text-gray-300 hover:text-white text-sm" @click="$store.explorer.modalOpen=false" aria-label="Close">✕</button>
+        </div>
+        <div id="modal-tx-detail" class="p-3 text-sm text-gray-200">Loading...</div>
+      </div>
+    </div>
+
+    <div @select-block.window="handleSelectBlock($event.detail)" @select-tx.window="handleSelectTx($event.detail)">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <section>
           <fieldset class="border border-gray-700 rounded-md p-4 bg-gray-800 shadow-sm">
@@ -111,6 +133,7 @@ SPDX-License-Identifier: Apache-2.0
         Alpine.store('explorer', {
           selectedBlockNumber: null,
           selectedTxHash: null,
+          modalOpen: false,
         });
         Alpine.data('explorerComponent', () => ({
           clearTxDetail(){
@@ -123,6 +146,21 @@ SPDX-License-Identifier: Apache-2.0
           },
           handleSelectTx(hash){
             Alpine.store('explorer').selectedTxHash = hash;
+          },
+          openTxModalByHash(raw){
+            const hash = (raw || '').trim();
+            if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) {
+              const alertEl = document.getElementById('api-error-alert');
+              alertEl.textContent = 'Invalid transaction hash format.';
+              alertEl.classList.remove('hidden');
+              setTimeout(() => alertEl.classList.add('hidden'), 3000);
+              return;
+            }
+            Alpine.store('explorer').selectedTxHash = hash;
+            Alpine.store('explorer').modalOpen = true;
+            this.clearTxDetail();
+            try { history.pushState({}, '', `/blockchain_explorer/ui?tx_hash=${encodeURIComponent(hash)}`); } catch {}
+            htmx.ajax('GET', `/blockchain_explorer/ui/tx/${hash}`, { target: '#modal-tx-detail' });
           },
         }));
       });
