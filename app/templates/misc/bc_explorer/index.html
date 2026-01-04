@@ -32,7 +32,7 @@ SPDX-License-Identifier: Apache-2.0
 
     <h1 class="text-xl font-semibold mb-4">ibet Blockchain Explorer</h1>
 
-    <div x-data="explorerComponent()" @select-block.window="handleSelectBlock($event.detail)">
+    <div x-data="explorerComponent()" @select-block.window="handleSelectBlock($event.detail)" @select-tx.window="handleSelectTx($event.detail)">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <section>
           <fieldset class="border border-gray-700 rounded-md p-4 bg-gray-800 shadow-sm">
@@ -106,6 +106,7 @@ SPDX-License-Identifier: Apache-2.0
       document.addEventListener('alpine:init', () => {
         Alpine.store('explorer', {
           selectedBlockNumber: null,
+          selectedTxHash: null,
         });
         Alpine.data('explorerComponent', () => ({
           clearTxDetail(){
@@ -115,6 +116,9 @@ SPDX-License-Identifier: Apache-2.0
             Alpine.store('explorer').selectedBlockNumber = num;
             this.clearTxDetail();
             if (this.$refs.txList) this.$refs.txList.innerHTML = 'Loading transactions...';
+          },
+          handleSelectTx(hash){
+            Alpine.store('explorer').selectedTxHash = hash;
           },
         }));
       });
