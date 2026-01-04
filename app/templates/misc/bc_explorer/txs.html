@@ -28,22 +28,33 @@ SPDX-License-Identifier: Apache-2.0
   </thead>
   <tbody>
     {% for t in txs %}
-    <tr class="border-t border-gray-700">
+    <tr class="border-t border-gray-700" data-tx-hash="{{ t.hash }}"
+        :class="{'bg-indigo-900/40': $store.explorer.selectedTxHash === '{{ t.hash }}'}">
       <td class="px-3 py-2">
         <div class="flex items-center gap-2">
           <a href="#"
              class="text-indigo-400 hover:underline"
              hx-get="/blockchain_explorer/ui/tx/{{ t.hash }}"
              hx-target="#tx-detail"
-             hx-push-url="/blockchain_explorer/ui?tx_hash={{ t.hash }}">{{ t.hash[:10] }}…{{ t.hash[-8:] }}</a>
+             hx-push-url="/blockchain_explorer/ui?tx_hash={{ t.hash }}"
+             @click.prevent="$dispatch('select-tx', '{{ t.hash }}')"
+          >{{ t.hash[:10] }}…{{ t.hash[-8:] }}</a>
           <button type="button"
                   class="px-2 py-0.5 text-xs rounded bg-gray-700 hover:bg-gray-600"
                   onclick="navigator.clipboard.writeText('{{ t.hash }}'); this.innerText='Copied'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
         </div>
       </td>
       <td class="px-3 py-2">{{ t.transaction_index }}</td>
-      <td class="px-3 py-2 text-gray-300 break-all">{{ t.from_address }}</td>
-      <td class="px-3 py-2 text-gray-300 break-all">{{ t.to_address }}</td>
+      <td class="px-3 py-2">
+        <span class="text-gray-300 break-all">
+          {% if t.from_address %}{{ t.from_address[:10] }}…{{ t.from_address[-8:] }}{% else %}-{% endif %}
+        </span>
+      </td>
+      <td class="px-3 py-2">
+        <span class="text-gray-300 break-all">
+          {% if t.to_address %}{{ t.to_address[:10] }}…{{ t.to_address[-8:] }}{% else %}-{% endif %}
+        </span>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

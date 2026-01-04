@@ -18,9 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 -->
 {% if block %}
 <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-  <dt class="text-gray-400">Number</dt><dd>{{ block.number }}</dd>
-  <dt class="text-gray-400">Hash</dt><dd class="text-gray-300 break-all">{{ block.hash }}</dd>
-  <dt class="text-gray-400">Parent</dt><dd class="text-gray-300 break-all">{{ block.parent_hash }}</dd>
+  <dt class="text-gray-400">Hash</dt><dd class="break-all">{{ block.hash }}</dd>
+  <dt class="text-gray-400">Parent</dt><dd class="break-all">{{ block.parent_hash }}</dd>
   <dt class="text-gray-400">Miner</dt><dd>{{ block.miner }}</dd>
   <dt class="text-gray-400">Gas</dt><dd>{{ block.gas_used }} / {{ block.gas_limit }}</dd>
   <dt class="text-gray-400">Size</dt><dd>{{ block.size }}</dd>
@@ -28,13 +27,15 @@ SPDX-License-Identifier: Apache-2.0
   <dd class="col-span-1">
     <ul class="list-disc ml-5 space-y-1">
       {% for txh in block.transactions %}
-      <li>
+      <li :class="{'bg-indigo-900/40': $store.explorer.selectedTxHash === '{{ txh }}'}" class="rounded px-1">
         <div class="flex items-center gap-2">
           <a href="#"
              class="text-indigo-400 hover:underline break-all"
              hx-get="/blockchain_explorer/ui/tx/{{ txh }}"
              hx-target="#tx-detail"
-             hx-push-url="true">{{ txh[:10] }}…{{ txh[-8:] }}</a>
+             hx-push-url="true"
+             @click.prevent="$dispatch('select-tx', '{{ txh }}')"
+          >{{ txh[:10] }}…{{ txh[-8:] }}</a>
           <button type="button"
                   class="px-2 py-0.5 text-xs rounded bg-gray-700 hover:bg-gray-600"
                   onclick="navigator.clipboard.writeText('{{ txh }}'); this.innerText='Copied'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
@@ -45,5 +46,5 @@ SPDX-License-Identifier: Apache-2.0
   </dd>
 </dl>
 {% else %}
-<div class="text-gray-400 text-sm">Block not found.</div>
+<div class="text-gray-400">Block not found.</div>
 {% endif %}

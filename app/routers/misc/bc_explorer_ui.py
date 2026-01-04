@@ -22,9 +22,12 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Path, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 from starlette.requests import Request
 
+import config as app_config
 from app.database import DBAsyncSession
+from app.model.db import IDXBlockDataBlockNumber
 from app.model.schema import ListBlockDataQuery, ListTxDataQuery
 from config import BC_EXPLORER_ENABLED
 
@@ -35,6 +38,22 @@ router = APIRouter(prefix="/blockchain_explorer", tags=["[misc] blockchain_explo
 templates = Jinja2Templates(directory="app/templates")
 
 
+# Helper: get latest synced block number
+async def _get_latest_block_number(db: DBAsyncSession) -> int | None:
+    idx_block_data_block_number = (
+        await db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(app_config.CHAIN_ID))
+            .limit(1)
+        )
+    ).first()
+    return (
+        idx_block_data_block_number.latest_block_number
+        if idx_block_data_block_number
+        else None
+    )
+
+
 @router.get(
     "/ui",
     summary="[ibet Blockchain Explorer] UI index",
@@ -42,10 +61,11 @@ templates = Jinja2Templates(directory="app/templates")
 )
 async def ui_index(
     request: Request,
+    db: DBAsyncSession,
     from_block_number: Annotated[int | None, Query()] = None,
     to_block_number: Annotated[int | None, Query()] = None,
     sort_order: Annotated[int | None, Query()] = 1,
-    limit: Annotated[int | None, Query()] = 50,
+    limit: Annotated[int | None, Query()] = 10,
     offset: Annotated[int | None, Query()] = 0,
     block_number: Annotated[int | None, Query()] = None,
     tx_hash: Annotated[str | None, Query()] = None,
@@ -55,10 +75,12 @@ async def ui_index(
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
+    latest_block_number = await _get_latest_block_number(db)
     return templates.TemplateResponse(
         "misc/bc_explorer/index.html",
         {
             "request": request,
+            "latest_block_number": latest_block_number,
             "initial_block_query": {
                 "from_block_number": from_block_number,
                 "to_block_number": to_block_number,
@@ -94,6 +116,7 @@ async def ui_blocks(
             "misc/bc_explorer/index.html",
             {
                 "request": request,
+                "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {
                     "from_block_number": get_query.from_block_number,
                     "to_block_number": get_query.to_block_number,
@@ -143,6 +166,7 @@ async def ui_block_detail(
             "misc/bc_explorer/index.html",
             {
                 "request": request,
+                "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {},
                 "initial_block_number": block_number,
                 "initial_tx_hash": None,
@@ -176,6 +200,7 @@ async def ui_txs(
             "misc/bc_explorer/index.html",
             {
                 "request": request,
+                "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {},
                 "initial_block_number": get_query.block_number,
                 "initial_tx_hash": None,
@@ -218,6 +243,7 @@ async def ui_tx_detail(
             "misc/bc_explorer/index.html",
             {
                 "request": request,
+                "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {},
                 "initial_block_number": None,
                 "initial_tx_hash": hash,
