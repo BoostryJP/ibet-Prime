@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
+import logging
 
 import uvloop
 from sqlalchemy import delete, select
@@ -50,7 +51,7 @@ Processor for block synchronization monitoring for ibet node.
 """
 
 process_name = "PROCESSOR-Monitor-Block-Sync-ibet"
-LOG = batch_log.get_logger(process_name=process_name)
+LOG = batch_log.get_logger(process_name=process_name, level=logging.DEBUG)
 
 
 class RingBuffer:

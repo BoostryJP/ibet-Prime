@@ -21,8 +21,9 @@ import logging
 import sys
 
 
-def get_logger(process_name: str = None):
-    LOG = logging.getLogger("background")
+def get_logger(process_name: str = None, level: int = logging.INFO):
+    logger_name = f"background.{process_name}" if process_name else "background"
+    LOG = logging.getLogger(logger_name)
     LOG.propagate = False
 
     logging.getLogger("pyroscope").setLevel(logging.ERROR)
@@ -33,10 +34,11 @@ def get_logger(process_name: str = None):
         f"[%(asctime)s] [{process_name}] [%(process)d] [%(levelname)s] %(message)s"
     )
     TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %z"
-    stream_handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(LOG_FORMAT, TIMESTAMP_FORMAT)
-    stream_handler.setFormatter(formatter)
-    LOG.addHandler(stream_handler)
-    LOG.setLevel(logging.INFO)
+    if not LOG.handlers:
+        stream_handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(LOG_FORMAT, TIMESTAMP_FORMAT)
+        stream_handler.setFormatter(formatter)
+        LOG.addHandler(stream_handler)
+    LOG.setLevel(level)
 
     return LOG
