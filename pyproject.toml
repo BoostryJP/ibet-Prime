@@ -41,7 +41,6 @@ dev = [
     "pyyaml<7.0,>=6.0",
     "pre-commit<5.0.0,>=4.1.0",
     "ruff<1.0.0,>=0.5.4",
-    "textual-dev<2.0.0,>=1.2.1",
     "pytest-alembic<1.0.0,>=0.10.7",
     "pytest-freezer<1.0.0,>=0.4.8",
     "pytest-asyncio<0.26.0,>=0.25.0",
