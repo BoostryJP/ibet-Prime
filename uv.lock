@@ -1831,32 +1831,11 @@ wheels = [
 
 [[package]]
 name = "ruamel-yaml"
-version = "0.18.15"
+version = "0.19.1"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "ruamel-yaml-clib", marker = "platform_python_implementation == 'CPython'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3e/db/f3950f5e5031b618aae9f423a39bf81a55c148aecd15a34527898e752cf4/ruamel.yaml-0.18.15.tar.gz", hash = "sha256:dbfca74b018c4c3fba0b9cc9ee33e53c371194a9000e694995e620490fd40700", size = 146865, upload-time = "2025-08-19T11:15:10.694Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/3b/ebda527b56beb90cb7652cb1c7e4f91f48649fbcd8d2eb2fb6e77cd3329b/ruamel_yaml-0.19.1.tar.gz", hash = "sha256:53eb66cd27849eff968ebf8f0bf61f46cdac2da1d1f3576dd4ccee9b25c31993", size = 142709, upload-time = "2026-01-02T16:50:31.84Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/e5/f2a0621f1781b76a38194acae72f01e37b1941470407345b6e8653ad7640/ruamel.yaml-0.18.15-py3-none-any.whl", hash = "sha256:148f6488d698b7a5eded5ea793a025308b25eca97208181b6a026037f391f701", size = 119702, upload-time = "2025-08-19T11:15:07.696Z" },
-]
-
-[[package]]
-name = "ruamel-yaml-clib"
-version = "0.2.14"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d8/e9/39ec4d4b3f91188fad1842748f67d4e749c77c37e353c4e545052ee8e893/ruamel.yaml.clib-0.2.14.tar.gz", hash = "sha256:803f5044b13602d58ea378576dd75aa759f52116a0232608e8fdada4da33752e", size = 225394, upload-time = "2025-09-22T19:51:23.753Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d7/ae/e3811f05415594025e96000349d3400978adaed88d8f98d494352d9761ee/ruamel.yaml.clib-0.2.14-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:7e4f9da7e7549946e02a6122dcad00b7c1168513acb1f8a726b1aaf504a99d32", size = 269205, upload-time = "2025-09-23T14:24:15.06Z" },
-    { url = "https://files.pythonhosted.org/packages/72/06/7d51f4688d6d72bb72fa74254e1593c4f5ebd0036be5b41fe39315b275e9/ruamel.yaml.clib-0.2.14-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:dd7546c851e59c06197a7c651335755e74aa383a835878ca86d2c650c07a2f85", size = 137417, upload-time = "2025-09-22T19:50:59.82Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/08/b4499234a420ef42960eeb05585df5cc7eb25ccb8c980490b079e6367050/ruamel.yaml.clib-0.2.14-cp313-cp313-manylinux2014_aarch64.whl", hash = "sha256:1c1acc3a0209ea9042cc3cfc0790edd2eddd431a2ec3f8283d081e4d5018571e", size = 642558, upload-time = "2025-09-22T19:51:03.388Z" },
-    { url = "https://files.pythonhosted.org/packages/b6/ba/1975a27dedf1c4c33306ee67c948121be8710b19387aada29e2f139c43ee/ruamel.yaml.clib-0.2.14-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2070bf0ad1540d5c77a664de07ebcc45eebd1ddcab71a7a06f26936920692beb", size = 744087, upload-time = "2025-09-22T19:51:00.897Z" },
-    { url = "https://files.pythonhosted.org/packages/20/15/8a19a13d27f3bd09fa18813add8380a29115a47b553845f08802959acbce/ruamel.yaml.clib-0.2.14-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9bd8fe07f49c170e09d76773fb86ad9135e0beee44f36e1576a201b0676d3d1d", size = 699709, upload-time = "2025-09-22T19:51:02.075Z" },
-    { url = "https://files.pythonhosted.org/packages/19/ee/8d6146a079ad21e534b5083c9ee4a4c8bec42f79cf87594b60978286b39a/ruamel.yaml.clib-0.2.14-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ff86876889ea478b1381089e55cf9e345707b312beda4986f823e1d95e8c0f59", size = 708926, upload-time = "2025-09-23T18:42:51.707Z" },
-    { url = "https://files.pythonhosted.org/packages/a9/f5/426b714abdc222392e68f3b8ad323930d05a214a27c7e7a0f06c69126401/ruamel.yaml.clib-0.2.14-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:1f118b707eece8cf84ecbc3e3ec94d9db879d85ed608f95870d39b2d2efa5dca", size = 740202, upload-time = "2025-09-22T19:51:04.673Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/ac/3c5c2b27a183f4fda8a57c82211721c016bcb689a4a175865f7646db9f94/ruamel.yaml.clib-0.2.14-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:b30110b29484adc597df6bd92a37b90e63a8c152ca8136aad100a02f8ba6d1b6", size = 765196, upload-time = "2025-09-22T19:51:05.916Z" },
-    { url = "https://files.pythonhosted.org/packages/92/2e/06f56a71fd55021c993ed6e848c9b2e5e9cfce180a42179f0ddd28253f7c/ruamel.yaml.clib-0.2.14-cp313-cp313-win32.whl", hash = "sha256:f4e97a1cf0b7a30af9e1d9dad10a5671157b9acee790d9e26996391f49b965a2", size = 98635, upload-time = "2025-09-22T19:51:08.183Z" },
-    { url = "https://files.pythonhosted.org/packages/51/79/76aba16a1689b50528224b182f71097ece338e7a4ab55e84c2e73443b78a/ruamel.yaml.clib-0.2.14-cp313-cp313-win_amd64.whl", hash = "sha256:090782b5fb9d98df96509eecdbcaffd037d47389a89492320280d52f91330d78", size = 115238, upload-time = "2025-09-22T19:51:07.081Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl", hash = "sha256:27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93", size = 118102, upload-time = "2026-01-02T16:50:29.201Z" },
 ]
 
 [[package]]
