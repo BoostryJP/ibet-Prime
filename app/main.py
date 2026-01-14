@@ -62,6 +62,7 @@ from app.routers.misc import (
     settlement_agent,
 )
 from app.utils import o11y_utils
+from app.utils.cache_control import CacheControlMiddleware
 from app.utils.docs_utils import custom_openapi
 from config import (
     BC_EXPLORER_ENABLED,
@@ -149,6 +150,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     lifespan=lifespan,
 )
+app.add_middleware(CacheControlMiddleware)
 
 
 @app.middleware("http")
