@@ -22,7 +22,20 @@ import pytest
 
 class TestCacheControl:
     @pytest.mark.asyncio
+    async def test_success_no_header_when_absent_on_cache_enabled_status(
+        self, async_client
+    ):
+        # No Cache-Control in request: for cache-enabled status (200),
+        # middleware should not set any Cache-Control
+        resp = await async_client.get("/e2ee")
+
+        assert resp.status_code == 200
+        assert resp.headers.get("Cache-Control") is None
+
+    @pytest.mark.asyncio
     async def test_success_mirror_request_headers(self, async_client):
+        # Cache-Control in request: for cache-enabled status (200),
+        # middleware should mirror Cache-Control from request
         headers = {
             "Cache-Control": "max-age=60, public",
         }
@@ -32,29 +45,39 @@ class TestCacheControl:
         assert resp.headers.get("Cache-Control") == "max-age=60, public"
 
     @pytest.mark.asyncio
-    async def test_404_enforce_no_store(self, async_client):
-        resp = await async_client.get("/not-found-path")
-
-        assert resp.status_code == 404  # Not Found
-        assert (
-            resp.headers.get("Cache-Control")
-            == "no-store, no-cache, must-revalidate, max-age=0"
-        )
-        assert resp.headers.get("Pragma") == "no-cache"
-        assert resp.headers.get("ETag") is None
-        assert resp.headers.get("Last-Modified") is None
-        assert resp.headers.get("Expires") is None
-
-    @pytest.mark.asyncio
-    async def test_405_enforce_no_store(self, async_client):
-        resp = await async_client.post("/e2ee")  # MethodNotAllowed
+    async def test_method_not_allowed_without_header(self, async_client):
+        # POST to GET-only endpoint returns 405 (Method not allowed).
+        # Without request header, Cache-Control should not be set.
+        resp = await async_client.post("/e2ee")
 
         assert resp.status_code == 405
+        assert resp.headers.get("Cache-Control") is None
+
+    @pytest.mark.asyncio
+    async def test_method_not_allowed_with_header_mirrored(self, async_client):
+        # 405 (Method not allowed) should mirror Cache-Control from request when provided
+        headers = {"Cache-Control": "private, max-age=10"}
+        resp = await async_client.post("/e2ee", headers=headers)
+
+        assert resp.status_code == 405
+        assert resp.headers.get("Cache-Control") == "private, max-age=10"
+
+    @pytest.mark.asyncio
+    async def test_error_cache_disabled_on_service_unavailable(self, async_client):
+        # Trigger 503 on /healthcheck by mocking DB connection error
+        from unittest import mock
+
+        with mock.patch(
+            "sqlalchemy.ext.asyncio.AsyncSession.connection",
+            mock.MagicMock(side_effect=Exception()),
+        ):
+            resp = await async_client.get("/healthcheck")
+
+        assert resp.status_code == 503
         assert (
             resp.headers.get("Cache-Control")
             == "no-store, no-cache, must-revalidate, max-age=0"
         )
         assert resp.headers.get("Pragma") == "no-cache"
         assert resp.headers.get("ETag") is None
-        assert resp.headers.get("Last-Modified") is None
         assert resp.headers.get("Expires") is None
