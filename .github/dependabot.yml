@@ -7,26 +7,45 @@ updates:
       day: "monday"
       time: "00:00"
     allow:
-    - dependency-name: "*"
-      dependency-type: "direct"
+      - dependency-name: "*"
+        dependency-type: "direct"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     allow:
-    - dependency-name: "*"
-      dependency-type: "direct"
+      - dependency-name: "*"
+        dependency-type: "direct"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: docker-compose
     directory: "/"
     schedule:
       interval: "monthly"
     ignore:
-    - dependency-name: "*"
-      update-types: ["version-update:semver-major"]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
     allow:
-    - dependency-name: "*"
-      dependency-type: "direct"
+      - dependency-name: "*"
+        dependency-type: "direct"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
