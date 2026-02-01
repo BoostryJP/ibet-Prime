@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 from typing import Annotated
 
 from fastapi import Depends
@@ -97,7 +98,10 @@ async def db_async_session():
     try:
         yield db
     finally:
-        await db.close()
+        try:
+            await asyncio.shield(db.close())
+        except asyncio.CancelledError:
+            raise
 
 
 DBSession = Annotated[Session, Depends(db_session)]
