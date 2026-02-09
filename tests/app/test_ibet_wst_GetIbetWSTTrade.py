@@ -60,7 +60,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -95,7 +95,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }

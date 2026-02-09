@@ -1006,7 +1006,7 @@ async def list_ibet_wst_trades(
             "seller_sc_account_address": trade.seller_sc_account_address,
             "buyer_sc_account_address": trade.buyer_sc_account_address,
             "st_value": trade.st_value,
-            "sc_value": trade.sc_value,
+            "sc_value": str(int(trade.sc_value)),
             "state": trade.state,
             "memo": trade.memo,
         }
@@ -1068,7 +1068,7 @@ async def get_ibet_wst_trade(
         "seller_sc_account_address": trade.seller_sc_account_address,
         "buyer_sc_account_address": trade.buyer_sc_account_address,
         "st_value": trade.st_value,
-        "sc_value": trade.sc_value,
+        "sc_value": str(trade.sc_value),
         "state": trade.state,
         "memo": trade.memo,
     }
