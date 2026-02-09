@@ -17,10 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from decimal import Decimal
 from enum import IntEnum, StrEnum
 from typing import Literal, TypedDict
 
-from sqlalchemy import JSON, BigInteger, Boolean, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Boolean, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -380,7 +381,8 @@ class IDXEthIbetWSTTrade(Base):
     # IbetWST trade amount
     st_value: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # StableCoin trade amount
-    sc_value: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # NOTE: On-chain this is handled as uint256, so it supports up to 78 decimal digits.
+    sc_value: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False)
     # Trade state
     state: Mapped[IDXEthIbetWSTTradeState] = mapped_column(
         String(20), nullable=False, index=True

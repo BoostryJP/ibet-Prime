@@ -63,7 +63,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -76,7 +76,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,
             "buyer_sc_account_address": self.user_address_1,
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",
             "memo": "test2",
         }
@@ -89,7 +89,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test3",
         }
@@ -115,7 +115,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_1,
                     "buyer_sc_account_address": self.user_address_2,
                     "st_value": 1000,
-                    "sc_value": 2000,
+                    "sc_value": "2000",
                     "state": "Pending",
                     "memo": "test1",
                 },
@@ -127,7 +127,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_2,
                     "buyer_sc_account_address": self.user_address_1,
                     "st_value": 3000,
-                    "sc_value": 4000,
+                    "sc_value": "4000",
                     "state": "Executed",
                     "memo": "test2",
                 },
@@ -147,7 +147,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -160,7 +160,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,
             "buyer_sc_account_address": self.user_address_1,
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",
             "memo": "test2",
         }
@@ -186,7 +186,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_1,
                     "buyer_sc_account_address": self.user_address_2,
                     "st_value": 1000,
-                    "sc_value": 2000,
+                    "sc_value": "2000",
                     "state": "Pending",
                     "memo": "test1",
                 }
@@ -206,7 +206,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -219,7 +219,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,
             "buyer_sc_account_address": self.user_address_1,
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",
             "memo": "test2",
         }
@@ -245,7 +245,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_1,
                     "buyer_sc_account_address": self.user_address_2,
                     "st_value": 1000,
-                    "sc_value": 2000,
+                    "sc_value": "2000",
                     "state": "Pending",
                     "memo": "test1",
                 }
@@ -265,7 +265,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -278,7 +278,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,
             "buyer_sc_account_address": self.user_address_1,
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",
             "memo": "test2",
         }
@@ -304,7 +304,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_1,
                     "buyer_sc_account_address": self.user_address_2,
                     "st_value": 1000,
-                    "sc_value": 2000,
+                    "sc_value": "2000",
                     "state": "Pending",
                     "memo": "test1",
                 }
@@ -324,7 +324,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -337,7 +337,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,  # Different address (not targeted)
             "buyer_sc_account_address": self.user_address_1,
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",
             "memo": "test2",
         }
@@ -363,7 +363,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_1,
                     "buyer_sc_account_address": self.user_address_2,
                     "st_value": 1000,
-                    "sc_value": 2000,
+                    "sc_value": "2000",
                     "state": "Pending",
                     "memo": "test1",
                 }
@@ -383,7 +383,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -396,7 +396,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,
             "buyer_sc_account_address": self.user_address_1,  # Different address (not targeted)
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",
             "memo": "test2",
         }
@@ -422,7 +422,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_1,
                     "buyer_sc_account_address": self.user_address_2,
                     "st_value": 1000,
-                    "sc_value": 2000,
+                    "sc_value": "2000",
                     "state": "Pending",
                     "memo": "test1",
                 }
@@ -442,7 +442,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -455,7 +455,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,
             "buyer_sc_account_address": self.user_address_1,
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",  # Different state (not targeted)
             "memo": "test2",
         }
@@ -481,7 +481,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_1,
                     "buyer_sc_account_address": self.user_address_2,
                     "st_value": 1000,
-                    "sc_value": 2000,
+                    "sc_value": "2000",
                     "state": "Pending",
                     "memo": "test1",
                 }
@@ -501,7 +501,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_1,
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": "2000",
             "state": "Pending",
             "memo": "test1",
         }
@@ -514,7 +514,7 @@ class TestListIbetWSTTrades:
             "seller_sc_account_address": self.user_address_2,
             "buyer_sc_account_address": self.user_address_1,
             "st_value": 3000,
-            "sc_value": 4000,
+            "sc_value": "4000",
             "state": "Executed",
             "memo": "test2",
         }
@@ -554,7 +554,7 @@ class TestListIbetWSTTrades:
                     "seller_sc_account_address": self.user_address_2,
                     "buyer_sc_account_address": self.user_address_1,
                     "st_value": 3000,
-                    "sc_value": 4000,
+                    "sc_value": "4000",
                     "state": "Executed",
                     "memo": "test2",
                 },
