@@ -28,7 +28,7 @@ dependencies = [
     "uvloop~=0.22.1",
     "memray<2.0.0,>=1.14.0",
     "py-spy>=0.4.0",
-    "typer~=0.21.1",
+    "typer~=0.23.0",
     "asyncpg~=0.31.0",
     "python-dotenv>=1.1.1",
 ]
