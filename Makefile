@@ -25,4 +25,4 @@ test_migrations:
 	uv run pytest -vv --test-alembic -m "alembic"
 
 run:
-	uv run gunicorn --worker-class server.AppWorker app.main:app
+	uv run gunicorn --worker-class server.AppUvicornWorker app.main:app

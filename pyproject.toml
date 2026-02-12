@@ -25,6 +25,7 @@ dependencies = [
     "web3==7.8.0",
     "httpx<1.0.0,>=0.27.0",
     "sqlalchemy[asyncio]<3.0.0,>=2.0.40",
+    "uvicorn[standard]~=0.40.0",
     "uvloop~=0.22.1",
     "memray<2.0.0,>=1.14.0",
     "py-spy>=0.4.0",

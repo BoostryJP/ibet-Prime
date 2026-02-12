@@ -44,7 +44,7 @@ function start () {
   KEEP_ALIVE=${KEEP_ALIVE:-2}
   WORKER_CONNECTIONS=${WORKER_CONNECTIONS:-100}
 
-  python run.py --worker-class server.AppWorker \
+  python run.py --worker-class server.AppUvicornWorker \
                 --workers ${WORKER_COUNT} \
                 --bind :5000 \
                 --timeout ${WORKER_TIMEOUT} \

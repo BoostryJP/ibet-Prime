@@ -7,6 +7,8 @@ services:
       - POSTGRES_USER=apluser
       - POSTGRES_PASSWORD=apluserpass
       - POSTGRES_DB=apldb
+    tmpfs:
+      - /var/lib/postgresql/data
   ibet-hardhat-network:
     build:
       context: ./
