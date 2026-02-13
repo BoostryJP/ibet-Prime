@@ -42,7 +42,6 @@ function start () {
   WORKER_MAX_REQUESTS=${WORKER_MAX_REQUESTS:-500}
   WORKER_MAX_REQUESTS_JITTER=${WORKER_MAX_REQUESTS_JITTER:-200}
   KEEP_ALIVE=${KEEP_ALIVE:-2}
-  WORKER_CONNECTIONS=${WORKER_CONNECTIONS:-100}
 
   python run.py --worker-class server.AppUvicornWorker \
                 --workers ${WORKER_COUNT} \
@@ -52,7 +51,6 @@ function start () {
                 --max-requests-jitter ${WORKER_MAX_REQUESTS_JITTER} \
                 --keep-alive ${KEEP_ALIVE} \
                 --limit-request-line 0 \
-                --worker-connections ${WORKER_CONNECTIONS} \
                 app.main:app
 }
 
