@@ -15992,12 +15992,11 @@ components:
           title: St Value
           description: Value of IbetWST to trade
         sc_value:
-          type: integer
+          type: string
           title: Sc Value
           description: Value of SC token to trade
         display_sc_value:
           type: string
-          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
           title: Display Sc Value
           description: Value of SC token to trade (decimals considered)
         sc_decimals:

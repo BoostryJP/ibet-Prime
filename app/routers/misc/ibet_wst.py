@@ -19,7 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import datetime
-from decimal import Decimal
 from typing import Annotated, Sequence
 
 import pytz
@@ -363,23 +362,8 @@ async def list_ibet_wst_transactions(
     # Response
     tx_list = []
     for wst_tx in wst_txs:
-        # Set event_log
-        event_log = wst_tx.event_log
-        if event_log is not None:
-            if wst_tx.tx_type in [
-                IbetWSTTxType.REQUEST_TRADE,
-                IbetWSTTxType.CANCEL_TRADE,
-                IbetWSTTxType.ACCEPT_TRADE,
-                IbetWSTTxType.REJECT_TRADE,
-            ]:
-                # For trade-related transactions, set additional event_log fields
-                sc_value = wst_tx.event_log.get("sc_value", 0)
-                sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
-                event_log["sc_value"] = sc_value
-                event_log["sc_decimals"] = sc_decimals
-                event_log["display_sc_value"] = str(
-                    Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
-                )
+        # Set event_log (sanitize + sc_value is always string for trade-related tx)
+        event_log = _build_event_log_for_response(wst_tx)
 
         # Set created datetime
         _created_datetime = (
@@ -444,23 +428,8 @@ async def get_ibet_wst_transaction(
     if wst_tx is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    # Set event_log
-    event_log = wst_tx.event_log
-    if event_log is not None:
-        if wst_tx.tx_type in [
-            IbetWSTTxType.REQUEST_TRADE,
-            IbetWSTTxType.CANCEL_TRADE,
-            IbetWSTTxType.ACCEPT_TRADE,
-            IbetWSTTxType.REJECT_TRADE,
-        ]:
-            # For trade-related transactions, set additional event_log fields
-            sc_value = wst_tx.event_log.get("sc_value", 0)
-            sc_decimals = wst_tx.event_log.get("sc_decimals", 6)
-            event_log["sc_value"] = sc_value
-            event_log["sc_decimals"] = sc_decimals
-            event_log["display_sc_value"] = str(
-                Decimal(str(sc_value)) / Decimal(str(10**sc_decimals))
-            )
+    # Set event_log (sanitize + sc_value is always string for trade-related tx)
+    event_log = _build_event_log_for_response(wst_tx)
 
     # Set created datetime
     _created_datetime = (
@@ -479,7 +448,7 @@ async def get_ibet_wst_transaction(
         "tx_hash": wst_tx.tx_hash,
         "block_number": wst_tx.block_number,
         "finalized": wst_tx.finalized,
-        "event_log": wst_tx.event_log,
+        "event_log": event_log,
         "created": _created_datetime,
     }
     return json_response(resp)
@@ -1145,3 +1114,45 @@ def get_client_ip(request: Request):
     else:
         client_ip = request.client.host
     return client_ip
+
+
+def _build_event_log_for_response(wst_tx: EthIbetWSTTx):
+    """DBのevent_logをAPIレスポンス用に整形し、巨大整数は文字列化して返す。"""
+
+    event_log = wst_tx.event_log
+    if event_log is None:
+        return None
+
+    event_log = dict(event_log)
+
+    if wst_tx.tx_type in [
+        IbetWSTTxType.REQUEST_TRADE,
+        IbetWSTTxType.CANCEL_TRADE,
+        IbetWSTTxType.ACCEPT_TRADE,
+        IbetWSTTxType.REJECT_TRADE,
+    ]:
+        sc_value_raw = event_log.get("sc_value", 0)
+        sc_decimals = event_log.get("sc_decimals", 6)
+
+        try:
+            sc_value_str = str(int(sc_value_raw))
+        except Exception:
+            sc_value_str = "0"
+        event_log["sc_value"] = sc_value_str
+        sc_value_for_calc = int(sc_value_str)
+
+        sc_decimals_int = int(sc_decimals)
+        event_log["sc_decimals"] = sc_decimals_int
+
+        # sc_decimals桁の固定小数表記で返す
+        if sc_decimals_int > 0:
+            scale = 10**sc_decimals_int
+            int_part = sc_value_for_calc // scale
+            frac_part = sc_value_for_calc % scale
+            event_log["display_sc_value"] = (
+                f"{int_part}.{frac_part:0{sc_decimals_int}d}"
+            )
+        else:
+            event_log["display_sc_value"] = str(sc_value_for_calc)
+
+    return event_log

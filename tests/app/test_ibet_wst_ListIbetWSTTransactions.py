@@ -24,6 +24,7 @@ import pytest
 
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTAuthorization,
     IbetWSTEventLogTradeRequested,
     IbetWSTEventLogTransfer,
     IbetWSTTxParamsMint,
@@ -50,6 +51,13 @@ class TestListIbetWSTTransactions:
     wst_token_address_1 = "0x1234567890AbcdEF1234567890aBcdef12345678"
     wst_token_address_2 = "0x234567890abCDEf1234567890aBCdEf123456789"
 
+    dummy_authorization: IbetWSTAuthorization = {
+        "nonce": "0x01",
+        "v": 27,
+        "r": "0x" + "00" * 32,
+        "s": "0x" + "00" * 32,
+    }
+
     ###########################################################################
     # Normal
     ###########################################################################
@@ -74,7 +82,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -129,7 +137,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -156,7 +164,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_2["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -243,7 +251,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -304,8 +312,8 @@ class TestListIbetWSTTransactions:
                             "seller_sc_account_address": "0x1234567890AbcdEF1234567890aBcdef12345678",
                             "buyer_sc_account_address": "0x234567890abCDEf1234567890aBCdEf123456789",
                             "st_value": 100,
-                            "sc_value": 1234567890,
-                            "display_sc_value": "12.3456789",  # Calculated from sc_value and sc_decimals
+                            "sc_value": "1234567890",
+                            "display_sc_value": "12.34567890",  # Calculated from sc_value and sc_decimals
                             "sc_decimals": 8,
                         },
                         "created": "2025-01-02T12:04:05+09:00",
@@ -313,6 +321,67 @@ class TestListIbetWSTTransactions:
                 ],
             }
         )
+
+    # <Normal_2_3>
+    # Return transactions for the specified address
+    # - If sc_value exceeds signed 64-bit, it is returned as string to avoid orjson overflow
+    async def test_normal_2_3(self, async_db, async_client):
+        # Prepare data
+        tx_id_1 = str(uuid.uuid4())
+        tx_1 = EthIbetWSTTx()
+        tx_1.tx_id = tx_id_1
+        tx_1.tx_type = IbetWSTTxType.REQUEST_TRADE
+        tx_1.version = IbetWSTVersion.V_1
+        tx_1.status = IbetWSTTxStatus.SUCCEEDED
+        tx_1.ibet_wst_address = self.wst_token_address_1
+        tx_1.tx_params = IbetWSTTxParamsRequestTrade(
+            seller_st_account="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_st_account="0x234567890abCDEf1234567890aBCdEf123456789",
+            sc_token_address="0x34567890abCdEF1234567890abcDeF1234567890",
+            st_value=100,
+            sc_value=1,
+            memo="Test trade request (big sc_value in event_log)",
+        )
+        tx_1.tx_sender = self.tx_sender["address"]
+        tx_1.authorizer = self.authorizer_1["address"]
+        tx_1.authorization = self.dummy_authorization
+        tx_1.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_1.block_number = 12345678
+        tx_1.finalized = True
+
+        big_sc_value = 2**63
+        tx_1.event_log = IbetWSTEventLogTradeRequested(
+            index=111,
+            seller_st_account_address="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_st_account_address="0x234567890abCDEf1234567890aBCdEf123456789",
+            sc_token_address="0x34567890abCdEF1234567890abcDeF1234567890",
+            seller_sc_account_address="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_sc_account_address="0x234567890abCDEf1234567890aBCdEf123456789",
+            st_value=100,
+            sc_value=big_sc_value,
+            sc_decimals=8,
+        )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
+        async_db.add(tx_1)
+
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "ibet_wst_address": self.wst_token_address_1,
+            },
+        )
+
+        # Check response
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["result_set"]["count"] == 1
+        assert body["transactions"][0]["tx_id"] == tx_id_1
+        assert body["transactions"][0]["event_log"]["sc_value"] == str(big_sc_value)
 
     # <Normal_3_1>
     # Filter by tx_id
@@ -334,7 +403,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -361,7 +430,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_2["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -433,7 +502,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -460,7 +529,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_2["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -532,7 +601,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -559,7 +628,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_2["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -631,7 +700,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -658,7 +727,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_2["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -730,7 +799,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -757,7 +826,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_2["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -826,7 +895,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -856,7 +925,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_1["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -886,7 +955,7 @@ class TestListIbetWSTTransactions:
         )
         tx_3.tx_sender = self.tx_sender["address"]
         tx_3.authorizer = self.authorizer_1["address"]
-        tx_3.authorization = {}
+        tx_3.authorization = self.dummy_authorization
         tx_3.tx_hash = (
             "0x34567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -959,7 +1028,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -989,7 +1058,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_1["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -1065,7 +1134,7 @@ class TestListIbetWSTTransactions:
         )
         tx_1.tx_sender = self.tx_sender["address"]
         tx_1.authorizer = self.authorizer_1["address"]
-        tx_1.authorization = {}
+        tx_1.authorization = self.dummy_authorization
         tx_1.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -1092,7 +1161,7 @@ class TestListIbetWSTTransactions:
         )
         tx_2.tx_sender = self.tx_sender["address"]
         tx_2.authorizer = self.authorizer_2["address"]
-        tx_2.authorization = {}
+        tx_2.authorization = self.dummy_authorization
         tx_2.tx_hash = (
             "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )

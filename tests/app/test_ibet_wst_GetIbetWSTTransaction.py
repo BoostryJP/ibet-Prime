@@ -19,11 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 
 import datetime
 import uuid
+from decimal import Decimal
 
 import pytest
 
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTAuthorization,
     IbetWSTEventLogMint,
     IbetWSTEventLogTradeRequested,
     IbetWSTTxParamsMint,
@@ -43,6 +45,13 @@ class TestGetIbetWSTTransaction:
     authorizer = default_eth_account("user1")
     tx_sender = default_eth_account("user2")
     user1 = default_eth_account("user3")
+
+    dummy_authorization: IbetWSTAuthorization = {
+        "nonce": "0x01",
+        "v": 27,
+        "r": "0x" + "00" * 32,
+        "s": "0x" + "00" * 32,
+    }
 
     ###########################################################################
     # Normal
@@ -65,7 +74,7 @@ class TestGetIbetWSTTransaction:
         )
         tx.tx_sender = self.tx_sender["address"]
         tx.authorizer = self.authorizer["address"]
-        tx.authorization = {}
+        tx.authorization = self.dummy_authorization
         tx.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -124,7 +133,7 @@ class TestGetIbetWSTTransaction:
         )
         tx.tx_sender = self.tx_sender["address"]
         tx.authorizer = self.authorizer["address"]
-        tx.authorization = {}
+        tx.authorization = self.dummy_authorization
         tx.tx_hash = (
             "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         )
@@ -171,12 +180,85 @@ class TestGetIbetWSTTransaction:
                     "seller_sc_account_address": "0x1234567890AbcdEF1234567890aBcdef12345678",
                     "buyer_sc_account_address": "0x234567890abCDEf1234567890aBCdEf123456789",
                     "st_value": 100,
-                    "sc_value": 1234567890,
-                    "display_sc_value": "12.3456789",  # Calculated from sc_value and sc_decimals
+                    "sc_value": "1234567890",
+                    "display_sc_value": "12.34567890",  # Calculated from sc_value and sc_decimals
                     "sc_decimals": 8,
                 },
                 "created": "2025-01-02T12:04:05+09:00",
             }
+        )
+
+        # Confirm that display_sc_value can be converted to decimal
+        body = resp.json()
+        assert Decimal(body["event_log"]["display_sc_value"]) == Decimal("12.34567890")
+
+    # <Normal_1_3>
+    # Return transaction details
+    # - If sc_value exceeds signed 64-bit, it is returned as string to avoid orjson overflow
+    async def test_normal_1_3(self, async_db, async_client):
+        # Prepare data
+        tx_id = str(uuid.uuid4())
+        tx = EthIbetWSTTx()
+        tx.tx_id = tx_id
+        tx.tx_type = IbetWSTTxType.REQUEST_TRADE
+        tx.version = IbetWSTVersion.V_1
+        tx.status = IbetWSTTxStatus.SUCCEEDED
+        tx.ibet_wst_address = "0x1234567890abcdef1234567890abcdef12345678"
+
+        # uint256 の最大値
+        big_sc_value = 2**256 - 1
+
+        tx.tx_params = IbetWSTTxParamsRequestTrade(
+            seller_st_account="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_st_account="0x234567890abCDEf1234567890aBCdEf123456789",
+            sc_token_address="0x34567890abCdEF1234567890abcDeF1234567890",
+            st_value=100,
+            sc_value=1,  # tx_params はスキーマ上 PositiveInt のため通常値
+            memo="Test trade request (big sc_value in event_log)",
+        )
+        tx.tx_sender = self.tx_sender["address"]
+        tx.authorizer = self.authorizer["address"]
+        tx.authorization = self.dummy_authorization
+        tx.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx.block_number = 12345678
+        tx.finalized = True
+        tx.event_log = IbetWSTEventLogTradeRequested(
+            index=111,
+            seller_st_account_address="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_st_account_address="0x234567890abCDEf1234567890aBCdEf123456789",
+            sc_token_address="0x34567890abCdEF1234567890abcDeF1234567890",
+            seller_sc_account_address="0x1234567890AbcdEF1234567890aBcdef12345678",
+            buyer_sc_account_address="0x234567890abCDEf1234567890aBCdEf123456789",
+            st_value=100,
+            sc_value=big_sc_value,
+            sc_decimals=8,
+        )
+        tx.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
+        async_db.add(tx)
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(self.api_url.format(tx_id=tx_id))
+
+        # Check response
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["tx_id"] == tx_id
+        assert body["tx_type"] == IbetWSTTxType.REQUEST_TRADE
+        assert body["event_log"]["sc_value"] == str(big_sc_value)
+
+        # Confirm that display_sc_value can be converted to decimal
+        # uint256 max / 10**8
+        sc_decimals = 8
+        scale = 10**sc_decimals
+        expected_display_str = (
+            f"{big_sc_value // scale}.{big_sc_value % scale:0{sc_decimals}d}"
+        )
+        assert body["event_log"]["display_sc_value"] == expected_display_str
+        assert Decimal(body["event_log"]["display_sc_value"]) == Decimal(
+            expected_display_str
         )
 
     ###########################################################################
