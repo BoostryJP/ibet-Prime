@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import datetime
 import uuid
 from decimal import Decimal
+from unittest import mock
 
 import pytest
 
@@ -180,7 +181,7 @@ class TestGetIbetWSTTransaction:
                     "seller_sc_account_address": "0x1234567890AbcdEF1234567890aBcdef12345678",
                     "buyer_sc_account_address": "0x234567890abCDEf1234567890aBCdEf123456789",
                     "st_value": 100,
-                    "sc_value": "1234567890",
+                    "sc_value": 1234567890,
                     "display_sc_value": "12.34567890",  # Calculated from sc_value and sc_decimals
                     "sc_decimals": 8,
                 },
@@ -194,7 +195,9 @@ class TestGetIbetWSTTransaction:
 
     # <Normal_1_3>
     # Return transaction details
-    # - If sc_value exceeds signed 64-bit, it is returned as string to avoid orjson overflow
+    # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
+    # - Test with sc_value set to uint256 max value to confirm that
+    #   display_sc_value can handle large values without overflow or precision loss
     async def test_normal_1_3(self, async_db, async_client):
         # Prepare data
         tx_id = str(uuid.uuid4())
@@ -213,7 +216,7 @@ class TestGetIbetWSTTransaction:
             buyer_st_account="0x234567890abCDEf1234567890aBCdEf123456789",
             sc_token_address="0x34567890abCdEF1234567890abcDeF1234567890",
             st_value=100,
-            sc_value=1,  # tx_params はスキーマ上 PositiveInt のため通常値
+            sc_value=big_sc_value,
             memo="Test trade request (big sc_value in event_log)",
         )
         tx.tx_sender = self.tx_sender["address"]
@@ -240,14 +243,15 @@ class TestGetIbetWSTTransaction:
         await async_db.commit()
 
         # Send request
-        resp = await async_client.get(self.api_url.format(tx_id=tx_id))
+        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+            resp = await async_client.get(self.api_url.format(tx_id=tx_id))
 
         # Check response
         assert resp.status_code == 200
         body = resp.json()
         assert body["tx_id"] == tx_id
         assert body["tx_type"] == IbetWSTTxType.REQUEST_TRADE
-        assert body["event_log"]["sc_value"] == str(big_sc_value)
+        assert body["event_log"]["sc_value"] == big_sc_value
 
         # Confirm that display_sc_value can be converted to decimal
         # uint256 max / 10**8

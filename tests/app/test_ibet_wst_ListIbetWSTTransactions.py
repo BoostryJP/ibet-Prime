@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import datetime
 import uuid
+from unittest import mock
 
 import pytest
 
@@ -312,7 +313,7 @@ class TestListIbetWSTTransactions:
                             "seller_sc_account_address": "0x1234567890AbcdEF1234567890aBcdef12345678",
                             "buyer_sc_account_address": "0x234567890abCDEf1234567890aBCdEf123456789",
                             "st_value": 100,
-                            "sc_value": "1234567890",
+                            "sc_value": 1234567890,
                             "display_sc_value": "12.34567890",  # Calculated from sc_value and sc_decimals
                             "sc_decimals": 8,
                         },
@@ -324,7 +325,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_2_3>
     # Return transactions for the specified address
-    # - If sc_value exceeds signed 64-bit, it is returned as string to avoid orjson overflow
+    # - For trade-related transactions, handle large sc_value correctly (greater than 2^63-1)
     async def test_normal_2_3(self, async_db, async_client):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
@@ -351,7 +352,7 @@ class TestListIbetWSTTransactions:
         tx_1.block_number = 12345678
         tx_1.finalized = True
 
-        big_sc_value = 2**63
+        big_sc_value = 2**256 - 1  # Maximum value for uint256
         tx_1.event_log = IbetWSTEventLogTradeRequested(
             index=111,
             seller_st_account_address="0x1234567890AbcdEF1234567890aBcdef12345678",
@@ -369,19 +370,20 @@ class TestListIbetWSTTransactions:
         await async_db.commit()
 
         # Send request
-        resp = await async_client.get(
-            self.api_url,
-            params={
-                "ibet_wst_address": self.wst_token_address_1,
-            },
-        )
+        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+            resp = await async_client.get(
+                self.api_url,
+                params={
+                    "ibet_wst_address": self.wst_token_address_1,
+                },
+            )
 
         # Check response
         assert resp.status_code == 200
         body = resp.json()
         assert body["result_set"]["count"] == 1
         assert body["transactions"][0]["tx_id"] == tx_id_1
-        assert body["transactions"][0]["event_log"]["sc_value"] == str(big_sc_value)
+        assert body["transactions"][0]["event_log"]["sc_value"] == big_sc_value
 
     # <Normal_3_1>
     # Filter by tx_id

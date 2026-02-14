@@ -100,7 +100,7 @@ class IbetWSTTrade(BaseModel):
     seller_sc_account_address: str = Field(description="SC seller account address")
     buyer_sc_account_address: str = Field(description="SC buyer account address")
     st_value: int = Field(description="Value of IbetWST to trade")
-    sc_value: str = Field(description="Value of SC token to trade (decimal string)")
+    sc_value: int = Field(description="Value of SC token to trade")
     state: Literal["Pending", "Executed", "Cancelled"] = Field(
         description="Trade state"
     )
@@ -404,8 +404,7 @@ class IbetWSTEventLogTrade(BaseModel):
         ..., description="SC buyer account address"
     )
     st_value: int = Field(..., description="Value of IbetWST to trade")
-    # NOTE: sc_value can exceed signed 64-bit range; API may return it as string to avoid orjson overflow.
-    sc_value: str = Field(..., description="Value of SC token to trade")
+    sc_value: int = Field(..., description="Value of SC token to trade")
     display_sc_value: str = Field(
         ..., description="Value of SC token to trade (decimals considered)"
     )
