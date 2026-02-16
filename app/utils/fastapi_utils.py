@@ -18,12 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import decimal
+import json
 from typing import Any
 
 import orjson
 from fastapi.responses import ORJSONResponse
 
-from app.exceptions import Integer64bitLimitExceededError
 from config import RESPONSE_VALIDATION_MODE
 
 
@@ -46,9 +46,13 @@ class CustomORJSONResponse(ORJSONResponse):
             return result
         except TypeError as e:
             if e.args[0] == "Integer exceeds 64-bit range":
-                raise Integer64bitLimitExceededError(
-                    "Response data includes integer which exceeds 64-bit range"
-                ) from None
+                return json.dumps(
+                    content,
+                    ensure_ascii=False,
+                    allow_nan=False,
+                    indent=None,
+                    separators=(",", ":"),
+                ).encode("utf-8")
             raise
 
 

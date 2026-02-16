@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from decimal import Decimal
 from enum import IntEnum, StrEnum
 from typing import Literal, Optional
 
@@ -101,7 +100,7 @@ class IbetWSTTrade(BaseModel):
     seller_sc_account_address: str = Field(description="SC seller account address")
     buyer_sc_account_address: str = Field(description="SC buyer account address")
     st_value: int = Field(description="Value of IbetWST to trade")
-    sc_value: str = Field(description="Value of SC token to trade (decimal string)")
+    sc_value: int = Field(description="Value of SC token to trade")
     state: Literal["Pending", "Executed", "Cancelled"] = Field(
         description="Trade state"
     )
@@ -406,7 +405,7 @@ class IbetWSTEventLogTrade(BaseModel):
     )
     st_value: int = Field(..., description="Value of IbetWST to trade")
     sc_value: int = Field(..., description="Value of SC token to trade")
-    display_sc_value: Decimal = Field(
+    display_sc_value: str = Field(
         ..., description="Value of SC token to trade (decimals considered)"
     )
     sc_decimals: int = Field(..., description="Decimals of the SC token")

@@ -4372,10 +4372,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/Integer64bitLimitExceededErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Retrieveledgerhistory
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /ledger/{token_address}/template:
     get:
       tags:
@@ -15997,7 +15994,6 @@ components:
           description: Value of SC token to trade
         display_sc_value:
           type: string
-          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
           title: Display Sc Value
           description: Value of SC token to trade (decimals considered)
         sc_decimals:
@@ -16148,9 +16144,9 @@ components:
           title: St Value
           description: Value of IbetWST to trade
         sc_value:
-          type: string
+          type: integer
           title: Sc Value
-          description: Value of SC token to trade (decimal string)
+          description: Value of SC token to trade
         state:
           type: string
           enum:

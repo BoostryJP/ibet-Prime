@@ -41,7 +41,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.mark.asyncio
-class TestAddIbetWSTWhitelist:
+class TestRequestIbetWSTTrade:
     # API endpoint
     api_url = "/ibet_wst/trades/{ibet_wst_address}/request"
 
@@ -98,7 +98,7 @@ class TestAddIbetWSTWhitelist:
             buyer_st_account=self.user2["address"],
             sc_token_address=self.sc_token_address,
             st_value=1000,
-            sc_value=2000,
+            sc_value=2**256 - 1,
             memo="Test Trade",
             nonce=nonce,
         )
@@ -116,7 +116,7 @@ class TestAddIbetWSTWhitelist:
                 "buyer_st_account_address": self.user2["address"],
                 "sc_token_address": self.sc_token_address,
                 "st_value": 1000,
-                "sc_value": 2000,
+                "sc_value": 2**256 - 1,
                 "memo": "Test Trade",
                 "authorizer": self.user1["address"],
                 "authorization": {
@@ -143,7 +143,7 @@ class TestAddIbetWSTWhitelist:
             "buyer_st_account": self.user2["address"],
             "sc_token_address": self.sc_token_address,
             "st_value": 1000,
-            "sc_value": 2000,
+            "sc_value": 2**256 - 1,
             "memo": "Test Trade",
         }
         assert wst_tx.tx_sender == self.relayer["address"]

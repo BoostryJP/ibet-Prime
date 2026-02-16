@@ -2926,6 +2926,114 @@ class TestRetrieveLedgerHistory:
             ],
         }
 
+    # <Normal_6>
+    # Response data includes over 64-bit range int
+    @pytest.mark.asyncio
+    async def test_normal_6(self, async_client, async_db):
+        user_1 = default_eth_account("user1")
+        issuer_address = user_1["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
+        account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        _ledger_1 = Ledger()
+        _ledger_1.token_address = token_address
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.ledger = {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                },
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"test1": "a", "test2": "b"},
+                    ],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 2,
+                            "price": 2**63,
+                            "balance": 2**64,  # Over 64-bit int range
+                            "acquisition_date": "2022/12/02",
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 100 * 200,
+                            "acquisition_date": "2022/12/03",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {"f-test1": "a", "f-test2": "b"},
+                    ],
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                },
+            ],
+        }
+        _ledger_1.ledger_created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
+        async_db.add(_ledger_1)
+
+        await async_db.commit()
+
+        # request target API
+        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+            resp = await async_client.get(
+                self.base_url.format(token_address=token_address, ledger_id=1),
+                params={
+                    "latest_flg": 0,
+                },
+                headers={
+                    "issuer-address": issuer_address,
+                },
+            )
+
+        # assertion
+        assert resp.status_code == 200
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -3168,116 +3276,4 @@ class TestRetrieveLedgerHistory:
         assert resp.json() == {
             "meta": {"code": 1, "title": "NotFound"},
             "detail": "ledger does not exist",
-        }
-
-    # <Error_7>
-    # Response data includes over 64-bit range int
-    @pytest.mark.asyncio
-    async def test_error_7(self, async_client, async_db):
-        user_1 = default_eth_account("user1")
-        issuer_address = user_1["address"]
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
-        account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
-
-        # prepare data
-        _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
-        _token.tx_hash = ""
-        _token.issuer_address = issuer_address
-        _token.token_address = token_address
-        _token.abi = {}
-        _token.version = TokenVersion.V_25_09
-        async_db.add(_token)
-
-        _ledger_1 = Ledger()
-        _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
-        _ledger_1.ledger = {
-            "created": "2022/12/01",
-            "token_name": "テスト原簿",
-            "headers": [
-                {
-                    "key": "aaa",
-                    "value": "aaa",
-                },
-                {
-                    "hoge": "aaaa",
-                    "fuga": "bbbb",
-                },
-            ],
-            "details": [
-                {
-                    "token_detail_type": "権利_test_1",
-                    "headers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {"test1": "a", "test2": "b"},
-                    ],
-                    "data": [
-                        {
-                            "account_address": account_address_1,
-                            "name": "name_test_1",
-                            "address": "address_test_1",
-                            "amount": 2,
-                            "price": 2**63,
-                            "balance": 2**64,  # Over 64-bit int range
-                            "acquisition_date": "2022/12/02",
-                        },
-                        {
-                            "account_address": account_address_2,
-                            "name": "name_test_2",
-                            "address": "address_test_2",
-                            "amount": 100,
-                            "price": 200,
-                            "balance": 100 * 200,
-                            "acquisition_date": "2022/12/03",
-                        },
-                    ],
-                    "footers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {"f-test1": "a", "f-test2": "b"},
-                    ],
-                },
-            ],
-            "footers": [
-                {
-                    "key": "aaa",
-                    "value": "aaa",
-                },
-                {
-                    "f-hoge": "aaaa",
-                    "f-fuga": "bbbb",
-                },
-            ],
-        }
-        _ledger_1.ledger_created = datetime.strptime(
-            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/02
-        async_db.add(_ledger_1)
-
-        await async_db.commit()
-
-        # request target API
-        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
-            resp = await async_client.get(
-                self.base_url.format(token_address=token_address, ledger_id=1),
-                params={
-                    "latest_flg": 0,
-                },
-                headers={
-                    "issuer-address": issuer_address,
-                },
-            )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {"code": 5, "title": "Integer64bitLimitExceededError"},
-            "detail": "Response data includes integer which exceeds 64-bit range",
         }
