@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from hexbytes import HexBytes
@@ -489,3 +489,74 @@ class TestGetEventLogs:
 
         # Assert
         assert logs == []
+
+    # <Normal_3_1>
+    # Split event log requests into 10-block chunks in local/dev
+    async def test_normal_3_1(self):
+        class _Event:
+            pass
+
+        class _Events:
+            Mint = _Event()
+
+        class _Contract:
+            events = _Events()
+
+        get_logs_mock = AsyncMock(side_effect=[[{"id": 1}], [{"id": 2}], [{"id": 3}]])
+        _Contract.events.Mint.get_logs = get_logs_mock
+
+        with patch("app.utils.eth_contract_utils.APP_ENV", "local"):
+            logs = await EthAsyncContractUtils.get_event_logs(
+                contract=_Contract,
+                event="Mint",
+                block_from=100,
+                block_to=124,
+            )
+
+        assert logs == [{"id": 1}, {"id": 2}, {"id": 3}]
+        assert get_logs_mock.await_count == 3
+        get_logs_mock.assert_any_await(
+            from_block=100,
+            to_block=109,
+            argument_filters=None,
+        )
+        get_logs_mock.assert_any_await(
+            from_block=110,
+            to_block=119,
+            argument_filters=None,
+        )
+        get_logs_mock.assert_any_await(
+            from_block=120,
+            to_block=124,
+            argument_filters=None,
+        )
+
+    # <Normal_3_2>
+    # Keep a single request outside local/dev
+    async def test_normal_3_2(self):
+        class _Event:
+            pass
+
+        class _Events:
+            Mint = _Event()
+
+        class _Contract:
+            events = _Events()
+
+        get_logs_mock = AsyncMock(return_value=[{"id": 1}])
+        _Contract.events.Mint.get_logs = get_logs_mock
+
+        with patch("app.utils.eth_contract_utils.APP_ENV", "live"):
+            logs = await EthAsyncContractUtils.get_event_logs(
+                contract=_Contract,
+                event="Mint",
+                block_from=100,
+                block_to=124,
+            )
+
+        assert logs == [{"id": 1}]
+        get_logs_mock.assert_awaited_once_with(
+            from_block=100,
+            to_block=124,
+            argument_filters=None,
+        )

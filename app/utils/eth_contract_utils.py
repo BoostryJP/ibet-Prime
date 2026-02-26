@@ -46,6 +46,7 @@ from app.database import async_engine
 from app.exceptions import SendTransactionError, ServiceUnavailableError
 from app.model import EthereumAddress
 from app.model.db import EthereumNode
+from config import APP_ENV
 from eth_config import (
     ETH_CHAIN_ID,
     ETH_WEB3_HTTP_PROVIDER,
@@ -55,6 +56,7 @@ from eth_config import (
 
 thread_local = threading.local()
 LOG = log.get_logger()
+ETH_GET_LOGS_MAX_BLOCKS_PER_REQUEST = 10
 
 
 class EthFailOverHTTPProvider(AsyncHTTPProvider):
@@ -385,11 +387,32 @@ class EthAsyncContractUtils:
         """
         try:
             _event = getattr(contract.events, event)
-            result = await _event.get_logs(
-                from_block=block_from,
-                to_block=block_to,
-                argument_filters=argument_filters,
-            )
+            # In local/dev environment, split event log requests into 10-block chunks.
+            if (
+                APP_ENV in ["local", "dev"]
+                and block_from is not None
+                and block_to is not None
+                and block_from < block_to
+            ):
+                max_block_span = ETH_GET_LOGS_MAX_BLOCKS_PER_REQUEST - 1
+                result = []
+                request_from = block_from
+                while request_from <= block_to:
+                    request_to = min(request_from + max_block_span, block_to)
+                    result.extend(
+                        await _event.get_logs(
+                            from_block=request_from,
+                            to_block=request_to,
+                            argument_filters=argument_filters,
+                        )
+                    )
+                    request_from = request_to + 1
+            else:
+                result = await _event.get_logs(
+                    from_block=block_from,
+                    to_block=block_to,
+                    argument_filters=argument_filters,
+                )
         except ABIEventNotFound:
             return []
 
