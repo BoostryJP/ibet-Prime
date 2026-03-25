@@ -1,7 +1,0 @@
-version = 1
-requires-python = "==3.13.11"
-
-[[package]]
-name = "ibet-prime-explorer"
-version = "0.1.0"
-source = { virtual = "." }

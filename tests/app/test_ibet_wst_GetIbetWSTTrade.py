@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from unittest import mock
+
 import pytest
 
 from app.model.db.ibet_wst import IDXEthIbetWSTTrade
@@ -49,6 +51,8 @@ class TestListIbetWSTTrades:
     ###########################################################################
 
     # <Normal_1>
+    # Test normal case with typical values for all fields.
+    # This verifies that the API can retrieve and return trade details correctly.
     async def test_normal_1(self, async_client, async_db):
         # Create test data
         trade1 = {
@@ -96,6 +100,48 @@ class TestListIbetWSTTrades:
             "buyer_sc_account_address": self.user_address_2,
             "st_value": 1000,
             "sc_value": 2000,
+            "state": "Pending",
+            "memo": "test1",
+        }
+
+    # <Normal_2>
+    # This test verifies that the API can handle and return maximum uint256 values correctly.
+    # RESPONSE_VALIDATION_MODE is set False to allow the API to return large integers without validation errors.
+    async def test_normal_2(self, async_client, async_db):
+        # Create test data
+        trade1 = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 2**63 - 1,  # Maximum int64 value
+            "sc_value": 2**256 - 1,  # Maximum uint256 value
+            "state": "Pending",
+            "memo": "test1",
+        }
+        await self.insert_trade(async_db, trade1)
+
+        # Call API
+        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+            resp = await async_client.get(
+                self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1, index=1)
+            )
+
+        # Validate response
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 2**63 - 1,  # Maximum int64 value should be returned correctly
+            "sc_value": 2**256
+            - 1,  # Maximum uint256 value should be returned correctly
             "state": "Pending",
             "memo": "test1",
         }

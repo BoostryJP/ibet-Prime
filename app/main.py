@@ -54,6 +54,7 @@ from app.routers.issuer import (
 )
 from app.routers.misc import (
     bc_explorer,
+    bc_explorer_ui,
     e2e_messaging,
     freeze_log,
     ibet_wst,
@@ -61,6 +62,7 @@ from app.routers.misc import (
     settlement_agent,
 )
 from app.utils import o11y_utils
+from app.utils.cache_control import CacheControlMiddleware
 from app.utils.docs_utils import custom_openapi
 from config import (
     BC_EXPLORER_ENABLED,
@@ -139,7 +141,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="25.12",
+    version="26.3",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -148,6 +150,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     lifespan=lifespan,
 )
+app.add_middleware(CacheControlMiddleware)
 
 
 @app.middleware("http")
@@ -216,6 +219,7 @@ else:
 
     if BC_EXPLORER_ENABLED:
         app.include_router(bc_explorer.router)
+        app.include_router(bc_explorer_ui.router)
 
     if FREEZE_LOG_FEATURE_ENABLED:
         app.include_router(freeze_log.router)
@@ -262,7 +266,7 @@ def convert_errors(
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content=jsonable_encoder({"meta": meta, "detail": convert_errors(exc)}),
     )
 
@@ -273,7 +277,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def query_validation_exception_handler(request: Request, exc: ValidationError):
     meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content=jsonable_encoder({"meta": meta, "detail": convert_errors(exc)}),
     )
 

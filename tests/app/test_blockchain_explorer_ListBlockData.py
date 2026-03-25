@@ -336,6 +336,41 @@ class TestListBlockData:
             self.filter_response_item(self.block_0),
         ]
 
+    # Normal_5
+    # has_transactions filter
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
+        # prepare: three blocks, only block_1 has txs
+        b0 = dict(self.block_0)
+        b1 = dict(self.block_1)
+        b2 = dict(self.block_2)
+        b1["transactions"] = [
+            "0x1111111111111111111111111111111111111111111111111111111111111111"
+        ]
+
+        await self.insert_block_data(async_db, b0)
+        await self.insert_block_data(async_db, b1)
+        await self.insert_block_data(async_db, b2)
+
+        await self.insert_block_data_block_number(async_db, latest_block_number=2)
+
+        # Request target API
+        with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
+            params = {"has_transactions": True}
+            resp = await async_client.get(self.apiurl, params=params)
+
+        # Assertion
+        assert resp.status_code == 200
+
+        response_data = resp.json()
+        assert response_data["result_set"] == {
+            "count": 1,
+            "offset": None,
+            "limit": None,
+            "total": 3,
+        }
+        assert response_data["block_data"] == [self.filter_response_item(b1)]
+
     ###########################################################################
     # Error
     ###########################################################################

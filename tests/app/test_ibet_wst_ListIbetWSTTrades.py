@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from unittest import mock
+
 import pytest
 
 from app.model.db.ibet_wst import IDXEthIbetWSTTrade
@@ -557,6 +559,52 @@ class TestListIbetWSTTrades:
                     "sc_value": 4000,
                     "state": "Executed",
                     "memo": "test2",
+                },
+            ],
+        }
+
+    # <Normal_4>
+    # Boundary values: st_value and sc_value with maximum values for int64 and uint256
+    # RESPONSE_VALIDATION_MODE is set False to allow testing of large values without validation errors
+    async def test_normal_4(self, async_client, async_db):
+        # Create test data
+        trade1 = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 2**63 - 1,  # Maximum value for int64
+            "sc_value": 2**256 - 1,  # Maximum value for uint256
+            "state": "Pending",
+            "memo": "test1",
+        }
+        await self.insert_trade(async_db, trade1)
+
+        # API call
+        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+            resp = await async_client.get(
+                self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1)
+            )
+
+        # Response validation
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
+            "trades": [
+                {
+                    "index": 1,
+                    "seller_st_account_address": self.user_address_1,
+                    "buyer_st_account_address": self.user_address_2,
+                    "sc_token_address": self.sc_token_address_1,
+                    "seller_sc_account_address": self.user_address_1,
+                    "buyer_sc_account_address": self.user_address_2,
+                    "st_value": 2**63 - 1,
+                    "sc_value": 2**256 - 1,
+                    "state": "Pending",
+                    "memo": "test1",
                 },
             ],
         }

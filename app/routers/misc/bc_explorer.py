@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import sys
 from typing import Annotated, Any, Dict, Sequence, Tuple
 
 from eth_utils import to_checksum_address
@@ -52,6 +53,237 @@ router = APIRouter(prefix="/blockchain_explorer", tags=["[misc] blockchain_explo
 
 
 # ------------------------------
+# Service layer (reusable by UI)
+# ------------------------------
+async def service_list_block_data(
+    db: DBAsyncSession, get_query: ListBlockDataQuery
+) -> Dict[str, Any]:
+    # NOTE: latest synced block number as total
+    idx_block_data_block_number = (
+        await db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(config.CHAIN_ID))
+            .limit(1)
+        )
+    ).first()
+    if idx_block_data_block_number is None:
+        return {
+            "result_set": {
+                "count": 0,
+                "offset": get_query.offset,
+                "limit": get_query.limit,
+                "total": 0,
+            },
+            "block_data": [],
+        }
+
+    total = idx_block_data_block_number.latest_block_number + 1
+
+    stmt = select(IDXBlockData)
+
+    # Search Filter
+    if (
+        get_query.from_block_number is not None
+        and get_query.to_block_number is not None
+    ):
+        stmt = stmt.where(
+            IDXBlockData.number >= get_query.from_block_number,
+            IDXBlockData.number <= get_query.to_block_number,
+        )
+    elif get_query.from_block_number is not None:
+        stmt = stmt.where(IDXBlockData.number >= get_query.from_block_number)
+    elif get_query.to_block_number is not None:
+        stmt = stmt.where(IDXBlockData.number <= get_query.to_block_number)
+
+    # Blocks that contain one or more transactions
+    if get_query.has_transactions:
+        # Exclude NULL and empty array []
+        stmt = stmt.where(
+            IDXBlockData.transactions.is_not(None),
+            func.json_array_length(IDXBlockData.transactions) > 0,
+        )
+
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXBlockData).order_by(None)
+    )
+
+    # Sort
+    if get_query.sort_order == 0:
+        stmt = stmt.order_by(IDXBlockData.number)
+    else:
+        stmt = stmt.order_by(desc(IDXBlockData.number))
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    if min(total, get_query.limit or sys.maxsize) > BLOCK_RESPONSE_LIMIT:
+        raise ResponseLimitExceededError("Search results exceed the limit")
+
+    block_data_tmp: Sequence[IDXBlockData] = (await db.scalars(stmt)).all()
+    block_data = []
+    for bd in block_data_tmp:
+        block_data.append(
+            {
+                "number": bd.number,
+                "hash": bd.hash,
+                "transactions": bd.transactions,
+                "timestamp": bd.timestamp,
+                "gas_limit": bd.gas_limit,
+                "gas_used": bd.gas_used,
+                "size": bd.size,
+            }
+        )
+
+    return {
+        "result_set": {
+            "count": count,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
+            "total": total,
+        },
+        "block_data": block_data,
+    }
+
+
+async def service_get_block_data(
+    db: DBAsyncSession, block_number: int
+) -> Dict[str, Any]:
+    block_data = (
+        await db.scalars(
+            select(IDXBlockData).where(IDXBlockData.number == block_number).limit(1)
+        )
+    ).first()
+    if block_data is None:
+        raise HTTPException(status_code=404, detail="block data not found")
+
+    return {
+        "number": block_data.number,
+        "parent_hash": block_data.parent_hash,
+        "sha3_uncles": block_data.sha3_uncles,
+        "miner": block_data.miner,
+        "state_root": block_data.state_root,
+        "transactions_root": block_data.transactions_root,
+        "receipts_root": block_data.receipts_root,
+        "logs_bloom": block_data.logs_bloom,
+        "difficulty": block_data.difficulty,
+        "gas_limit": block_data.gas_limit,
+        "gas_used": block_data.gas_used,
+        "timestamp": block_data.timestamp,
+        "proof_of_authority_data": block_data.proof_of_authority_data,
+        "mix_hash": block_data.mix_hash,
+        "nonce": block_data.nonce,
+        "hash": block_data.hash,
+        "size": block_data.size,
+        "transactions": block_data.transactions,
+    }
+
+
+async def service_list_tx_data(
+    db: DBAsyncSession, get_query: ListTxDataQuery
+) -> Dict[str, Any]:
+    stmt = select(IDXTxData).where(IDXTxData.block_number == get_query.block_number)
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
+    )
+
+    # Search Filter
+    if get_query.from_address is not None:
+        stmt = stmt.where(
+            IDXTxData.from_address == to_checksum_address(get_query.from_address)
+        )
+    if get_query.to_address is not None:
+        stmt = stmt.where(
+            IDXTxData.to_address == to_checksum_address(get_query.to_address)
+        )
+
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
+    )
+
+    # Sort
+    stmt = stmt.order_by(desc(IDXTxData.created))
+
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
+
+    if min(total, get_query.limit or sys.maxsize) > TX_RESPONSE_LIMIT:
+        raise ResponseLimitExceededError("Search results exceed the limit")
+
+    tx_data_tmp: Sequence[IDXTxData] = (await db.scalars(stmt)).all()
+    tx_data = []
+    for txd in tx_data_tmp:
+        tx_data.append(
+            {
+                "hash": txd.hash,
+                "block_hash": txd.block_hash,
+                "block_number": txd.block_number,
+                "transaction_index": txd.transaction_index,
+                "from_address": txd.from_address,
+                "to_address": txd.to_address,
+            }
+        )
+
+    return {
+        "result_set": {
+            "count": count,
+            "offset": get_query.offset,
+            "limit": get_query.limit,
+            "total": total,
+        },
+        "tx_data": tx_data,
+    }
+
+
+async def service_get_tx_data(db: DBAsyncSession, hash: str) -> Dict[str, Any]:
+    tx_data = (
+        await db.scalars(select(IDXTxData).where(IDXTxData.hash == hash).limit(1))
+    ).first()
+    if tx_data is None:
+        raise HTTPException(status_code=404, detail="block data not found")
+
+    contract_name: str | None = None
+    contract_function: str | None = None
+    contract_parameters: dict | None = None
+    token_contract = (
+        await db.scalars(
+            select(Token).where(Token.token_address == tx_data.to_address).limit(1)
+        )
+    ).first()
+    if token_contract is not None:
+        contract_name = token_contract.type
+        contract = AsyncContractUtils.get_contract(
+            contract_name=contract_name, contract_address=tx_data.to_address
+        )
+        decoded_input: Tuple["ContractFunction", Dict[str, Any]] = (
+            contract.decode_function_input(tx_data.input)
+        )
+        contract_function = decoded_input[0].fn_name
+        contract_parameters = decoded_input[1]
+
+    return {
+        "hash": tx_data.hash,
+        "block_hash": tx_data.block_hash,
+        "block_number": tx_data.block_number,
+        "transaction_index": tx_data.transaction_index,
+        "from_address": tx_data.from_address,
+        "to_address": tx_data.to_address,
+        "contract_name": contract_name,
+        "contract_function": contract_function,
+        "contract_parameters": contract_parameters,
+        "gas": tx_data.gas,
+        "gas_price": tx_data.gas_price,
+        "value": tx_data.value,
+        "nonce": tx_data.nonce,
+    }
+
+
+# ------------------------------
 # [BC-Explorer] List Block data
 # ------------------------------
 @router.get(
@@ -74,91 +306,8 @@ async def list_block_data(
             status_code=404, detail="This URL is not available in the current settings"
         )
 
-    # NOTE: The more data, the slower the SELECT COUNT(1) query becomes.
-    #       To get total number of block data, latest block number where block data synced is used here.
-    idx_block_data_block_number = (
-        await db.scalars(
-            select(IDXBlockDataBlockNumber)
-            .where(IDXBlockDataBlockNumber.chain_id == str(config.CHAIN_ID))
-            .limit(1)
-        )
-    ).first()
-    if idx_block_data_block_number is None:
-        return json_response(
-            {
-                "result_set": {
-                    "count": 0,
-                    "offset": get_query.offset,
-                    "limit": get_query.limit,
-                    "total": 0,
-                },
-                "block_data": [],
-            }
-        )
-
-    total = idx_block_data_block_number.latest_block_number + 1
-
-    stmt = select(IDXBlockData)
-
-    # Search Filter
-    if (
-        get_query.from_block_number is not None
-        and get_query.to_block_number is not None
-    ):
-        stmt = stmt.where(
-            IDXBlockData.number >= get_query.from_block_number,
-            IDXBlockData.number <= get_query.to_block_number,
-        )
-    elif get_query.from_block_number is not None:
-        stmt = stmt.where(IDXBlockData.number >= get_query.from_block_number)
-    elif get_query.to_block_number is not None:
-        stmt = stmt.where(IDXBlockData.number <= get_query.to_block_number)
-
-    count = await db.scalar(
-        stmt.with_only_columns(func.count()).select_from(IDXBlockData).order_by(None)
-    )
-
-    # Sort
-    if get_query.sort_order == 0:
-        stmt = stmt.order_by(IDXBlockData.number)
-    else:
-        stmt = stmt.order_by(desc(IDXBlockData.number))
-
-    # Pagination
-    if get_query.limit is not None:
-        stmt = stmt.limit(get_query.limit)
-    if get_query.offset is not None:
-        stmt = stmt.offset(get_query.offset)
-
-    if max(total, get_query.limit or 0) > BLOCK_RESPONSE_LIMIT:
-        raise ResponseLimitExceededError("Search results exceed the limit")
-
-    block_data_tmp: Sequence[IDXBlockData] = (await db.scalars(stmt)).all()
-    block_data = []
-    for bd in block_data_tmp:
-        block_data.append(
-            {
-                "number": bd.number,
-                "hash": bd.hash,
-                "transactions": bd.transactions,
-                "timestamp": bd.timestamp,
-                "gas_limit": bd.gas_limit,
-                "gas_used": bd.gas_used,
-                "size": bd.size,
-            }
-        )
-
-    return json_response(
-        {
-            "result_set": {
-                "count": count,
-                "offset": get_query.offset,
-                "limit": get_query.limit,
-                "total": total,
-            },
-            "block_data": block_data,
-        }
-    )
+    result = await service_list_block_data(db=db, get_query=get_query)
+    return json_response(result)
 
 
 # ------------------------------
@@ -183,36 +332,8 @@ async def get_block_data(
             status_code=404, detail="This URL is not available in the current settings"
         )
 
-    block_data = (
-        await db.scalars(
-            select(IDXBlockData).where(IDXBlockData.number == block_number).limit(1)
-        )
-    ).first()
-    if block_data is None:
-        raise HTTPException(status_code=404, detail="block data not found")
-
-    return json_response(
-        {
-            "number": block_data.number,
-            "parent_hash": block_data.parent_hash,
-            "sha3_uncles": block_data.sha3_uncles,
-            "miner": block_data.miner,
-            "state_root": block_data.state_root,
-            "transactions_root": block_data.transactions_root,
-            "receipts_root": block_data.receipts_root,
-            "logs_bloom": block_data.logs_bloom,
-            "difficulty": block_data.difficulty,
-            "gas_limit": block_data.gas_limit,
-            "gas_used": block_data.gas_used,
-            "timestamp": block_data.timestamp,
-            "proof_of_authority_data": block_data.proof_of_authority_data,
-            "mix_hash": block_data.mix_hash,
-            "nonce": block_data.nonce,
-            "hash": block_data.hash,
-            "size": block_data.size,
-            "transactions": block_data.transactions,
-        }
-    )
+    result = await service_get_block_data(db=db, block_number=block_number)
+    return json_response(result)
 
 
 # ------------------------------
@@ -238,64 +359,8 @@ async def list_tx_data(
             status_code=404, detail="This URL is not available in the current settings"
         )
 
-    stmt = select(IDXTxData)
-    total = await db.scalar(
-        stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
-    )
-
-    # Search Filter
-    if get_query.block_number is not None:
-        stmt = stmt.where(IDXTxData.block_number == get_query.block_number)
-    if get_query.from_address is not None:
-        stmt = stmt.where(
-            IDXTxData.from_address == to_checksum_address(get_query.from_address)
-        )
-    if get_query.to_address is not None:
-        stmt = stmt.where(
-            IDXTxData.to_address == to_checksum_address(get_query.to_address)
-        )
-
-    count = await db.scalar(
-        stmt.with_only_columns(func.count()).select_from(IDXTxData).order_by(None)
-    )
-
-    # Sort
-    stmt = stmt.order_by(desc(IDXTxData.created))
-
-    # Pagination
-    if get_query.limit is not None:
-        stmt = stmt.limit(get_query.limit)
-    if get_query.offset is not None:
-        stmt = stmt.offset(get_query.offset)
-
-    if max(total, get_query.limit or 0) > TX_RESPONSE_LIMIT:
-        raise ResponseLimitExceededError("Search results exceed the limit")
-
-    tx_data_tmp: Sequence[IDXTxData] = (await db.scalars(stmt)).all()
-    tx_data = []
-    for txd in tx_data_tmp:
-        tx_data.append(
-            {
-                "hash": txd.hash,
-                "block_hash": txd.block_hash,
-                "block_number": txd.block_number,
-                "transaction_index": txd.transaction_index,
-                "from_address": txd.from_address,
-                "to_address": txd.to_address,
-            }
-        )
-
-    return json_response(
-        {
-            "result_set": {
-                "count": count,
-                "offset": get_query.offset,
-                "limit": get_query.limit,
-                "total": total,
-            },
-            "tx_data": tx_data,
-        }
-    )
+    result = await service_list_tx_data(db=db, get_query=get_query)
+    return json_response(result)
 
 
 # ------------------------------
@@ -319,47 +384,5 @@ async def get_tx_data(
             status_code=404, detail="This URL is not available in the current settings"
         )
 
-    # Search tx data
-    tx_data = (
-        await db.scalars(select(IDXTxData).where(IDXTxData.hash == hash).limit(1))
-    ).first()
-    if tx_data is None:
-        raise HTTPException(status_code=404, detail="block data not found")
-
-    # Decode contract input parameters
-    contract_name: str | None = None
-    contract_function: str | None = None
-    contract_parameters: dict | None = None
-    token_contract = (
-        await db.scalars(
-            select(Token).where(Token.token_address == tx_data.to_address).limit(1)
-        )
-    ).first()
-    if token_contract is not None:
-        contract_name = token_contract.type
-        contract = AsyncContractUtils.get_contract(
-            contract_name=contract_name, contract_address=tx_data.to_address
-        )
-        decoded_input: Tuple["ContractFunction", Dict[str, Any]] = (
-            contract.decode_function_input(tx_data.input)
-        )
-        contract_function = decoded_input[0].fn_name
-        contract_parameters = decoded_input[1]
-
-    return json_response(
-        {
-            "hash": tx_data.hash,
-            "block_hash": tx_data.block_hash,
-            "block_number": tx_data.block_number,
-            "transaction_index": tx_data.transaction_index,
-            "from_address": tx_data.from_address,
-            "to_address": tx_data.to_address,
-            "contract_name": contract_name,
-            "contract_function": contract_function,
-            "contract_parameters": contract_parameters,
-            "gas": tx_data.gas,
-            "gas_price": tx_data.gas_price,
-            "value": tx_data.value,
-            "nonce": tx_data.nonce,
-        }
-    )
+    result = await service_get_tx_data(db=db, hash=hash)
+    return json_response(result)

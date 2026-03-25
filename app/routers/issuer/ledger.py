@@ -178,9 +178,7 @@ async def list_all_ledger_history(
     "/{token_address}/history/{ledger_id}",
     operation_id="RetrieveLedgerHistory",
     response_model=RetrieveLedgerHistoryResponse,
-    responses=get_routers_responses(
-        422, 404, InvalidParameterError, Integer64bitLimitExceededError
-    ),
+    responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 async def retrieve_ledger_history(
     db: DBAsyncSession,
