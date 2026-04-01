@@ -1,4 +1,4 @@
-.PHONY: format doc test test_migrations run
+.PHONY: format lint typecheck doc test test_migrations run
 
 install:
 	uv sync --frozen --no-install-project --all-extras
@@ -14,6 +14,9 @@ format:
 
 lint:
 	uv run ruff check --fix
+
+typecheck:
+	uv run pyright --project pyrightconfig.json
 
 doc:
 	IBET_WST_FEATURE_ENABLED=1 DVP_AGENT_FEATURE_ENABLED=1 BC_EXPLORER_ENABLED=1 FREEZE_LOG_FEATURE_ENABLED=1 uv run python docs/generate_openapi_doc.py
