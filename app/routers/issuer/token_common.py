@@ -87,8 +87,10 @@ local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
 
 
-def _get_wst_address(token: Token, blockchain_network: IbetWSTBlockchain) -> str | None:
-    return token.get_ibet_wst_address(blockchain_network)
+def _get_wst_address(
+    token: Token, blockchain_platform: IbetWSTBlockchain
+) -> str | None:
+    return token.get_ibet_wst_address(blockchain_platform)
 
 
 # GET: /tokens
@@ -343,13 +345,13 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
     if token is None:
         raise HTTPException(status_code=404, detail="Token not found")
     ibet_wst_address = _get_wst_address(
-        token, IbetWSTBlockchain(request_query.blockchain_network)
+        token, IbetWSTBlockchain(request_query.blockchain_platform)
     )
     if ibet_wst_address is None:
         raise HTTPException(status_code=404, detail="Token not found")
 
     # Get whitelists
-    if request_query.blockchain_network == IbetWSTBlockchain.ETHEREUM:
+    if request_query.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
         whitelist_list: Sequence[tuple[IDXEthIbetWSTWhitelist, IDXPersonalInfo]] = (
             (
                 await db.execute(
@@ -448,13 +450,13 @@ async def get_ibet_wst_whitelist_with_personal_info(
     if token is None:
         raise HTTPException(status_code=404, detail="Token not found")
     ibet_wst_address = _get_wst_address(
-        token, IbetWSTBlockchain(request_query.blockchain_network)
+        token, IbetWSTBlockchain(request_query.blockchain_platform)
     )
     if ibet_wst_address is None:
         raise HTTPException(status_code=404, detail="Token not found")
 
     # Get whitelist status
-    if request_query.blockchain_network == IbetWSTBlockchain.ETHEREUM:
+    if request_query.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
         wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
         whitelist = await wst_contract.account_white_list(
             to_checksum_address(account_address)
@@ -561,12 +563,12 @@ async def add_ibet_wst_whitelist(
     if token is None:
         raise HTTPException(status_code=404, detail="Token not found")
     ibet_wst_address = _get_wst_address(
-        token, IbetWSTBlockchain(data.blockchain_network)
+        token, IbetWSTBlockchain(data.blockchain_platform)
     )
     if ibet_wst_address is None:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    if data.blockchain_network == IbetWSTBlockchain.ETHEREUM:
+    if data.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
         # Generate IbetWST contract instance
         contract = EthereumIbetWST(ibet_wst_address)
 
@@ -683,14 +685,14 @@ async def delete_ibet_wst_whitelist(
     if token is None:
         raise HTTPException(status_code=404, detail="Token not found")
     ibet_wst_address = _get_wst_address(
-        token, IbetWSTBlockchain(data.blockchain_network)
+        token, IbetWSTBlockchain(data.blockchain_platform)
     )
     if ibet_wst_address is None:
         raise HTTPException(status_code=404, detail="Token not found")
     if token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("This token is temporarily unavailable")
 
-    if data.blockchain_network == IbetWSTBlockchain.ETHEREUM:
+    if data.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
         # Generate IbetWST contract instance
         contract = EthereumIbetWST(ibet_wst_address)
 
@@ -804,14 +806,14 @@ async def force_burn_ibet_wst_position(
     if token is None:
         raise HTTPException(status_code=404, detail="Token not found")
     ibet_wst_address = _get_wst_address(
-        token, IbetWSTBlockchain(data.blockchain_network)
+        token, IbetWSTBlockchain(data.blockchain_platform)
     )
     if ibet_wst_address is None:
         raise HTTPException(status_code=404, detail="Token not found")
     if token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("This token is temporarily unavailable")
 
-    if data.blockchain_network == IbetWSTBlockchain.ETHEREUM:
+    if data.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
         # Generate IbetWST contract instance
         contract = EthereumIbetWST(ibet_wst_address)
 

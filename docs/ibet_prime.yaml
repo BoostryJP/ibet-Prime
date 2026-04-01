@@ -8566,14 +8566,14 @@ paths:
             description: Token address
             title: Token Address
           description: Token address
-        - name: blockchain_network
+        - name: blockchain_platform
           in: query
           required: false
           schema:
             $ref: '#/components/schemas/IbetWSTBlockchainNetwork'
-            description: Blockchain network for IbetWST operation
+            description: Blockchain platform for IbetWST operation
             default: ethereum
-          description: Blockchain network for IbetWST operation
+          description: Blockchain platform for IbetWST operation
         - name: issuer-address
           in: header
           required: true
@@ -8628,14 +8628,14 @@ paths:
             description: Account address
             title: Account Address
           description: Account address
-        - name: blockchain_network
+        - name: blockchain_platform
           in: query
           required: false
           schema:
             $ref: '#/components/schemas/IbetWSTBlockchainNetwork'
-            description: Blockchain network for IbetWST operation
+            description: Blockchain platform for IbetWST operation
             default: ethereum
-          description: Blockchain network for IbetWST operation
+          description: Blockchain platform for IbetWST operation
         - name: issuer-address
           in: header
           required: true
@@ -10312,7 +10312,7 @@ paths:
 
         - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
         - The data returned by this API is generated based on finalized blocks.
-        - `blockchain_network` is required to specify which blockchain's IbetWST whitelist accounts to retrieve.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist accounts to retrieve.
             - Defaults to ETHEREUM if not specified.
       operationId: RetrieveIbetWSTWhitelistAccounts
       parameters:
@@ -10329,9 +10329,9 @@ paths:
           required: false
           schema:
             $ref: '#/components/schemas/IbetWSTBlockchainNetwork'
-            description: Blockchain network for IbetWST operation
+            description: Blockchain platform for IbetWST operation
             default: ethereum
-          description: Blockchain network for IbetWST operation
+          description: Blockchain platform for IbetWST operation
       responses:
         '200':
           description: Successful Response
@@ -10355,7 +10355,7 @@ paths:
 
         - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
         - The data returned by this API also reflects the state of non-finalized blocks.
-        - `blockchain_network` is required to specify which blockchain's IbetWST whitelist status to retrieve.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist status to retrieve.
             - Defaults to ETHEREUM if not specified.
       operationId: GetIbetWSTWhitelist
       parameters:
@@ -10380,9 +10380,9 @@ paths:
           required: false
           schema:
             $ref: '#/components/schemas/IbetWSTBlockchainNetwork'
-            description: Blockchain network for IbetWST operation
+            description: Blockchain platform for IbetWST operation
             default: ethereum
-          description: Blockchain network for IbetWST operation
+          description: Blockchain platform for IbetWST operation
       responses:
         '200':
           description: Successful Response
@@ -11909,9 +11909,9 @@ components:
         3:SET
     AddIbetWSTWhitelistRequest:
       properties:
-        blockchain_network:
+        blockchain_platform:
           $ref: '#/components/schemas/IbetWSTBlockchainNetwork'
-          description: Blockchain network for IbetWST operation
+          description: Blockchain platform for IbetWST operation
           default: ethereum
         st_account_address:
           type: string
@@ -13508,9 +13508,9 @@ components:
       title: DVPDeliveryInfoNotification
     DeleteIbetWSTWhitelistRequest:
       properties:
-        blockchain_network:
+        blockchain_platform:
           $ref: '#/components/schemas/IbetWSTBlockchainNetwork'
-          description: Blockchain network for IbetWST operation
+          description: Blockchain platform for IbetWST operation
           default: ethereum
         st_account_address:
           type: string
@@ -13991,9 +13991,9 @@ components:
       description: DVP delivery finish schema (REQUEST)
     ForceBurnIbetWSTRequest:
       properties:
-        blockchain_network:
+        blockchain_platform:
           $ref: '#/components/schemas/IbetWSTBlockchainNetwork'
-          description: Blockchain network for IbetWST operation
+          description: Blockchain platform for IbetWST operation
           default: ethereum
         account_address:
           type: string

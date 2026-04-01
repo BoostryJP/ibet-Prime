@@ -188,9 +188,9 @@ class GetIbetWSTTransactionQuery(BaseModel):
 class AddIbetWSTWhitelistRequest(BaseModel):
     """AddIbetWSTWhitelist request schema"""
 
-    blockchain_network: IbetWSTBlockchainNetwork = Field(
+    blockchain_platform: IbetWSTBlockchainNetwork = Field(
         default=IbetWSTBlockchainNetwork.ETHEREUM,
-        description="Blockchain network for IbetWST operation",
+        description="Blockchain platform for IbetWST operation",
     )
     st_account_address: ChecksumEthereumAddress = Field(
         description="ST account address to be added to the whitelist"
@@ -206,9 +206,9 @@ class AddIbetWSTWhitelistRequest(BaseModel):
 class DeleteIbetWSTWhitelistRequest(BaseModel):
     """DeleteIbetWSTWhitelist request schema"""
 
-    blockchain_network: IbetWSTBlockchainNetwork = Field(
+    blockchain_platform: IbetWSTBlockchainNetwork = Field(
         default=IbetWSTBlockchainNetwork.ETHEREUM,
-        description="Blockchain network for IbetWST operation",
+        description="Blockchain platform for IbetWST operation",
     )
     st_account_address: ChecksumEthereumAddress = Field(
         description="ST account address to be removed from the whitelist"
@@ -218,9 +218,9 @@ class DeleteIbetWSTWhitelistRequest(BaseModel):
 class IbetWSTWhitelistQuery(BaseModel):
     """IbetWST whitelist request query schema"""
 
-    blockchain_network: IbetWSTBlockchainNetwork = Field(
+    blockchain_platform: IbetWSTBlockchainNetwork = Field(
         default=IbetWSTBlockchainNetwork.ETHEREUM,
-        description="Blockchain network for IbetWST operation",
+        description="Blockchain platform for IbetWST operation",
     )
 
 
@@ -241,9 +241,9 @@ class BurnIbetWSTRequest(BaseModel):
 class ForceBurnIbetWSTRequest(BaseModel):
     """ForceBurnIbetWST request schema"""
 
-    blockchain_network: IbetWSTBlockchainNetwork = Field(
+    blockchain_platform: IbetWSTBlockchainNetwork = Field(
         default=IbetWSTBlockchainNetwork.ETHEREUM,
-        description="Blockchain network for IbetWST operation",
+        description="Blockchain platform for IbetWST operation",
     )
     account_address: ChecksumEthereumAddress = Field(
         description="Account address from which to force burn IbetWST"
@@ -416,7 +416,7 @@ class RetrieveIbetWSTWhitelistAccountsQuery(BaseModel):
 
     blockchain_platform: IbetWSTBlockchainNetwork = Field(
         default=IbetWSTBlockchainNetwork.ETHEREUM,
-        description="Blockchain network for IbetWST operation",
+        description="Blockchain platform for IbetWST operation",
     )
 
 
@@ -425,7 +425,7 @@ class GetIbetWSTWhitelistQuery(BaseModel):
 
     blockchain_platform: IbetWSTBlockchainNetwork = Field(
         default=IbetWSTBlockchainNetwork.ETHEREUM,
-        description="Blockchain network for IbetWST operation",
+        description="Blockchain platform for IbetWST operation",
     )
 
 

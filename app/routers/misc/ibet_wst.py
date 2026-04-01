@@ -564,7 +564,7 @@ async def retrieve_ibet_wst_whitelist_accounts(
 
     - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
     - The data returned by this API is generated based on finalized blocks.
-    - `blockchain_network` is required to specify which blockchain's IbetWST whitelist accounts to retrieve.
+    - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist accounts to retrieve.
         - Defaults to ETHEREUM if not specified.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
@@ -620,7 +620,7 @@ async def get_ibet_wst_whitelist(
 
     - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
     - The data returned by this API also reflects the state of non-finalized blocks.
-    - `blockchain_network` is required to specify which blockchain's IbetWST whitelist status to retrieve.
+    - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist status to retrieve.
         - Defaults to ETHEREUM if not specified.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
