@@ -1,0 +1,20 @@
+{
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "**/.*",
+        ".venv",
+        "__pycache__/",
+        "app/",
+        "batch/",
+        "cmd/",
+        "config.py",
+        "docs/",
+        "eth_config.py",
+        "migrations/",
+        "run.py",
+        "server.py",
+        "tests/",
+    ],
+    "typeCheckingMode": "strict"
+}
