@@ -32,6 +32,7 @@ from web3.types import TxReceipt
 from app.database import BatchAsyncSessionLocal
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTBlockchain,
     IbetWSTEventLogAccountWhiteListAdded,
     IbetWSTEventLogAccountWhiteListDeleted,
     IbetWSTEventLogBurn,
@@ -47,7 +48,7 @@ from app.model.db import (
     IDXEthIbetWSTWhitelist,
     Token,
 )
-from app.model.eth import ERC20, IbetWST
+from app.model.eth import EthereumERC20, EthereumIbetWST
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
@@ -169,7 +170,7 @@ async def reflect_unfinalized_tx(
     match wst_tx.tx_type:
         case IbetWSTTxType.ADD_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -191,7 +192,7 @@ async def reflect_unfinalized_tx(
             )
         case IbetWSTTxType.DELETE_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -235,12 +236,15 @@ async def finalize_tx(
             if token is None:
                 return
 
-            token.ibet_wst_deployed = True
-            token.ibet_wst_address = tx_receipt.get("contractAddress", None)
+            token.set_ibet_wst_deployed(IbetWSTBlockchain.ETHEREUM, True)
+            token.set_ibet_wst_address(
+                IbetWSTBlockchain.ETHEREUM,
+                tx_receipt.get("contractAddress", None),
+            )
             await db_session.merge(token)
         case IbetWSTTxType.MINT:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Mint().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -253,7 +257,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.BURN:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Burn().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -266,7 +270,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.FORCE_BURN:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Burn().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -279,7 +283,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ADD_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -301,7 +305,7 @@ async def finalize_tx(
             )
         case IbetWSTTxType.DELETE_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -324,7 +328,7 @@ async def finalize_tx(
                 )
         case IbetWSTTxType.TRANSFER:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Transfer().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -338,13 +342,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REQUEST_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRequested().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = EthereumERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeRequested(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],
@@ -359,13 +363,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.CANCEL_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeCancelled().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = EthereumERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeCancelled(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],
@@ -380,13 +384,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ACCEPT_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeAccepted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = EthereumERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeAccepted(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],
@@ -401,13 +405,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REJECT_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = EthereumIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRejected().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = EthereumERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeRejected(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],

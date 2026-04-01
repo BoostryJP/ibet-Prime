@@ -175,7 +175,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -275,6 +275,7 @@ class TestIssueBondToken:
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
                 "activate_ibet_wst": None,
+                "ibet_wst_blockchains": None,
                 "ibet_wst_name": None,
             }
             resp = await async_client.post(
@@ -328,7 +329,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -469,7 +470,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -560,6 +561,7 @@ class TestIssueBondToken:
                 "redemption_value_currency": "JPY",
                 "purpose": "purpose_test1",
                 "activate_ibet_wst": True,  # Activate IbetWST
+                "ibet_wst_blockchains": ["ethereum"],
                 "ibet_wst_name": "ibet_wst_name_test1",
             }
             resp = await async_client.post(
@@ -619,7 +621,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is True
+            assert token_1.is_ibet_wst_activated("ethereum") is True
             assert token_1.ibet_wst_version == IbetWSTVersion.V_1
             assert token_1.ibet_wst_name == "ibet_wst_name_test1"
 

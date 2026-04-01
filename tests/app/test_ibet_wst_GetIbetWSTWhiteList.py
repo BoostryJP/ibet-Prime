@@ -43,7 +43,7 @@ class TestGetIbetWSTWhiteList:
     # <Normal_1>
     # Return whitelist status of account
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.account_white_list",
+        "app.routers.misc.ibet_wst.EthereumIbetWST.account_white_list",
         AsyncMock(
             return_value=IbetWSTWhiteList(
                 st_account=to_checksum_address(st_account_address),
@@ -67,8 +67,8 @@ class TestGetIbetWSTWhiteList:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = to_checksum_address(ibet_wst_address)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", to_checksum_address(ibet_wst_address))
         async_db.add(token)
         await async_db.commit()
 

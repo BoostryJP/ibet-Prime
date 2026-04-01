@@ -49,10 +49,10 @@ class TestRetrieveBondToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = "eth_token_address_test1"
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
 
@@ -186,10 +186,10 @@ class TestRetrieveBondToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = "eth_token_address_test1"
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
 

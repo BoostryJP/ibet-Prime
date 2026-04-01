@@ -103,6 +103,7 @@ class TestListIbetWSTTransactions:
             self.api_url,
             params={
                 "ibet_wst_address": self.wst_token_address_1,
+                "blockchain_platform": "ethereum",
             },
         )
 
@@ -1235,7 +1236,7 @@ class TestListIbetWSTTransactions:
                     "type": "missing",
                     "loc": ["query", "ibet_wst_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 }
             ],
         }

@@ -34,7 +34,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.model.eth import IbetWST, IbetWSTDigestHelper, IbetWSTTrade
+from app.model.eth import EthereumIbetWST, IbetWSTDigestHelper, IbetWSTTrade
 from app.utils.eth_contract_utils import EthWeb3
 from tests.account_config import default_eth_account
 
@@ -62,7 +62,7 @@ class TestCancelIbetWSTTrade:
     # <Normal_1>
     # Successfully accept a trade request
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.get_trade",
+        "app.routers.misc.ibet_wst.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user1["address"],
@@ -78,10 +78,12 @@ class TestCancelIbetWSTTrade:
         ),
     )
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.balance_of", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
+        AsyncMock(return_value=1000),
     )
     @mock.patch(
-        "app.routers.misc.ibet_wst.ERC20.allowance", AsyncMock(return_value=2000)
+        "app.routers.misc.ibet_wst.EthereumERC20.allowance",
+        AsyncMock(return_value=2000),
     )
     @mock.patch(
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
@@ -96,8 +98,8 @@ class TestCancelIbetWSTTrade:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
         await async_db.commit()
 
@@ -105,7 +107,7 @@ class TestCancelIbetWSTTrade:
         nonce = secrets.token_bytes(32)
 
         # Get domain separator
-        token_st = IbetWST(self.ibet_wst_address)
+        token_st = EthereumIbetWST(self.ibet_wst_address)
         domain_separator = await token_st.domain_separator()
 
         # Generate digest
@@ -200,7 +202,7 @@ class TestCancelIbetWSTTrade:
         nonce = secrets.token_bytes(32)
 
         # Get domain separator
-        token_st = IbetWST(self.ibet_wst_address)
+        token_st = EthereumIbetWST(self.ibet_wst_address)
         domain_separator = await token_st.domain_separator()
 
         # Generate digest
@@ -240,7 +242,7 @@ class TestCancelIbetWSTTrade:
     # <Error_3>
     # Insufficient balance for IbetWST token transfer
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.get_trade",
+        "app.routers.misc.ibet_wst.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user1["address"],
@@ -256,11 +258,12 @@ class TestCancelIbetWSTTrade:
         ),
     )
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.balance_of",
+        "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
         AsyncMock(return_value=999),  # Insufficient balance
     )
     @mock.patch(
-        "app.routers.misc.ibet_wst.ERC20.allowance", AsyncMock(return_value=2000)
+        "app.routers.misc.ibet_wst.EthereumERC20.allowance",
+        AsyncMock(return_value=2000),
     )
     @mock.patch(
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
@@ -275,8 +278,8 @@ class TestCancelIbetWSTTrade:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
         await async_db.commit()
 
@@ -284,7 +287,7 @@ class TestCancelIbetWSTTrade:
         nonce = secrets.token_bytes(32)
 
         # Get domain separator
-        token_st = IbetWST(self.ibet_wst_address)
+        token_st = EthereumIbetWST(self.ibet_wst_address)
         domain_separator = await token_st.domain_separator()
 
         # Generate digest
@@ -324,7 +327,7 @@ class TestCancelIbetWSTTrade:
     # <Error_4>
     # Insufficient allowance for ERC20 token transfer
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.get_trade",
+        "app.routers.misc.ibet_wst.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user1["address"],
@@ -340,10 +343,11 @@ class TestCancelIbetWSTTrade:
         ),
     )
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.balance_of", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
+        AsyncMock(return_value=1000),
     )
     @mock.patch(
-        "app.routers.misc.ibet_wst.ERC20.allowance",
+        "app.routers.misc.ibet_wst.EthereumERC20.allowance",
         AsyncMock(return_value=1999),  # Insufficient allowance
     )
     @mock.patch(
@@ -359,8 +363,8 @@ class TestCancelIbetWSTTrade:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
         await async_db.commit()
 
@@ -368,7 +372,7 @@ class TestCancelIbetWSTTrade:
         nonce = secrets.token_bytes(32)
 
         # Get domain separator
-        token_st = IbetWST(self.ibet_wst_address)
+        token_st = EthereumIbetWST(self.ibet_wst_address)
         domain_separator = await token_st.domain_separator()
 
         # Generate digest

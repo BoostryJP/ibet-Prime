@@ -171,7 +171,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.add_account_white_list_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.add_account_white_list_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_2(self, processor, async_db, caplog):
@@ -239,7 +239,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.delete_account_white_list_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.delete_account_white_list_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_3(self, processor, async_db, caplog):
@@ -305,7 +305,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.request_trade_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.request_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_4(self, processor, async_db, caplog):
@@ -378,7 +378,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.cancel_trade_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.cancel_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_5(self, processor, async_db, caplog):
@@ -444,7 +444,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.accept_trade_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.accept_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_6(self, processor, async_db, caplog):
@@ -508,7 +508,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.reject_trade_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.reject_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_7(self, processor, async_db, caplog):
@@ -572,7 +572,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.mint_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.mint_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_8(self, processor, async_db, caplog):
@@ -639,7 +639,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.burn_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.burn_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_9(self, processor, async_db, caplog):
@@ -706,7 +706,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.transfer_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.transfer_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_10(self, processor, async_db, caplog):
@@ -776,7 +776,7 @@ class TestProcessor:
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.IbetWST.force_burn_from_with_authorization",
+        "app.model.eth.wst.EthereumIbetWST.force_burn_from_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_11(self, processor, async_db, caplog):

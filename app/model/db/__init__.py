@@ -134,6 +134,7 @@ from .node import EthereumNode, Node
 from .notification import Notification, NotificationType
 from .scheduled_events import ScheduledEvents, ScheduledEventType
 from .token import (
+    IbetWSTBlockchain,
     Token,
     TokenAttrUpdate,
     TokenCache,

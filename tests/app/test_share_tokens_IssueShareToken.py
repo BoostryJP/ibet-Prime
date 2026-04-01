@@ -174,7 +174,7 @@ class TestIssueShareToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -309,7 +309,7 @@ class TestIssueShareToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -413,6 +413,7 @@ class TestIssueShareToken:
                 "principal_value": 1000,
                 "is_canceled": True,
                 "activate_ibet_wst": None,
+                "ibet_wst_blockchains": None,
                 "ibet_wst_name": None,
             }
             resp = await async_client.post(
@@ -601,7 +602,7 @@ class TestIssueShareToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -865,6 +866,7 @@ class TestIssueShareToken:
                 "cancellation_date": "20221231",
                 "principal_value": 1000,
                 "activate_ibet_wst": True,  # Activate IbetWST
+                "ibet_wst_blockchains": ["ethereum"],
                 "ibet_wst_name": "ibet_wst_name_test1",
             }
             resp = await async_client.post(
@@ -922,7 +924,7 @@ class TestIssueShareToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is True
+            assert token_1.is_ibet_wst_activated("ethereum") is True
             assert token_1.ibet_wst_version == IbetWSTVersion.V_1
             assert token_1.ibet_wst_name == "ibet_wst_name_test1"
 

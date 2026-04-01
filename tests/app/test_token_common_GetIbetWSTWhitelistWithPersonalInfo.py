@@ -55,7 +55,7 @@ class TestGetIbetWSTWhiteList:
     # Return whitelist status of account
     # - Personal information is not registered
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.account_white_list",
+        "app.routers.misc.ibet_wst.EthereumIbetWST.account_white_list",
         AsyncMock(
             return_value=IbetWSTWhiteList(
                 st_account=to_checksum_address(st_account_address),
@@ -75,9 +75,11 @@ class TestGetIbetWSTWhiteList:
             version=TokenVersion.V_25_09,
             abi={},
             token_status=TokenStatus.SUCCEEDED,
-            ibet_wst_activated=True,
-            ibet_wst_deployed=True,
-            ibet_wst_address=to_checksum_address(self.ibet_wst_address),
+        )
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address(
+            "ethereum", to_checksum_address(self.ibet_wst_address)
         )
         async_db.add(token)
         await async_db.commit()
@@ -105,7 +107,7 @@ class TestGetIbetWSTWhiteList:
     # Return whitelist status of account
     # - Personal information is registered
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.account_white_list",
+        "app.routers.misc.ibet_wst.EthereumIbetWST.account_white_list",
         AsyncMock(
             return_value=IbetWSTWhiteList(
                 st_account=to_checksum_address(st_account_address),
@@ -125,9 +127,11 @@ class TestGetIbetWSTWhiteList:
             version=TokenVersion.V_25_09,
             abi={},
             token_status=TokenStatus.SUCCEEDED,
-            ibet_wst_activated=True,
-            ibet_wst_deployed=True,
-            ibet_wst_address=to_checksum_address(self.ibet_wst_address),
+        )
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address(
+            "ethereum", to_checksum_address(self.ibet_wst_address)
         )
         async_db.add(token)
 

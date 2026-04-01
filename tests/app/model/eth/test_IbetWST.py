@@ -22,7 +22,7 @@ import secrets
 import pytest
 
 from app.model.eth import (
-    IbetWST,
+    EthereumIbetWST,
     IbetWSTAuthorization,
     IbetWSTDigestHelper,
 )
@@ -329,7 +329,7 @@ class TestAccountWhitelist:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Call account_white_list function
         whitelist = await contract.account_white_list(self.user1["address"])
@@ -349,7 +349,7 @@ class TestAccountWhitelist:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Call name function
         whitelist = await contract.account_white_list(ZERO_ADDRESS)
@@ -387,7 +387,7 @@ class TestAddAccountWhiteListWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -450,7 +450,7 @@ class TestAddAccountWhiteListWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -533,7 +533,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -601,7 +601,7 @@ class TestDeleteAccountWhiteListWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -696,7 +696,7 @@ class TestTransferWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -779,7 +779,7 @@ class TestTransferWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -850,7 +850,7 @@ class TestMintWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -907,7 +907,7 @@ class TestMintWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -983,7 +983,7 @@ class TestBurnWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -1048,7 +1048,7 @@ class TestBurnWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -1109,7 +1109,7 @@ class TestBurnWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -1185,7 +1185,7 @@ class TestForceBurnFromWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -1250,7 +1250,7 @@ class TestForceBurnFromWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -1311,7 +1311,7 @@ class TestForceBurnFromWithAuthorization:
         )
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Generate nonce
         nonce = secrets.token_bytes(32)
@@ -1378,7 +1378,7 @@ class TestGetTrade:
     async def test_normal_1(self):
         # Deploy contract (WST)
         st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -1435,7 +1435,7 @@ class TestGetTrade:
         contract_address = await deploy_wst_token("Test Token", self.owner, self.owner)
 
         # Generate contract instance
-        contract = IbetWST(contract_address)
+        contract = EthereumIbetWST(contract_address)
 
         # Call get_trade function
         trade_info = await contract.get_trade(1)
@@ -1475,7 +1475,7 @@ class TestRequestTradeWithAuthorization:
     async def test_normal_1(self):
         # Deploy contract (WST)
         st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -1567,7 +1567,7 @@ class TestRequestTradeWithAuthorization:
     async def test_error_1(self):
         # Deploy contract (WST)
         st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -1672,7 +1672,7 @@ class TestCancelTradeWithAuthorization:
     async def test_normal_1(self):
         # Deploy contract (WST)
         st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -1765,7 +1765,7 @@ class TestCancelTradeWithAuthorization:
     async def test_error_1(self):
         # Deploy contract (WST)
         st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -1874,7 +1874,7 @@ class TestAcceptTradeWithAuthorization:
         await mint_wst_token(
             st_token_address, self.seller_st["address"], 1000, self.owner
         )
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -1981,7 +1981,7 @@ class TestAcceptTradeWithAuthorization:
         await mint_wst_token(
             st_token_address, self.seller_st["address"], 1000, self.owner
         )
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -2098,7 +2098,7 @@ class TestRejectTradeWithAuthorization:
     async def test_normal_1(self):
         # Deploy contract (WST)
         st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
@@ -2191,7 +2191,7 @@ class TestRejectTradeWithAuthorization:
     async def test_error_1(self):
         # Deploy contract (WST)
         st_token_address = await deploy_wst_token("Test Token", self.owner, self.owner)
-        token_st = IbetWST(st_token_address)
+        token_st = EthereumIbetWST(st_token_address)
 
         # Deploy contract (SC token)
         sc_token_address = await deploy_erc20_token(
