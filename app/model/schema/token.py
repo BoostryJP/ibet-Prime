@@ -51,6 +51,11 @@ from .position import LockEvent, LockEventCategory
 ############################
 # REQUEST
 ############################
+class IbetWSTBlockchain(StrEnum):
+    ETHEREUM = "ethereum"
+    # NOTE: Add other blockchains here when needed
+
+
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
 
@@ -87,6 +92,10 @@ class IbetStraightBondCreate(BaseModel):
 
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
+    )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
     )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
@@ -127,8 +136,10 @@ class IbetStraightBondCreate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Self):
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -163,6 +174,10 @@ class IbetStraightBondUpdate(BaseModel):
 
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
+    )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
     )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
@@ -208,8 +223,10 @@ class IbetStraightBondUpdate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Self):
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -266,6 +283,10 @@ class IbetShareCreate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
+    )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
     )
@@ -282,8 +303,10 @@ class IbetShareCreate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Self):
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -313,6 +336,10 @@ class IbetShareUpdate(BaseModel):
 
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
+    )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
     )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
@@ -347,8 +374,10 @@ class IbetShareUpdate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Self):
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -594,10 +623,12 @@ class IbetStraightBondResponse(IbetStraightBond):
     contract_version: IbetStraightBondContractVersion = Field(
         ..., description="Contract version"
     )
-    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_activated: bool = Field(..., description="IbetWST activated on Ethereum")
+    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed on Ethereum")
+    ibet_wst_address: Optional[str] = Field(
+        ..., description="IbetWST contract address on Ethereum"
+    )
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
-    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
-    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
     ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")
 
 
@@ -609,10 +640,12 @@ class IbetShareResponse(IbetShare):
     contract_version: IbetShareContractVersion = Field(
         ..., description="Contract version"
     )
-    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_activated: bool = Field(..., description="IbetWST activated on Ethereum")
+    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed on Ethereum")
+    ibet_wst_address: Optional[str] = Field(
+        ..., description="IbetWST contract address on Ethereum"
+    )
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
-    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
-    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
     ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")
 
 

@@ -146,6 +146,7 @@ class TestUpdateBondToken:
             "transfer_approval_required": True,
             "memo": "m" * 10000,
             "activate_ibet_wst": True,
+            "ibet_wst_blockchains": ["ethereum"],
             "ibet_wst_name": "ibet_wst_name_test",
         }
         resp = await async_client.post(
@@ -175,7 +176,7 @@ class TestUpdateBondToken:
                 select(Token).where(Token.token_address == _token_address).limit(1)
             )
         ).first()
-        assert token_af.ibet_wst_activated is True
+        assert token_af.is_ibet_wst_activated("ethereum") is True
         assert token_af.ibet_wst_version == IbetWSTVersion.V_1
         assert token_af.ibet_wst_tx_id is not None
         assert token_af.ibet_wst_name == "ibet_wst_name_test"

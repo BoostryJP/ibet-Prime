@@ -63,9 +63,11 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
             version=TokenVersion.V_25_09,
             abi={},
             token_status=TokenStatus.SUCCEEDED,
-            ibet_wst_activated=True,
-            ibet_wst_deployed=True,
-            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+        )
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address(
+            "ethereum", to_checksum_address(self.wst_token_address_1)
         )
         async_db.add(token)
 
@@ -104,9 +106,11 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
             version=TokenVersion.V_25_09,
             abi={},
             token_status=TokenStatus.SUCCEEDED,
-            ibet_wst_activated=True,
-            ibet_wst_deployed=True,
-            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+        )
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address(
+            "ethereum", to_checksum_address(self.wst_token_address_1)
         )
         async_db.add(token)
 

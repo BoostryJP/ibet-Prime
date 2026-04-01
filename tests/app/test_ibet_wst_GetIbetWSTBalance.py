@@ -38,7 +38,8 @@ class TestGetIbetWSTBalance:
     # <Normal_1>
     # Return balance of account
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.balance_of", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
+        AsyncMock(return_value=1000),
     )
     async def test_normal_1(self, async_client, async_db):
         # Define parameters
@@ -55,8 +56,8 @@ class TestGetIbetWSTBalance:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = to_checksum_address(ibet_wst_address)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", to_checksum_address(ibet_wst_address))
         async_db.add(token)
         await async_db.commit()
 

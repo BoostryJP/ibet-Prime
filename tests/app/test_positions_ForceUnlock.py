@@ -315,8 +315,8 @@ class TestForceUnlock:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
-        token.ibet_wst_address = _ibet_wst_address
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_address("ethereum", _ibet_wst_address)
         async_db.add(token)
 
         tx_id = str(uuid.uuid4())
@@ -952,8 +952,8 @@ class TestForceUnlock:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
-        token.ibet_wst_address = _ibet_wst_address
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_address("ethereum", _ibet_wst_address)
         async_db.add(token)
 
         tx_id = str(uuid.uuid4())

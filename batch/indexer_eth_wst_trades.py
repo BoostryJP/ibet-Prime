@@ -29,11 +29,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import BatchAsyncSessionLocal
 from app.model.db import (
     Account,
+    IbetWSTBlockchain,
     IDXEthIbetWSTTrade,
     IDXEthIbetWSTTradeBlockNumber,
     Token,
 )
-from app.model.eth import IbetWST, IbetWSTTrade
+from app.model.eth import EthereumIbetWST, IbetWSTTrade
 from app.utils.eth_contract_utils import (
     EthAsyncContractEventsView,
     EthAsyncContractUtils,
@@ -111,26 +112,25 @@ class Processor:
         """
         Load the list of WST tokens from the database and initialize their contract events.
         """
-        # Get the list of all WST tokens that have been deployed
-        wst_address_all: tuple[str, ...] = tuple(
-            [
-                record[0]
-                for record in (
-                    await db_session.execute(
-                        select(Token.ibet_wst_address)
-                        .join(
-                            Account,
-                            and_(
-                                Account.issuer_address == Token.issuer_address,
-                                Account.is_deleted == False,
-                            ),
-                        )
-                        .where(Token.ibet_wst_deployed.is_(True))
-                    )
+        token_list: Sequence[Token] = (
+            await db_session.scalars(
+                select(Token).join(
+                    Account,
+                    and_(
+                        Account.issuer_address == Token.issuer_address,
+                        Account.is_deleted == False,
+                    ),
                 )
-                .tuples()
-                .all()
-            ]
+            )
+        ).all()
+
+        wst_address_all: tuple[str, ...] = tuple(
+            {
+                token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+                for token in token_list
+                if token.is_ibet_wst_deployed(IbetWSTBlockchain.ETHEREUM)
+                and token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM) is not None
+            }
         )
 
         # Get the list of all WST tokens that have been loaded
@@ -145,18 +145,15 @@ class Processor:
             # If there are no additional tokens to load, skip process
             return
 
-        # Get the list of WST tokens that need to be loaded
-        load_required_token_list: Sequence[Token] = (
-            await db_session.scalars(
-                select(Token).where(
-                    Token.ibet_wst_address.in_(load_required_address_list),
-                )
-            )
-        ).all()
-        for _token in load_required_token_list:
-            wst = IbetWST(_token.ibet_wst_address)
-            self.wst_list[_token.ibet_wst_address] = EthAsyncContractEventsView(
-                _token.ibet_wst_address, wst.contract.events
+        for _token in token_list:
+            wst_address = _token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+            if wst_address not in load_required_address_list:
+                continue
+            if wst_address is None:
+                continue
+            wst = EthereumIbetWST(wst_address)
+            self.wst_list[wst_address] = EthAsyncContractEventsView(
+                wst_address, wst.contract.events
             )
 
     @staticmethod
@@ -224,7 +221,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = EthereumIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(
@@ -251,7 +248,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = EthereumIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(
@@ -278,7 +275,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = EthereumIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(
@@ -305,7 +302,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = EthereumIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(

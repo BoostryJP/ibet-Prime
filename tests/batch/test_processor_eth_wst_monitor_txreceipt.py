@@ -252,11 +252,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -353,11 +353,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -497,11 +497,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -538,8 +538,11 @@ class TestProcessor:
                 select(Token).where(Token.ibet_wst_tx_id == tx_id).limit(1)
             )
         ).first()
-        assert token_af.ibet_wst_deployed is True
-        assert token_af.ibet_wst_address == "0x9876543210abCDef1234567890AbcDef12345678"
+        assert token_af.is_ibet_wst_deployed("ethereum") is True
+        assert (
+            token_af.get_ibet_wst_address("ethereum")
+            == "0x9876543210abCDef1234567890AbcDef12345678"
+        )
 
         assert caplog.messages == [
             f"Monitor transaction: id={tx_id}, type=deploy",
@@ -590,11 +593,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -681,11 +684,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -771,11 +774,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -874,11 +877,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -973,7 +976,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.ERC20.decimals",
+        "app.model.eth.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_5(self, processor, async_db, caplog):
@@ -987,11 +990,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -1085,7 +1088,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.ERC20.decimals",
+        "app.model.eth.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_6(self, processor, async_db, caplog):
@@ -1099,11 +1102,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -1190,7 +1193,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.ERC20.decimals",
+        "app.model.eth.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_7(self, processor, async_db, caplog):
@@ -1204,11 +1207,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -1295,7 +1298,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.ERC20.decimals",
+        "app.model.eth.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_8(self, processor, async_db, caplog):
@@ -1309,11 +1312,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -1405,11 +1408,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -1500,11 +1503,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         wst_tx = EthIbetWSTTx()
@@ -1580,11 +1583,11 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.ibet_wst_deployed = False
-        token.ibet_wst_address = None
+        token.set_ibet_wst_deployed("ethereum", False)
+        token.set_ibet_wst_address("ethereum", None)
         async_db.add(token)
 
         another_tx_id = str(uuid.uuid4())

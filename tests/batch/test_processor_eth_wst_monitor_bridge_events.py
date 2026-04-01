@@ -182,8 +182,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -326,8 +326,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -443,8 +443,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -560,8 +560,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -657,8 +657,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -767,8 +767,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()

@@ -35,7 +35,8 @@ class TestGetERC20Allowance:
     # <Normal_1>
     # Return allowance of account
     @mock.patch(
-        "app.routers.misc.ibet_wst.ERC20.allowance", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumERC20.allowance",
+        AsyncMock(return_value=1000),
     )
     async def test_normal_1(self, async_client, async_db):
         # Define parameters
@@ -102,19 +103,19 @@ class TestGetERC20Allowance:
                     "type": "missing",
                     "loc": ["query", "token_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
                 {
                     "type": "missing",
                     "loc": ["query", "account_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
                 {
                     "type": "missing",
                     "loc": ["query", "spender_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
             ],
         }

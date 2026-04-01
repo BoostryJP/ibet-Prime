@@ -91,7 +91,7 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = False  # No IbetWST deployed
+        token.set_ibet_wst_deployed("ethereum", False)  # No IbetWST deployed
         async_db.add(token)
 
         account = Account()
@@ -134,8 +134,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -177,7 +177,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.IbetWST.get_trade",
+        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -204,8 +204,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -266,7 +266,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.IbetWST.get_trade",
+        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -293,8 +293,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -354,7 +354,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.IbetWST.get_trade",
+        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -381,8 +381,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -442,7 +442,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.IbetWST.get_trade",
+        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -469,8 +469,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -530,7 +530,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.IbetWST.get_trade",
+        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -557,8 +557,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()

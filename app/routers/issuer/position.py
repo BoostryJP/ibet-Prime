@@ -37,6 +37,7 @@ from app.exceptions import (
 )
 from app.model.db import (
     EthIbetWSTTx,
+    IbetWSTBlockchain,
     IbetWSTTxType,
     IDXLock,
     IDXLockedPosition,
@@ -681,7 +682,11 @@ async def force_unlock(
     #   If a Burn or ForceBurn transaction for ibetWST is in progress,
     #   executing a ForceUnlock transaction may result in an insufficient locked balance error
     #   during the ForceUnlock transaction associated with the WST transaction.
-    if _token.ibet_wst_activated and _token.ibet_wst_address is not None:
+    ibet_wst_address = _token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+    if (
+        _token.is_ibet_wst_activated(IbetWSTBlockchain.ETHEREUM)
+        and ibet_wst_address is not None
+    ):
         _pending_wst_tx: EthIbetWSTTx | None = (
             await db.scalars(
                 select(EthIbetWSTTx)
@@ -690,7 +695,7 @@ async def force_unlock(
                         EthIbetWSTTx.tx_type.in_(
                             [IbetWSTTxType.BURN, IbetWSTTxType.FORCE_BURN]
                         ),
-                        EthIbetWSTTx.ibet_wst_address == _token.ibet_wst_address,
+                        EthIbetWSTTx.ibet_wst_address == ibet_wst_address,
                         EthIbetWSTTx.authorizer == account_address,
                         EthIbetWSTTx.finalized == False,
                     )
@@ -702,6 +707,10 @@ async def force_unlock(
             raise InvalidParameterError(
                 "There is a pending ibetWST Burn or ForceBurn transaction for this account"
             )
+
+    # NOTE:
+    #  Currently, only Ethereum is supported.
+    #  If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
 
     # Force unlock
     unlock_message_data = UnlockDataMessage(message=data.message).model_dump_json(

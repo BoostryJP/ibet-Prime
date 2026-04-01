@@ -17,4 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from .wst import ERC20, IbetWST, IbetWSTAuthorization, IbetWSTDigestHelper, IbetWSTTrade
+from .wst import (
+    EthereumERC20,
+    EthereumIbetWST,
+    IbetWSTAuthorization,
+    IbetWSTDigestHelper,
+    IbetWSTTrade,
+)

@@ -76,6 +76,7 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     EthIbetWSTTx,
+    IbetWSTBlockchain,
     IbetWSTTxParamsDeploy,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -199,6 +200,19 @@ router = APIRouter(
 LOG = log.get_logger()
 local_tz = pytz.timezone(config.TZ)
 utc_tz = pytz.timezone("UTC")
+
+
+def _resolve_ibet_wst_blockchains(
+    ibet_wst_blockchains: list[str] | None,
+) -> list[IbetWSTBlockchain]:
+    blockchains = ibet_wst_blockchains
+    if not blockchains:
+        blockchains = [IbetWSTBlockchain.ETHEREUM]
+    return list(
+        dict.fromkeys(
+            [IbetWSTBlockchain(str(blockchain)) for blockchain in blockchains]
+        )
+    )
 
 
 # POST: /bond/tokens
@@ -360,23 +374,35 @@ async def issue_bond_token(
     _token.token_status = token_status
     _token.version = TokenVersion.V_25_09
     if token.activate_ibet_wst:
-        tx_id = str(uuid.uuid4())
-        # Activate IbetWST
-        _token.ibet_wst_activated = True
+        ibet_wst_blockchains = _resolve_ibet_wst_blockchains(token.ibet_wst_blockchains)
+
+        # Activate IbetWST on requested blockchains.
+        for ibet_wst_blockchain in ibet_wst_blockchains:
+            _token.set_ibet_wst_activated(ibet_wst_blockchain, True)
+
         _token.ibet_wst_version = IbetWSTVersion.V_1
-        _token.ibet_wst_tx_id = tx_id
         _token.ibet_wst_name = token.ibet_wst_name
-        # Register IbetWST transaction
-        _ibet_wst_tx = EthIbetWSTTx()
-        _ibet_wst_tx.tx_id = tx_id
-        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
-        _ibet_wst_tx.version = IbetWSTVersion.V_1
-        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
-        _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=token.ibet_wst_name, initial_owner=issuer_address
-        )
-        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        db.add(_ibet_wst_tx)
+
+        # Register Ethereum IbetWST deployment transaction if ethereum is selected.
+        if IbetWSTBlockchain.ETHEREUM in ibet_wst_blockchains:
+            tx_id = str(uuid.uuid4())
+            _token.ibet_wst_tx_id = tx_id
+
+            _ibet_wst_tx = EthIbetWSTTx()
+            _ibet_wst_tx.tx_id = tx_id
+            _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+            _ibet_wst_tx.version = IbetWSTVersion.V_1
+            _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+            _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                name=token.ibet_wst_name, initial_owner=issuer_address
+            )
+            _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+            db.add(_ibet_wst_tx)
+
+        # NOTE:
+        #   Currently, only Ethereum is supported.
+        #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+
     db.add(_token)
 
     # Register operation log
@@ -452,11 +478,21 @@ async def list_all_bond_tokens(
         )
         bond_token["token_status"] = token.token_status
         bond_token["contract_version"] = token.version
-        bond_token["ibet_wst_activated"] = True if token.ibet_wst_activated else False
         bond_token["ibet_wst_version"] = token.ibet_wst_version
-        bond_token["ibet_wst_deployed"] = True if token.ibet_wst_deployed else False
-        bond_token["ibet_wst_address"] = token.ibet_wst_address
         bond_token["ibet_wst_name"] = token.ibet_wst_name
+
+        # TODO:
+        # Currently, IbetWST supports only Ethererum, so the IbetWST related information is set based on the Ethereum blockchain.
+        # If support for other blockchains is added in the future, the IbetWST related information should be set JSON response based on the corresponding blockchain.
+        bond_token["ibet_wst_activated"] = token.is_ibet_wst_activated(
+            IbetWSTBlockchain.ETHEREUM
+        )
+        bond_token["ibet_wst_deployed"] = token.is_ibet_wst_deployed(
+            IbetWSTBlockchain.ETHEREUM
+        )
+        bond_token["ibet_wst_address"] = token.get_ibet_wst_address(
+            IbetWSTBlockchain.ETHEREUM
+        )
 
         bond_tokens.append(bond_token)
 
@@ -503,11 +539,21 @@ async def retrieve_bond_token(
     )
     bond_token["token_status"] = _token.token_status
     bond_token["contract_version"] = _token.version
-    bond_token["ibet_wst_activated"] = True if _token.ibet_wst_activated else False
     bond_token["ibet_wst_version"] = _token.ibet_wst_version
-    bond_token["ibet_wst_deployed"] = True if _token.ibet_wst_deployed else False
-    bond_token["ibet_wst_address"] = _token.ibet_wst_address
     bond_token["ibet_wst_name"] = _token.ibet_wst_name
+
+    # TODO:
+    # Currently, IbetWST supports only Ethererum, so the IbetWST related information is set based on the Ethereum blockchain.
+    # If support for other blockchains is added in the future, the IbetWST related information should be set JSON response based on the corresponding blockchain.
+    bond_token["ibet_wst_activated"] = _token.is_ibet_wst_activated(
+        IbetWSTBlockchain.ETHEREUM
+    )
+    bond_token["ibet_wst_deployed"] = _token.is_ibet_wst_deployed(
+        IbetWSTBlockchain.ETHEREUM
+    )
+    bond_token["ibet_wst_address"] = _token.get_ibet_wst_address(
+        IbetWSTBlockchain.ETHEREUM
+    )
 
     return json_response(bond_token)
 
@@ -646,24 +692,40 @@ async def update_bond_token(
         raise SendTransactionError("failed to send transaction")
 
     # Activate IbetWST
-    if update_data.activate_ibet_wst and not _token.ibet_wst_activated:
-        tx_id = str(uuid.uuid4())
-        _token.ibet_wst_activated = True
-        _token.ibet_wst_version = IbetWSTVersion.V_1
-        _token.ibet_wst_tx_id = tx_id
-        _token.ibet_wst_name = update_data.ibet_wst_name
-
-        # Register IbetWST transaction
-        _ibet_wst_tx = EthIbetWSTTx()
-        _ibet_wst_tx.tx_id = tx_id
-        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
-        _ibet_wst_tx.version = IbetWSTVersion.V_1
-        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
-        _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=update_data.ibet_wst_name, initial_owner=issuer_address
+    if update_data.activate_ibet_wst:
+        ibet_wst_blockchains = _resolve_ibet_wst_blockchains(
+            update_data.ibet_wst_blockchains
         )
-        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        db.add(_ibet_wst_tx)
+        activate_blockchains = [
+            blockchain
+            for blockchain in ibet_wst_blockchains
+            if not _token.is_ibet_wst_activated(blockchain)
+        ]
+        if len(activate_blockchains) > 0:
+            for blockchain in activate_blockchains:
+                _token.set_ibet_wst_activated(blockchain, True)
+            _token.ibet_wst_version = IbetWSTVersion.V_1
+            _token.ibet_wst_name = update_data.ibet_wst_name
+
+            # Register Ethereum IbetWST deployment transaction if ethereum is selected.
+            if IbetWSTBlockchain.ETHEREUM in activate_blockchains:
+                tx_id = str(uuid.uuid4())
+                _token.ibet_wst_tx_id = tx_id
+
+                _ibet_wst_tx = EthIbetWSTTx()
+                _ibet_wst_tx.tx_id = tx_id
+                _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+                _ibet_wst_tx.version = IbetWSTVersion.V_1
+                _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+                _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                    name=update_data.ibet_wst_name, initial_owner=issuer_address
+                )
+                _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+                db.add(_ibet_wst_tx)
+
+            # NOTE:
+            #   Currently, only Ethereum is supported.
+            #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
 
     # Register operation log
     operation_log = TokenUpdateOperationLog()

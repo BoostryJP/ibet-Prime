@@ -33,77 +33,6 @@ from config import ZERO_ADDRESS
 from eth_config import ETH_CHAIN_ID
 
 
-class ERC20:
-    """
-    ERC20 contract
-    """
-
-    contract_name = "IbetERC20"
-    contract: AsyncContract
-
-    def __init__(
-        self,
-        contract_address: str = ZERO_ADDRESS,
-    ):
-        self.contract = EthAsyncContractUtils.get_contract(
-            contract_name=self.contract_name, contract_address=contract_address
-        )
-
-    async def name(self) -> str:
-        """
-        Get token name
-
-        :return: Token name
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract, function_name="name", args=(), default_returns=""
-        )
-
-    async def balance_of(self, account: EthereumAddress) -> int:
-        """
-        Get balance of account
-
-        :param account: Account address
-        :return: Account balance
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract,
-            function_name="balanceOf",
-            args=(to_checksum_address(account),),
-            default_returns=0,
-        )
-
-    async def allowance(
-        self, account: EthereumAddress, spender: EthereumAddress
-    ) -> int:
-        """
-        Get allowance of spender by owner
-
-        :param account: Token holder address
-        :param spender: Spender address
-        :return: Allowance amount
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract,
-            function_name="allowance",
-            args=(to_checksum_address(account), to_checksum_address(spender)),
-            default_returns=0,
-        )
-
-    async def decimals(self) -> int:
-        """
-        Get token decimals
-
-        :return: Token decimals
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract,
-            function_name="decimals",
-            args=(),
-            default_returns=18,
-        )
-
-
 class IbetWSTWhiteList(BaseModel):
     """
     IbetWST White List information
@@ -761,7 +690,78 @@ class IbetWSTDigestHelper:
         return digest
 
 
-class IbetWST(ERC20):
+class EthereumERC20:
+    """
+    ERC20 contract
+    """
+
+    contract_name = "IbetERC20"
+    contract: AsyncContract
+
+    def __init__(
+        self,
+        contract_address: str = ZERO_ADDRESS,
+    ):
+        self.contract = EthAsyncContractUtils.get_contract(
+            contract_name=self.contract_name, contract_address=contract_address
+        )
+
+    async def name(self) -> str:
+        """
+        Get token name
+
+        :return: Token name
+        """
+        return await EthAsyncContractUtils.call_function(
+            contract=self.contract, function_name="name", args=(), default_returns=""
+        )
+
+    async def balance_of(self, account: EthereumAddress) -> int:
+        """
+        Get balance of account
+
+        :param account: Account address
+        :return: Account balance
+        """
+        return await EthAsyncContractUtils.call_function(
+            contract=self.contract,
+            function_name="balanceOf",
+            args=(to_checksum_address(account),),
+            default_returns=0,
+        )
+
+    async def allowance(
+        self, account: EthereumAddress, spender: EthereumAddress
+    ) -> int:
+        """
+        Get allowance of spender by owner
+
+        :param account: Token holder address
+        :param spender: Spender address
+        :return: Allowance amount
+        """
+        return await EthAsyncContractUtils.call_function(
+            contract=self.contract,
+            function_name="allowance",
+            args=(to_checksum_address(account), to_checksum_address(spender)),
+            default_returns=0,
+        )
+
+    async def decimals(self) -> int:
+        """
+        Get token decimals
+
+        :return: Token decimals
+        """
+        return await EthAsyncContractUtils.call_function(
+            contract=self.contract,
+            function_name="decimals",
+            args=(),
+            default_returns=18,
+        )
+
+
+class EthereumIbetWST(EthereumERC20):
     """
     IbetWST contract
     """

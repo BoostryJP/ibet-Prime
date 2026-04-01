@@ -139,6 +139,11 @@ class ValueOperator(IntEnum):
     LTE = 2
 
 
+class IbetWSTBlockchain(StrEnum):
+    ETHEREUM = "ethereum"
+    # NOTE: Add other blockchains that support IbetWST as needed
+
+
 ############################
 # REQUEST
 ############################
