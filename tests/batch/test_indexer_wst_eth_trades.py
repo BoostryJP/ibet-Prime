@@ -29,7 +29,7 @@ from app.model.db import (
     Account,
     IDXEthIbetWSTTrade,
     IDXEthIbetWSTTradeBlockNumber,
-    IDXEthIbetWSTTradeState,
+    IDXIbetWSTTradeState,
     Token,
     TokenType,
     TokenVersion,
@@ -236,7 +236,7 @@ class TestProcessor:
         assert wst_trade.buyer_sc_account_address == self.user_address_2
         assert wst_trade.st_value == 1000
         assert wst_trade.sc_value == 2000
-        assert wst_trade.state == IDXEthIbetWSTTradeState.PENDING
+        assert wst_trade.state == IDXIbetWSTTradeState.PENDING
         assert wst_trade.memo == ""
 
         # Check IDXEthIbetWSTTradeBlockNumber
@@ -330,7 +330,7 @@ class TestProcessor:
         assert wst_trade.buyer_sc_account_address == self.user_address_2
         assert wst_trade.st_value == 1000
         assert wst_trade.sc_value == 2000
-        assert wst_trade.state == IDXEthIbetWSTTradeState.EXECUTED
+        assert wst_trade.state == IDXIbetWSTTradeState.EXECUTED
         assert wst_trade.memo == ""
 
         # Check log
@@ -418,7 +418,7 @@ class TestProcessor:
         assert wst_trade.buyer_sc_account_address == self.user_address_2
         assert wst_trade.st_value == 1000
         assert wst_trade.sc_value == 2000
-        assert wst_trade.state == IDXEthIbetWSTTradeState.CANCELLED
+        assert wst_trade.state == IDXIbetWSTTradeState.CANCELLED
         assert wst_trade.memo == ""
 
         # Check log
@@ -506,7 +506,7 @@ class TestProcessor:
         assert wst_trade.buyer_sc_account_address == self.user_address_2
         assert wst_trade.st_value == 1000
         assert wst_trade.sc_value == 2000
-        assert wst_trade.state == IDXEthIbetWSTTradeState.REJECTED
+        assert wst_trade.state == IDXIbetWSTTradeState.REJECTED
         assert wst_trade.memo == ""
 
         # Check log
@@ -587,7 +587,7 @@ class TestProcessor:
             )
         ).all()
         assert len(wst_trade) == 1
-        assert wst_trade[0].state == IDXEthIbetWSTTradeState.EXECUTED
+        assert wst_trade[0].state == IDXIbetWSTTradeState.EXECUTED
 
         # Check log
         assert caplog.messages == [

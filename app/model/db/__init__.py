@@ -85,8 +85,8 @@ from .ibet_wst import (
     IDXAvaIbetWSTWhitelist,
     IDXEthIbetWSTTrade,
     IDXEthIbetWSTTradeBlockNumber,
-    IDXEthIbetWSTTradeState,
     IDXEthIbetWSTWhitelist,
+    IDXIbetWSTTradeState,
     ToIbetBridgeTxStatus,
     ToIbetBridgeTxType,
 )

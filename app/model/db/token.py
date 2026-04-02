@@ -50,6 +50,7 @@ class TokenStatus(IntEnum):
 class IbetWSTBlockchain(StrEnum):
     ETHEREUM = "ethereum"
     AVALANCHE = "avalanche"
+    # NOTE: Add other blockchains that support IbetWST as needed
 
 
 type IbetWSTActivatedStatusByBlockchain = dict[IbetWSTBlockchain, bool]

@@ -331,11 +331,28 @@ class AvaIbetWSTTx(Base):
 
     __tablename__ = "ava_ibet_wst_tx"
 
+    # Transaction ID
+    # - Unique identifier for the transaction
+    # - Format: UUID4
     tx_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    # Transaction Type
     tx_type: Mapped[IbetWSTTxType] = mapped_column(String(20), nullable=False)
+    # IbetWST Version
+    # - Version of the IbetWST contract used for the transaction
     version: Mapped[IbetWSTVersion] = mapped_column(String(2), nullable=False)
+    # Transaction status
+    # - PENDING: Transaction is created but not yet sent
+    # - SENT: Transaction is sent to the Avalanche network
+    # - SUCCEEDED: Transaction is mined and succeeded
+    # - FAILED: Transaction failed (e.g., due to insufficient gas or revert)
     status: Mapped[IbetWSTTxStatus] = mapped_column(Integer, nullable=False)
+    # IbetWST contract address
+    # - Address of the IbetWST contract on the Avalanche network
+    # - For deploy transactions: The contract address is set when the contract is deployed.
+    # - For other transactions: The contract address is set at the time the transaction is instructed
     ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
+    # Transaction parameters
+    # - JSON object containing the parameters for the transaction
     tx_params: Mapped[
         IbetWSTTxParamsDeploy
         | IbetWSTTxParamsAddAccountWhiteList
@@ -349,17 +366,41 @@ class AvaIbetWSTTx(Base):
         | IbetWSTTxParamsAcceptTrade
         | IbetWSTTxParamsRejectTrade
     ] = mapped_column(JSON, nullable=False)
+    # Transaction sender
+    # - Address of the sender who initiated the transaction
     tx_sender: Mapped[str] = mapped_column(String(42), nullable=False)
+    # Authorizer
+    # - Address of the authorizer who created the authorization for the transaction
+    # - This field is set if the transaction requires authorization
     authorizer: Mapped[str | None] = mapped_column(String(42), nullable=True)
+    # Authorization data
+    # - JSON object containing additional data for authorization
+    # - This field is set if the transaction requires authorization
     authorization: Mapped[IbetWSTAuthorization | None] = mapped_column(
         JSON, nullable=True, default=None
     )
+    # Client IP address
+    # - IP address of the client who initiated the transaction
+    # - This field is set when the transaction is executed directly via API call.
     client_ip: Mapped[str | None] = mapped_column(String(40))
+    # Transaction nonce
+    # - Nonce of the transaction on the Avalanche network
     tx_nonce: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Transaction hash
+    # - Hash of the transaction on the Avalanche network
+    # - Set to None if the transaction is not yet sent
     tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
+    # Block number
+    # - Block number when the transaction was mined
     block_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Gas used
     gas_used: Mapped[int | None] = mapped_column(BigInteger)
+    # Block finalized
+    # - True if the block is finalized, False otherwise
     finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Event log of the transaction
+    # - Set if the transaction emits events and the block is finalized
+    # - Not set if the tx_type is "DEPLOY"
     event_log: Mapped[
         IbetWSTEventLogMint
         | IbetWSTEventLogBurn
@@ -393,11 +434,13 @@ class IDXAvaIbetWSTTradeBlockNumber(Base):
 
     __tablename__ = "idx_ava_ibet_wst_trade_block_number"
 
+    # Record ID
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # Synchronized block number
     latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
 
 
-class IDXEthIbetWSTTradeState(StrEnum):
+class IDXIbetWSTTradeState(StrEnum):
     """IbetWST Trade State"""
 
     PENDING = "Pending"
@@ -441,7 +484,7 @@ class IDXEthIbetWSTTrade(Base):
     # NOTE: On-chain this is handled as uint256, so it supports up to 78 decimal digits.
     sc_value: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False)
     # Trade state
-    state: Mapped[IDXEthIbetWSTTradeState] = mapped_column(
+    state: Mapped[IDXIbetWSTTradeState] = mapped_column(
         String(20), nullable=False, index=True
     )
     # Memo
@@ -453,28 +496,39 @@ class IDXAvaIbetWSTTrade(Base):
 
     __tablename__ = "idx_ava_ibet_wst_trade"
 
+    # IbetWST contract address
     ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # Index of the trade
     index: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # Seller's IbetWST account address
     seller_st_account_address: Mapped[str] = mapped_column(
         String(42), nullable=False, index=True
     )
+    # Buyer's IbetWST account address
     buyer_st_account_address: Mapped[str] = mapped_column(
         String(42), nullable=False, index=True
     )
+    # StableCoin contract address
     sc_token_address: Mapped[str] = mapped_column(
         String(42), nullable=False, index=True
     )
+    # Seller's StableCoin account address
     seller_sc_account_address: Mapped[str] = mapped_column(
         String(42), nullable=False, index=True
     )
+    # Buyer's StableCoin account address
     buyer_sc_account_address: Mapped[str] = mapped_column(
         String(42), nullable=False, index=True
     )
+    # IbetWST trade amount
     st_value: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # StableCoin trade amount
     sc_value: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False)
-    state: Mapped[IDXEthIbetWSTTradeState] = mapped_column(
+    # Trade state
+    state: Mapped[IDXIbetWSTTradeState] = mapped_column(
         String(20), nullable=False, index=True
     )
+    # Memo
     memo: Mapped[str] = mapped_column(Text)
 
 
@@ -613,7 +667,11 @@ class IDXAvaIbetWSTWhitelist(Base):
 
     __tablename__ = "idx_ava_ibet_wst_whitelist"
 
+    # IbetWST contract address
     ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # ST account address
     st_account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # SC account address for deposits
     sc_account_address_in: Mapped[str] = mapped_column(String(42), nullable=False)
+    # SC account address for withdrawals
     sc_account_address_out: Mapped[str] = mapped_column(String(42), nullable=False)
