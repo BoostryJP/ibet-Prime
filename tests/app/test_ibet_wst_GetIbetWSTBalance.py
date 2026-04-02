@@ -37,6 +37,7 @@ class TestGetIbetWSTBalance:
 
     # <Normal_1>
     # Return balance of account
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
         "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
         AsyncMock(return_value=1000),
@@ -70,6 +71,42 @@ class TestGetIbetWSTBalance:
         )
 
         # Check response status code
+        assert resp.status_code == 200
+        assert resp.json() == {"balance": 1000}
+
+    # <Normal_2>
+    # Return balance of account on avalanche
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheIbetWST.balance_of",
+        AsyncMock(return_value=1000),
+    )
+    async def test_normal_2(self, async_client, async_db):
+        issuer_address = "0x1234567890abcdef1234567890abcdef12345678"
+        account_address = "0x234567890abcdef1234567890abcdef123456789"
+        ibet_token_address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+        ibet_wst_address = "0xbcdefabcdefabcdefabcdefabcdefabcdefabcde"
+
+        token = Token()
+        token.token_address = to_checksum_address(ibet_token_address)
+        token.issuer_address = issuer_address
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", to_checksum_address(ibet_wst_address))
+        async_db.add(token)
+        await async_db.commit()
+
+        resp = await async_client.get(
+            self.api_url.format(
+                account_address=account_address,
+                ibet_wst_address=ibet_wst_address,
+            ),
+            params={"blockchain_platform": "avalanche"},
+        )
+
         assert resp.status_code == 200
         assert resp.json() == {"balance": 1000}
 

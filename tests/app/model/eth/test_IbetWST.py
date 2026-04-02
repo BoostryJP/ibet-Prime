@@ -21,7 +21,7 @@ import secrets
 
 import pytest
 
-from app.model.eth import (
+from app.model.wst import (
     EthereumIbetWST,
     IbetWSTAuthorization,
     IbetWSTDigestHelper,

@@ -139,6 +139,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": {"ethereum": True},
+                    "deployed": {"ethereum": True},
+                    "address": {"ethereum": "eth_token_address_test1"},
+                },
                 "ibet_wst_name": "ibet_wst_name_test1",
             }
         ]
@@ -288,6 +293,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": {"ethereum": True},
+                    "deployed": {"ethereum": True},
+                    "address": {"ethereum": "eth_token_address_test1"},
+                },
                 "ibet_wst_name": "ibet_wst_name_test1",
             },
             {
@@ -320,6 +330,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             },
         ]
@@ -450,6 +465,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             }
         ]
@@ -606,6 +626,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             },
             {
@@ -638,6 +663,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             },
         ]

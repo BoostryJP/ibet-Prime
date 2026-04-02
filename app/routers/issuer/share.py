@@ -477,6 +477,11 @@ async def list_all_share_tokens(
         share_token["ibet_wst_address"] = token.get_ibet_wst_address(
             IbetWSTBlockchain.ETHEREUM
         )
+        share_token["ibet_wst_settings_by_blockchain"] = {
+            "activated": token.ibet_wst_activated_by_blockchain,
+            "deployed": token.ibet_wst_deployed_by_blockchain,
+            "address": token.ibet_wst_address_by_blockchain,
+        }
 
         share_tokens.append(share_token)
 
@@ -538,6 +543,11 @@ async def retrieve_share_token(
     share_token["ibet_wst_address"] = _token.get_ibet_wst_address(
         IbetWSTBlockchain.ETHEREUM
     )
+    share_token["ibet_wst_settings_by_blockchain"] = {
+        "activated": _token.ibet_wst_activated_by_blockchain,
+        "deployed": _token.ibet_wst_deployed_by_blockchain,
+        "address": _token.ibet_wst_address_by_blockchain,
+    }
 
     return json_response(share_token)
 

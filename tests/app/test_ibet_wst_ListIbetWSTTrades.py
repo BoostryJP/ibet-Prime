@@ -21,7 +21,7 @@ from unittest import mock
 
 import pytest
 
-from app.model.db.ibet_wst import IDXEthIbetWSTTrade
+from app.model.db.ibet_wst import IDXAvaIbetWSTTrade, IDXEthIbetWSTTrade
 
 
 @pytest.mark.asyncio
@@ -42,9 +42,16 @@ class TestListIbetWSTTrades:
     sc_token_address_2 = "0x1234567890123456789012345678900000001002"
 
     @staticmethod
-    async def insert_trade(async_db, trade_data):
+    async def insert_trade_eth(async_db, trade_data):
         """Insert a trade record into the database."""
         trade = IDXEthIbetWSTTrade(**trade_data)
+        async_db.add(trade)
+        await async_db.commit()
+
+    @staticmethod
+    async def insert_trade_ava(async_db, trade_data):
+        """Insert a trade record into the database."""
+        trade = IDXAvaIbetWSTTrade(**trade_data)
         async_db.add(trade)
         await async_db.commit()
 
@@ -52,9 +59,10 @@ class TestListIbetWSTTrades:
     # Normal
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Fetch trades for a specific IbetWST address
-    async def test_normal_1(self, async_client, async_db):
+    # - blockchain_platform = "ethereum" (default)
+    async def test_normal_1_1(self, async_client, async_db):
         # Create test data
         trade1 = {
             "ibet_wst_address": self.ibet_wst_address_1,
@@ -95,13 +103,99 @@ class TestListIbetWSTTrades:
             "state": "Pending",
             "memo": "test3",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
-        await self.insert_trade(async_db, trade3)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade3)
 
         # API call
         resp = await async_client.get(
             self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1)
+        )
+
+        # Response validation
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
+            "trades": [
+                {
+                    "index": 1,
+                    "seller_st_account_address": self.user_address_1,
+                    "buyer_st_account_address": self.user_address_2,
+                    "sc_token_address": self.sc_token_address_1,
+                    "seller_sc_account_address": self.user_address_1,
+                    "buyer_sc_account_address": self.user_address_2,
+                    "st_value": 1000,
+                    "sc_value": 2000,
+                    "state": "Pending",
+                    "memo": "test1",
+                },
+                {
+                    "index": 2,
+                    "seller_st_account_address": self.user_address_2,
+                    "buyer_st_account_address": self.user_address_1,
+                    "sc_token_address": self.sc_token_address_1,
+                    "seller_sc_account_address": self.user_address_2,
+                    "buyer_sc_account_address": self.user_address_1,
+                    "st_value": 3000,
+                    "sc_value": 4000,
+                    "state": "Executed",
+                    "memo": "test2",
+                },
+            ],
+        }
+
+    # <Normal_1_2>
+    # Fetch trades for a specific IbetWST address
+    # - blockchain_platform = "avalanche"
+    async def test_normal_1_2(self, async_client, async_db):
+        # Create test data
+        trade1 = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 1000,
+            "sc_value": 2000,
+            "state": "Pending",
+            "memo": "test1",
+        }
+        trade2 = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 2,
+            "seller_st_account_address": self.user_address_2,
+            "buyer_st_account_address": self.user_address_1,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_2,
+            "buyer_sc_account_address": self.user_address_1,
+            "st_value": 3000,
+            "sc_value": 4000,
+            "state": "Executed",
+            "memo": "test2",
+        }
+        trade3 = {
+            "ibet_wst_address": self.ibet_wst_address_2,  # Different IbetWST address (not targeted)
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 1000,
+            "sc_value": 2000,
+            "state": "Pending",
+            "memo": "test3",
+        }
+        await self.insert_trade_ava(async_db, trade1)
+        await self.insert_trade_ava(async_db, trade2)
+        await self.insert_trade_ava(async_db, trade3)
+
+        # API call
+        resp = await async_client.get(
+            self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1),
+            params={"blockchain_platform": "avalanche"},
         )
 
         # Response validation
@@ -166,8 +260,8 @@ class TestListIbetWSTTrades:
             "state": "Executed",
             "memo": "test2",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
 
         # API call
         resp = await async_client.get(
@@ -225,8 +319,8 @@ class TestListIbetWSTTrades:
             "state": "Executed",
             "memo": "test2",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
 
         # API call
         resp = await async_client.get(
@@ -284,8 +378,8 @@ class TestListIbetWSTTrades:
             "state": "Executed",
             "memo": "test2",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
 
         # API call
         resp = await async_client.get(
@@ -343,8 +437,8 @@ class TestListIbetWSTTrades:
             "state": "Executed",
             "memo": "test2",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
 
         # API call
         resp = await async_client.get(
@@ -402,8 +496,8 @@ class TestListIbetWSTTrades:
             "state": "Executed",
             "memo": "test2",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
 
         # API call
         resp = await async_client.get(
@@ -461,8 +555,8 @@ class TestListIbetWSTTrades:
             "state": "Executed",  # Different state (not targeted)
             "memo": "test2",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
 
         # API call
         resp = await async_client.get(
@@ -533,9 +627,9 @@ class TestListIbetWSTTrades:
             "state": "Pending",
             "memo": "test3",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
-        await self.insert_trade(async_db, trade3)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade3)
 
         # API call
         resp = await async_client.get(
@@ -581,7 +675,7 @@ class TestListIbetWSTTrades:
             "state": "Pending",
             "memo": "test1",
         }
-        await self.insert_trade(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade1)
 
         # API call
         with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):

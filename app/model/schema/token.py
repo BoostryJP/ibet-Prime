@@ -53,6 +53,7 @@ from .position import LockEvent, LockEventCategory
 ############################
 class IbetWSTBlockchain(StrEnum):
     ETHEREUM = "ethereum"
+    AVALANCHE = "avalanche"
     # NOTE: Add other blockchains here when needed
 
 
@@ -615,6 +616,20 @@ class TokenAddressResponse(BaseModel):
     token_status: TokenStatus
 
 
+class IbetWSTSettingsByBlockchainResponse(BaseModel):
+    """IbetWST settings by blockchain"""
+
+    activated: dict[IbetWSTBlockchain, bool] | None = Field(
+        ..., description="IbetWST activation status by blockchain"
+    )
+    deployed: dict[IbetWSTBlockchain, bool] | None = Field(
+        ..., description="IbetWST deployment status by blockchain"
+    )
+    address: dict[IbetWSTBlockchain, str] | None = Field(
+        ..., description="IbetWST contract address by blockchain"
+    )
+
+
 class IbetStraightBondResponse(IbetStraightBond):
     """ibet Straight Bond schema (Response)"""
 
@@ -623,10 +638,17 @@ class IbetStraightBondResponse(IbetStraightBond):
     contract_version: IbetStraightBondContractVersion = Field(
         ..., description="Contract version"
     )
-    ibet_wst_activated: bool = Field(..., description="IbetWST activated on Ethereum")
-    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed on Ethereum")
+    ibet_wst_activated: bool = Field(
+        ..., description="[Deprecated] IbetWST activated on Ethereum"
+    )
+    ibet_wst_deployed: bool = Field(
+        ..., description="[Deprecated] IbetWST deployed on Ethereum"
+    )
     ibet_wst_address: Optional[str] = Field(
-        ..., description="IbetWST contract address on Ethereum"
+        ..., description="[Deprecated] IbetWST contract address on Ethereum"
+    )
+    ibet_wst_settings_by_blockchain: IbetWSTSettingsByBlockchainResponse = Field(
+        ..., description="IbetWST settings by blockchain"
     )
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
     ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")
@@ -640,10 +662,17 @@ class IbetShareResponse(IbetShare):
     contract_version: IbetShareContractVersion = Field(
         ..., description="Contract version"
     )
-    ibet_wst_activated: bool = Field(..., description="IbetWST activated on Ethereum")
-    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed on Ethereum")
+    ibet_wst_activated: bool = Field(
+        ..., description="[Deprecated] IbetWST activated on Ethereum"
+    )
+    ibet_wst_deployed: bool = Field(
+        ..., description="[Deprecated] IbetWST deployed on Ethereum"
+    )
     ibet_wst_address: Optional[str] = Field(
-        ..., description="IbetWST contract address on Ethereum"
+        ..., description="[Deprecated] IbetWST contract address on Ethereum"
+    )
+    ibet_wst_settings_by_blockchain: IbetWSTSettingsByBlockchainResponse = Field(
+        ..., description="IbetWST settings by blockchain"
     )
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
     ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")

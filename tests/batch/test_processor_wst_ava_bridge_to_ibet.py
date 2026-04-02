@@ -28,17 +28,15 @@ from sqlalchemy import select
 from app.exceptions import ContractRevertError
 from app.model.db import (
     Account,
+    AvaToIbetBridgeTx,
     EthToIbetBridgeTx,
-    EthToIbetBridgeTxStatus,
-    EthToIbetBridgeTxType,
     IbetBridgeTxParamsForceChangeLockedAccount,
     IbetBridgeTxParamsForceUnlock,
+    ToIbetBridgeTxStatus,
+    ToIbetBridgeTxType,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from batch.processor_eth_wst_bridge_to_ibet import (
-    LOG,
-    WSTBridgeToIbetProcessor,
-)
+from batch.processor_wst_ava_bridge_to_ibet import LOG, AvaWSTBridgeToIbetProcessor
 from tests.account_config import default_eth_account
 
 
@@ -48,21 +46,18 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield WSTBridgeToIbetProcessor()
+    yield AvaWSTBridgeToIbetProcessor()
     log.propagate = False
     log.setLevel(default_log_level)
 
 
 @pytest.mark.asyncio
 class TestProcessor:
-    # Test accounts
     issuer = default_eth_account("user1")
     user1 = default_eth_account("user2")
     user2 = default_eth_account("user3")
 
-    # Test ibet token addresses
     ibet_token_address_1 = "0x1234567890123456789012345678900000000010"
-    ibet_token_address_2 = "0x1234567890123456789012345678900000000020"
 
     #############################################################
     # Normal
@@ -70,33 +65,27 @@ class TestProcessor:
 
     # Normal_1
     # No records to process
-    # - Skip processing if no records to process
     async def test_normal_1(self, processor, async_db, caplog):
-        # Execute batch
         await processor.send_ibet_tx()
         async_db.expire_all()
 
         assert caplog.messages == []
 
     # Normal_2_1
-    # Process a single record
-    # - Force unlock transaction
+    # Process a single force unlock record
     @mock.patch(
-        "batch.processor_eth_wst_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
+        "batch.processor_wst_ava_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
         AsyncMock(
-            side_effect=[
-                (
-                    "test_tx_hash_1",
-                    {
-                        "status": 1,  # Transaction succeeded
-                        "blockNumber": 123456,
-                    },
-                )
-            ]
+            return_value=(
+                "test_tx_hash_1",
+                {
+                    "status": 1,
+                    "blockNumber": 123456,
+                },
+            )
         ),
     )
     async def test_normal_2_1(self, processor, async_db, caplog):
-        # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -104,11 +93,105 @@ class TestProcessor:
         async_db.add(account)
 
         tx_id = str(uuid.uuid4())
-        eth_to_ibet_tx = EthToIbetBridgeTx(
+        ava_to_ibet_tx = AvaToIbetBridgeTx(
             tx_id=tx_id,
             token_address=self.ibet_token_address_1,
-            tx_type=EthToIbetBridgeTxType.FORCE_UNLOCK,
-            status=EthToIbetBridgeTxStatus.PENDING,
+            tx_type=ToIbetBridgeTxType.FORCE_UNLOCK,
+            status=ToIbetBridgeTxStatus.PENDING,
+            tx_params=IbetBridgeTxParamsForceUnlock(
+                lock_address=self.issuer["address"],
+                account_address=self.user1["address"],
+                recipient_address=self.user1["address"],
+                value=1000,
+                data={"message": "ibet_wst_bridge", "network": "avalanche"},
+            ),
+            tx_sender=self.issuer["address"],
+        )
+        async_db.add(ava_to_ibet_tx)
+        await async_db.commit()
+
+        await processor.send_ibet_tx()
+        async_db.expire_all()
+
+        ava_to_ibet_tx_af = (
+            await async_db.scalars(
+                select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
+            )
+        ).first()
+        assert ava_to_ibet_tx_af.tx_hash == "test_tx_hash_1"
+        assert ava_to_ibet_tx_af.block_number == 123456
+        assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.SUCCEEDED
+
+        assert caplog.messages == [
+            f"Sending ibet bridge transaction: id={tx_id}, type=force_unlock",
+            f"Transaction sent successfully: id={tx_id}",
+        ]
+
+    # Normal_2_2
+    # Process a single force change locked account record
+    @mock.patch(
+        "batch.processor_wst_ava_bridge_to_ibet.IbetSecurityTokenInterface.force_change_locked_account",
+        AsyncMock(
+            return_value=(
+                "test_tx_hash_2",
+                {
+                    "status": 1,
+                    "blockNumber": 654321,
+                },
+            )
+        ),
+    )
+    async def test_normal_2_2(self, processor, async_db, caplog):
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        tx_id = str(uuid.uuid4())
+        ava_to_ibet_tx = AvaToIbetBridgeTx(
+            tx_id=tx_id,
+            token_address=self.ibet_token_address_1,
+            tx_type=ToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT,
+            status=ToIbetBridgeTxStatus.PENDING,
+            tx_params=IbetBridgeTxParamsForceChangeLockedAccount(
+                lock_address=self.issuer["address"],
+                before_account_address=self.user1["address"],
+                after_account_address=self.user2["address"],
+                value=1000,
+                data={"message": "ibet_wst_bridge", "network": "avalanche"},
+            ),
+            tx_sender=self.issuer["address"],
+        )
+        async_db.add(ava_to_ibet_tx)
+        await async_db.commit()
+
+        await processor.send_ibet_tx()
+        async_db.expire_all()
+
+        ava_to_ibet_tx_af = (
+            await async_db.scalars(
+                select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
+            )
+        ).first()
+        assert ava_to_ibet_tx_af.tx_hash == "test_tx_hash_2"
+        assert ava_to_ibet_tx_af.block_number == 654321
+        assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.SUCCEEDED
+
+        assert caplog.messages == [
+            f"Sending ibet bridge transaction: id={tx_id}, type=force_change_locked_account",
+            f"Transaction sent successfully: id={tx_id}",
+        ]
+
+    # Normal_3
+    # ETH table records are ignored by AVA processor
+    async def test_normal_3(self, processor, async_db, caplog):
+        eth_tx_id = str(uuid.uuid4())
+        eth_to_ibet_tx = EthToIbetBridgeTx(
+            tx_id=eth_tx_id,
+            token_address=self.ibet_token_address_1,
+            tx_type=ToIbetBridgeTxType.FORCE_UNLOCK,
+            status=ToIbetBridgeTxStatus.PENDING,
             tx_params=IbetBridgeTxParamsForceUnlock(
                 lock_address=self.issuer["address"],
                 account_address=self.user1["address"],
@@ -121,88 +204,16 @@ class TestProcessor:
         async_db.add(eth_to_ibet_tx)
         await async_db.commit()
 
-        # Execute batch
         await processor.send_ibet_tx()
         async_db.expire_all()
 
-        # Check the transaction log
         eth_to_ibet_tx_af = (
             await async_db.scalars(
-                select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
+                select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == eth_tx_id)
             )
         ).first()
-        assert eth_to_ibet_tx_af.tx_hash == "test_tx_hash_1"
-        assert eth_to_ibet_tx_af.block_number == 123456
-        assert eth_to_ibet_tx_af.status == EthToIbetBridgeTxStatus.SUCCEEDED
-
-        # Check the log
-        assert caplog.messages == [
-            f"Sending ibet bridge transaction: id={tx_id}, type=force_unlock",
-            f"Transaction sent successfully: id={tx_id}",
-        ]
-
-    # Normal_2_2
-    # Process a single record
-    # - Force change locked account transaction
-    @mock.patch(
-        "batch.processor_eth_wst_bridge_to_ibet.IbetSecurityTokenInterface.force_change_locked_account",
-        AsyncMock(
-            side_effect=[
-                (
-                    "test_tx_hash_1",
-                    {
-                        "status": 1,  # Transaction succeeded
-                        "blockNumber": 123456,
-                    },
-                )
-            ]
-        ),
-    )
-    async def test_normal_2_2(self, processor, async_db, caplog):
-        # Prepare test data
-        account = Account()
-        account.issuer_address = self.issuer["address"]
-        account.keyfile = self.issuer["keyfile_json"]
-        account.eoa_password = E2EEUtils.encrypt("password")
-        async_db.add(account)
-
-        tx_id = str(uuid.uuid4())
-        eth_to_ibet_tx = EthToIbetBridgeTx(
-            tx_id=tx_id,
-            token_address=self.ibet_token_address_1,
-            tx_type=EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT,
-            status=EthToIbetBridgeTxStatus.PENDING,
-            tx_params=IbetBridgeTxParamsForceChangeLockedAccount(
-                lock_address=self.issuer["address"],
-                before_account_address=self.user1["address"],
-                after_account_address=self.user2["address"],
-                value=1000,
-                data={"message": "ibet_wst_bridge"},
-            ),
-            tx_sender=self.issuer["address"],
-        )
-        async_db.add(eth_to_ibet_tx)
-        await async_db.commit()
-
-        # Execute batch
-        await processor.send_ibet_tx()
-        async_db.expire_all()
-
-        # Check the transaction log
-        eth_to_ibet_tx_af = (
-            await async_db.scalars(
-                select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
-            )
-        ).first()
-        assert eth_to_ibet_tx_af.tx_hash == "test_tx_hash_1"
-        assert eth_to_ibet_tx_af.block_number == 123456
-        assert eth_to_ibet_tx_af.status == EthToIbetBridgeTxStatus.SUCCEEDED
-
-        # Check the log
-        assert caplog.messages == [
-            f"Sending ibet bridge transaction: id={tx_id}, type=force_change_locked_account",
-            f"Transaction sent successfully: id={tx_id}",
-        ]
+        assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING
+        assert caplog.messages == []
 
     #############################################################
     # Error
@@ -210,50 +221,42 @@ class TestProcessor:
 
     # Error_1
     # Issuer account not found
-    # - Skip processing if the issuer account is not found
     async def test_error_1(self, processor, async_db, caplog):
-        # Prepare test data
         tx_id = str(uuid.uuid4())
-        eth_to_ibet_tx = EthToIbetBridgeTx(
+        ava_to_ibet_tx = AvaToIbetBridgeTx(
             tx_id=tx_id,
             token_address=self.ibet_token_address_1,
-            tx_type=EthToIbetBridgeTxType.FORCE_UNLOCK,
-            status=EthToIbetBridgeTxStatus.PENDING,
+            tx_type=ToIbetBridgeTxType.FORCE_UNLOCK,
+            status=ToIbetBridgeTxStatus.PENDING,
             tx_params=IbetBridgeTxParamsForceUnlock(
                 lock_address=self.issuer["address"],
                 account_address=self.user1["address"],
                 recipient_address=self.user1["address"],
                 value=1000,
-                data={"message": "ibet_wst_bridge"},
+                data={"message": "ibet_wst_bridge", "network": "avalanche"},
             ),
             tx_sender=self.issuer["address"],
         )
-        async_db.add(eth_to_ibet_tx)
+        async_db.add(ava_to_ibet_tx)
         await async_db.commit()
 
-        # Execute batch
         await processor.send_ibet_tx()
         async_db.expire_all()
 
-        # Check the log
+        ava_to_ibet_tx_af = (
+            await async_db.scalars(
+                select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
+            )
+        ).first()
+        assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING
         assert caplog.messages == [
             f"Sending ibet bridge transaction: id={tx_id}, type=force_unlock",
             f"Cannot find issuer for transaction: id={tx_id}",
         ]
 
-        # Check the transaction log
-        eth_to_ibet_tx_af = (
-            await async_db.scalars(
-                select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
-            )
-        ).first()
-        assert eth_to_ibet_tx_af.status == EthToIbetBridgeTxStatus.PENDING
-
     # Error_2
     # Unknown transaction type
-    # - Update the status to FAILED if the transaction type is unknown
     async def test_error_2(self, processor, async_db, caplog):
-        # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -261,56 +264,44 @@ class TestProcessor:
         async_db.add(account)
 
         tx_id = str(uuid.uuid4())
-        eth_to_ibet_tx = EthToIbetBridgeTx(
+        ava_to_ibet_tx = AvaToIbetBridgeTx(
             tx_id=tx_id,
             token_address=self.ibet_token_address_1,
-            tx_type="unknown_type",  # Invalid transaction type
-            status=EthToIbetBridgeTxStatus.PENDING,
+            tx_type="unknown_type",
+            status=ToIbetBridgeTxStatus.PENDING,
             tx_params=IbetBridgeTxParamsForceUnlock(
                 lock_address=self.issuer["address"],
                 account_address=self.user1["address"],
                 recipient_address=self.user1["address"],
                 value=1000,
-                data={"message": "ibet_wst_bridge"},
+                data={"message": "ibet_wst_bridge", "network": "avalanche"},
             ),
             tx_sender=self.issuer["address"],
         )
-        async_db.add(eth_to_ibet_tx)
+        async_db.add(ava_to_ibet_tx)
         await async_db.commit()
 
-        # Execute batch
         await processor.send_ibet_tx()
         async_db.expire_all()
 
-        # Check the transaction log
-        eth_to_ibet_tx_af = (
+        ava_to_ibet_tx_af = (
             await async_db.scalars(
-                select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
+                select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
-        assert eth_to_ibet_tx_af.status == EthToIbetBridgeTxStatus.FAILED
-
-        # Check the log
+        assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.FAILED
         assert caplog.messages == [
             f"Sending ibet bridge transaction: id={tx_id}, type=unknown_type",
             f"Unknown transaction type: id={tx_id}, type=unknown_type",
         ]
 
     # Error_3
-    # Transaction failed (Contract revert error)
-    # - Log the error message and update the status to FAILED
+    # Contract revert error
     @mock.patch(
-        "batch.processor_eth_wst_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
-        AsyncMock(
-            side_effect=[
-                ContractRevertError(
-                    code_msg="111201"
-                ),  # Simulate a contract revert error
-            ]
-        ),
+        "batch.processor_wst_ava_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
+        AsyncMock(side_effect=[ContractRevertError(code_msg="111201")]),
     )
     async def test_error_3(self, processor, async_db, caplog):
-        # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -318,56 +309,46 @@ class TestProcessor:
         async_db.add(account)
 
         tx_id = str(uuid.uuid4())
-        eth_to_ibet_tx = EthToIbetBridgeTx(
+        ava_to_ibet_tx = AvaToIbetBridgeTx(
             tx_id=tx_id,
             token_address=self.ibet_token_address_1,
-            tx_type=EthToIbetBridgeTxType.FORCE_UNLOCK,
-            status=EthToIbetBridgeTxStatus.PENDING,
+            tx_type=ToIbetBridgeTxType.FORCE_UNLOCK,
+            status=ToIbetBridgeTxStatus.PENDING,
             tx_params=IbetBridgeTxParamsForceUnlock(
                 lock_address=self.issuer["address"],
                 account_address=self.user1["address"],
                 recipient_address=self.user1["address"],
                 value=1000,
-                data={"message": "ibet_wst_bridge"},
+                data={"message": "ibet_wst_bridge", "network": "avalanche"},
             ),
             tx_sender=self.issuer["address"],
         )
-        async_db.add(eth_to_ibet_tx)
+        async_db.add(ava_to_ibet_tx)
         await async_db.commit()
 
-        # Execute batch
         await processor.send_ibet_tx()
         async_db.expire_all()
 
-        # Check the transaction log
-        eth_to_ibet_tx_af = (
+        ava_to_ibet_tx_af = (
             await async_db.scalars(
-                select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
+                select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
-        assert eth_to_ibet_tx_af.tx_hash is None
-        assert eth_to_ibet_tx_af.block_number is None
-        assert eth_to_ibet_tx_af.status == EthToIbetBridgeTxStatus.FAILED
-
-        # Check the log
+        assert ava_to_ibet_tx_af.tx_hash is None
+        assert ava_to_ibet_tx_af.block_number is None
+        assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.FAILED
         assert caplog.messages == [
             f"Sending ibet bridge transaction: id={tx_id}, type=force_unlock",
             f"Transaction failed: id={tx_id} ( 111201 | Unlock amount is greater than locked amount. )",
         ]
 
     # Error_4
-    # Transaction failed (Another exception)
-    # - Skip processing
+    # Unknown exception is re-raised and transaction stays pending
     @mock.patch(
-        "batch.processor_eth_wst_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
-        AsyncMock(
-            side_effect=[
-                Exception,  # Simulate a generic exception
-            ]
-        ),
+        "batch.processor_wst_ava_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
+        AsyncMock(side_effect=[Exception]),
     )
     async def test_error_4(self, processor, async_db, caplog):
-        # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -375,39 +356,35 @@ class TestProcessor:
         async_db.add(account)
 
         tx_id = str(uuid.uuid4())
-        eth_to_ibet_tx = EthToIbetBridgeTx(
+        ava_to_ibet_tx = AvaToIbetBridgeTx(
             tx_id=tx_id,
             token_address=self.ibet_token_address_1,
-            tx_type=EthToIbetBridgeTxType.FORCE_UNLOCK,
-            status=EthToIbetBridgeTxStatus.PENDING,
+            tx_type=ToIbetBridgeTxType.FORCE_UNLOCK,
+            status=ToIbetBridgeTxStatus.PENDING,
             tx_params=IbetBridgeTxParamsForceUnlock(
                 lock_address=self.issuer["address"],
                 account_address=self.user1["address"],
                 recipient_address=self.user1["address"],
                 value=1000,
-                data={"message": "ibet_wst_bridge"},
+                data={"message": "ibet_wst_bridge", "network": "avalanche"},
             ),
             tx_sender=self.issuer["address"],
         )
-        async_db.add(eth_to_ibet_tx)
+        async_db.add(ava_to_ibet_tx)
         await async_db.commit()
 
-        # Execute batch
         with pytest.raises(Exception):
             await processor.send_ibet_tx()
         async_db.expire_all()
 
-        # Check the transaction log
-        eth_to_ibet_tx_af = (
+        ava_to_ibet_tx_af = (
             await async_db.scalars(
-                select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
+                select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
-        assert eth_to_ibet_tx_af.tx_hash is None
-        assert eth_to_ibet_tx_af.block_number is None
-        assert eth_to_ibet_tx_af.status == EthToIbetBridgeTxStatus.PENDING
-
-        # Check the log
+        assert ava_to_ibet_tx_af.tx_hash is None
+        assert ava_to_ibet_tx_af.block_number is None
+        assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING
         assert caplog.messages == [
             f"Sending ibet bridge transaction: id={tx_id}, type=force_unlock",
         ]

@@ -112,6 +112,7 @@ class IbetWSTTrade(BaseModel):
 ############################
 class IbetWSTBlockchainNetwork(StrEnum):
     ETHEREUM = "ethereum"
+    AVALANCHE = "avalanche"
 
 
 class ListAllIbetWSTTokensSortItem(StrEnum):

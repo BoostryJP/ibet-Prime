@@ -18,8 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import os
+from typing import Any, cast
 
-import boto3
+import boto3  # type: ignore[import-untyped]
 
 from config import APP_ENV, AWS_REGION_NAME
 
@@ -37,22 +38,31 @@ ETH_MASTER_PRIVATE_KEY_RESOURCE = os.environ.get(
     "ETH_MASTER_PRIVATE_KEY_RESOURCE", "os_environ"
 )
 
+
 # Hex encoded private key of the master account
-if ETH_MASTER_PRIVATE_KEY_RESOURCE == "aws_secrets_manager":
+def _load_eth_master_private_key() -> str | None:
+    secret_id = os.environ.get("ETH_MASTER_PRIVATE_KEY")
+    if ETH_MASTER_PRIVATE_KEY_RESOURCE != "aws_secrets_manager":
+        # If using environment variable, retrieve the private key from the specified environment variable
+        return secret_id
+    if secret_id is None:
+        return None
+
     # If using AWS Secrets Manager, retrieve the private key from the specified resource
-    ETH_MASTER_PRIVATE_KEY = (
-        boto3.client("secretsmanager", region_name=AWS_REGION_NAME)
-        .get_secret_value(SecretId=os.environ.get("ETH_MASTER_PRIVATE_KEY"))
-        .get("SecretString")
+    client: Any = boto3.client(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        "secretsmanager", region_name=AWS_REGION_NAME
     )
-else:
-    # If using environment variable, retrieve the private key from the specified environment variable
-    ETH_MASTER_PRIVATE_KEY = os.environ.get("ETH_MASTER_PRIVATE_KEY")
+    secret_value: Any = client.get_secret_value(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        SecretId=secret_id
+    )
+    return cast(str | None, secret_value.get("SecretString"))  # pyright: ignore[reportUnknownMemberType]
+
+
+ETH_MASTER_PRIVATE_KEY: str | None = _load_eth_master_private_key()
 
 # Ethereum configuration settings for a blockchain application
-ETH_CHAIN_ID = (
-    int(os.environ.get("ETH_CHAIN_ID")) if os.environ.get("ETH_CHAIN_ID") else 2025
-)
+_eth_chain_id = os.environ.get("ETH_CHAIN_ID")
+ETH_CHAIN_ID = int(_eth_chain_id) if _eth_chain_id is not None else 11111
 
 
 ####################################################
@@ -63,12 +73,10 @@ ETH_CHAIN_ID = (
 ETH_WEB3_HTTP_PROVIDER = (
     os.environ.get("ETH_WEB3_HTTP_PROVIDER") or "http://localhost:8546"
 )
+_eth_web3_http_provider_standby = os.environ.get("ETH_WEB3_HTTP_PROVIDER_STANDBY")
 ETH_WEB3_HTTP_PROVIDER_STANDBY = (
-    [
-        node.strip()
-        for node in os.environ.get("ETH_WEB3_HTTP_PROVIDER_STANDBY").split(",")
-    ]
-    if os.environ.get("ETH_WEB3_HTTP_PROVIDER_STANDBY")
+    [node.strip() for node in _eth_web3_http_provider_standby.split(",")]
+    if _eth_web3_http_provider_standby
     else []
 )
 ETH_WEB3_REQUEST_RETRY_COUNT = 3
@@ -90,7 +98,4 @@ BLOCK_SYNC_REMAINING_THRESHOLD = 2
 EXPECTED_BLOCK_GENERATION_PER_MIN = 5.0
 
 # Threshold for block generation speed to determine synchronization halt [rate]
-if APP_ENV == "local":
-    BLOCK_GENERATION_SPEED_THRESHOLD = 0.0
-else:
-    BLOCK_GENERATION_SPEED_THRESHOLD = 0.2
+BLOCK_GENERATION_SPEED_THRESHOLD = 0.0 if APP_ENV == "local" else 0.2

@@ -27,16 +27,16 @@ from web3.types import RPCEndpoint
 
 from app.model.db import (
     Account,
-    IDXEthIbetWSTTrade,
-    IDXEthIbetWSTTradeBlockNumber,
+    IDXAvaIbetWSTTrade,
+    IDXAvaIbetWSTTradeBlockNumber,
     IDXEthIbetWSTTradeState,
     Token,
     TokenType,
     TokenVersion,
 )
-from app.model.eth import IbetWSTTrade
-from app.utils.eth_contract_utils import EthWeb3
-from batch.indexer_eth_wst_trades import Processor
+from app.model.wst import IbetWSTTrade
+from app.utils.ava_contract_utils import AvaWeb3
+from batch.indexer_wst_ava_trades import Processor
 
 
 @pytest.fixture(scope="function")
@@ -81,7 +81,7 @@ class TestProcessor:
     # - The synchronized block number is updated.
     async def test_normal_1_1(self, processor, async_db, caplog):
         # Generate empty block
-        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -91,7 +91,7 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_deployed("ethereum", False)  # No IbetWST deployed
+        token.set_ibet_wst_deployed("avalanche", False)  # No IbetWST deployed
         async_db.add(token)
 
         account = Account()
@@ -106,9 +106,9 @@ class TestProcessor:
         await processor.sync_events()
         async_db.expire_all()
 
-        # Check IDXEthIbetWSTTradeBlockNumber
+        # Check IDXAvaIbetWSTTradeBlockNumber
         synced_block_number = (
-            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         assert synced_block_number.latest_block_number == latest_finalized_block
 
@@ -124,7 +124,7 @@ class TestProcessor:
     # - The synchronized block number is updated.
     async def test_normal_1_2(self, processor, async_db, caplog):
         # Generate empty block
-        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -134,8 +134,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_deployed("ethereum", True)
-        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -150,9 +150,9 @@ class TestProcessor:
         await processor.sync_events()
         async_db.expire_all()
 
-        # Check IDXEthIbetWSTTradeBlockNumber
+        # Check IDXAvaIbetWSTTradeBlockNumber
         synced_block_number = (
-            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         assert synced_block_number.latest_block_number == latest_finalized_block
 
@@ -166,7 +166,7 @@ class TestProcessor:
     # "TradeRequested" event exists
     # - Trade data is updated.
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthAsyncContractUtils.get_event_logs",
+        "batch.indexer_wst_ava_trades.AvaAsyncContractUtils.get_event_logs",
         AsyncMock(
             side_effect=[
                 [{"args": {"index": 1}}],  # "TradeRequested" event exists
@@ -177,7 +177,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
+        "batch.indexer_wst_ava_trades.AvalancheIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -194,7 +194,7 @@ class TestProcessor:
     )
     async def test_normal_2_1(self, processor, async_db, caplog):
         # Generate empty block
-        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -204,8 +204,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_deployed("ethereum", True)
-        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -220,11 +220,11 @@ class TestProcessor:
         await processor.sync_events()
         async_db.expire_all()
 
-        # Check IDXEthIbetWSTTrade data
+        # Check IDXAvaIbetWSTTrade data
         wst_trade = (
             await async_db.scalars(
-                select(IDXEthIbetWSTTrade)
-                .where(IDXEthIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
+                select(IDXAvaIbetWSTTrade)
+                .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
@@ -239,9 +239,9 @@ class TestProcessor:
         assert wst_trade.state == IDXEthIbetWSTTradeState.PENDING
         assert wst_trade.memo == ""
 
-        # Check IDXEthIbetWSTTradeBlockNumber
+        # Check IDXAvaIbetWSTTradeBlockNumber
         synced_block_number = (
-            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         assert synced_block_number.latest_block_number == latest_finalized_block
 
@@ -255,7 +255,7 @@ class TestProcessor:
     # "TradeAccepted" event exists
     # - Trade data is updated.
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthAsyncContractUtils.get_event_logs",
+        "batch.indexer_wst_ava_trades.AvaAsyncContractUtils.get_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # No "TradeRequested" event
@@ -266,7 +266,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
+        "batch.indexer_wst_ava_trades.AvalancheIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -283,7 +283,7 @@ class TestProcessor:
     )
     async def test_normal_2_2(self, processor, async_db, caplog):
         # Generate empty block
-        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -293,8 +293,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_deployed("ethereum", True)
-        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -309,16 +309,16 @@ class TestProcessor:
         await processor.sync_events()
         async_db.expire_all()
 
-        # Check IDXEthIbetWSTTradeBlockNumber
+        # Check IDXAvaIbetWSTTradeBlockNumber
         synced_block_number = (
-            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         assert synced_block_number.latest_block_number == latest_finalized_block
 
         wst_trade = (
             await async_db.scalars(
-                select(IDXEthIbetWSTTrade)
-                .where(IDXEthIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
+                select(IDXAvaIbetWSTTrade)
+                .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
@@ -343,7 +343,7 @@ class TestProcessor:
     # "TradeCancelled" event exists
     # - Trade data is updated.
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthAsyncContractUtils.get_event_logs",
+        "batch.indexer_wst_ava_trades.AvaAsyncContractUtils.get_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # No "TradeRequested" event
@@ -354,7 +354,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
+        "batch.indexer_wst_ava_trades.AvalancheIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -371,7 +371,7 @@ class TestProcessor:
     )
     async def test_normal_2_3(self, processor, async_db, caplog):
         # Generate empty block
-        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -381,8 +381,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_deployed("ethereum", True)
-        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -397,16 +397,16 @@ class TestProcessor:
         await processor.sync_events()
         async_db.expire_all()
 
-        # Check IDXEthIbetWSTTradeBlockNumber
+        # Check IDXAvaIbetWSTTradeBlockNumber
         synced_block_number = (
-            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         assert synced_block_number.latest_block_number == latest_finalized_block
 
         wst_trade = (
             await async_db.scalars(
-                select(IDXEthIbetWSTTrade)
-                .where(IDXEthIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
+                select(IDXAvaIbetWSTTrade)
+                .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
@@ -431,7 +431,7 @@ class TestProcessor:
     # "TradeRejected" event exists
     # - Trade data is updated.
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthAsyncContractUtils.get_event_logs",
+        "batch.indexer_wst_ava_trades.AvaAsyncContractUtils.get_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # No "TradeRequested" event
@@ -442,7 +442,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
+        "batch.indexer_wst_ava_trades.AvalancheIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -459,7 +459,7 @@ class TestProcessor:
     )
     async def test_normal_2_4(self, processor, async_db, caplog):
         # Generate empty block
-        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -469,8 +469,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_deployed("ethereum", True)
-        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -485,16 +485,16 @@ class TestProcessor:
         await processor.sync_events()
         async_db.expire_all()
 
-        # Check IDXEthIbetWSTTradeBlockNumber
+        # Check IDXAvaIbetWSTTradeBlockNumber
         synced_block_number = (
-            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         assert synced_block_number.latest_block_number == latest_finalized_block
 
         wst_trade = (
             await async_db.scalars(
-                select(IDXEthIbetWSTTrade)
-                .where(IDXEthIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
+                select(IDXAvaIbetWSTTrade)
+                .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
@@ -519,7 +519,7 @@ class TestProcessor:
     # Multiple Trade events for the same trade index occur in one process
     # - A single record is created in the final state.
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthAsyncContractUtils.get_event_logs",
+        "batch.indexer_wst_ava_trades.AvaAsyncContractUtils.get_event_logs",
         AsyncMock(
             side_effect=[
                 [{"args": {"index": 1}}],  # "TradeRequested" event exists
@@ -530,7 +530,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.indexer_eth_wst_trades.EthereumIbetWST.get_trade",
+        "batch.indexer_wst_ava_trades.AvalancheIbetWST.get_trade",
         AsyncMock(
             return_value=IbetWSTTrade(
                 seller_st_account=user_address_1,
@@ -547,7 +547,7 @@ class TestProcessor:
     )
     async def test_normal_3(self, processor, async_db, caplog):
         # Generate empty block
-        await EthWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -557,8 +557,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_deployed("ethereum", True)
-        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address_1)
         async_db.add(token)
 
         account = Account()
@@ -573,16 +573,16 @@ class TestProcessor:
         await processor.sync_events()
         async_db.expire_all()
 
-        # Check IDXEthIbetWSTTradeBlockNumber
+        # Check IDXAvaIbetWSTTradeBlockNumber
         synced_block_number = (
-            await async_db.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         assert synced_block_number.latest_block_number == latest_finalized_block
 
         wst_trade = (
             await async_db.scalars(
-                select(IDXEthIbetWSTTrade).where(
-                    IDXEthIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1,
+                select(IDXAvaIbetWSTTrade).where(
+                    IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1,
                 )
             )
         ).all()

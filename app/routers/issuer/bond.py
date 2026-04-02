@@ -493,6 +493,11 @@ async def list_all_bond_tokens(
         bond_token["ibet_wst_address"] = token.get_ibet_wst_address(
             IbetWSTBlockchain.ETHEREUM
         )
+        bond_token["ibet_wst_settings_by_blockchain"] = {
+            "activated": token.ibet_wst_activated_by_blockchain,
+            "deployed": token.ibet_wst_deployed_by_blockchain,
+            "address": token.ibet_wst_address_by_blockchain,
+        }
 
         bond_tokens.append(bond_token)
 
@@ -554,6 +559,11 @@ async def retrieve_bond_token(
     bond_token["ibet_wst_address"] = _token.get_ibet_wst_address(
         IbetWSTBlockchain.ETHEREUM
     )
+    bond_token["ibet_wst_settings_by_blockchain"] = {
+        "activated": _token.ibet_wst_activated_by_blockchain,
+        "deployed": _token.ibet_wst_deployed_by_blockchain,
+        "address": _token.ibet_wst_address_by_blockchain,
+    }
 
     return json_response(bond_token)
 

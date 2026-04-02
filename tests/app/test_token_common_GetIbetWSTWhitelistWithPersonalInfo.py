@@ -31,7 +31,7 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.model.eth.wst import IbetWSTWhiteList
+from app.model.wst import IbetWSTWhiteList
 
 
 @pytest.mark.asyncio
@@ -54,6 +54,7 @@ class TestGetIbetWSTWhiteList:
     # <Normal_1_1>
     # Return whitelist status of account
     # - Personal information is not registered
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
         "app.routers.misc.ibet_wst.EthereumIbetWST.account_white_list",
         AsyncMock(
@@ -65,7 +66,7 @@ class TestGetIbetWSTWhiteList:
             )
         ),
     )
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client, async_db):
         # Prepare data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -104,6 +105,60 @@ class TestGetIbetWSTWhiteList:
         }
 
     # <Normal_1_2>
+    # Return whitelist status of account
+    # - Personal information is not registered
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheIbetWST.account_white_list",
+        AsyncMock(
+            return_value=IbetWSTWhiteList(
+                st_account=to_checksum_address(st_account_address),
+                sc_account_in=to_checksum_address(sc_account_address_in),
+                sc_account_out=to_checksum_address(sc_account_address_out),
+                listed=True,
+            )
+        ),
+    )
+    async def test_normal_1_2(self, async_client, async_db):
+        # Prepare data
+        token = Token(
+            type=TokenType.IBET_STRAIGHT_BOND,
+            tx_hash="0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            issuer_address=to_checksum_address(self.issuer_address),
+            token_address=to_checksum_address(self.ibet_token_address),
+            version=TokenVersion.V_25_09,
+            abi={},
+            token_status=TokenStatus.SUCCEEDED,
+        )
+        token.set_ibet_wst_activated("avalanche", True)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address(
+            "avalanche", to_checksum_address(self.ibet_wst_address)
+        )
+        async_db.add(token)
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url.format(
+                token_address=self.ibet_token_address,
+                account_address=self.st_account_address,
+            ),
+            headers={"issuer-address": self.issuer_address},
+            params={"blockchain_platform": "avalanche"},
+        )
+
+        # Check response status code
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "st_account_address": to_checksum_address(self.st_account_address),
+            "st_account_personal_info": None,
+            "sc_account_address_in": to_checksum_address(self.sc_account_address_in),
+            "sc_account_address_out": to_checksum_address(self.sc_account_address_out),
+            "listed": True,
+        }
+
+    # <Normal_2>
     # Return whitelist status of account
     # - Personal information is registered
     @mock.patch(

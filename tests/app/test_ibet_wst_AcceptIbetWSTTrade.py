@@ -34,7 +34,13 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.model.eth import EthereumIbetWST, IbetWSTDigestHelper, IbetWSTTrade
+from app.model.wst import (
+    AvalancheIbetWST,
+    EthereumIbetWST,
+    IbetWSTDigestHelper,
+    IbetWSTTrade,
+)
+from app.utils.ava_contract_utils import AvaWeb3
 from app.utils.eth_contract_utils import EthWeb3
 from tests.account_config import default_eth_account
 
@@ -61,6 +67,7 @@ class TestCancelIbetWSTTrade:
 
     # <Normal_1>
     # Successfully accept a trade request
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
         "app.routers.misc.ibet_wst.EthereumIbetWST.get_trade",
         AsyncMock(
@@ -157,6 +164,90 @@ class TestCancelIbetWSTTrade:
             "s": signature.s.to_bytes(32).hex(),
         }
         assert wst_tx.client_ip == "127.0.0.1"
+
+    # <Normal_2>
+    # Successfully accept a trade request
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheIbetWST.get_trade",
+        AsyncMock(
+            return_value=IbetWSTTrade(
+                seller_st_account=user1["address"],
+                buyer_st_account=user2["address"],
+                sc_token_address=sc_token_address,
+                seller_sc_account=user1["address"],
+                buyer_sc_account=user2["address"],
+                st_value=1000,
+                sc_value=2000,
+                state="Pending",
+                memo="Test trade",
+            )
+        ),
+    )
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheIbetWST.balance_of",
+        AsyncMock(return_value=1000),
+    )
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheERC20.allowance",
+        AsyncMock(return_value=2000),
+    )
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AVA_MASTER_ACCOUNT_ADDRESS",
+        relayer["address"],
+    )
+    async def test_normal_2(self, async_db, async_client):
+        # Prepare data: Token
+        token = Token()
+        token.token_address = self.ibet_token_address
+        token.issuer_address = self.issuer["address"]
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address)
+        async_db.add(token)
+        await async_db.commit()
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        token_st = AvalancheIbetWST(self.ibet_wst_address)
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_accept_trade_digest(
+            domain_separator=domain_separator,
+            index=10,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = AvaWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(ibet_wst_address=self.ibet_wst_address),
+            json={
+                "index": 10,
+                "authorizer": self.user1["address"],
+                "authorization": {
+                    "nonce": nonce.hex(),
+                    "v": signature.v,
+                    "r": signature.r.to_bytes(32).hex(),
+                    "s": signature.s.to_bytes(32).hex(),
+                },
+                "blockchain_platform": "avalanche",
+            },
+        )
+
+        # Check response status code and content
+        assert resp.status_code == 200
+        assert resp.json() == {"tx_id": mock.ANY}
 
     ###########################################################################
     # Error

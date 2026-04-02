@@ -197,7 +197,7 @@ class EthAsyncContractUtils:
         :param contract_name: contract name
         :return: ABI, bytecode, deployedBytecode
         """
-        contract_json = json.load(open(f"contracts/eth/{contract_name}.json", "r"))
+        contract_json = json.load(open(f"contracts/wst/{contract_name}.json", "r"))
 
         if "bytecode" not in contract_json.keys():
             contract_json["bytecode"] = None
@@ -221,7 +221,7 @@ class EthAsyncContractUtils:
         :param private_key: private key
         :return: contract address, ABI, transaction hash
         """
-        contract_file = f"contracts/eth/{contract_name}.json"
+        contract_file = f"contracts/wst/{contract_name}.json"
         try:
             contract_json = json.load(open(contract_file, "r"))
         except FileNotFoundError as file_not_found_err:
@@ -266,7 +266,7 @@ class EthAsyncContractUtils:
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
-        contract_file = f"contracts/eth/{contract_name}.json"
+        contract_file = f"contracts/wst/{contract_name}.json"
         contract_json = json.load(open(contract_file, "r"))
         contract_factory = EthWeb3.eth.contract(abi=contract_json["abi"])
         cls.factory_map[contract_name] = contract_factory

@@ -21,11 +21,11 @@ from unittest import mock
 
 import pytest
 
-from app.model.db.ibet_wst import IDXEthIbetWSTTrade
+from app.model.db.ibet_wst import IDXAvaIbetWSTTrade, IDXEthIbetWSTTrade
 
 
 @pytest.mark.asyncio
-class TestListIbetWSTTrades:
+class TestGetIbetWSTTrade:
     # API URL for testing
     apiurl = "/ibet_wst/trades/{ibet_wst_address}/{index}"
 
@@ -40,9 +40,16 @@ class TestListIbetWSTTrades:
     sc_token_address_1 = "0x1234567890123456789012345678900000001001"
 
     @staticmethod
-    async def insert_trade(async_db, trade_data):
+    async def insert_trade_eth(async_db, trade_data):
         """Insert a trade record into the database."""
         trade = IDXEthIbetWSTTrade(**trade_data)
+        async_db.add(trade)
+        await async_db.commit()
+
+    @staticmethod
+    async def insert_trade_ava(async_db, trade_data):
+        """Insert a trade record into the database."""
+        trade = IDXAvaIbetWSTTrade(**trade_data)
         async_db.add(trade)
         await async_db.commit()
 
@@ -50,10 +57,11 @@ class TestListIbetWSTTrades:
     # Normal
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Test normal case with typical values for all fields.
     # This verifies that the API can retrieve and return trade details correctly.
-    async def test_normal_1(self, async_client, async_db):
+    # - blockchain_platform = "ethereum" (default)
+    async def test_normal_1_1(self, async_client, async_db):
         # Create test data
         trade1 = {
             "ibet_wst_address": self.ibet_wst_address_1,
@@ -81,12 +89,54 @@ class TestListIbetWSTTrades:
             "state": "Executed",
             "memo": "test2",
         }
-        await self.insert_trade(async_db, trade1)
-        await self.insert_trade(async_db, trade2)
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
 
         # Call API
         resp = await async_client.get(
             self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1, index=1)
+        )
+
+        # Validate response
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 1000,
+            "sc_value": 2000,
+            "state": "Pending",
+            "memo": "test1",
+        }
+
+    # <Normal_1_2>
+    # Test normal case with typical values for all fields.
+    # This verifies that the API can retrieve and return trade details correctly.
+    # - blockchain_platform = "avalanche"
+    async def test_normal_1_2(self, async_client, async_db):
+        # Create test data
+        trade1 = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 1000,
+            "sc_value": 2000,
+            "state": "Pending",
+            "memo": "test1",
+        }
+        await self.insert_trade_ava(async_db, trade1)
+
+        # Call API
+        resp = await async_client.get(
+            self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1, index=1),
+            params={"blockchain_platform": "avalanche"},
         )
 
         # Validate response
@@ -122,7 +172,7 @@ class TestListIbetWSTTrades:
             "state": "Pending",
             "memo": "test1",
         }
-        await self.insert_trade(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade1)
 
         # Call API
         with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):

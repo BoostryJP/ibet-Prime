@@ -45,7 +45,7 @@ from app.model.db import (
     IbetWSTTxType,
     IbetWSTVersion,
 )
-from batch.processor_eth_wst_send_tx import LOG, ProcessorEthWSTSendTx
+from batch.processor_wst_eth_send_tx import LOG, ProcessorEthWSTSendTx
 from tests.account_config import default_eth_account
 
 
@@ -106,11 +106,11 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Deploy
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
@@ -163,15 +163,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Add Whitelist
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.add_account_white_list_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.add_account_white_list_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_2(self, processor, async_db, caplog):
@@ -231,15 +231,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Delete Whitelist
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.delete_account_white_list_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.delete_account_white_list_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_3(self, processor, async_db, caplog):
@@ -297,15 +297,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Request Trade
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.request_trade_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.request_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_4(self, processor, async_db, caplog):
@@ -370,15 +370,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Cancel Trade
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.cancel_trade_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.cancel_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_5(self, processor, async_db, caplog):
@@ -436,15 +436,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Accept Trade
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.accept_trade_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.accept_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_6(self, processor, async_db, caplog):
@@ -500,15 +500,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Reject Trade
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.reject_trade_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.reject_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_7(self, processor, async_db, caplog):
@@ -564,15 +564,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Mint
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.mint_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.mint_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_8(self, processor, async_db, caplog):
@@ -631,15 +631,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Burn
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.burn_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.burn_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_9(self, processor, async_db, caplog):
@@ -698,15 +698,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Transfer
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.transfer_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.transfer_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_10(self, processor, async_db, caplog):
@@ -768,15 +768,15 @@ class TestProcessor:
     # - Confirm that processing is performed correctly when there is target data to process
     # - transaction type: Force Burn
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumIbetWST.force_burn_from_with_authorization",
+        "app.model.wst.wst.EthereumIbetWST.force_burn_from_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
     async def test_normal_2_11(self, processor, async_db, caplog):
@@ -880,11 +880,11 @@ class TestProcessor:
     # Error_2
     # - Confirm that processing fails when an exception occurs during transaction sending
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_ACCOUNT_ADDRESS",
         eth_master["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_send_tx.ETH_MASTER_PRIVATE_KEY",
+        "batch.processor_wst_eth_send_tx.ETH_MASTER_PRIVATE_KEY",
         eth_master["private_key"],
     )
     @mock.patch(
