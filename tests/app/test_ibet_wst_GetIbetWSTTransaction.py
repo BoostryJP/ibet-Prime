@@ -25,12 +25,15 @@ from unittest import mock
 import pytest
 
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTAuthorization,
     IbetWSTEventLogMint,
     IbetWSTEventLogTradeRequested,
+    IbetWSTEventLogTransfer,
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRequestTrade,
+    IbetWSTTxParamsTransfer,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
@@ -264,6 +267,49 @@ class TestGetIbetWSTTransaction:
         assert Decimal(body["event_log"]["display_sc_value"]) == Decimal(
             expected_display_str
         )
+
+    # <Normal_2>
+    # Return avalanche transaction details
+    async def test_normal_2(self, async_db, async_client):
+        tx_id = str(uuid.uuid4())
+        tx = AvaIbetWSTTx()
+        tx.tx_id = tx_id
+        tx.tx_type = IbetWSTTxType.TRANSFER
+        tx.version = IbetWSTVersion.V_1
+        tx.status = IbetWSTTxStatus.SUCCEEDED
+        tx.ibet_wst_address = "0x1234567890abcdef1234567890abcdef12345678"
+        tx.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.tx_sender["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx.tx_sender = self.tx_sender["address"]
+        tx.authorizer = self.authorizer["address"]
+        tx.authorization = self.dummy_authorization
+        tx.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx.block_number = 12345678
+        tx.finalized = True
+        tx.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.tx_sender["address"],
+            value=1000,
+        )
+        tx.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
+        async_db.add(tx)
+        await async_db.commit()
+
+        resp = await async_client.get(
+            self.api_url.format(tx_id=tx_id),
+            params={"blockchain_platform": "avalanche"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["tx_id"] == tx_id
+        assert resp.json()["tx_type"] == IbetWSTTxType.TRANSFER
 
     ###########################################################################
     # Error

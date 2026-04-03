@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import secrets
 import uuid
-from typing import Annotated, Optional, Sequence
+from typing import Annotated, Optional
 
 import pytz
 from eth_keyfile import decode_keyfile_json
@@ -32,11 +32,13 @@ from app.database import DBAsyncSession
 from app.exceptions import InvalidParameterError
 from app.model import EthereumAddress
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTBlockchain,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    IDXAvaIbetWSTWhitelist,
     IDXEthIbetWSTWhitelist,
     IDXPersonalInfo,
     ScheduledEvents,
@@ -50,7 +52,6 @@ from app.model.db.ibet_wst import (
     IbetWSTTxParamsDeleteAccountWhiteList,
     IbetWSTTxParamsForceBurn,
 )
-from app.model.eth import EthereumIbetWST, IbetWSTDigestHelper
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     AddIbetWSTWhitelistRequest,
@@ -66,6 +67,8 @@ from app.model.schema import (
     ListAllScheduledEventsSortItem,
     RetrieveIbetWSTWhitelistAccountsWithPersonalInfoResponse,
 )
+from app.model.wst import AvalancheIbetWST, EthereumIbetWST, IbetWSTDigestHelper
+from app.utils.ava_contract_utils import AvaWeb3
 from app.utils.check_utils import (
     address_is_valid_address,
     check_auth,
@@ -75,7 +78,8 @@ from app.utils.check_utils import (
 from app.utils.docs_utils import get_routers_responses
 from app.utils.eth_contract_utils import EthWeb3
 from app.utils.fastapi_utils import json_response
-from config import IBET_WST_FEATURE_ENABLED, TZ
+from avalanche_config import AVA_MASTER_ACCOUNT_ADDRESS
+from config import IBET_WST_AVA_FEATURE_ENABLED, IBET_WST_ETH_FEATURE_ENABLED, TZ
 from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(
@@ -91,6 +95,52 @@ def _get_wst_address(
     token: Token, blockchain_platform: IbetWSTBlockchain
 ) -> str | None:
     return token.get_ibet_wst_address(blockchain_platform)
+
+
+def _get_wst_contract(
+    ibet_wst_address: str, blockchain_platform: IbetWSTBlockchain
+) -> EthereumIbetWST | AvalancheIbetWST:
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return AvalancheIbetWST(ibet_wst_address)
+    return EthereumIbetWST(ibet_wst_address)
+
+
+def _get_signer_web3(blockchain_platform: IbetWSTBlockchain):
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return AvaWeb3
+    return EthWeb3
+
+
+def _get_master_account(blockchain_platform: IbetWSTBlockchain) -> str:
+    account = (
+        AVA_MASTER_ACCOUNT_ADDRESS
+        if blockchain_platform == IbetWSTBlockchain.AVALANCHE
+        else ETH_MASTER_ACCOUNT_ADDRESS
+    )
+    if account is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Master account is not configured for the selected blockchain platform",
+        )
+    return account
+
+
+def _get_wst_tx_model(blockchain_platform: IbetWSTBlockchain):
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return AvaIbetWSTTx
+    return EthIbetWSTTx
+
+
+def _get_wst_whitelist_model(blockchain_platform: IbetWSTBlockchain):
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return IDXAvaIbetWSTWhitelist
+    return IDXEthIbetWSTWhitelist
+
+
+def _is_wst_blockchain_feature_enabled(blockchain_platform: IbetWSTBlockchain) -> bool:
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return IBET_WST_AVA_FEATURE_ENABLED
+    return IBET_WST_ETH_FEATURE_ENABLED
 
 
 # GET: /tokens
@@ -319,8 +369,10 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
     - This endpoint retrieves the whitelist accounts of an IbetWST contract along with their personal information.
     """
 
-    # Check if IBET_WST feature is enabled
-    if IBET_WST_FEATURE_ENABLED is False:
+    blockchain_platform = IbetWSTBlockchain(request_query.blockchain_platform)
+
+    # Check if IBET_WST feature is enabled for selected blockchain platform
+    if _is_wst_blockchain_feature_enabled(blockchain_platform) is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
@@ -351,32 +403,27 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
         raise HTTPException(status_code=404, detail="Token not found")
 
     # Get whitelists
-    if request_query.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        whitelist_list: Sequence[tuple[IDXEthIbetWSTWhitelist, IDXPersonalInfo]] = (
-            (
-                await db.execute(
-                    select(IDXEthIbetWSTWhitelist, IDXPersonalInfo)
-                    .where(IDXEthIbetWSTWhitelist.ibet_wst_address == ibet_wst_address)
-                    .outerjoin(
-                        IDXPersonalInfo,
-                        and_(
-                            IDXPersonalInfo.issuer_address
-                            == to_checksum_address(issuer_address),
-                            IDXEthIbetWSTWhitelist.st_account_address
-                            == IDXPersonalInfo.account_address,
-                        ),
-                    )
-                    .order_by(IDXEthIbetWSTWhitelist.created.desc())
+    whitelist_model = _get_wst_whitelist_model(blockchain_platform)
+    whitelist_list = (
+        (
+            await db.execute(
+                select(whitelist_model, IDXPersonalInfo)
+                .where(whitelist_model.ibet_wst_address == ibet_wst_address)
+                .outerjoin(
+                    IDXPersonalInfo,
+                    and_(
+                        IDXPersonalInfo.issuer_address
+                        == to_checksum_address(issuer_address),
+                        whitelist_model.st_account_address
+                        == IDXPersonalInfo.account_address,
+                    ),
                 )
+                .order_by(whitelist_model.created.desc())
             )
-            .tuples()
-            .all()
         )
-    else:
-        # NOTE:
-        #   For other blockchains, the whitelist data is not yet stored in the database,
-        #   so an empty list is returned for now.
-        whitelist_list = []
+        .tuples()
+        .all()
+    )
 
     # Response
     account_list = []
@@ -424,8 +471,10 @@ async def get_ibet_wst_whitelist_with_personal_info(
     - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
     """
 
-    # Check if IBET_WST feature is enabled
-    if IBET_WST_FEATURE_ENABLED is False:
+    blockchain_platform = IbetWSTBlockchain(request_query.blockchain_platform)
+
+    # Check if IBET_WST feature is enabled for selected blockchain platform
+    if _is_wst_blockchain_feature_enabled(blockchain_platform) is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
@@ -456,14 +505,10 @@ async def get_ibet_wst_whitelist_with_personal_info(
         raise HTTPException(status_code=404, detail="Token not found")
 
     # Get whitelist status
-    if request_query.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
-        whitelist = await wst_contract.account_white_list(
-            to_checksum_address(account_address)
-        )
-    else:
-        # NOTE: For other blockchains, the whitelist data is not yet stored in the database
-        pass
+    wst_contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
+    whitelist = await wst_contract.account_white_list(
+        to_checksum_address(account_address)
+    )
 
     # Get personal information
     personal_info: IDXPersonalInfo | None = (
@@ -518,8 +563,10 @@ async def add_ibet_wst_whitelist(
     - This endpoint allows an issuer to add an account to the whitelist of an IbetWST contract.
     """
 
-    # Check if IBET_WST feature is enabled
-    if IBET_WST_FEATURE_ENABLED is False:
+    blockchain_platform = IbetWSTBlockchain(data.blockchain_platform)
+
+    # Check if IBET_WST feature is enabled for selected blockchain platform
+    if _is_wst_blockchain_feature_enabled(blockchain_platform) is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
@@ -568,51 +615,53 @@ async def add_ibet_wst_whitelist(
     if ibet_wst_address is None:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    if data.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Generate IbetWST contract instance
-        contract = EthereumIbetWST(ibet_wst_address)
+    # Generate IbetWST contract instance
+    contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
 
-        # Generate nonce
-        nonce = secrets.token_bytes(32)
+    # Generate nonce
+    nonce = secrets.token_bytes(32)
 
-        # Get domain separator
-        domain_separator = await contract.domain_separator()
+    # Get domain separator
+    domain_separator = await contract.domain_separator()
 
-        # Generate digest
-        digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
-            domain_separator=domain_separator,
-            st_account=data.st_account_address,  # ST Account to be added to whitelist
-            sc_account_in=data.sc_account_address_in,  # SC Account for deposits
-            sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
-            nonce=nonce,
-        )
+    # Generate digest
+    digest = IbetWSTDigestHelper.generate_add_account_whitelist_digest(
+        domain_separator=domain_separator,
+        st_account=data.st_account_address,  # ST Account to be added to whitelist
+        sc_account_in=data.sc_account_address_in,  # SC Account for deposits
+        sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
+        nonce=nonce,
+    )
 
-        # Sign the digest from the authorizer's private key
-        signature = EthWeb3.eth.account.unsafe_sign_hash(digest, private_key)
+    # Sign the digest from the authorizer's private key
+    signature = _get_signer_web3(blockchain_platform).eth.account.unsafe_sign_hash(
+        digest, private_key
+    )
 
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
-            st_account=data.st_account_address,  # ST Account to be added to whitelist
-            sc_account_in=data.sc_account_address_in,  # SC Account for deposits
-            sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
-        )
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = to_checksum_address(issuer_address)
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=nonce.hex(),
-            v=signature.v,
-            r=signature.r.to_bytes(32).hex(),
-            s=signature.s.to_bytes(32).hex(),
-        )
-        db.add(wst_tx)
-        await db.commit()
+    # Insert transaction record
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsAddAccountWhiteList(
+        st_account=data.st_account_address,  # ST Account to be added to whitelist
+        sc_account_in=data.sc_account_address_in,  # SC Account for deposits
+        sc_account_out=data.sc_account_address_out,  # SC Account for withdrawals
+    )
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = to_checksum_address(issuer_address)
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=nonce.hex(),
+        v=signature.v,
+        r=signature.r.to_bytes(32).hex(),
+        s=signature.s.to_bytes(32).hex(),
+    )
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -640,8 +689,10 @@ async def delete_ibet_wst_whitelist(
 
     - This endpoint allows an issuer to delete an account from the whitelist of an IbetWST contract.
     """
-    # Check if IBET_WST feature is enabled
-    if IBET_WST_FEATURE_ENABLED is False:
+    blockchain_platform = IbetWSTBlockchain(data.blockchain_platform)
+
+    # Check if IBET_WST feature is enabled for selected blockchain platform
+    if _is_wst_blockchain_feature_enabled(blockchain_platform) is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
@@ -692,47 +743,49 @@ async def delete_ibet_wst_whitelist(
     if token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("This token is temporarily unavailable")
 
-    if data.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Generate IbetWST contract instance
-        contract = EthereumIbetWST(ibet_wst_address)
+    # Generate IbetWST contract instance
+    contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
 
-        # Generate nonce
-        nonce = secrets.token_bytes(32)
+    # Generate nonce
+    nonce = secrets.token_bytes(32)
 
-        # Get domain separator
-        domain_separator = await contract.domain_separator()
+    # Get domain separator
+    domain_separator = await contract.domain_separator()
 
-        # Generate digest
-        digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
-            domain_separator=domain_separator,
-            st_account=data.st_account_address,  # Account to be deleted to whitelist
-            nonce=nonce,
-        )
+    # Generate digest
+    digest = IbetWSTDigestHelper.generate_delete_account_whitelist_digest(
+        domain_separator=domain_separator,
+        st_account=data.st_account_address,  # Account to be deleted to whitelist
+        nonce=nonce,
+    )
 
-        # Sign the digest from the authorizer's private key
-        signature = EthWeb3.eth.account.unsafe_sign_hash(digest, private_key)
+    # Sign the digest from the authorizer's private key
+    signature = _get_signer_web3(blockchain_platform).eth.account.unsafe_sign_hash(
+        digest, private_key
+    )
 
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
-            st_account=data.st_account_address,  # Account to be deleted to whitelist
-        )
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = to_checksum_address(issuer_address)
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=nonce.hex(),
-            v=signature.v,
-            r=signature.r.to_bytes(32).hex(),
-            s=signature.s.to_bytes(32).hex(),
-        )
-        db.add(wst_tx)
-        await db.commit()
+    # Insert transaction record
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsDeleteAccountWhiteList(
+        st_account=data.st_account_address,  # Account to be deleted to whitelist
+    )
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = to_checksum_address(issuer_address)
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=nonce.hex(),
+        v=signature.v,
+        r=signature.r.to_bytes(32).hex(),
+        s=signature.s.to_bytes(32).hex(),
+    )
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -761,8 +814,10 @@ async def force_burn_ibet_wst_position(
     - This endpoint allows an issuer to force burn an IbetWST position for a specific account.
     """
 
-    # Check if IBET_WST feature is enabled
-    if IBET_WST_FEATURE_ENABLED is False:
+    blockchain_platform = IbetWSTBlockchain(data.blockchain_platform)
+
+    # Check if IBET_WST feature is enabled for selected blockchain platform
+    if _is_wst_blockchain_feature_enabled(blockchain_platform) is False:
         raise HTTPException(
             status_code=404, detail="This URL is not available in the current settings"
         )
@@ -813,48 +868,50 @@ async def force_burn_ibet_wst_position(
     if token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("This token is temporarily unavailable")
 
-    if data.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Generate IbetWST contract instance
-        contract = EthereumIbetWST(ibet_wst_address)
+    # Generate IbetWST contract instance
+    contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
 
-        # Generate nonce
-        nonce = secrets.token_bytes(32)
+    # Generate nonce
+    nonce = secrets.token_bytes(32)
 
-        # Get domain separator
-        domain_separator = await contract.domain_separator()
+    # Get domain separator
+    domain_separator = await contract.domain_separator()
 
-        # Generate digest
-        digest = IbetWSTDigestHelper.generate_force_burn_from_digest(
-            domain_separator=domain_separator,
-            account_address=data.account_address,  # Account to force burn
-            value=data.value,  # Amount to force burn
-            nonce=nonce,
-        )
+    # Generate digest
+    digest = IbetWSTDigestHelper.generate_force_burn_from_digest(
+        domain_separator=domain_separator,
+        account_address=data.account_address,  # Account to force burn
+        value=data.value,  # Amount to force burn
+        nonce=nonce,
+    )
 
-        # Sign the digest from the authorizer's private key
-        signature = EthWeb3.eth.account.unsafe_sign_hash(digest, private_key)
+    # Sign the digest from the authorizer's private key
+    signature = _get_signer_web3(blockchain_platform).eth.account.unsafe_sign_hash(
+        digest, private_key
+    )
 
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.FORCE_BURN
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsForceBurn(
-            account=data.account_address,  # Account to force burn
-            value=data.value,  # Amount to force burn
-        )
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = to_checksum_address(issuer_address)
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=nonce.hex(),
-            v=signature.v,
-            r=signature.r.to_bytes(32).hex(),
-            s=signature.s.to_bytes(32).hex(),
-        )
-        db.add(wst_tx)
-        await db.commit()
+    # Insert transaction record
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.FORCE_BURN
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsForceBurn(
+        account=data.account_address,  # Account to force burn
+        value=data.value,  # Amount to force burn
+    )
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = to_checksum_address(issuer_address)
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=nonce.hex(),
+        v=signature.v,
+        r=signature.r.to_bytes(32).hex(),
+        s=signature.s.to_bytes(32).hex(),
+    )
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})

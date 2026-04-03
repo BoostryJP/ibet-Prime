@@ -141,6 +141,7 @@ class ValueOperator(IntEnum):
 
 class IbetWSTBlockchain(StrEnum):
     ETHEREUM = "ethereum"
+    AVALANCHE = "avalanche"
     # NOTE: Add other blockchains that support IbetWST as needed
 
 

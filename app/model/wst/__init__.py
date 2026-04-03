@@ -18,9 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from .wst import (
+    AvalancheERC20,
+    AvalancheIbetWST,
     EthereumERC20,
     EthereumIbetWST,
     IbetWSTAuthorization,
     IbetWSTDigestHelper,
     IbetWSTTrade,
+    IbetWSTWhiteList,
 )

@@ -24,13 +24,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import log
 from app.database import DBAsyncSession
 from app.exceptions import ServiceUnavailableError
-from app.model.db import EthereumNode, Node
+from app.model.db import AvalancheNode, EthereumNode, Node
 from app.model.schema import BlockNumberResponse
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
-from config import IBET_WST_FEATURE_ENABLED
+from config import IBET_WST_AVA_FEATURE_ENABLED, IBET_WST_ETH_FEATURE_ENABLED
 
 web3 = AsyncWeb3Wrapper()
 
@@ -52,7 +52,8 @@ async def service_health_check(db: DBAsyncSession):
     Check following services are available:
     - Database
     - ibet Node
-    - Ethereum Node (if IbetWST feature is enabled)
+    - Ethereum Node (if IbetWST ETH feature is enabled)
+    - Avalanche Node (if IbetWST AVA feature is enabled)
     - E2EE Setting
     """
     errors = []
@@ -63,8 +64,11 @@ async def service_health_check(db: DBAsyncSession):
         # Check ibet node is synced
         await __check_ibet_node_is_synced(errors, db)
         # Check ethereum node is synced
-        if IBET_WST_FEATURE_ENABLED:
+        if IBET_WST_ETH_FEATURE_ENABLED:
             await __check_ethereum_node_is_synced(errors, db)
+        # Check avalanche node is synced
+        if IBET_WST_AVA_FEATURE_ENABLED:
+            await __check_avalanche_node_is_synced(errors, db)
     except Exception as err:
         LOG.exception(err)
         errors.append("Cannot connect to the data source")
@@ -102,6 +106,19 @@ async def __check_ethereum_node_is_synced(errors: list, db: AsyncSession):
     ).first()
     if _node is None:
         msg = "ethereum node is down"
+        LOG.error(msg)
+        errors.append(msg)
+
+
+async def __check_avalanche_node_is_synced(errors: list, db: AsyncSession):
+    """Check if avalanche node is synced"""
+    _node = (
+        await db.scalars(
+            select(AvalancheNode).where(AvalancheNode.is_synced == True).limit(1)
+        )
+    ).first()
+    if _node is None:
+        msg = "avalanche node is down"
         LOG.error(msg)
         errors.append(msg)
 

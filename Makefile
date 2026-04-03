@@ -19,7 +19,7 @@ typecheck:
 	uv run pyright --project pyrightconfig.json
 
 doc:
-	IBET_WST_FEATURE_ENABLED=1 DVP_AGENT_FEATURE_ENABLED=1 BC_EXPLORER_ENABLED=1 FREEZE_LOG_FEATURE_ENABLED=1 uv run python docs/generate_openapi_doc.py
+	IBET_WST_ETH_FEATURE_ENABLED=1 IBET_WST_AVA_FEATURE_ENABLED=1 DVP_AGENT_FEATURE_ENABLED=1 BC_EXPLORER_ENABLED=1 FREEZE_LOG_FEATURE_ENABLED=1 uv run python docs/generate_openapi_doc.py
 
 test:
 	uv run pytest tests/ ${ARG}

@@ -37,8 +37,6 @@ from app.model.db import (
     Account,
     EthIbetWSTTx,
     EthToIbetBridgeTx,
-    EthToIbetBridgeTxStatus,
-    EthToIbetBridgeTxType,
     IbetBridgeTxParamsForceChangeLockedAccount,
     IbetBridgeTxParamsForceUnlock,
     IbetWSTAuthorization,
@@ -48,9 +46,11 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    ToIbetBridgeTxStatus,
+    ToIbetBridgeTxType,
     Token,
 )
-from app.model.eth import EthereumIbetWST, IbetWSTDigestHelper
+from app.model.wst import EthereumIbetWST, IbetWSTDigestHelper
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.eth_contract_utils import (
     EthAsyncContractEventsView,
@@ -166,7 +166,7 @@ class BridgeMessageTransfer(BaseModel):
     message: Literal["ibet_wst_bridge"]
 
 
-class WSTBridgeMonitoringProcessor:
+class EthWSTBridgeMonitoringProcessor:
     """
     Processor for handling IbetWST bridge operations.
     """
@@ -493,8 +493,8 @@ class WSTBridgeMonitoringProcessor:
                 bridge_tx = EthToIbetBridgeTx()
                 bridge_tx.tx_id = tx_id
                 bridge_tx.token_address = bridge_event_viewer.ibet_token_address
-                bridge_tx.tx_type = EthToIbetBridgeTxType.FORCE_UNLOCK
-                bridge_tx.status = EthToIbetBridgeTxStatus.PENDING
+                bridge_tx.tx_type = ToIbetBridgeTxType.FORCE_UNLOCK
+                bridge_tx.status = ToIbetBridgeTxStatus.PENDING
                 bridge_tx.tx_params = IbetBridgeTxParamsForceUnlock(
                     lock_address=bridge_event_viewer.issuer_address,
                     account_address=args["from"],
@@ -527,8 +527,8 @@ class WSTBridgeMonitoringProcessor:
                 bridge_tx = EthToIbetBridgeTx()
                 bridge_tx.tx_id = tx_id
                 bridge_tx.token_address = bridge_event_viewer.ibet_token_address
-                bridge_tx.tx_type = EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
-                bridge_tx.status = EthToIbetBridgeTxStatus.PENDING
+                bridge_tx.tx_type = ToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
+                bridge_tx.status = ToIbetBridgeTxStatus.PENDING
                 bridge_tx.tx_params = IbetBridgeTxParamsForceChangeLockedAccount(
                     lock_address=bridge_event_viewer.issuer_address,
                     before_account_address=args["from"],
@@ -542,7 +542,7 @@ class WSTBridgeMonitoringProcessor:
 
 async def main():
     LOG.info("Service started successfully")
-    bridge_processor = WSTBridgeMonitoringProcessor()
+    bridge_processor = EthWSTBridgeMonitoringProcessor()
 
     while True:
         try:

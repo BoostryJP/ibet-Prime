@@ -47,7 +47,7 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
 )
-from app.model.eth import EthereumIbetWST, IbetWSTAuthorization
+from app.model.wst import EthereumIbetWST, IbetWSTAuthorization
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc

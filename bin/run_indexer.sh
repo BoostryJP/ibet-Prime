@@ -35,8 +35,12 @@ if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   python batch/indexer_e2e_messaging.py &
 fi
 
-if [[ $IBET_WST_FEATURE_ENABLED = 1 ]]; then
-  python batch/indexer_eth_wst_trades.py &
+if [[ $IBET_WST_ETH_FEATURE_ENABLED = 1 ]]; then
+  python batch/indexer_wst_eth_trades.py &
+fi
+
+if [[ $IBET_WST_AVA_FEATURE_ENABLED = 1 ]]; then
+  python batch/indexer_wst_ava_trades.py &
 fi
 
 if [[ $BC_EXPLORER_ENABLED = 1 ]]; then

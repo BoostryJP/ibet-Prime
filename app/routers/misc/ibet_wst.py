@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Sequence
+from typing import Annotated
 
 import pytz
 from eth_utils import to_checksum_address
@@ -35,6 +35,7 @@ from app.exceptions import (
 )
 from app.model import EthereumAddress
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTAuthorization,
     IbetWSTTxParamsAcceptTrade,
@@ -45,13 +46,14 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    IDXAvaIbetWSTTrade,
+    IDXAvaIbetWSTWhitelist,
     IDXEthIbetWSTTrade,
     IDXEthIbetWSTWhitelist,
     Token,
     TokenType,
 )
 from app.model.db.ibet_wst import IbetWSTTxParamsTransfer
-from app.model.eth import EthereumERC20, EthereumIbetWST
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.schema import (
     AcceptIbetWSTTradeRequest,
@@ -84,8 +86,15 @@ from app.model.schema import (
     TransferIbetWSTRequest,
 )
 from app.model.schema.base import IbetWSTBlockchain
+from app.model.wst import (
+    AvalancheERC20,
+    AvalancheIbetWST,
+    EthereumERC20,
+    EthereumIbetWST,
+)
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
+from avalanche_config import AVA_MASTER_ACCOUNT_ADDRESS
 from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(prefix="/ibet_wst", tags=["[misc] ibet_wst"])
@@ -110,6 +119,54 @@ async def _find_wst_token_by_address(
         if _get_wst_address(token, blockchain_platform) == target_address:
             return token
     return None
+
+
+def _get_wst_contract(
+    ibet_wst_address: str, blockchain_platform: IbetWSTBlockchain
+) -> EthereumIbetWST | AvalancheIbetWST:
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return AvalancheIbetWST(to_checksum_address(ibet_wst_address))
+    return EthereumIbetWST(to_checksum_address(ibet_wst_address))
+
+
+def _get_erc20_contract(
+    token_address: str, blockchain_platform: IbetWSTBlockchain
+) -> EthereumERC20 | AvalancheERC20:
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return AvalancheERC20(token_address)
+    return EthereumERC20(token_address)
+
+
+def _get_master_account(blockchain_platform: IbetWSTBlockchain) -> str:
+    account = (
+        AVA_MASTER_ACCOUNT_ADDRESS
+        if blockchain_platform == IbetWSTBlockchain.AVALANCHE
+        else ETH_MASTER_ACCOUNT_ADDRESS
+    )
+    if account is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Master account is not configured for the selected blockchain platform",
+        )
+    return account
+
+
+def _get_wst_tx_model(blockchain_platform: IbetWSTBlockchain):
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return AvaIbetWSTTx
+    return EthIbetWSTTx
+
+
+def _get_wst_whitelist_model(blockchain_platform: IbetWSTBlockchain):
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return IDXAvaIbetWSTWhitelist
+    return IDXEthIbetWSTWhitelist
+
+
+def _get_wst_trade_model(blockchain_platform: IbetWSTBlockchain):
+    if blockchain_platform == IbetWSTBlockchain.AVALANCHE:
+        return IDXAvaIbetWSTTrade
+    return IDXEthIbetWSTTrade
 
 
 # GET: /ibet_wst/tokens
@@ -263,20 +320,21 @@ async def get_ibet_wst_balance(
     - `blockchain_platform` is required to specify which blockchain's IbetWST balance to retrieve.
         - Defaults to ETHEREUM if not specified.
     """
+    blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
+
     # Check if ibet-WST exists
     _token = await _find_wst_token_by_address(
         db,
         ibet_wst_address,
-        IbetWSTBlockchain(query.blockchain_platform),
+        blockchain_platform,
     )
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
     # Get balance amount
-    if query.blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
-        balance = await wst_contract.balance_of(to_checksum_address(account_address))
-        return json_response({"balance": balance})
+    wst_contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
+    balance = await wst_contract.balance_of(to_checksum_address(account_address))
+    return json_response({"balance": balance})
 
 
 # POST: /ibet_wst/balances/{account_address}/{ibet_wst_address}/burn
@@ -308,42 +366,36 @@ async def burn_ibet_wst_balance(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Pre-transaction check: Ensure ST token balance is sufficient
-        wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
-        wst_balance = await wst_contract.balance_of(
-            to_checksum_address(account_address)
-        )
-        if wst_balance < req_params.value:
-            raise IbetWSTInsufficientBalanceError
+    # Pre-transaction check: Ensure ST token balance is sufficient
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
+    wst_contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
+    wst_balance = await wst_contract.balance_of(to_checksum_address(account_address))
+    if wst_balance < req_params.value:
+        raise IbetWSTInsufficientBalanceError
 
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.BURN
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsBurn(
-            from_address=to_checksum_address(account_address),
-            value=req_params.value,
-        )
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = req_params.authorizer
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=req_params.authorization.nonce,
-            v=req_params.authorization.v,
-            r=req_params.authorization.r,
-            s=req_params.authorization.s,
-        )
-        wst_tx.client_ip = get_client_ip(request)
-        db.add(wst_tx)
-        await db.commit()
-
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.BURN
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsBurn(
+        from_address=to_checksum_address(account_address),
+        value=req_params.value,
+    )
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    wst_tx.client_ip = get_client_ip(request)
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -369,72 +421,60 @@ async def list_ibet_wst_transactions(
 
     blockchain_platform = IbetWSTBlockchain(get_query.blockchain_platform)
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Base Query
-        stmt = select(EthIbetWSTTx).where(
-            EthIbetWSTTx.ibet_wst_address == get_query.ibet_wst_address
-        )
-        total = await db.scalar(
-            stmt.with_only_columns(func.count())
-            .select_from(EthIbetWSTTx)
-            .order_by(None)
-        )
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
+    # Base Query
+    stmt = select(wst_tx_model).where(
+        wst_tx_model.ibet_wst_address == get_query.ibet_wst_address
+    )
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(wst_tx_model).order_by(None)
+    )
 
-        # Search Filter
-        if get_query.tx_id is not None:
-            stmt = stmt.where(EthIbetWSTTx.tx_id == get_query.tx_id)
-        if get_query.tx_type is not None:
-            stmt = stmt.where(EthIbetWSTTx.tx_type == get_query.tx_type)
-        if get_query.status is not None:
-            stmt = stmt.where(EthIbetWSTTx.status == int(get_query.status))
-        if get_query.tx_hash is not None:
-            stmt = stmt.where(EthIbetWSTTx.tx_hash == get_query.tx_hash)
-        if get_query.authorizer is not None:
-            stmt = stmt.where(EthIbetWSTTx.authorizer == get_query.authorizer)
-        if get_query.finalized is not None:
-            stmt = stmt.where(EthIbetWSTTx.finalized == get_query.finalized)
-        if get_query.created_from:
-            _created_from = datetime.strptime(
-                get_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
-            )
-            stmt = stmt.where(
-                EthIbetWSTTx.created
-                >= local_tz.localize(_created_from)
-                .astimezone(utc_tz)
-                .replace(tzinfo=None)
-            )
-        if get_query.created_to:
-            _created_to = datetime.strptime(
-                get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
-            )
-            stmt = stmt.where(
-                EthIbetWSTTx.created
-                <= local_tz.localize(_created_to)
-                .astimezone(utc_tz)
-                .replace(tzinfo=None)
-            )
-
-        count = await db.scalar(
-            stmt.with_only_columns(func.count())
-            .select_from(EthIbetWSTTx)
-            .order_by(None)
+    # Search Filter
+    if get_query.tx_id is not None:
+        stmt = stmt.where(wst_tx_model.tx_id == get_query.tx_id)
+    if get_query.tx_type is not None:
+        stmt = stmt.where(wst_tx_model.tx_type == get_query.tx_type)
+    if get_query.status is not None:
+        stmt = stmt.where(wst_tx_model.status == int(get_query.status))
+    if get_query.tx_hash is not None:
+        stmt = stmt.where(wst_tx_model.tx_hash == get_query.tx_hash)
+    if get_query.authorizer is not None:
+        stmt = stmt.where(wst_tx_model.authorizer == get_query.authorizer)
+    if get_query.finalized is not None:
+        stmt = stmt.where(wst_tx_model.finalized == get_query.finalized)
+    if get_query.created_from:
+        _created_from = datetime.strptime(
+            get_query.created_from + ".000000", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            wst_tx_model.created
+            >= local_tz.localize(_created_from).astimezone(utc_tz).replace(tzinfo=None)
+        )
+    if get_query.created_to:
+        _created_to = datetime.strptime(
+            get_query.created_to + ".999999", "%Y-%m-%d %H:%M:%S.%f"
+        )
+        stmt = stmt.where(
+            wst_tx_model.created
+            <= local_tz.localize(_created_to).astimezone(utc_tz).replace(tzinfo=None)
         )
 
-        # Sort
-        stmt = stmt.order_by(desc(EthIbetWSTTx.created))
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(wst_tx_model).order_by(None)
+    )
 
-        # Pagination
-        if get_query.limit is not None:
-            stmt = stmt.limit(get_query.limit)
-        if get_query.offset is not None:
-            stmt = stmt.offset(get_query.offset)
+    # Sort
+    stmt = stmt.order_by(desc(wst_tx_model.created))
 
-        # Execute Query
-        wst_txs: Sequence[EthIbetWSTTx] = (await db.scalars(stmt)).all()
+    # Pagination
+    if get_query.limit is not None:
+        stmt = stmt.limit(get_query.limit)
+    if get_query.offset is not None:
+        stmt = stmt.offset(get_query.offset)
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction retrieval logic for those blockchains should be implemented here.
+    # Execute Query
+    wst_txs = (await db.scalars(stmt)).all()
 
     # Response
     tx_list = []
@@ -501,46 +541,39 @@ async def get_ibet_wst_transaction(
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Get Transaction
-        wst_tx: EthIbetWSTTx | None = (
-            await db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
-            )
-        ).first()
-        if wst_tx is None:
-            raise HTTPException(status_code=404, detail="Transaction not found")
-
-        # Set event_log
-        event_log = _build_event_log_for_response(wst_tx)
-
-        # Set created datetime
-        _created_datetime = (
-            pytz.timezone("UTC")
-            .localize(wst_tx.created)
-            .astimezone(local_tz)
-            .isoformat()
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
+    # Get Transaction
+    wst_tx = (
+        await db.scalars(
+            select(wst_tx_model).where(wst_tx_model.tx_id == tx_id).limit(1)
         )
+    ).first()
+    if wst_tx is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
 
-        # Response
-        resp = {
-            "tx_id": wst_tx.tx_id,
-            "tx_type": wst_tx.tx_type,
-            "version": wst_tx.version,
-            "status": wst_tx.status,
-            "ibet_wst_address": wst_tx.ibet_wst_address,
-            "tx_sender": wst_tx.tx_sender,
-            "authorizer": wst_tx.authorizer,
-            "tx_hash": wst_tx.tx_hash,
-            "block_number": wst_tx.block_number,
-            "finalized": wst_tx.finalized,
-            "event_log": event_log,
-            "created": _created_datetime,
-        }
+    # Set event_log
+    event_log = _build_event_log_for_response(wst_tx)
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction retrieval logic for those blockchains should be implemented here.
+    # Set created datetime
+    _created_datetime = (
+        pytz.timezone("UTC").localize(wst_tx.created).astimezone(local_tz).isoformat()
+    )
+
+    # Response
+    resp = {
+        "tx_id": wst_tx.tx_id,
+        "tx_type": wst_tx.tx_type,
+        "version": wst_tx.version,
+        "status": wst_tx.status,
+        "ibet_wst_address": wst_tx.ibet_wst_address,
+        "tx_sender": wst_tx.tx_sender,
+        "authorizer": wst_tx.authorizer,
+        "tx_hash": wst_tx.tx_hash,
+        "block_number": wst_tx.block_number,
+        "finalized": wst_tx.finalized,
+        "event_log": event_log,
+        "created": _created_datetime,
+    }
 
     return json_response(resp)
 
@@ -569,33 +602,29 @@ async def retrieve_ibet_wst_whitelist_accounts(
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Get whitelists
-        whitelist_list: Sequence[IDXEthIbetWSTWhitelist] = (
-            await db.scalars(
-                select(IDXEthIbetWSTWhitelist)
-                .where(
-                    IDXEthIbetWSTWhitelist.ibet_wst_address
-                    == to_checksum_address(ibet_wst_address)
-                )
-                .order_by(IDXEthIbetWSTWhitelist.created.desc())
+    whitelist_model = _get_wst_whitelist_model(blockchain_platform)
+    # Get whitelists
+    whitelist_list = (
+        await db.scalars(
+            select(whitelist_model)
+            .where(
+                whitelist_model.ibet_wst_address
+                == to_checksum_address(ibet_wst_address)
             )
-        ).all()
+            .order_by(whitelist_model.created.desc())
+        )
+    ).all()
 
-        # Response
-        account_list = []
-        for whitelist in whitelist_list:
-            account_list.append(
-                {
-                    "st_account_address": whitelist.st_account_address,
-                    "sc_account_address_in": whitelist.sc_account_address_in,
-                    "sc_account_address_out": whitelist.sc_account_address_out,
-                }
-            )
-
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the whitelist retrieval logic for those blockchains should be implemented here.
+    # Response
+    account_list = []
+    for whitelist in whitelist_list:
+        account_list.append(
+            {
+                "st_account_address": whitelist.st_account_address,
+                "sc_account_address_in": whitelist.sc_account_address_in,
+                "sc_account_address_out": whitelist.sc_account_address_out,
+            }
+        )
 
     return json_response({"whitelist_accounts": account_list})
 
@@ -630,16 +659,11 @@ async def get_ibet_wst_whitelist(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Get whitelist status
-        wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
-        whitelist = await wst_contract.account_white_list(
-            to_checksum_address(account_address)
-        )
-
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the whitelist retrieval logic for those blockchains should be implemented here.
+    # Get whitelist status
+    wst_contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
+    whitelist = await wst_contract.account_white_list(
+        to_checksum_address(account_address)
+    )
 
     return json_response(
         {
@@ -682,53 +706,50 @@ async def transfer_ibet_wst(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Generate contract instance
-        wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
 
-        # Pre-transaction check: Ensure ST token balance is sufficient
-        wst_balance = await wst_contract.balance_of(
-            to_checksum_address(req_params.from_address)
-        )
-        if wst_balance < req_params.value:
-            raise IbetWSTInsufficientBalanceError
+    # Generate contract instance
+    wst_contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
 
-        # Pre-transaction check: Ensure from_address and to_address are whitelisted
-        wl_from = await wst_contract.account_white_list(req_params.from_address)
-        wl_to = await wst_contract.account_white_list(req_params.to_address)
-        if not wl_from.listed or not wl_to.listed:
-            raise IbetWSTAccountNotWhitelistedError
+    # Pre-transaction check: Ensure ST token balance is sufficient
+    wst_balance = await wst_contract.balance_of(
+        to_checksum_address(req_params.from_address)
+    )
+    if wst_balance < req_params.value:
+        raise IbetWSTInsufficientBalanceError
 
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.TRANSFER
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsTransfer(
-            from_address=req_params.from_address,
-            to_address=req_params.to_address,
-            value=req_params.value,
-            valid_after=req_params.valid_after,
-            valid_before=req_params.valid_before,
-        )
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = req_params.authorizer
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=req_params.authorization.nonce,
-            v=req_params.authorization.v,
-            r=req_params.authorization.r,
-            s=req_params.authorization.s,
-        )
-        wst_tx.client_ip = get_client_ip(request)
-        db.add(wst_tx)
-        await db.commit()
+    # Pre-transaction check: Ensure from_address and to_address are whitelisted
+    wl_from = await wst_contract.account_white_list(req_params.from_address)
+    wl_to = await wst_contract.account_white_list(req_params.to_address)
+    if not wl_from.listed or not wl_to.listed:
+        raise IbetWSTAccountNotWhitelistedError
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.TRANSFER
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsTransfer(
+        from_address=req_params.from_address,
+        to_address=req_params.to_address,
+        value=req_params.value,
+        valid_after=req_params.valid_after,
+        valid_before=req_params.valid_before,
+    )
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    wst_tx.client_ip = get_client_ip(request)
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -762,51 +783,46 @@ async def request_ibet_wst_trade(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Generate contract instance
-        wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
 
-        # Pre-transaction check: Ensure from_address and to_address are whitelisted
-        wl_from = await wst_contract.account_white_list(
-            req_params.seller_st_account_address
-        )
-        wl_to = await wst_contract.account_white_list(
-            req_params.buyer_st_account_address
-        )
-        if not wl_from.listed or not wl_to.listed:
-            raise IbetWSTAccountNotWhitelistedError
+    # Generate contract instance
+    wst_contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
 
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.REQUEST_TRADE
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
-            seller_st_account=req_params.seller_st_account_address,
-            buyer_st_account=req_params.buyer_st_account_address,
-            sc_token_address=req_params.sc_token_address,
-            st_value=req_params.st_value,
-            sc_value=req_params.sc_value,
-            memo=req_params.memo,
-        )
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = req_params.authorizer
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=req_params.authorization.nonce,
-            v=req_params.authorization.v,
-            r=req_params.authorization.r,
-            s=req_params.authorization.s,
-        )
-        wst_tx.client_ip = get_client_ip(request)
-        db.add(wst_tx)
-        await db.commit()
+    # Pre-transaction check: Ensure from_address and to_address are whitelisted
+    wl_from = await wst_contract.account_white_list(
+        req_params.seller_st_account_address
+    )
+    wl_to = await wst_contract.account_white_list(req_params.buyer_st_account_address)
+    if not wl_from.listed or not wl_to.listed:
+        raise IbetWSTAccountNotWhitelistedError
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.REQUEST_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsRequestTrade(
+        seller_st_account=req_params.seller_st_account_address,
+        buyer_st_account=req_params.buyer_st_account_address,
+        sc_token_address=req_params.sc_token_address,
+        st_value=req_params.st_value,
+        sc_value=req_params.sc_value,
+        memo=req_params.memo,
+    )
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    wst_tx.client_ip = get_client_ip(request)
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -839,31 +855,28 @@ async def cancel_ibet_wst_trade(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.CANCEL_TRADE
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsCancelTrade(index=req_params.index)
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = req_params.authorizer
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=req_params.authorization.nonce,
-            v=req_params.authorization.v,
-            r=req_params.authorization.r,
-            s=req_params.authorization.s,
-        )
-        wst_tx.client_ip = get_client_ip(request)
-        db.add(wst_tx)
-        await db.commit()
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.CANCEL_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsCancelTrade(index=req_params.index)
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    wst_tx.client_ip = get_client_ip(request)
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -901,51 +914,48 @@ async def accept_ibet_wst_trade(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Retrieve trade details
-        wst_contract = EthereumIbetWST(to_checksum_address(ibet_wst_address))
-        trade = await wst_contract.get_trade(req_params.index)
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
 
-        # Pre-transaction check: Ensure ST token balance is sufficient
-        wst_balance = await wst_contract.balance_of(
-            to_checksum_address(trade.seller_st_account)
-        )
-        if wst_balance < trade.st_value:
-            raise IbetWSTInsufficientBalanceError
+    # Retrieve trade details
+    wst_contract = _get_wst_contract(ibet_wst_address, blockchain_platform)
+    trade = await wst_contract.get_trade(req_params.index)
 
-        # Pre-transaction check: Ensure SC token allowance is sufficient
-        sc_contract = EthereumERC20(trade.sc_token_address)
-        allowance = await sc_contract.allowance(
-            account=to_checksum_address(trade.buyer_sc_account),
-            spender=to_checksum_address(ibet_wst_address),
-        )
-        if allowance < trade.sc_value:
-            raise ERC20InsufficientAllowanceError
+    # Pre-transaction check: Ensure ST token balance is sufficient
+    wst_balance = await wst_contract.balance_of(
+        to_checksum_address(trade.seller_st_account)
+    )
+    if wst_balance < trade.st_value:
+        raise IbetWSTInsufficientBalanceError
 
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.ACCEPT_TRADE
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsAcceptTrade(index=req_params.index)
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = req_params.authorizer
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=req_params.authorization.nonce,
-            v=req_params.authorization.v,
-            r=req_params.authorization.r,
-            s=req_params.authorization.s,
-        )
-        wst_tx.client_ip = get_client_ip(request)
-        db.add(wst_tx)
-        await db.commit()
+    # Pre-transaction check: Ensure SC token allowance is sufficient
+    sc_contract = _get_erc20_contract(trade.sc_token_address, blockchain_platform)
+    allowance = await sc_contract.allowance(
+        account=to_checksum_address(trade.buyer_sc_account),
+        spender=to_checksum_address(ibet_wst_address),
+    )
+    if allowance < trade.sc_value:
+        raise ERC20InsufficientAllowanceError
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.ACCEPT_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsAcceptTrade(index=req_params.index)
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    wst_tx.client_ip = get_client_ip(request)
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -979,31 +989,28 @@ async def reject_ibet_wst_trade(
     if _token is None:
         raise HTTPException(status_code=404, detail="IbetWST token not found")
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Insert transaction record
-        tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
-        wst_tx.tx_id = tx_id
-        wst_tx.tx_type = IbetWSTTxType.REJECT_TRADE
-        wst_tx.version = IbetWSTVersion.V_1
-        wst_tx.status = IbetWSTTxStatus.PENDING
-        wst_tx.ibet_wst_address = ibet_wst_address
-        wst_tx.tx_params = IbetWSTTxParamsRejectTrade(index=req_params.index)
-        wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        wst_tx.authorizer = req_params.authorizer
-        wst_tx.authorization = IbetWSTAuthorization(
-            nonce=req_params.authorization.nonce,
-            v=req_params.authorization.v,
-            r=req_params.authorization.r,
-            s=req_params.authorization.s,
-        )
-        wst_tx.client_ip = get_client_ip(request)
-        db.add(wst_tx)
-        await db.commit()
+    wst_tx_model = _get_wst_tx_model(blockchain_platform)
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+    # Insert transaction record
+    tx_id = str(uuid.uuid4())
+    wst_tx = wst_tx_model()
+    wst_tx.tx_id = tx_id
+    wst_tx.tx_type = IbetWSTTxType.REJECT_TRADE
+    wst_tx.version = IbetWSTVersion.V_1
+    wst_tx.status = IbetWSTTxStatus.PENDING
+    wst_tx.ibet_wst_address = ibet_wst_address
+    wst_tx.tx_params = IbetWSTTxParamsRejectTrade(index=req_params.index)
+    wst_tx.tx_sender = _get_master_account(blockchain_platform)
+    wst_tx.authorizer = req_params.authorizer
+    wst_tx.authorization = IbetWSTAuthorization(
+        nonce=req_params.authorization.nonce,
+        v=req_params.authorization.v,
+        r=req_params.authorization.r,
+        s=req_params.authorization.s,
+    )
+    wst_tx.client_ip = get_client_ip(request)
+    db.add(wst_tx)
+    await db.commit()
 
     return json_response({"tx_id": tx_id})
 
@@ -1034,65 +1041,52 @@ async def list_ibet_wst_trades(
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Base Query
-        stmt = select(IDXEthIbetWSTTrade).where(
-            IDXEthIbetWSTTrade.ibet_wst_address == to_checksum_address(ibet_wst_address)
+    wst_trade_model = _get_wst_trade_model(blockchain_platform)
+
+    # Base Query
+    stmt = select(wst_trade_model).where(
+        wst_trade_model.ibet_wst_address == to_checksum_address(ibet_wst_address)
+    )
+    total = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(wst_trade_model).order_by(None)
+    )
+
+    # Search Filter
+    if query.seller_st_account_address is not None:
+        stmt = stmt.where(
+            wst_trade_model.seller_st_account_address == query.seller_st_account_address
         )
-        total = await db.scalar(
-            stmt.with_only_columns(func.count())
-            .select_from(IDXEthIbetWSTTrade)
-            .order_by(None)
+    if query.buyer_st_account_address is not None:
+        stmt = stmt.where(
+            wst_trade_model.buyer_st_account_address == query.buyer_st_account_address
         )
-
-        # Search Filter
-        if query.seller_st_account_address is not None:
-            stmt = stmt.where(
-                IDXEthIbetWSTTrade.seller_st_account_address
-                == query.seller_st_account_address
-            )
-        if query.buyer_st_account_address is not None:
-            stmt = stmt.where(
-                IDXEthIbetWSTTrade.buyer_st_account_address
-                == query.buyer_st_account_address
-            )
-        if query.sc_token_address is not None:
-            stmt = stmt.where(
-                IDXEthIbetWSTTrade.sc_token_address == query.sc_token_address
-            )
-        if query.seller_sc_account_address is not None:
-            stmt = stmt.where(
-                IDXEthIbetWSTTrade.seller_sc_account_address
-                == query.seller_sc_account_address
-            )
-        if query.buyer_sc_account_address is not None:
-            stmt = stmt.where(
-                IDXEthIbetWSTTrade.buyer_sc_account_address
-                == query.buyer_sc_account_address
-            )
-        if query.state is not None:
-            stmt = stmt.where(IDXEthIbetWSTTrade.state == query.state)
-        count = await db.scalar(
-            stmt.with_only_columns(func.count())
-            .select_from(IDXEthIbetWSTTrade)
-            .order_by(None)
+    if query.sc_token_address is not None:
+        stmt = stmt.where(wst_trade_model.sc_token_address == query.sc_token_address)
+    if query.seller_sc_account_address is not None:
+        stmt = stmt.where(
+            wst_trade_model.seller_sc_account_address == query.seller_sc_account_address
         )
+    if query.buyer_sc_account_address is not None:
+        stmt = stmt.where(
+            wst_trade_model.buyer_sc_account_address == query.buyer_sc_account_address
+        )
+    if query.state is not None:
+        stmt = stmt.where(wst_trade_model.state == query.state)
+    count = await db.scalar(
+        stmt.with_only_columns(func.count()).select_from(wst_trade_model).order_by(None)
+    )
 
-        # Sort
-        stmt = stmt.order_by(asc(IDXEthIbetWSTTrade.index))
+    # Sort
+    stmt = stmt.order_by(asc(wst_trade_model.index))
 
-        # Pagination
-        if query.limit is not None:
-            stmt = stmt.limit(query.limit)
-        if query.offset is not None:
-            stmt = stmt.offset(query.offset)
+    # Pagination
+    if query.limit is not None:
+        stmt = stmt.limit(query.limit)
+    if query.offset is not None:
+        stmt = stmt.offset(query.offset)
 
-        # Execute Query
-        _trades: Sequence[IDXEthIbetWSTTrade] = (await db.scalars(stmt)).all()
-
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the trade retrieval logic for those blockchains should be implemented here.
+    # Execute Query
+    _trades = (await db.scalars(stmt)).all()
 
     # Response
     trade_list = [
@@ -1145,25 +1139,21 @@ async def get_ibet_wst_trade(
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
-    if blockchain_platform == IbetWSTBlockchain.ETHEREUM:
-        # Get Trade
-        trade: IDXEthIbetWSTTrade | None = (
-            await db.scalars(
-                select(IDXEthIbetWSTTrade).where(
-                    and_(
-                        IDXEthIbetWSTTrade.ibet_wst_address
-                        == to_checksum_address(ibet_wst_address),
-                        IDXEthIbetWSTTrade.index == index,
-                    )
+    wst_trade_model = _get_wst_trade_model(blockchain_platform)
+    # Get Trade
+    trade = (
+        await db.scalars(
+            select(wst_trade_model).where(
+                and_(
+                    wst_trade_model.ibet_wst_address
+                    == to_checksum_address(ibet_wst_address),
+                    wst_trade_model.index == index,
                 )
             )
-        ).first()
-        if trade is None:
-            raise HTTPException(status_code=404, detail="Trade not found")
-
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the trade retrieval logic for those blockchains should be implemented here.
+        )
+    ).first()
+    if trade is None:
+        raise HTTPException(status_code=404, detail="Trade not found")
 
     # Response
     resp = {
@@ -1203,15 +1193,12 @@ async def get_erc20_balance(
         - Defaults to ETHEREUM if not specified.
     """
 
-    if IbetWSTBlockchain(query.blockchain_platform) == IbetWSTBlockchain.ETHEREUM:
-        # Get balance amount
-        # - If token_address is not an ERC20 token, it will return 0 balance.
-        erc20 = EthereumERC20(query.token_address)
-        balance = await erc20.balance_of(query.account_address)
+    blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the balance retrieval logic for those blockchains should be implemented here.
+    # Get balance amount
+    # - If token_address is not an ERC20 token, it will return 0 balance.
+    erc20 = _get_erc20_contract(query.token_address, blockchain_platform)
+    balance = await erc20.balance_of(query.account_address)
 
     # Return response
     return json_response({"balance": balance})
@@ -1240,15 +1227,12 @@ async def get_erc20_allowance(
         - Defaults to ETHEREUM if not specified.
     """
 
-    if IbetWSTBlockchain(query.blockchain_platform) == IbetWSTBlockchain.ETHEREUM:
-        # Get allowance amount
-        # - If token_address is not an ERC20 token, it will return 0 allowance
-        erc20 = EthereumERC20(query.token_address)
-        allowance = await erc20.allowance(query.account_address, query.spender_address)
+    blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
-    # NOTE:
-    #   Currently, only Ethereum is supported.
-    #   If other blockchains are added in the future, the allowance retrieval logic for those blockchains should be implemented here.
+    # Get allowance amount
+    # - If token_address is not an ERC20 token, it will return 0 allowance
+    erc20 = _get_erc20_contract(query.token_address, blockchain_platform)
+    allowance = await erc20.allowance(query.account_address, query.spender_address)
 
     # Return response
     return json_response({"allowance": allowance})
@@ -1267,7 +1251,7 @@ def get_client_ip(request: Request):
     return client_ip
 
 
-def _build_event_log_for_response(wst_tx: EthIbetWSTTx):
+def _build_event_log_for_response(wst_tx: EthIbetWSTTx | AvaIbetWSTTx):
     """
     Format the event_log from the DB for API response
     """

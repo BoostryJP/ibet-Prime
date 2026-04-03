@@ -148,10 +148,16 @@ The main environment variables are as follows.
         <td>0(not use) / 1(use)</td>
     </tr>
     <tr>
-        <td>IBET_WST_FEATURE_ENABLED</td>
+        <td>IBET_WST_ETH_FEATURE_ENABLED</td>
         <td>False</td>
-        <td nowrap>Weather to use IbetWST features</td>
-        <td>1</td>
+        <td nowrap>Whether to use IbetWST features on Ethereum</td>
+        <td>0(not use) / 1(use)</td>
+    </tr>
+    <tr>
+        <td>IBET_WST_AVA_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Whether to use IbetWST features on Avalanche</td>
+        <td>0(not use) / 1(use)</td>
     </tr>
     <tr>
         <td>DVP_AGENT_FEATURE_ENABLED</td>

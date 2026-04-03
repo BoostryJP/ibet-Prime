@@ -27,7 +27,7 @@ from sqlalchemy import select
 from web3.exceptions import TimeExhausted
 
 from app.model.db import (
-    EthIbetWSTTx,
+    AvaIbetWSTTx,
     IbetWSTTxParamsAcceptTrade,
     IbetWSTTxParamsAddAccountWhiteList,
     IbetWSTTxParamsBurn,
@@ -42,14 +42,14 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
-    IDXEthIbetWSTWhitelist,
+    IDXAvaIbetWSTWhitelist,
     Token,
     TokenType,
     TokenVersion,
 )
-from batch.processor_eth_wst_monitor_txreceipt import (
+from batch.processor_wst_ava_monitor_txreceipt import (
     LOG,
-    ProcessorEthWSTMonitorTxReceipt,
+    ProcessorAvaWSTMonitorTxReceipt,
 )
 from tests.account_config import default_eth_account
 
@@ -60,7 +60,7 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield ProcessorEthWSTMonitorTxReceipt()
+    yield ProcessorAvaWSTMonitorTxReceipt()
     log.propagate = False
     log.setLevel(default_log_level)
 
@@ -84,7 +84,7 @@ class TestProcessor:
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
@@ -104,7 +104,7 @@ class TestProcessor:
         # Check if the transaction is still in the same state
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -113,14 +113,14 @@ class TestProcessor:
     # Normal_2
     # - TxReceipt: does not exist (TimeExhausted)
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(side_effect=TimeExhausted),
     )
     async def test_normal_2(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
@@ -141,7 +141,7 @@ class TestProcessor:
         # Verify that the status has not changed
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
@@ -156,7 +156,7 @@ class TestProcessor:
     # - TxReceipt: exists(success)
     # - Not finalized
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -167,14 +167,14 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
     async def test_normal_3_1_1(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
@@ -195,7 +195,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -215,7 +215,7 @@ class TestProcessor:
     # - TxReceipt: exists(success)
     # - Not finalized: tx_type = ADD_WHITELIST
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -226,7 +226,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
     @mock.patch(
@@ -252,14 +252,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
         wst_tx.version = IbetWSTVersion.V_1
@@ -283,7 +283,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -295,8 +295,8 @@ class TestProcessor:
         )
 
         # Verify that the whitelist entry has been created
-        idx_whitelist: IDXEthIbetWSTWhitelist = (
-            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+        idx_whitelist: IDXAvaIbetWSTWhitelist = (
+            await async_db.scalars(select(IDXAvaIbetWSTWhitelist).limit(1))
         ).first()
         assert idx_whitelist is not None
         assert (
@@ -316,7 +316,7 @@ class TestProcessor:
     # - TxReceipt: exists(success)
     # - Not finalized: tx_type = DELETE_WHITELIST
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -327,7 +327,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
     @mock.patch(
@@ -353,14 +353,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
         wst_tx.version = IbetWSTVersion.V_1
@@ -374,7 +374,7 @@ class TestProcessor:
         wst_tx.finalized = False
         async_db.add(wst_tx)
 
-        idx_whitelist = IDXEthIbetWSTWhitelist(
+        idx_whitelist = IDXAvaIbetWSTWhitelist(
             ibet_wst_address=wst_tx.ibet_wst_address,
             st_account_address=self.user1["address"],
             sc_account_address_in=self.user2["address"],
@@ -390,7 +390,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -403,7 +403,7 @@ class TestProcessor:
 
         # Verify that the whitelist entry has been deleted
         idx_whitelist_af = (
-            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTWhitelist).limit(1))
         ).first()
         assert idx_whitelist_af is None
 
@@ -416,7 +416,7 @@ class TestProcessor:
     # - TxReceipt: exists(failure)
     # - Not finalized
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 0,
@@ -426,14 +426,14 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
     async def test_normal_3_2(self, processor, async_db, caplog):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
@@ -454,7 +454,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.FAILED
@@ -472,7 +472,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: DEPLOY
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -483,7 +483,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     async def test_normal_4_1(self, processor, async_db, caplog):
@@ -497,14 +497,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
@@ -525,7 +525,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -538,9 +538,9 @@ class TestProcessor:
                 select(Token).where(Token.ibet_wst_tx_id == tx_id).limit(1)
             )
         ).first()
-        assert token_af.is_ibet_wst_deployed("ethereum") is True
+        assert token_af.is_ibet_wst_deployed("avalanche") is True
         assert (
-            token_af.get_ibet_wst_address("ethereum")
+            token_af.get_ibet_wst_address("avalanche")
             == "0x9876543210abCDef1234567890AbcDef12345678"
         )
 
@@ -555,7 +555,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: MINT
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -566,7 +566,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -593,14 +593,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.MINT
         wst_tx.version = IbetWSTVersion.V_1
@@ -623,7 +623,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -646,7 +646,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: BURN
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -657,7 +657,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -684,14 +684,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.BURN
         wst_tx.version = IbetWSTVersion.V_1
@@ -714,7 +714,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -737,7 +737,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: ADD_WHITELIST
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -748,7 +748,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -774,14 +774,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.ADD_WHITELIST
         wst_tx.version = IbetWSTVersion.V_1
@@ -805,7 +805,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -817,8 +817,8 @@ class TestProcessor:
         }
 
         # Verify that the whitelist entry has been created
-        idx_whitelist: IDXEthIbetWSTWhitelist = (
-            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+        idx_whitelist: IDXAvaIbetWSTWhitelist = (
+            await async_db.scalars(select(IDXAvaIbetWSTWhitelist).limit(1))
         ).first()
         assert idx_whitelist is not None
         assert (
@@ -840,7 +840,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: DELETE_WHITELIST
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -851,7 +851,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -877,14 +877,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DELETE_WHITELIST
         wst_tx.version = IbetWSTVersion.V_1
@@ -898,7 +898,7 @@ class TestProcessor:
         wst_tx.finalized = False
         async_db.add(wst_tx)
 
-        idx_whitelist = IDXEthIbetWSTWhitelist(
+        idx_whitelist = IDXAvaIbetWSTWhitelist(
             ibet_wst_address=wst_tx.ibet_wst_address,
             st_account_address=self.user1["address"],
             sc_account_address_in=self.user2["address"],
@@ -914,7 +914,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -927,7 +927,7 @@ class TestProcessor:
 
         # Verify that the whitelist entry has been deleted
         idx_whitelist_af = (
-            await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
+            await async_db.scalars(select(IDXAvaIbetWSTWhitelist).limit(1))
         ).first()
         assert idx_whitelist_af is None
 
@@ -942,7 +942,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: REQUEST_TRADE
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -953,7 +953,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -976,7 +976,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumERC20.decimals",
+        "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_5(self, processor, async_db, caplog):
@@ -990,14 +990,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.REQUEST_TRADE
         wst_tx.version = IbetWSTVersion.V_1
@@ -1024,7 +1024,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -1054,7 +1054,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: CANCEL_TRADE
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -1065,7 +1065,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -1088,7 +1088,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumERC20.decimals",
+        "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_6(self, processor, async_db, caplog):
@@ -1102,14 +1102,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.CANCEL_TRADE
         wst_tx.version = IbetWSTVersion.V_1
@@ -1129,7 +1129,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -1159,7 +1159,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: ACCEPT_TRADE
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -1170,7 +1170,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -1193,7 +1193,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumERC20.decimals",
+        "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_7(self, processor, async_db, caplog):
@@ -1207,14 +1207,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.ACCEPT_TRADE
         wst_tx.version = IbetWSTVersion.V_1
@@ -1234,7 +1234,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -1264,7 +1264,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: REJECT_TRADE
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -1275,7 +1275,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -1298,7 +1298,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.model.eth.wst.EthereumERC20.decimals",
+        "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
     async def test_normal_4_2_8(self, processor, async_db, caplog):
@@ -1312,14 +1312,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.REJECT_TRADE
         wst_tx.version = IbetWSTVersion.V_1
@@ -1339,7 +1339,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -1369,7 +1369,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: TRANSFER
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -1380,7 +1380,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -1408,14 +1408,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.TRANSFER
         wst_tx.version = IbetWSTVersion.V_1
@@ -1441,7 +1441,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -1465,7 +1465,7 @@ class TestProcessor:
     # - Finalized
     # - TxType: FORCE_BURN
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             return_value={
                 "status": 1,
@@ -1476,7 +1476,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     @mock.patch(
@@ -1503,14 +1503,14 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.FORCE_BURN
         wst_tx.version = IbetWSTVersion.V_1
@@ -1533,7 +1533,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -1555,7 +1555,7 @@ class TestProcessor:
     # - TxReceipt: exists(success)
     # - Finalized
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(
             side_effect=[
                 TimeExhausted,  # Simulate a timeout for the first call
@@ -1569,7 +1569,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
+        "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
     async def test_normal_5(self, processor, async_db, caplog):
@@ -1583,15 +1583,15 @@ class TestProcessor:
         token.abi = {}
         token.tx_hash = ""
         token.version = TokenVersion.V_25_09
-        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_activated("avalanche", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
         token.ibet_wst_tx_id = tx_id
-        token.set_ibet_wst_deployed("ethereum", False)
-        token.set_ibet_wst_address("ethereum", None)
+        token.set_ibet_wst_deployed("avalanche", False)
+        token.set_ibet_wst_address("avalanche", None)
         async_db.add(token)
 
         another_tx_id = str(uuid.uuid4())
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = another_tx_id  # Use a different tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
@@ -1605,7 +1605,7 @@ class TestProcessor:
         wst_tx.finalized = False
         async_db.add(wst_tx)
 
-        wst_tx = EthIbetWSTTx()
+        wst_tx = AvaIbetWSTTx()
         wst_tx.tx_id = tx_id
         wst_tx.tx_type = IbetWSTTxType.DEPLOY
         wst_tx.version = IbetWSTVersion.V_1
@@ -1628,7 +1628,7 @@ class TestProcessor:
         # Verify that the status and block number have been updated
         wst_tx_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
@@ -1638,7 +1638,7 @@ class TestProcessor:
 
         wst_tx_another_af = (
             await async_db.scalars(
-                select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == another_tx_id).limit(1)
+                select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == another_tx_id).limit(1)
             )
         ).first()
         assert wst_tx_another_af.status == IbetWSTTxStatus.FAILED
