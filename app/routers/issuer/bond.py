@@ -651,6 +651,7 @@ async def retrieve_bond_token(
         SendTransactionError,
         ContractRevertError,
         OperationNotSupportedVersionError,
+        OperationNotAllowedStateError,
     ),
 )
 async def update_bond_token(

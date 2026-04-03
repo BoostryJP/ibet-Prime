@@ -635,6 +635,7 @@ async def retrieve_share_token(
         SendTransactionError,
         ContractRevertError,
         OperationNotSupportedVersionError,
+        OperationNotAllowedStateError,
     ),
 )
 async def update_share_token(
