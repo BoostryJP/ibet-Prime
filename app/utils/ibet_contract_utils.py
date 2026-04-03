@@ -192,7 +192,7 @@ class ContractUtils:
         tx_from_value = transaction.get("from")
         if tx_from_value is None:
             raise SendTransactionError("Transaction sender is required")
-        tx_from = to_checksum_address(cast(str, tx_from_value))
+        tx_from = cast(str, tx_from_value)
 
         # local database session
         DB_URI = DATABASE_URL
@@ -221,7 +221,7 @@ class ContractUtils:
 
         try:
             # Get nonce
-            nonce = web3.eth.get_transaction_count(tx_from)
+            nonce = web3.eth.get_transaction_count(cast(Any, tx_from_value))
             transaction["nonce"] = nonce
             signed_tx = web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
@@ -484,7 +484,7 @@ class AsyncContractUtils:
         tx_from_value = transaction.get("from")
         if tx_from_value is None:
             raise SendTransactionError("Transaction sender is required")
-        tx_from = to_checksum_address(cast(str, tx_from_value))
+        tx_from = cast(str, tx_from_value)
 
         # local database session
         DB_URI = ASYNC_DATABASE_URL
@@ -520,7 +520,7 @@ class AsyncContractUtils:
 
         try:
             # Get nonce
-            nonce = await async_web3.eth.get_transaction_count(tx_from)
+            nonce = await async_web3.eth.get_transaction_count(cast(Any, tx_from_value))
             transaction["nonce"] = nonce
             signed_tx = async_web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
@@ -554,7 +554,7 @@ class AsyncContractUtils:
         tx_from_value = transaction.get("from")
         if tx_from_value is None:
             raise SendTransactionError("Transaction sender is required")
-        tx_from = to_checksum_address(cast(str, tx_from_value))
+        tx_from = cast(str, tx_from_value)
 
         # local database session
         DB_URI = DATABASE_URL
@@ -589,7 +589,7 @@ class AsyncContractUtils:
 
         try:
             # Get nonce
-            nonce = await async_web3.eth.get_transaction_count(tx_from)
+            nonce = await async_web3.eth.get_transaction_count(cast(Any, tx_from_value))
             transaction["nonce"] = nonce
             signed_tx = async_web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
