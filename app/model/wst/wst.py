@@ -28,80 +28,14 @@ from web3.types import Nonce
 
 from app.exceptions import SendTransactionError
 from app.model import EthereumAddress
+from app.utils.ava_contract_utils import (
+    AvaAsyncContractUtils,
+    AvaTxUtils,
+)
 from app.utils.eth_contract_utils import EthAsyncContractUtils, EthTxUtils
+from avalanche_config import AVA_CHAIN_ID
 from config import ZERO_ADDRESS
 from eth_config import ETH_CHAIN_ID
-
-
-class ERC20:
-    """
-    ERC20 contract
-    """
-
-    contract_name = "IbetERC20"
-    contract: AsyncContract
-
-    def __init__(
-        self,
-        contract_address: str = ZERO_ADDRESS,
-    ):
-        self.contract = EthAsyncContractUtils.get_contract(
-            contract_name=self.contract_name, contract_address=contract_address
-        )
-
-    async def name(self) -> str:
-        """
-        Get token name
-
-        :return: Token name
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract, function_name="name", args=(), default_returns=""
-        )
-
-    async def balance_of(self, account: EthereumAddress) -> int:
-        """
-        Get balance of account
-
-        :param account: Account address
-        :return: Account balance
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract,
-            function_name="balanceOf",
-            args=(to_checksum_address(account),),
-            default_returns=0,
-        )
-
-    async def allowance(
-        self, account: EthereumAddress, spender: EthereumAddress
-    ) -> int:
-        """
-        Get allowance of spender by owner
-
-        :param account: Token holder address
-        :param spender: Spender address
-        :return: Allowance amount
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract,
-            function_name="allowance",
-            args=(to_checksum_address(account), to_checksum_address(spender)),
-            default_returns=0,
-        )
-
-    async def decimals(self) -> int:
-        """
-        Get token decimals
-
-        :return: Token decimals
-        """
-        return await EthAsyncContractUtils.call_function(
-            contract=self.contract,
-            function_name="decimals",
-            args=(),
-            default_returns=18,
-        )
 
 
 class IbetWSTWhiteList(BaseModel):
@@ -761,12 +695,86 @@ class IbetWSTDigestHelper:
         return digest
 
 
-class IbetWST(ERC20):
+class _BaseERC20:
+    """
+    ERC20 contract
+    """
+
+    contract_name = "IbetERC20"
+    contract: AsyncContract
+    contract_utils = EthAsyncContractUtils
+
+    def __init__(
+        self,
+        contract_address: str = ZERO_ADDRESS,
+    ):
+        self.contract = self.contract_utils.get_contract(
+            contract_name=self.contract_name, contract_address=contract_address
+        )
+
+    async def name(self) -> str:
+        """
+        Get token name
+
+        :return: Token name
+        """
+        return await self.contract_utils.call_function(
+            contract=self.contract, function_name="name", args=(), default_returns=""
+        )
+
+    async def balance_of(self, account: EthereumAddress) -> int:
+        """
+        Get balance of account
+
+        :param account: Account address
+        :return: Account balance
+        """
+        return await self.contract_utils.call_function(
+            contract=self.contract,
+            function_name="balanceOf",
+            args=(to_checksum_address(account),),
+            default_returns=0,
+        )
+
+    async def allowance(
+        self, account: EthereumAddress, spender: EthereumAddress
+    ) -> int:
+        """
+        Get allowance of spender by owner
+
+        :param account: Token holder address
+        :param spender: Spender address
+        :return: Allowance amount
+        """
+        return await self.contract_utils.call_function(
+            contract=self.contract,
+            function_name="allowance",
+            args=(to_checksum_address(account), to_checksum_address(spender)),
+            default_returns=0,
+        )
+
+    async def decimals(self) -> int:
+        """
+        Get token decimals
+
+        :return: Token decimals
+        """
+        return await self.contract_utils.call_function(
+            contract=self.contract,
+            function_name="decimals",
+            args=(),
+            default_returns=18,
+        )
+
+
+class _BaseIbetWST(_BaseERC20):
     """
     IbetWST contract
     """
 
     contract_name = "AuthIbetWST"
+    tx_utils = EthTxUtils
+    chain_id = ETH_CHAIN_ID
 
     def __init__(self, contract_address: str = ZERO_ADDRESS):
         super().__init__(contract_address)
@@ -777,7 +785,7 @@ class IbetWST(ERC20):
 
         :return: Domain separator
         """
-        name = await EthAsyncContractUtils.call_function(
+        name = await self.contract_utils.call_function(
             contract=self.contract, function_name="name", args=(), default_returns=""
         )
         return keccak(
@@ -795,7 +803,7 @@ class IbetWST(ERC20):
                     ),
                     keccak(name.encode()),
                     keccak("1".encode()),
-                    ETH_CHAIN_ID,
+                    self.chain_id,
                     to_checksum_address(self.contract.address),
                 ],
             )
@@ -808,7 +816,7 @@ class IbetWST(ERC20):
         :param account: Account address
         :return: True if account is in white list, False otherwise
         """
-        whitelist = await EthAsyncContractUtils.call_function(
+        whitelist = await self.contract_utils.call_function(
             contract=self.contract,
             function_name="accountWhiteList",
             args=(to_checksum_address(account),),
@@ -848,7 +856,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to add the account to the whitelist
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.addAccountWhiteListWithAuthorization(
                 to_checksum_address(st_account),
                 to_checksum_address(sc_account_in),
@@ -859,7 +867,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 150000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -867,7 +875,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -889,7 +897,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to delete the account from the whitelist
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.deleteAccountWhiteListWithAuthorization(
                 to_checksum_address(st_account),
                 authorization.nonce,
@@ -898,7 +906,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 80000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -906,7 +914,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -930,7 +938,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to mint tokens
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.mintWithAuthorization(
                 to_checksum_address(to_address),
                 value,
@@ -940,7 +948,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 125000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -948,7 +956,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -972,7 +980,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to burn tokens
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.burnWithAuthorization(
                 to_checksum_address(from_address),
                 value,
@@ -982,7 +990,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 82000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -990,7 +998,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -1014,7 +1022,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to force burn tokens
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.forceBurnFromWithAuthorization(
                 to_checksum_address(account_address),
                 value,
@@ -1024,7 +1032,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 82000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -1032,7 +1040,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -1062,7 +1070,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to transfer tokens
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.transferWithAuthorization(
                 to_checksum_address(from_address),
                 to_checksum_address(to_address),
@@ -1075,7 +1083,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 108000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -1083,7 +1091,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -1113,7 +1121,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to receive tokens
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.receiveWithAuthorization(
                 to_checksum_address(from_address),
                 to_checksum_address(to_address),
@@ -1126,7 +1134,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 500000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -1134,7 +1142,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -1145,7 +1153,7 @@ class IbetWST(ERC20):
         :param index: Trade ID (index)
         :return: Trade information
         """
-        trade = await EthAsyncContractUtils.call_function(
+        trade = await self.contract_utils.call_function(
             contract=self.contract,
             function_name="getTrade",
             args=(index,),
@@ -1202,7 +1210,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.requestTradeWithAuthorization(
                 to_checksum_address(seller_st_account),
                 to_checksum_address(buyer_st_account),
@@ -1216,7 +1224,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 324000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -1224,7 +1232,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -1246,7 +1254,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to cancel the trade
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.cancelTradeWithAuthorization(
                 index,
                 authorization.nonce,
@@ -1255,7 +1263,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 113000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -1263,7 +1271,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -1285,7 +1293,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to accept the trade
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.acceptTradeWithAuthorization(
                 index,
                 authorization.nonce,
@@ -1294,7 +1302,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 182000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -1302,7 +1310,7 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
 
@@ -1324,7 +1332,7 @@ class IbetWST(ERC20):
         """
         try:
             # Build the transaction to reject the trade
-            fees = await EthTxUtils.suggest_fees()
+            fees = await self.tx_utils.suggest_fees()
             tx = await self.contract.functions.rejectTradeWithAuthorization(
                 index,
                 authorization.nonce,
@@ -1333,7 +1341,7 @@ class IbetWST(ERC20):
                 authorization.s,
             ).build_transaction(
                 {
-                    "chainId": ETH_CHAIN_ID,
+                    "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 113000,
                     "maxFeePerGas": fees["maxFeePerGas"],
@@ -1341,6 +1349,34 @@ class IbetWST(ERC20):
                 }
             )
             # Send the transaction
-            return await EthAsyncContractUtils.send_transaction(tx, tx_sender_key)
+            return await self.contract_utils.send_transaction(tx, tx_sender_key)
         except Exception as err:
             raise SendTransactionError(err)
+
+
+class EthereumERC20(_BaseERC20):
+    """ERC20 contract on Ethereum."""
+
+    contract_utils = EthAsyncContractUtils
+
+
+class AvalancheERC20(_BaseERC20):
+    """ERC20 contract on Avalanche."""
+
+    contract_utils = AvaAsyncContractUtils
+
+
+class EthereumIbetWST(_BaseIbetWST):
+    """IbetWST contract on Ethereum."""
+
+    contract_utils = EthAsyncContractUtils
+    tx_utils = EthTxUtils
+    chain_id = ETH_CHAIN_ID
+
+
+class AvalancheIbetWST(_BaseIbetWST):
+    """IbetWST contract on Avalanche."""
+
+    contract_utils = AvaAsyncContractUtils
+    tx_utils = AvaTxUtils
+    chain_id = AVA_CHAIN_ID

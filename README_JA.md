@@ -149,9 +149,15 @@ $ npm install
         <td>0(利用しない) / 1(利用する)</td>
     </tr>
     <tr>
-        <td>IBET_WST_FEATURE_ENABLED</td>
+        <td>IBET_WST_ETH_FEATURE_ENABLED</td>
         <td>False</td>
-        <td nowrap>IbetWST関連機能の利用有無</td>
+        <td nowrap>Ethereum上のIbetWST関連機能の利用有無</td>
+        <td>0（利用しない） / 1（利用する）</td>
+    </tr>
+    <tr>
+        <td>IBET_WST_AVA_FEATURE_ENABLED</td>
+        <td>False</td>
+        <td nowrap>Avalanche上のIbetWST関連機能の利用有無</td>
         <td>0（利用しない） / 1（利用する）</td>
     </tr>
     <tr>

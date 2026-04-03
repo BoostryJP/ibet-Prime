@@ -31,7 +31,8 @@ from web3.types import TxReceipt
 
 from app.database import BatchAsyncSessionLocal
 from app.model.db import (
-    EthIbetWSTTx,
+    AvaIbetWSTTx,
+    IbetWSTBlockchain,
     IbetWSTEventLogAccountWhiteListAdded,
     IbetWSTEventLogAccountWhiteListDeleted,
     IbetWSTEventLogBurn,
@@ -44,28 +45,28 @@ from app.model.db import (
     IbetWSTTxParamsAddAccountWhiteList,
     IbetWSTTxStatus,
     IbetWSTTxType,
-    IDXEthIbetWSTWhitelist,
+    IDXAvaIbetWSTWhitelist,
     Token,
 )
-from app.model.eth import ERC20, IbetWST
-from app.utils.eth_contract_utils import EthAsyncContractUtils
+from app.model.wst import AvalancheERC20, AvalancheIbetWST
+from app.utils.ava_contract_utils import AvaAsyncContractUtils
 from batch import free_malloc
 from batch.utils import batch_log
 
 """
-[PROCESSOR-ETH-WST-Monitor-TxReceipt]
+[PROCESSOR-AVA-WST-Monitor-TxReceipt]
 
-This processor monitors Ethereum transactions related to IbetWST 
+This processor monitors Avalanche transactions related to IbetWST 
 and updates their status based on transaction receipts.
 """
 
-process_name = "PROCESSOR-ETH-WST-Monitor-TxReceipt"
+process_name = "PROCESSOR-AVA-WST-Monitor-TxReceipt"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
-class ProcessorEthWSTMonitorTxReceipt:
+class ProcessorAvaWSTMonitorTxReceipt:
     """
-    Processor for monitoring Ethereum transactions related to IbetWST.
+    Processor for monitoring Avalanche transactions related to IbetWST.
     """
 
     async def run(self):
@@ -73,23 +74,23 @@ class ProcessorEthWSTMonitorTxReceipt:
         try:
             # Get the latest finalized block number
             finalized_block_number = (
-                await EthAsyncContractUtils.get_finalized_block_number()
+                await AvaAsyncContractUtils.get_finalized_block_number()
             )
 
             # Get transactions waiting for block mining
-            wst_tx_list: Sequence[EthIbetWSTTx] = (
+            wst_tx_list: Sequence[AvaIbetWSTTx] = (
                 await db_session.scalars(
-                    select(EthIbetWSTTx).where(
+                    select(AvaIbetWSTTx).where(
                         and_(
-                            EthIbetWSTTx.status.in_(
+                            AvaIbetWSTTx.status.in_(
                                 [
                                     IbetWSTTxStatus.SENT,
                                     IbetWSTTxStatus.SUCCEEDED,
                                     IbetWSTTxStatus.FAILED,
                                 ]
                             ),
-                            EthIbetWSTTx.tx_hash.is_not(None),
-                            EthIbetWSTTx.finalized.is_not(True),
+                            AvaIbetWSTTx.tx_hash.is_not(None),
+                            AvaIbetWSTTx.finalized.is_not(True),
                         )
                     )
                 )
@@ -101,7 +102,7 @@ class ProcessorEthWSTMonitorTxReceipt:
                 # Get TxReceipt
                 try:
                     tx_receipt = (
-                        await EthAsyncContractUtils.wait_for_transaction_receipt(
+                        await AvaAsyncContractUtils.wait_for_transaction_receipt(
                             tx_hash=wst_tx.tx_hash, timeout=1
                         )
                     )
@@ -156,7 +157,7 @@ class ProcessorEthWSTMonitorTxReceipt:
 
 
 async def reflect_unfinalized_tx(
-    db_session: AsyncSession, wst_tx: EthIbetWSTTx, tx_receipt: TxReceipt
+    db_session: AsyncSession, wst_tx: AvaIbetWSTTx, tx_receipt: TxReceipt
 ):
     """
     Reflect unfinalized IbetWST transaction.
@@ -169,7 +170,7 @@ async def reflect_unfinalized_tx(
     match wst_tx.tx_type:
         case IbetWSTTxType.ADD_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -182,7 +183,7 @@ async def reflect_unfinalized_tx(
             # Add to whitelist table
             tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
             await db_session.merge(
-                IDXEthIbetWSTWhitelist(
+                IDXAvaIbetWSTWhitelist(
                     ibet_wst_address=wst_tx.ibet_wst_address,
                     st_account_address=tx_params["st_account"],
                     sc_account_address_in=tx_params["sc_account_in"],
@@ -191,7 +192,7 @@ async def reflect_unfinalized_tx(
             )
         case IbetWSTTxType.DELETE_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -203,11 +204,11 @@ async def reflect_unfinalized_tx(
                 await db_session.merge(wst_tx)
                 # Delete from whitelist table
                 await db_session.execute(
-                    delete(IDXEthIbetWSTWhitelist).where(
+                    delete(IDXAvaIbetWSTWhitelist).where(
                         and_(
-                            IDXEthIbetWSTWhitelist.ibet_wst_address
+                            IDXAvaIbetWSTWhitelist.ibet_wst_address
                             == wst_tx.ibet_wst_address,
-                            IDXEthIbetWSTWhitelist.st_account_address
+                            IDXAvaIbetWSTWhitelist.st_account_address
                             == event["args"]["accountAddress"],
                         )
                     )
@@ -217,7 +218,7 @@ async def reflect_unfinalized_tx(
 
 
 async def finalize_tx(
-    db_session: AsyncSession, wst_tx: EthIbetWSTTx, tx_receipt: TxReceipt
+    db_session: AsyncSession, wst_tx: AvaIbetWSTTx, tx_receipt: TxReceipt
 ):
     """
     Finalize the IbetWST transaction.
@@ -235,12 +236,15 @@ async def finalize_tx(
             if token is None:
                 return
 
-            token.ibet_wst_deployed = True
-            token.ibet_wst_address = tx_receipt.get("contractAddress", None)
+            token.set_ibet_wst_deployed(IbetWSTBlockchain.AVALANCHE, True)
+            token.set_ibet_wst_address(
+                IbetWSTBlockchain.AVALANCHE,
+                tx_receipt.get("contractAddress", None),
+            )
             await db_session.merge(token)
         case IbetWSTTxType.MINT:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Mint().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -253,7 +257,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.BURN:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Burn().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -266,7 +270,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.FORCE_BURN:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Burn().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -279,7 +283,7 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ADD_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListAdded().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -292,7 +296,7 @@ async def finalize_tx(
             # Add to whitelist table
             tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
             await db_session.merge(
-                IDXEthIbetWSTWhitelist(
+                IDXAvaIbetWSTWhitelist(
                     ibet_wst_address=wst_tx.ibet_wst_address,
                     st_account_address=tx_params["st_account"],
                     sc_account_address_in=tx_params["sc_account_in"],
@@ -301,7 +305,7 @@ async def finalize_tx(
             )
         case IbetWSTTxType.DELETE_WHITELIST:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.AccountWhiteListDeleted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -313,18 +317,18 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
                 # Delete from whitelist table
                 await db_session.execute(
-                    delete(IDXEthIbetWSTWhitelist).where(
+                    delete(IDXAvaIbetWSTWhitelist).where(
                         and_(
-                            IDXEthIbetWSTWhitelist.ibet_wst_address
+                            IDXAvaIbetWSTWhitelist.ibet_wst_address
                             == wst_tx.ibet_wst_address,
-                            IDXEthIbetWSTWhitelist.st_account_address
+                            IDXAvaIbetWSTWhitelist.st_account_address
                             == event["args"]["accountAddress"],
                         )
                     )
                 )
         case IbetWSTTxType.TRANSFER:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.Transfer().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
@@ -338,13 +342,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REQUEST_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRequested().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = AvalancheERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeRequested(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],
@@ -359,13 +363,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.CANCEL_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeCancelled().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = AvalancheERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeCancelled(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],
@@ -380,13 +384,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.ACCEPT_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeAccepted().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = AvalancheERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeAccepted(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],
@@ -401,13 +405,13 @@ async def finalize_tx(
                 await db_session.merge(wst_tx)
         case IbetWSTTxType.REJECT_TRADE:
             # Update the IbetWST transaction with the event log
-            ibet_wst = IbetWST(wst_tx.ibet_wst_address)
+            ibet_wst = AvalancheIbetWST(wst_tx.ibet_wst_address)
             events = ibet_wst.contract.events.TradeRejected().process_receipt(
                 txn_receipt=tx_receipt, errors=DISCARD
             )
             event = events[0] if len(events) > 0 else None
             if event is not None:
-                sc_token = ERC20(event["args"]["SCTokenAddress"])
+                sc_token = AvalancheERC20(event["args"]["SCTokenAddress"])
                 wst_tx.event_log = IbetWSTEventLogTradeRejected(
                     index=event["args"]["index"],
                     seller_st_account_address=event["args"]["sellerSTAccountAddress"],
@@ -425,15 +429,15 @@ async def finalize_tx(
 
     # If there are transactions with duplicate nonces,
     # update the status of all such records to FAILED.
-    duplicate_tx_list: Sequence[EthIbetWSTTx] = (
+    duplicate_tx_list: Sequence[AvaIbetWSTTx] = (
         await db_session.scalars(
-            select(EthIbetWSTTx).where(
+            select(AvaIbetWSTTx).where(
                 and_(
-                    EthIbetWSTTx.tx_sender == wst_tx.tx_sender,
-                    EthIbetWSTTx.tx_nonce == wst_tx.tx_nonce,
-                    EthIbetWSTTx.tx_id != wst_tx.tx_id,
-                    EthIbetWSTTx.status == IbetWSTTxStatus.SENT,
-                    EthIbetWSTTx.finalized.is_not(True),
+                    AvaIbetWSTTx.tx_sender == wst_tx.tx_sender,
+                    AvaIbetWSTTx.tx_nonce == wst_tx.tx_nonce,
+                    AvaIbetWSTTx.tx_id != wst_tx.tx_id,
+                    AvaIbetWSTTx.status == IbetWSTTxStatus.SENT,
+                    AvaIbetWSTTx.finalized.is_not(True),
                 )
             )
         )
@@ -451,7 +455,7 @@ async def finalize_tx(
 
 async def main():
     LOG.info("Service started successfully")
-    processor = ProcessorEthWSTMonitorTxReceipt()
+    processor = ProcessorAvaWSTMonitorTxReceipt()
 
     while True:
         try:

@@ -29,15 +29,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import BatchAsyncSessionLocal
 from app.model.db import (
     Account,
-    IDXEthIbetWSTTrade,
-    IDXEthIbetWSTTradeBlockNumber,
+    IbetWSTBlockchain,
+    IDXAvaIbetWSTTrade,
+    IDXAvaIbetWSTTradeBlockNumber,
     Token,
 )
-from app.model.eth import IbetWST, IbetWSTTrade
-from app.utils.eth_contract_utils import (
-    EthAsyncContractEventsView,
-    EthAsyncContractUtils,
-    EthWeb3,
+from app.model.wst import AvalancheIbetWST, IbetWSTTrade
+from app.utils.ava_contract_utils import (
+    AvaAsyncContractEventsView,
+    AvaAsyncContractUtils,
+    AvaWeb3,
 )
 from batch import free_malloc
 from batch.utils import batch_log
@@ -46,13 +47,13 @@ from config import (
     INDEXER_SYNC_INTERVAL,
 )
 
-process_name = "INDEXER-Eth-WST-Trades"
+process_name = "INDEXER-Ava-WST-Trades"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
 class Processor:
     def __init__(self):
-        self.wst_list: dict[str, EthAsyncContractEventsView] = {}
+        self.wst_list: dict[str, AvaAsyncContractEventsView] = {}
 
     async def sync_events(self):
         db_session = BatchAsyncSessionLocal()
@@ -111,26 +112,25 @@ class Processor:
         """
         Load the list of WST tokens from the database and initialize their contract events.
         """
-        # Get the list of all WST tokens that have been deployed
-        wst_address_all: tuple[str, ...] = tuple(
-            [
-                record[0]
-                for record in (
-                    await db_session.execute(
-                        select(Token.ibet_wst_address)
-                        .join(
-                            Account,
-                            and_(
-                                Account.issuer_address == Token.issuer_address,
-                                Account.is_deleted == False,
-                            ),
-                        )
-                        .where(Token.ibet_wst_deployed.is_(True))
-                    )
+        token_list: Sequence[Token] = (
+            await db_session.scalars(
+                select(Token).join(
+                    Account,
+                    and_(
+                        Account.issuer_address == Token.issuer_address,
+                        Account.is_deleted == False,
+                    ),
                 )
-                .tuples()
-                .all()
-            ]
+            )
+        ).all()
+
+        wst_address_all: tuple[str, ...] = tuple(
+            {
+                token.get_ibet_wst_address(IbetWSTBlockchain.AVALANCHE)
+                for token in token_list
+                if token.is_ibet_wst_deployed(IbetWSTBlockchain.AVALANCHE)
+                and token.get_ibet_wst_address(IbetWSTBlockchain.AVALANCHE) is not None
+            }
         )
 
         # Get the list of all WST tokens that have been loaded
@@ -145,18 +145,15 @@ class Processor:
             # If there are no additional tokens to load, skip process
             return
 
-        # Get the list of WST tokens that need to be loaded
-        load_required_token_list: Sequence[Token] = (
-            await db_session.scalars(
-                select(Token).where(
-                    Token.ibet_wst_address.in_(load_required_address_list),
-                )
-            )
-        ).all()
-        for _token in load_required_token_list:
-            wst = IbetWST(_token.ibet_wst_address)
-            self.wst_list[_token.ibet_wst_address] = EthAsyncContractEventsView(
-                _token.ibet_wst_address, wst.contract.events
+        for _token in token_list:
+            wst_address = _token.get_ibet_wst_address(IbetWSTBlockchain.AVALANCHE)
+            if wst_address not in load_required_address_list:
+                continue
+            if wst_address is None:
+                continue
+            wst = AvalancheIbetWST(wst_address)
+            self.wst_list[wst_address] = AvaAsyncContractEventsView(
+                wst_address, wst.contract.events
             )
 
     @staticmethod
@@ -165,7 +162,7 @@ class Processor:
 
         :return: finalized block number
         """
-        block = await EthWeb3.eth.get_block("finalized")
+        block = await AvaWeb3.eth.get_block("finalized")
         block_number = block.get("number")
         return block_number
 
@@ -175,7 +172,7 @@ class Processor:
         Get the starting block number for monitoring trade events.
         """
         _idx_transfer_block_number = (
-            await db_session.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await db_session.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         if _idx_transfer_block_number is None:
             return 0
@@ -187,13 +184,13 @@ class Processor:
         db_session: AsyncSession, block_number: int
     ) -> None:
         """
-        Set the latest synchronized block number for IDXEthIbetWSTTradeBlockNumber.
+        Set the latest synchronized block number for IDXAvaIbetWSTTradeBlockNumber.
         """
         idx_synced = (
-            await db_session.scalars(select(IDXEthIbetWSTTradeBlockNumber).limit(1))
+            await db_session.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
         if idx_synced is None:
-            idx_synced = IDXEthIbetWSTTradeBlockNumber()
+            idx_synced = IDXAvaIbetWSTTradeBlockNumber()
 
         idx_synced.latest_block_number = block_number
         await db_session.merge(idx_synced)
@@ -215,7 +212,7 @@ class Processor:
         """
         for wst_address, wst_events in self.wst_list.items():
             # Fetch TradeRequested events from the contract
-            events = await EthAsyncContractUtils.get_event_logs(
+            events = await AvaAsyncContractUtils.get_event_logs(
                 contract=wst_events,
                 event="TradeRequested",
                 block_from=block_from,
@@ -224,7 +221,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = AvalancheIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(
@@ -242,7 +239,7 @@ class Processor:
         """
         for wst_address, wst_events in self.wst_list.items():
             # Fetch TradeAccepted events from the contract
-            events = await EthAsyncContractUtils.get_event_logs(
+            events = await AvaAsyncContractUtils.get_event_logs(
                 contract=wst_events,
                 event="TradeAccepted",
                 block_from=block_from,
@@ -251,7 +248,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = AvalancheIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(
@@ -269,7 +266,7 @@ class Processor:
         """
         for wst_address, wst_events in self.wst_list.items():
             # Fetch TradeCancelled events from the contract
-            events = await EthAsyncContractUtils.get_event_logs(
+            events = await AvaAsyncContractUtils.get_event_logs(
                 contract=wst_events,
                 event="TradeCancelled",
                 block_from=block_from,
@@ -278,7 +275,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = AvalancheIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(
@@ -296,7 +293,7 @@ class Processor:
         """
         for wst_address, wst_events in self.wst_list.items():
             # Fetch TradeCancelled events from the contract
-            events = await EthAsyncContractUtils.get_event_logs(
+            events = await AvaAsyncContractUtils.get_event_logs(
                 contract=wst_events,
                 event="TradeRejected",
                 block_from=block_from,
@@ -305,7 +302,7 @@ class Processor:
             for event in events:
                 trade_index = event["args"]["index"]
                 # Fetch the trade details from the contract
-                wst_contract = IbetWST(wst_address)
+                wst_contract = AvalancheIbetWST(wst_address)
                 wst_trade: IbetWSTTrade = await wst_contract.get_trade(trade_index)
                 # Upsert the trade into the database
                 await self.__upsert_trade(
@@ -326,7 +323,7 @@ class Processor:
         Upsert a trade record into the database.
         """
         # Create or update the trade record
-        idx_trade = IDXEthIbetWSTTrade(
+        idx_trade = IDXAvaIbetWSTTrade(
             ibet_wst_address=wst_address,
             index=wst_trade_index,
             seller_st_account_address=wst_trade.seller_st_account,

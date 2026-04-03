@@ -24,7 +24,8 @@ paths:
         Check following services are available:
         - Database
         - ibet Node
-        - Ethereum Node (if IbetWST feature is enabled)
+        - Ethereum Node (if IbetWST ETH feature is enabled)
+        - Avalanche Node (if IbetWST AVA feature is enabled)
         - E2EE Setting
       operationId: ServiceHealthCheck
       responses:
@@ -949,6 +950,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                 title: Response 400 Updatebondtoken
         '503':
@@ -5583,6 +5585,7 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
+                  - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                 title: Response 400 Updatesharetoken
         '503':
@@ -8566,6 +8569,14 @@ paths:
             description: Token address
             title: Token Address
           description: Token address
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST operation
+            default: ethereum
+          description: Blockchain platform for IbetWST operation
         - name: issuer-address
           in: header
           required: true
@@ -8620,6 +8631,14 @@ paths:
             description: Account address
             title: Account Address
           description: Account address
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST operation
+            default: ethereum
+          description: Blockchain platform for IbetWST operation
         - name: issuer-address
           in: header
           required: true
@@ -9863,6 +9882,8 @@ paths:
 
         - This endpoint retrieves all IbetWST tokens based on the provided query parameters.
         - Only tokens whose deployment has already been finalized will be returned.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST tokens to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: ListAllIbetWSTTokens
       parameters:
         - name: offset
@@ -9887,6 +9908,14 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform (**This affects total number**)
+            default: ethereum
+          description: Blockchain platform (**This affects total number**)
         - name: issuer_address
           in: query
           required: false
@@ -9969,6 +9998,8 @@ paths:
         Get IbetWST balance for a specific account address
 
         - This endpoint retrieves the IbetWST balance for the specified account address.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST balance to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: GetIbetWSTBalance
       parameters:
         - name: account_address
@@ -9987,6 +10018,14 @@ paths:
             description: IbetWST contract address
             title: Ibet Wst Address
           description: IbetWST contract address
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST lookup
+            default: ethereum
+          description: Blockchain platform for IbetWST lookup
       responses:
         '200':
           description: Successful Response
@@ -10014,6 +10053,8 @@ paths:
       description: |-
         Burn IbetWST balance
         - This endpoint allows a user to send burnWithAuthorization transaction to the IbetWST contract.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST balance to burn.
+            - Defaults to ETHEREUM if not specified.
       operationId: BurnIbetWSTBalance
       parameters:
         - name: account_address
@@ -10073,6 +10114,8 @@ paths:
         List IbetWST transactions
 
         - This endpoint retrieves all IbetWST transactions based on the provided query parameters.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST transactions to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: ListIbetWSTTransactions
       parameters:
         - name: offset
@@ -10097,6 +10140,14 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST lookup
+            default: ethereum
+          description: Blockchain platform for IbetWST lookup
         - name: ibet_wst_address
           in: query
           required: true
@@ -10221,6 +10272,8 @@ paths:
         Get IbetWST transaction details
 
         - This endpoint retrieves the details of a specific IbetWST transaction by its ID.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST transaction to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: GetIbetWSTTransaction
       parameters:
         - name: tx_id
@@ -10231,6 +10284,14 @@ paths:
             description: IbetWST transaction ID
             title: Tx Id
           description: IbetWST transaction ID
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST lookup
+            default: ethereum
+          description: Blockchain platform for IbetWST lookup
       responses:
         '200':
           description: Successful Response
@@ -10254,6 +10315,8 @@ paths:
 
         - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
         - The data returned by this API is generated based on finalized blocks.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist accounts to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: RetrieveIbetWSTWhitelistAccounts
       parameters:
         - name: ibet_wst_address
@@ -10264,6 +10327,14 @@ paths:
             description: IbetWST contract address
             title: Ibet Wst Address
           description: IbetWST contract address
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST operation
+            default: ethereum
+          description: Blockchain platform for IbetWST operation
       responses:
         '200':
           description: Successful Response
@@ -10287,6 +10358,8 @@ paths:
 
         - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
         - The data returned by this API also reflects the state of non-finalized blocks.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist status to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: GetIbetWSTWhitelist
       parameters:
         - name: ibet_wst_address
@@ -10305,6 +10378,14 @@ paths:
             description: Account address
             title: Account Address
           description: Account address
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST operation
+            default: ethereum
+          description: Blockchain platform for IbetWST operation
       responses:
         '200':
           description: Successful Response
@@ -10333,6 +10414,8 @@ paths:
         Transfer IbetWST tokens
 
         - This endpoint allows a user to send transferWithAuthorization transaction to the IbetWST contract.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST tokens to transfer.
+            - Defaults to ETHEREUM if not specified.
       operationId: TransferIbetWST
       parameters:
         - name: ibet_wst_address
@@ -10387,6 +10470,8 @@ paths:
         Request an IbetWST trade
 
         - This endpoint allows a user to send requestTradeWithAuthorization transaction to the IbetWST contract.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST trade to request.
+            - Defaults to ETHEREUM if not specified.
       operationId: RequestIbetWSTTrade
       parameters:
         - name: ibet_wst_address
@@ -10484,6 +10569,8 @@ paths:
         - This endpoint allows a user to send acceptTradeWithAuthorization transaction to the IbetWST contract.
         - If seller's ST token balance is insufficient, an IbetWSTInsufficientBalanceError will be raised.
         - If buyer's SC token allowance is insufficient, an ERC20InsufficientAllowanceError will be raised.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST trade to accept.
+            - Defaults to ETHEREUM if not specified.
       operationId: AcceptIbetWSTTrade
       parameters:
         - name: ibet_wst_address
@@ -10538,6 +10625,8 @@ paths:
         Reject an IbetWST trade
 
         - This endpoint allows a user to send rejectTradeWithAuthorization transaction to the IbetWST contract.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST trade to reject.
+            - Defaults to ETHEREUM if not specified.
       operationId: RejectIbetWSTTrade
       parameters:
         - name: ibet_wst_address
@@ -10583,6 +10672,8 @@ paths:
 
         - This endpoint retrieves a list of trades from the IbetWST contract based on the provided query parameters.
         - The data returned by this API is generated based on finalized blocks.
+        - `blockchain_platform` is required to specify which blockchain's IbetWST trades to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: ListIbetWSTTrades
       parameters:
         - name: ibet_wst_address
@@ -10615,6 +10706,14 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST lookup
+            default: ethereum
+          description: Blockchain platform for IbetWST lookup
         - name: seller_st_account_address
           in: query
           required: false
@@ -10720,6 +10819,14 @@ paths:
             description: Trade index
             title: Index
           description: Trade index
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for IbetWST lookup
+            default: ethereum
+          description: Blockchain platform for IbetWST lookup
       responses:
         '200':
           description: Successful Response
@@ -10750,8 +10857,18 @@ paths:
         - This endpoint retrieves the balance of a specific ERC20 token for a given account address.
         - The data returned by this API also reflects the state of non-finalized blocks.
         - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+        - `blockchain_platform` is required to specify which blockchain's ERC20 token balance to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: GetERC20Balance
       parameters:
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for ERC20 lookup
+            default: ethereum
+          description: Blockchain platform for ERC20 lookup
         - name: token_address
           in: query
           required: true
@@ -10792,8 +10909,18 @@ paths:
         - This endpoint retrieves the allowance of a specific ERC20 token for a given account address.
         - The data returned by this API also reflects the state of non-finalized blocks.
         - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
+        - `blockchain_platform` is required to specify which blockchain's ERC20 token allowance to retrieve.
+            - Defaults to ETHEREUM if not specified.
       operationId: GetERC20Allowance
       parameters:
+        - name: blockchain_platform
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IbetWSTBlockchain'
+            description: Blockchain platform for ERC20 lookup
+            default: ethereum
+          description: Blockchain platform for ERC20 lookup
         - name: token_address
           in: query
           required: true
@@ -11643,6 +11770,10 @@ components:
       description: DVP delivery abort schema (REQUEST)
     AcceptIbetWSTTradeRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST lookup
+          default: ethereum
         index:
           type: integer
           exclusiveMinimum: 0.0
@@ -11781,6 +11912,10 @@ components:
         3:SET
     AddIbetWSTWhitelistRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST operation
+          default: ethereum
         st_account_address:
           type: string
           title: St Account Address
@@ -12625,6 +12760,10 @@ components:
       description: Bulk transfer uploads
     BurnIbetWSTRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST lookup
+          default: ethereum
         value:
           type: integer
           exclusiveMinimum: 0.0
@@ -12657,6 +12796,10 @@ components:
       description: DVP delivery cancel schema (REQUEST)
     CancelIbetWSTTradeRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST lookup
+          default: ethereum
         index:
           type: integer
           exclusiveMinimum: 0.0
@@ -13368,6 +13511,10 @@ components:
       title: DVPDeliveryInfoNotification
     DeleteIbetWSTWhitelistRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST operation
+          default: ethereum
         st_account_address:
           type: string
           title: St Account Address
@@ -13847,6 +13994,10 @@ components:
       description: DVP delivery finish schema (REQUEST)
     ForceBurnIbetWSTRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST operation
+          default: ethereum
         account_address:
           type: string
           title: Account Address
@@ -14570,6 +14721,14 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_blockchains:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/IbetWSTBlockchain'
+              type: array
+            - type: 'null'
+          title: Ibet Wst Blockchains
+          description: Blockchains to activate IbetWST on
         ibet_wst_name:
           anyOf:
             - type: string
@@ -14684,23 +14843,25 @@ components:
         ibet_wst_activated:
           type: boolean
           title: Ibet Wst Activated
-          description: IbetWST activated
+          description: '[Deprecated] IbetWST activated on Ethereum'
+        ibet_wst_deployed:
+          type: boolean
+          title: Ibet Wst Deployed
+          description: '[Deprecated] IbetWST deployed on Ethereum'
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: '[Deprecated] IbetWST contract address on Ethereum'
+        ibet_wst_settings_by_blockchain:
+          $ref: '#/components/schemas/IbetWSTSettingsByBlockchainResponse'
         ibet_wst_version:
           anyOf:
             - type: string
             - type: 'null'
           title: Ibet Wst Version
           description: IbetWST version
-        ibet_wst_deployed:
-          type: boolean
-          title: Ibet Wst Deployed
-          description: IbetWST deployed
-        ibet_wst_address:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Ibet Wst Address
-          description: IbetWST contract address
         ibet_wst_name:
           anyOf:
             - type: string
@@ -14735,9 +14896,10 @@ components:
         - token_status
         - contract_version
         - ibet_wst_activated
-        - ibet_wst_version
         - ibet_wst_deployed
         - ibet_wst_address
+        - ibet_wst_settings_by_blockchain
+        - ibet_wst_version
         - ibet_wst_name
       title: IbetShareResponse
       description: ibet Share schema (Response)
@@ -14994,6 +15156,14 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_blockchains:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/IbetWSTBlockchain'
+              type: array
+            - type: 'null'
+          title: Ibet Wst Blockchains
+          description: Blockchains to activate IbetWST on
         ibet_wst_name:
           anyOf:
             - type: string
@@ -15323,6 +15493,14 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_blockchains:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/IbetWSTBlockchain'
+              type: array
+            - type: 'null'
+          title: Ibet Wst Blockchains
+          description: Blockchains to activate IbetWST on
         ibet_wst_name:
           anyOf:
             - type: string
@@ -15458,23 +15636,25 @@ components:
         ibet_wst_activated:
           type: boolean
           title: Ibet Wst Activated
-          description: IbetWST activated
+          description: '[Deprecated] IbetWST activated on Ethereum'
+        ibet_wst_deployed:
+          type: boolean
+          title: Ibet Wst Deployed
+          description: '[Deprecated] IbetWST deployed on Ethereum'
+        ibet_wst_address:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ibet Wst Address
+          description: '[Deprecated] IbetWST contract address on Ethereum'
+        ibet_wst_settings_by_blockchain:
+          $ref: '#/components/schemas/IbetWSTSettingsByBlockchainResponse'
         ibet_wst_version:
           anyOf:
             - type: string
             - type: 'null'
           title: Ibet Wst Version
           description: IbetWST version
-        ibet_wst_deployed:
-          type: boolean
-          title: Ibet Wst Deployed
-          description: IbetWST deployed
-        ibet_wst_address:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Ibet Wst Address
-          description: IbetWST contract address
         ibet_wst_name:
           anyOf:
             - type: string
@@ -15515,9 +15695,10 @@ components:
         - token_status
         - contract_version
         - ibet_wst_activated
-        - ibet_wst_version
         - ibet_wst_deployed
         - ibet_wst_address
+        - ibet_wst_settings_by_blockchain
+        - ibet_wst_version
         - ibet_wst_name
       title: IbetStraightBondResponse
       description: ibet Straight Bond schema (Response)
@@ -15842,6 +16023,14 @@ components:
             - type: 'null'
           title: Activate Ibet Wst
           description: Activate IbetWST
+        ibet_wst_blockchains:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/IbetWSTBlockchain'
+              type: array
+            - type: 'null'
+          title: Ibet Wst Blockchains
+          description: Blockchains to activate IbetWST on
         ibet_wst_name:
           anyOf:
             - type: string
@@ -15914,6 +16103,12 @@ components:
         - s
       title: IbetWSTAuthorization
       description: IbetWST Authorization schema
+    IbetWSTBlockchain:
+      type: string
+      enum:
+        - ethereum
+        - avalanche
+      title: IbetWSTBlockchain
     IbetWSTEventLogAccountWhiteList:
       properties:
         account_address:
@@ -16071,6 +16266,45 @@ components:
         - detail
       title: IbetWSTInsufficientBalanceErrorResponse
       description: Insufficient balance for IbetWST token transfer
+    IbetWSTSettingsByBlockchainResponse:
+      properties:
+        activated:
+          anyOf:
+            - additionalProperties:
+                type: boolean
+              propertyNames:
+                $ref: '#/components/schemas/IbetWSTBlockchain'
+              type: object
+            - type: 'null'
+          title: Activated
+          description: IbetWST activation status by blockchain
+        deployed:
+          anyOf:
+            - additionalProperties:
+                type: boolean
+              propertyNames:
+                $ref: '#/components/schemas/IbetWSTBlockchain'
+              type: object
+            - type: 'null'
+          title: Deployed
+          description: IbetWST deployment status by blockchain
+        address:
+          anyOf:
+            - additionalProperties:
+                type: string
+              propertyNames:
+                $ref: '#/components/schemas/IbetWSTBlockchain'
+              type: object
+            - type: 'null'
+          title: Address
+          description: IbetWST contract address by blockchain
+      type: object
+      required:
+        - activated
+        - deployed
+        - address
+      title: IbetWSTSettingsByBlockchainResponse
+      description: IbetWST settings by blockchain
     IbetWSTToken:
       properties:
         issuer_address:
@@ -17386,6 +17620,7 @@ components:
       type: integer
       enum:
         - 101
+        - 102
       title: OperationNotAllowedStateErrorCode
     OperationNotAllowedStateErrorMetainfo:
       properties:
@@ -17892,6 +18127,10 @@ components:
       description: Register Personal Information schema (REQUEST)
     RejectIbetWSTTradeRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST lookup
+          default: ethereum
         index:
           type: integer
           exclusiveMinimum: 0.0
@@ -17913,6 +18152,10 @@ components:
       description: RejectIbetWSTTrade request schema
     RequestIbetWSTTradeRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST lookup
+          default: ethereum
         seller_st_account_address:
           type: string
           title: Seller St Account Address
@@ -19400,6 +19643,10 @@ components:
       description: transfer history
     TransferIbetWSTRequest:
       properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST lookup
+          default: ethereum
         from_address:
           type: string
           title: From Address

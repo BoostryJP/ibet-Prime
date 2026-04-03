@@ -21,6 +21,12 @@ services:
       dockerfile: tests/Dockerfile_eth
     ports:
       - "8546:8545"
+  ava-hardhat-network:
+    build:
+      context: ./
+      dockerfile: tests/Dockerfile_ava
+    ports:
+      - "8547:8545"
   ibet-prime-postgres:
     build:
       context: ./
@@ -29,9 +35,12 @@ services:
       - TEST_DATABASE_URL=postgresql://apluser:apluserpass@postgres/apldb
       - WEB3_HTTP_PROVIDER=http://ibet:8545
       - ETH_WEB3_HTTP_PROVIDER=http://eth:8545
-      - ETH_CHAIN_ID=2025
+      - ETH_CHAIN_ID=11111
+      - AVA_WEB3_HTTP_PROVIDER=http://ava:8545
+      - AVA_CHAIN_ID=22222
       - RESPONSE_VALIDATION_MODE=1
-      - IBET_WST_FEATURE_ENABLED=1
+      - IBET_WST_ETH_FEATURE_ENABLED=1
+      - IBET_WST_AVA_FEATURE_ENABLED=1
       - BC_EXPLORER_ENABLED=1
       - FREEZE_LOG_FEATURE_ENABLED=1
       - DVP_AGENT_FEATURE_ENABLED=1
@@ -39,9 +48,11 @@ services:
       - postgres:postgres
       - ibet-hardhat-network:ibet
       - eth-hardhat-network:eth
+      - ava-hardhat-network:ava
     depends_on:
       - postgres
       - ibet-hardhat-network
       - eth-hardhat-network
+      - ava-hardhat-network
     volumes:
       - ./cov:/app/ibet-Prime/cov

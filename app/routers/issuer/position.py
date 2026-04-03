@@ -36,7 +36,9 @@ from app.exceptions import (
     SendTransactionError,
 )
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
+    IbetWSTBlockchain,
     IbetWSTTxType,
     IDXLock,
     IDXLockedPosition,
@@ -681,27 +683,32 @@ async def force_unlock(
     #   If a Burn or ForceBurn transaction for ibetWST is in progress,
     #   executing a ForceUnlock transaction may result in an insufficient locked balance error
     #   during the ForceUnlock transaction associated with the WST transaction.
-    if _token.ibet_wst_activated and _token.ibet_wst_address is not None:
-        _pending_wst_tx: EthIbetWSTTx | None = (
-            await db.scalars(
-                select(EthIbetWSTTx)
-                .where(
-                    and_(
-                        EthIbetWSTTx.tx_type.in_(
-                            [IbetWSTTxType.BURN, IbetWSTTxType.FORCE_BURN]
-                        ),
-                        EthIbetWSTTx.ibet_wst_address == _token.ibet_wst_address,
-                        EthIbetWSTTx.authorizer == account_address,
-                        EthIbetWSTTx.finalized == False,
+    for blockchain, tx_model in [
+        (IbetWSTBlockchain.ETHEREUM, EthIbetWSTTx),
+        (IbetWSTBlockchain.AVALANCHE, AvaIbetWSTTx),
+    ]:
+        ibet_wst_address = _token.get_ibet_wst_address(blockchain)
+        if _token.is_ibet_wst_activated(blockchain) and ibet_wst_address is not None:
+            _pending_wst_tx = (
+                await db.scalars(
+                    select(tx_model)
+                    .where(
+                        and_(
+                            tx_model.tx_type.in_(
+                                [IbetWSTTxType.BURN, IbetWSTTxType.FORCE_BURN]
+                            ),
+                            tx_model.ibet_wst_address == ibet_wst_address,
+                            tx_model.authorizer == account_address,
+                            tx_model.finalized == False,
+                        )
                     )
+                    .limit(1)
                 )
-                .limit(1)
-            )
-        ).first()
-        if _pending_wst_tx is not None:
-            raise InvalidParameterError(
-                "There is a pending ibetWST Burn or ForceBurn transaction for this account"
-            )
+            ).first()
+            if _pending_wst_tx is not None:
+                raise InvalidParameterError(
+                    "There is a pending ibetWST Burn or ForceBurn transaction for this account"
+                )
 
     # Force unlock
     unlock_message_data = UnlockDataMessage(message=data.message).model_dump_json(

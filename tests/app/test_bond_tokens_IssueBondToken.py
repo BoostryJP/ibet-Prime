@@ -35,6 +35,7 @@ from app.model.db import (
     UTXO,
     Account,
     AuthToken,
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -175,7 +176,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -275,6 +276,7 @@ class TestIssueBondToken:
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
                 "activate_ibet_wst": None,
+                "ibet_wst_blockchains": None,
                 "ibet_wst_name": None,
             }
             resp = await async_client.post(
@@ -328,7 +330,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -469,7 +471,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is None
+            assert token_1.is_ibet_wst_activated("ethereum") is False
             assert token_1.ibet_wst_version is None
             assert token_1.ibet_wst_name is None
 
@@ -560,6 +562,7 @@ class TestIssueBondToken:
                 "redemption_value_currency": "JPY",
                 "purpose": "purpose_test1",
                 "activate_ibet_wst": True,  # Activate IbetWST
+                "ibet_wst_blockchains": ["ethereum"],
                 "ibet_wst_name": "ibet_wst_name_test1",
             }
             resp = await async_client.post(
@@ -619,7 +622,7 @@ class TestIssueBondToken:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
             assert token_1.version == TokenVersion.V_25_09
-            assert token_1.ibet_wst_activated is True
+            assert token_1.is_ibet_wst_activated("ethereum") is True
             assert token_1.ibet_wst_version == IbetWSTVersion.V_1
             assert token_1.ibet_wst_name == "ibet_wst_name_test1"
 
@@ -661,6 +664,92 @@ class TestIssueBondToken:
             }
             assert (
                 ibet_wst_tx_1.tx_sender == "0x1234567890123456789012345678901234567890"
+            )
+
+    # <Normal_5>
+    # Activate IbetWST on Avalanche
+    @mock.patch(
+        "app.routers.issuer.bond.AVA_MASTER_ACCOUNT_ADDRESS",
+        "0x1234567890123456789012345678901234567890",
+    )
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+
+        account = Account()
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+        await async_db.commit()
+
+        IbetStraightBondContract_create = patch(
+            target="app.model.ibet.token.IbetStraightBondContract.create",
+            return_value=(
+                "contract_address_test1",
+                "abi_test1",
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+            ),
+        )
+        TokenListContract_register = patch(
+            target="app.model.ibet.token_list.TokenListContract.register",
+            return_value=None,
+        )
+        ContractUtils_get_block_by_transaction_hash = patch(
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            return_value={
+                "number": 12345,
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=UTC).timestamp(),
+            },
+        )
+
+        with (
+            IbetStraightBondContract_create,
+            TokenListContract_register,
+            ContractUtils_get_block_by_transaction_hash,
+        ):
+            req_param = {
+                "name": "name_test1",
+                "total_supply": 10000,
+                "face_value": 200,
+                "face_value_currency": "JPY",
+                "redemption_date": "20231231",
+                "redemption_value": 200,
+                "redemption_value_currency": "JPY",
+                "purpose": "purpose_test1",
+                "activate_ibet_wst": True,
+                "ibet_wst_blockchains": ["avalanche"],
+                "ibet_wst_name": "ibet_wst_name_test1",
+            }
+            resp = await async_client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"],
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
+            )
+
+            assert resp.status_code == 200
+            token_1 = (await async_db.scalars(select(Token).limit(1))).first()
+            assert token_1.is_ibet_wst_activated("avalanche") is True
+
+            ibet_wst_tx = (await async_db.scalars(select(EthIbetWSTTx))).all()
+            assert len(ibet_wst_tx) == 0
+
+            ava_ibet_wst_tx = (await async_db.scalars(select(AvaIbetWSTTx))).all()
+            assert len(ava_ibet_wst_tx) == 1
+            ava_ibet_wst_tx_1 = ava_ibet_wst_tx[0]
+            assert ava_ibet_wst_tx_1.tx_type == IbetWSTTxType.DEPLOY
+            assert ava_ibet_wst_tx_1.version == IbetWSTVersion.V_1
+            assert ava_ibet_wst_tx_1.status == IbetWSTTxStatus.PENDING
+            assert ava_ibet_wst_tx_1.tx_params == {
+                "name": "ibet_wst_name_test1",
+                "initial_owner": test_account["address"],
+            }
+            assert (
+                ava_ibet_wst_tx_1.tx_sender
+                == "0x1234567890123456789012345678901234567890"
             )
 
     ###########################################################################

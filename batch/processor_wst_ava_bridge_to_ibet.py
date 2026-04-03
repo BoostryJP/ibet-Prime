@@ -20,10 +20,10 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import json
 import sys
-from typing import Sequence
+from typing import Any, Sequence, cast
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,11 +32,11 @@ from app.database import BatchAsyncSessionLocal
 from app.exceptions import ContractRevertError
 from app.model.db import (
     Account,
-    EthToIbetBridgeTx,
-    EthToIbetBridgeTxStatus,
-    EthToIbetBridgeTxType,
+    AvaToIbetBridgeTx,
     IbetBridgeTxParamsForceChangeLockedAccount,
     IbetBridgeTxParamsForceUnlock,
+    ToIbetBridgeTxStatus,
+    ToIbetBridgeTxType,
 )
 from app.model.ibet import IbetSecurityTokenInterface
 from app.model.ibet.tx_params.ibet_security_token import (
@@ -49,18 +49,18 @@ from batch.utils import batch_log
 from config import IBET_WST_BRIDGE_INTERVAL
 
 """
-[PROCESSOR-ETH-WST-Bridge-To-Ibet]
+[PROCESSOR-AVA-WST-Bridge-To-Ibet]
 
 This processor sends bridge transactions for ibetfin.
 """
 
-process_name = "PROCESSOR-ETH-WST-Bridge-To-Ibet"
+process_name = "PROCESSOR-AVA-WST-Bridge-To-Ibet"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
-class WSTBridgeToIbetProcessor:
+class AvaWSTBridgeToIbetProcessor:
     """
-    Processor to send Bridge transactions for ibetfin.
+    Processor to send bridge transactions for ibetfin.
     """
 
     @staticmethod
@@ -70,10 +70,10 @@ class WSTBridgeToIbetProcessor:
         """
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
-            pending_tx_list: Sequence[EthToIbetBridgeTx] = (
+            pending_tx_list: Sequence[AvaToIbetBridgeTx] = (
                 await db_session.scalars(
-                    select(EthToIbetBridgeTx).where(
-                        EthToIbetBridgeTx.status == EthToIbetBridgeTxStatus.PENDING
+                    select(AvaToIbetBridgeTx).where(
+                        AvaToIbetBridgeTx.status == ToIbetBridgeTxStatus.PENDING
                     )
                 )
             ).all()
@@ -81,6 +81,7 @@ class WSTBridgeToIbetProcessor:
                 LOG.info(
                     f"Sending ibet bridge transaction: id={pending_tx.tx_id}, type={pending_tx.tx_type}"
                 )
+
                 # Get the issuer's private key
                 issuer: Account | None = (
                     await db_session.scalars(
@@ -95,8 +96,15 @@ class WSTBridgeToIbetProcessor:
                     )
                     continue
 
+                issuer_keyfile = cast(Any, issuer).keyfile
+                if issuer_keyfile is None or issuer.eoa_password is None:
+                    LOG.warning(
+                        f"Issuer key data is missing for transaction: id={pending_tx.tx_id}"
+                    )
+                    continue
+
                 issuer_pk = decode_keyfile_json(
-                    raw_keyfile_json=issuer.keyfile,
+                    raw_keyfile_json=cast(dict[str, Any], issuer_keyfile),
                     password=E2EEUtils.decrypt(issuer.eoa_password).encode("utf-8"),
                 )
 
@@ -106,40 +114,47 @@ class WSTBridgeToIbetProcessor:
 
                 try:
                     # Depending on the transaction type, call the appropriate method
-                    if pending_tx.tx_type == EthToIbetBridgeTxType.FORCE_UNLOCK:
-                        tx_params: IbetBridgeTxParamsForceUnlock = pending_tx.tx_params
+                    if pending_tx.tx_type == ToIbetBridgeTxType.FORCE_UNLOCK:
+                        force_unlock_params = cast(
+                            IbetBridgeTxParamsForceUnlock, pending_tx.tx_params
+                        )
                         tx_hash, tx_receipt = await ibet_token_contract.force_unlock(
                             tx_params=ForceUnlockParams(
-                                lock_address=tx_params["lock_address"],
-                                account_address=tx_params["account_address"],
-                                recipient_address=tx_params["recipient_address"],
-                                value=tx_params["value"],
-                                data=json.dumps(tx_params["data"]),
+                                lock_address=force_unlock_params["lock_address"],
+                                account_address=force_unlock_params["account_address"],
+                                recipient_address=force_unlock_params[
+                                    "recipient_address"
+                                ],
+                                value=force_unlock_params["value"],
+                                data=json.dumps(force_unlock_params["data"]),
                             ),
                             tx_sender=pending_tx.tx_sender,
                             tx_sender_key=issuer_pk,
                         )
                     elif (
                         pending_tx.tx_type
-                        == EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
+                        == ToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
                     ):
-                        tx_params: IbetBridgeTxParamsForceChangeLockedAccount = (
-                            pending_tx.tx_params
+                        change_locked_account_params = cast(
+                            IbetBridgeTxParamsForceChangeLockedAccount,
+                            pending_tx.tx_params,
                         )
                         (
                             tx_hash,
                             tx_receipt,
                         ) = await ibet_token_contract.force_change_locked_account(
                             tx_params=ForceChangeLockedAccountParams(
-                                lock_address=tx_params["lock_address"],
-                                before_account_address=tx_params[
+                                lock_address=change_locked_account_params[
+                                    "lock_address"
+                                ],
+                                before_account_address=change_locked_account_params[
                                     "before_account_address"
                                 ],
-                                after_account_address=tx_params[
+                                after_account_address=change_locked_account_params[
                                     "after_account_address"
                                 ],
-                                value=tx_params["value"],
-                                data=json.dumps(tx_params["data"]),
+                                value=change_locked_account_params["value"],
+                                data=json.dumps(change_locked_account_params["data"]),
                             ),
                             tx_sender=pending_tx.tx_sender,
                             tx_sender_key=issuer_pk,
@@ -148,7 +163,7 @@ class WSTBridgeToIbetProcessor:
                         LOG.error(
                             f"Unknown transaction type: id={pending_tx.tx_id}, type={pending_tx.tx_type}"
                         )
-                        pending_tx.status = EthToIbetBridgeTxStatus.FAILED
+                        pending_tx.status = ToIbetBridgeTxStatus.FAILED
                         await db_session.merge(pending_tx)
                         await db_session.commit()
                         continue
@@ -157,7 +172,7 @@ class WSTBridgeToIbetProcessor:
                     LOG.error(
                         f"Transaction failed: id={pending_tx.tx_id} ( {cre.code} | {cre.message} )"
                     )
-                    pending_tx.status = EthToIbetBridgeTxStatus.FAILED
+                    pending_tx.status = ToIbetBridgeTxStatus.FAILED
                     await db_session.merge(pending_tx)
                     await db_session.commit()
                     continue
@@ -166,7 +181,7 @@ class WSTBridgeToIbetProcessor:
                 LOG.info(f"Transaction sent successfully: id={pending_tx.tx_id}")
                 pending_tx.tx_hash = tx_hash
                 pending_tx.block_number = tx_receipt["blockNumber"]
-                pending_tx.status = EthToIbetBridgeTxStatus.SUCCEEDED
+                pending_tx.status = ToIbetBridgeTxStatus.SUCCEEDED
                 await db_session.merge(pending_tx)
                 await db_session.commit()
         except Exception:
@@ -179,7 +194,7 @@ class WSTBridgeToIbetProcessor:
 
 async def main():
     LOG.info("Service started successfully")
-    bridge_tx_processor = WSTBridgeToIbetProcessor()
+    bridge_tx_processor = AvaWSTBridgeToIbetProcessor()
 
     while True:
         try:

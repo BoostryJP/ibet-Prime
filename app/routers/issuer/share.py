@@ -68,6 +68,7 @@ from app.exceptions import (
 from app.model.db import (
     UTXO,
     Account,
+    AvaIbetWSTTx,
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
     BatchIssueRedeemUpload,
@@ -77,6 +78,7 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     EthIbetWSTTx,
+    IbetWSTBlockchain,
     IbetWSTTxParamsDeploy,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -190,6 +192,7 @@ from app.utils.check_utils import (
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
 from app.utils.ibet_contract_utils import AsyncContractUtils
+from avalanche_config import AVA_MASTER_ACCOUNT_ADDRESS
 from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(
@@ -200,6 +203,77 @@ router = APIRouter(
 LOG = log.get_logger()
 local_tz = pytz.timezone(config.TZ)
 utc_tz = pytz.timezone("UTC")
+
+
+def _resolve_ibet_wst_blockchains(
+    ibet_wst_blockchains: Sequence[str | IbetWSTBlockchain] | None,
+) -> list[IbetWSTBlockchain]:
+    blockchains = ibet_wst_blockchains
+    if not blockchains:
+        blockchains = [IbetWSTBlockchain.ETHEREUM]
+    return list(
+        dict.fromkeys(
+            [IbetWSTBlockchain(str(blockchain)) for blockchain in blockchains]
+        )
+    )
+
+
+async def _is_ibet_wst_deploy_in_progress(
+    db: DBAsyncSession, tx_id: str | None
+) -> bool:
+    """
+    Check if there is an in-progress IbetWST deployment transaction with the given tx_id
+    """
+
+    if tx_id is None:
+        return False
+
+    # Check Ethereum IbetWST deployment transaction
+    in_progress_cond = or_(
+        EthIbetWSTTx.status.in_([IbetWSTTxStatus.PENDING, IbetWSTTxStatus.SENT]),
+        and_(
+            EthIbetWSTTx.status == IbetWSTTxStatus.SUCCEEDED,
+            EthIbetWSTTx.finalized.is_not(True),
+        ),
+    )
+    eth_deploy_tx = (
+        await db.scalars(
+            select(EthIbetWSTTx)
+            .where(
+                and_(
+                    EthIbetWSTTx.tx_id == tx_id,
+                    EthIbetWSTTx.tx_type == IbetWSTTxType.DEPLOY,
+                    in_progress_cond,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if eth_deploy_tx is not None:
+        return True
+
+    # Check Avalanche IbetWST deployment transaction
+    in_progress_cond = or_(
+        AvaIbetWSTTx.status.in_([IbetWSTTxStatus.PENDING, IbetWSTTxStatus.SENT]),
+        and_(
+            AvaIbetWSTTx.status == IbetWSTTxStatus.SUCCEEDED,
+            AvaIbetWSTTx.finalized.is_not(True),
+        ),
+    )
+    ava_deploy_tx = (
+        await db.scalars(
+            select(AvaIbetWSTTx)
+            .where(
+                and_(
+                    AvaIbetWSTTx.tx_id == tx_id,
+                    AvaIbetWSTTx.tx_type == IbetWSTTxType.DEPLOY,
+                    in_progress_cond,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    return ava_deploy_tx is not None
 
 
 # POST: /share/tokens
@@ -352,23 +426,44 @@ async def issue_share_token(
     _token.token_status = token_status
     _token.version = TokenVersion.V_25_09
     if token.activate_ibet_wst:
-        tx_id = str(uuid.uuid4())
-        # Activate IbetWST
-        _token.ibet_wst_activated = True
+        ibet_wst_blockchains = _resolve_ibet_wst_blockchains(token.ibet_wst_blockchains)
+
+        # Activate IbetWST on requested blockchains.
+        for ibet_wst_blockchain in ibet_wst_blockchains:
+            _token.set_ibet_wst_activated(ibet_wst_blockchain, True)
+
         _token.ibet_wst_version = IbetWSTVersion.V_1
-        _token.ibet_wst_tx_id = tx_id
         _token.ibet_wst_name = token.ibet_wst_name
-        # Register IbetWST transaction
-        _ibet_wst_tx = EthIbetWSTTx()
-        _ibet_wst_tx.tx_id = tx_id
-        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
-        _ibet_wst_tx.version = IbetWSTVersion.V_1
-        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
-        _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=token.ibet_wst_name, initial_owner=issuer_address
-        )
-        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        db.add(_ibet_wst_tx)
+
+        tx_id = str(uuid.uuid4())
+        _token.ibet_wst_tx_id = tx_id
+
+        # Register Ethereum IbetWST deployment transaction if ethereum is selected.
+        if IbetWSTBlockchain.ETHEREUM in ibet_wst_blockchains:
+            _ibet_wst_tx = EthIbetWSTTx()
+            _ibet_wst_tx.tx_id = tx_id
+            _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+            _ibet_wst_tx.version = IbetWSTVersion.V_1
+            _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+            _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                name=token.ibet_wst_name, initial_owner=issuer_address
+            )
+            _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+            db.add(_ibet_wst_tx)
+
+        # Register Avalanche IbetWST deployment transaction if avalanche is selected.
+        if IbetWSTBlockchain.AVALANCHE in ibet_wst_blockchains:
+            _ibet_wst_tx = AvaIbetWSTTx()
+            _ibet_wst_tx.tx_id = tx_id
+            _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+            _ibet_wst_tx.version = IbetWSTVersion.V_1
+            _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+            _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                name=token.ibet_wst_name, initial_owner=issuer_address
+            )
+            _ibet_wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
+            db.add(_ibet_wst_tx)
+
     db.add(_token)
 
     # Register operation log
@@ -436,11 +531,26 @@ async def list_all_share_tokens(
         )
         share_token["token_status"] = token.token_status
         share_token["contract_version"] = token.version
-        share_token["ibet_wst_activated"] = True if token.ibet_wst_activated else False
         share_token["ibet_wst_version"] = token.ibet_wst_version
-        share_token["ibet_wst_deployed"] = True if token.ibet_wst_deployed else False
-        share_token["ibet_wst_address"] = token.ibet_wst_address
         share_token["ibet_wst_name"] = token.ibet_wst_name
+        share_token["ibet_wst_settings_by_blockchain"] = {
+            "activated": token.ibet_wst_activated_by_blockchain,
+            "deployed": token.ibet_wst_deployed_by_blockchain,
+            "address": token.ibet_wst_address_by_blockchain,
+        }
+
+        # NOTE:
+        # ibet_wst_activated, ibet_wst_deployed, and ibet_wst_address are set based on the Ethereum blockchain for backward compatibility.
+        # These items will be removed in the future.
+        share_token["ibet_wst_activated"] = token.is_ibet_wst_activated(
+            IbetWSTBlockchain.ETHEREUM
+        )
+        share_token["ibet_wst_deployed"] = token.is_ibet_wst_deployed(
+            IbetWSTBlockchain.ETHEREUM
+        )
+        share_token["ibet_wst_address"] = token.get_ibet_wst_address(
+            IbetWSTBlockchain.ETHEREUM
+        )
 
         share_tokens.append(share_token)
 
@@ -487,11 +597,26 @@ async def retrieve_share_token(
     )
     share_token["token_status"] = _token.token_status
     share_token["contract_version"] = _token.version
-    share_token["ibet_wst_activated"] = True if _token.ibet_wst_activated else False
     share_token["ibet_wst_version"] = _token.ibet_wst_version
-    share_token["ibet_wst_deployed"] = True if _token.ibet_wst_deployed else False
-    share_token["ibet_wst_address"] = _token.ibet_wst_address
     share_token["ibet_wst_name"] = _token.ibet_wst_name
+    share_token["ibet_wst_settings_by_blockchain"] = {
+        "activated": _token.ibet_wst_activated_by_blockchain,
+        "deployed": _token.ibet_wst_deployed_by_blockchain,
+        "address": _token.ibet_wst_address_by_blockchain,
+    }
+
+    # NOTE:
+    # ibet_wst_activated, ibet_wst_deployed, and ibet_wst_address are set based on the Ethereum blockchain for backward compatibility.
+    # These items will be removed in the future.
+    share_token["ibet_wst_activated"] = _token.is_ibet_wst_activated(
+        IbetWSTBlockchain.ETHEREUM
+    )
+    share_token["ibet_wst_deployed"] = _token.is_ibet_wst_deployed(
+        IbetWSTBlockchain.ETHEREUM
+    )
+    share_token["ibet_wst_address"] = _token.get_ibet_wst_address(
+        IbetWSTBlockchain.ETHEREUM
+    )
 
     return json_response(share_token)
 
@@ -510,6 +635,7 @@ async def retrieve_share_token(
         SendTransactionError,
         ContractRevertError,
         OperationNotSupportedVersionError,
+        OperationNotAllowedStateError,
     ),
 )
 async def update_share_token(
@@ -608,24 +734,66 @@ async def update_share_token(
         raise SendTransactionError("failed to send transaction")
 
     # Activate IbetWST
-    if update_data.activate_ibet_wst and not _token.ibet_wst_activated:
-        tx_id = str(uuid.uuid4())
-        _token.ibet_wst_activated = True
-        _token.ibet_wst_version = IbetWSTVersion.V_1
-        _token.ibet_wst_tx_id = tx_id
-        _token.ibet_wst_name = update_data.ibet_wst_name
-
-        # Register IbetWST transaction
-        _ibet_wst_tx = EthIbetWSTTx()
-        _ibet_wst_tx.tx_id = tx_id
-        _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
-        _ibet_wst_tx.version = IbetWSTVersion.V_1
-        _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
-        _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-            name=update_data.ibet_wst_name, initial_owner=issuer_address
+    if update_data.activate_ibet_wst:
+        ibet_wst_blockchains = _resolve_ibet_wst_blockchains(
+            update_data.ibet_wst_blockchains
         )
-        _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
-        db.add(_ibet_wst_tx)
+        activate_blockchains = [
+            blockchain
+            for blockchain in ibet_wst_blockchains
+            if not _token.is_ibet_wst_activated(blockchain)
+        ]
+        if len(activate_blockchains) > 0:
+            # Check if there is an in-progress IbetWST deployment transaction.
+            # If so, reject the request to avoid conflicts.
+            if await _is_ibet_wst_deploy_in_progress(db, _token.ibet_wst_tx_id):
+                raise OperationNotAllowedStateError(
+                    102,
+                    "IbetWST activation is in progress",
+                )
+
+            # Activate IbetWST on requested blockchains.
+            already_activated = any(
+                _token.is_ibet_wst_activated(blockchain)
+                for blockchain in IbetWSTBlockchain
+            )
+            for blockchain in activate_blockchains:
+                _token.set_ibet_wst_activated(blockchain, True)
+
+            # Check if IbetWST is already activated on any blockchain.
+            # If not, set the IbetWST version and name.
+            if not already_activated:
+                _token.ibet_wst_version = IbetWSTVersion.V_1
+                _token.ibet_wst_name = update_data.ibet_wst_name
+
+            tx_id = str(uuid.uuid4())
+            _token.ibet_wst_tx_id = tx_id
+
+            # Register Ethereum IbetWST deployment transaction if ethereum is selected.
+            if IbetWSTBlockchain.ETHEREUM in activate_blockchains:
+                _ibet_wst_tx = EthIbetWSTTx()
+                _ibet_wst_tx.tx_id = tx_id
+                _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+                _ibet_wst_tx.version = IbetWSTVersion.V_1
+                _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+                _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                    name=update_data.ibet_wst_name, initial_owner=issuer_address
+                )
+                _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
+                db.add(_ibet_wst_tx)
+
+            # Register Avalanche IbetWST deployment transaction if avalanche is selected.
+            if IbetWSTBlockchain.AVALANCHE in activate_blockchains:
+                _ibet_wst_tx = AvaIbetWSTTx()
+                _ibet_wst_tx.tx_id = tx_id
+                _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+                _ibet_wst_tx.version = IbetWSTVersion.V_1
+                _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+                _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                    name=update_data.ibet_wst_name, initial_owner=issuer_address
+                )
+                _ibet_wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
+                db.add(_ibet_wst_tx)
 
     # Register operation log
     operation_log = TokenUpdateOperationLog()

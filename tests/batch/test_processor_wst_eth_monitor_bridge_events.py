@@ -32,20 +32,20 @@ from app.model.db import (
     Account,
     EthIbetWSTTx,
     EthToIbetBridgeTx,
-    EthToIbetBridgeTxStatus,
-    EthToIbetBridgeTxType,
     IbetWSTBridgeSyncedBlockNumber,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    ToIbetBridgeTxStatus,
+    ToIbetBridgeTxType,
     Token,
     TokenType,
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from batch.processor_eth_wst_monitor_bridge_events import (
+from batch.processor_wst_eth_monitor_bridge_events import (
     LOG,
-    WSTBridgeMonitoringProcessor,
+    EthWSTBridgeMonitoringProcessor,
 )
 from config import WEB3_HTTP_PROVIDER
 from eth_config import ETH_WEB3_HTTP_PROVIDER
@@ -61,7 +61,7 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield WSTBridgeMonitoringProcessor()
+    yield EthWSTBridgeMonitoringProcessor()
     log.propagate = False
     log.setLevel(default_log_level)
 
@@ -131,11 +131,11 @@ class TestProcessor:
     # Issuer account not found
     # - Check if the process is skipped
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
         AsyncMock(
             side_effect=[
                 [
@@ -152,7 +152,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # __process_burn
@@ -182,8 +182,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -276,11 +276,11 @@ class TestProcessor:
     # ibet -> eth bridge event is detected
     # - Check if the mint transaction record is registered
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
         AsyncMock(
             side_effect=[
                 [
@@ -297,7 +297,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # __process_burn
@@ -326,8 +326,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -393,11 +393,11 @@ class TestProcessor:
     # ibet -> eth bridge event is detected
     # - Check if the mint transaction record is registered
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
         AsyncMock(
             side_effect=[
                 [
@@ -414,7 +414,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # __process_burn
@@ -443,8 +443,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -510,11 +510,11 @@ class TestProcessor:
     # ibet -> eth bridge event: Invalid message
     # - Check if the process is skipped
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
         AsyncMock(
             side_effect=[
                 [
@@ -531,7 +531,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # __process_burn
@@ -560,8 +560,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -609,11 +609,11 @@ class TestProcessor:
     # eth -> ibet bridge event is detected
     # - Burn event is detected
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # __process_mint
@@ -621,7 +621,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
         AsyncMock(
             side_effect=[
                 [
@@ -657,8 +657,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -704,8 +704,8 @@ class TestProcessor:
         ibet_tx = ibet_tx_list[0]
         assert ibet_tx.tx_id is not None
         assert ibet_tx.token_address == self.ibet_token_address_1
-        assert ibet_tx.tx_type == EthToIbetBridgeTxType.FORCE_UNLOCK
-        assert ibet_tx.status == EthToIbetBridgeTxStatus.PENDING
+        assert ibet_tx.tx_type == ToIbetBridgeTxType.FORCE_UNLOCK
+        assert ibet_tx.status == ToIbetBridgeTxStatus.PENDING
         assert ibet_tx.tx_params == {
             "lock_address": self.issuer["address"],
             "account_address": self.user1["address"],
@@ -718,11 +718,11 @@ class TestProcessor:
     # eth -> ibet bridge event is detected
     # - Transfer event is detected
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
+        "batch.processor_wst_eth_monitor_bridge_events.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_ibet_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # __process_mint
@@ -730,7 +730,7 @@ class TestProcessor:
         ),
     )
     @mock.patch(
-        "batch.processor_eth_wst_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
+        "batch.processor_wst_eth_monitor_bridge_events.BridgeEventViewer.get_wst_event_logs",
         AsyncMock(
             side_effect=[
                 [],  # __process_burn
@@ -767,8 +767,8 @@ class TestProcessor:
         token.tx_hash = ""
         token.abi = self.ibet_token_abi
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address_1
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         async_db.add(token)
 
         await async_db.commit()
@@ -814,8 +814,8 @@ class TestProcessor:
         ibet_tx = ibet_tx_list[0]
         assert ibet_tx.tx_id is not None
         assert ibet_tx.token_address == self.ibet_token_address_1
-        assert ibet_tx.tx_type == EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
-        assert ibet_tx.status == EthToIbetBridgeTxStatus.PENDING
+        assert ibet_tx.tx_type == ToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
+        assert ibet_tx.status == ToIbetBridgeTxStatus.PENDING
         assert ibet_tx.tx_params == {
             "lock_address": self.issuer["address"],
             "before_account_address": self.user1["address"],

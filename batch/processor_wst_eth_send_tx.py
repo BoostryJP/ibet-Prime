@@ -47,7 +47,7 @@ from app.model.db import (
     IbetWSTTxStatus,
     IbetWSTTxType,
 )
-from app.model.eth import IbetWST, IbetWSTAuthorization
+from app.model.wst import EthereumIbetWST, IbetWSTAuthorization
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from batch import free_malloc
@@ -250,7 +250,7 @@ async def send_add_whitelist_transaction(
     """
     Send a transaction to add an account to the IbetWST whitelist.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsAddAccountWhiteList = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.add_account_white_list_with_authorization(
         st_account=tx_params["st_account"],
@@ -275,7 +275,7 @@ async def send_delete_whitelist_transaction(
     """
     Send a transaction to delete an account from the IbetWST whitelist.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsDeleteAccountWhiteList = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.delete_account_white_list_with_authorization(
         st_account=tx_params["st_account"],
@@ -298,7 +298,7 @@ async def send_transfer_transaction(
     """
     Send a transaction to transfer IbetWST tokens.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsTransfer = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.transfer_with_authorization(
         from_address=tx_params["from_address"],
@@ -325,7 +325,7 @@ async def send_mint_transaction(
     """
     Send a transaction to mint IbetWST tokens.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsMint = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.mint_with_authorization(
         to_address=tx_params["to_address"],
@@ -349,7 +349,7 @@ async def send_burn_transaction(
     """
     Send a transaction to burn IbetWST tokens.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsBurn = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.burn_with_authorization(
         from_address=tx_params["from_address"],
@@ -373,7 +373,7 @@ async def send_force_burn_transaction(
     """
     Send a transaction to force burn IbetWST tokens.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsForceBurn = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.force_burn_from_with_authorization(
         account_address=tx_params["account"],
@@ -397,7 +397,7 @@ async def send_request_trade_transaction(
     """
     Send a transaction to request a trade for the IbetWST.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsRequestTrade = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.request_trade_with_authorization(
         seller_st_account=tx_params["seller_st_account"],
@@ -425,7 +425,7 @@ async def cancel_trade_transaction(
     """
     Send a transaction to cancel a trade for the IbetWST.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsCancelTrade = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.cancel_trade_with_authorization(
         index=tx_params["index"],
@@ -448,7 +448,7 @@ async def accept_trade_transaction(
     """
     Send a transaction to accept a trade for the IbetWST.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsAcceptTrade = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.accept_trade_with_authorization(
         index=tx_params["index"],
@@ -471,7 +471,7 @@ async def reject_trade_transaction(
     """
     Send a transaction to reject a trade for the IbetWST.
     """
-    wst_contract = IbetWST(wst_tx.ibet_wst_address)
+    wst_contract = EthereumIbetWST(wst_tx.ibet_wst_address)
     tx_params: IbetWSTTxParamsRejectTrade = wst_tx.tx_params
     tx_hash, nonce = await wst_contract.reject_trade_with_authorization(
         index=tx_params["index"],

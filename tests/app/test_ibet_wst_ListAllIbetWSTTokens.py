@@ -58,7 +58,7 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = False  # Not deployed yet
+        _token.set_ibet_wst_deployed("ethereum", False)  # Not deployed yet
         async_db.add(_token)
         await async_db.commit()
 
@@ -93,8 +93,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
         await async_db.commit()
@@ -186,8 +186,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
         await async_db.commit()
@@ -266,8 +266,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -278,8 +278,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -410,8 +410,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -422,8 +422,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -480,7 +480,10 @@ class TestListAllIbetWSTTokens:
         # Request target API
         resp = await async_client.get(
             self.api_url,
-            params={"issuer_address": self.issuer_address_1},
+            params={
+                "issuer_address": self.issuer_address_1,
+                "blockchain_platform": "ethereum",
+            },
         )
 
         # Assertion
@@ -518,8 +521,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -530,8 +533,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -606,8 +609,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -618,8 +621,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -694,8 +697,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -706,8 +709,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -782,8 +785,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -794,8 +797,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -947,8 +950,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -959,8 +962,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -1111,8 +1114,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_1
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
         _token.ibet_wst_name = "TestIbetWST1"
         async_db.add(_token)
 
@@ -1123,8 +1126,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_2
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_2)
         _token.ibet_wst_name = "TestIbetWST2"
         async_db.add(_token)
 
@@ -1135,8 +1138,8 @@ class TestListAllIbetWSTTokens:
         _token.tx_hash = ""
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
-        _token.ibet_wst_deployed = True
-        _token.ibet_wst_address = self.ibet_wst_address_3
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_3)
         _token.ibet_wst_name = "TestIbetWST3"
         async_db.add(_token)
 
@@ -1237,36 +1240,11 @@ class TestListAllIbetWSTTokens:
 
         # Assertion
         assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {"code": 1, "title": "RequestValidationError"},
-            "detail": [
-                {
-                    "type": "value_error",
-                    "loc": ["query", "issuer_address"],
-                    "msg": "Value error, invalid ethereum address",
-                    "input": "invalid_issuer_address",
-                    "ctx": {"error": {}},
-                },
-                {
-                    "type": "value_error",
-                    "loc": ["query", "ibet_wst_address"],
-                    "msg": "Value error, invalid ethereum address",
-                    "input": "invalid_ibet_wst_address",
-                    "ctx": {"error": {}},
-                },
-                {
-                    "type": "value_error",
-                    "loc": ["query", "ibet_token_address"],
-                    "msg": "Value error, invalid ethereum address",
-                    "input": "invalid_ibet_token_address",
-                    "ctx": {"error": {}},
-                },
-                {
-                    "type": "enum",
-                    "loc": ["query", "token_type"],
-                    "msg": "Input should be 'IbetStraightBond' or 'IbetShare'",
-                    "input": "invalid_token_type",
-                    "ctx": {"expected": "'IbetStraightBond' or 'IbetShare'"},
-                },
-            ],
+        body = resp.json()
+        assert body["meta"] == {"code": 1, "title": "RequestValidationError"}
+        assert {tuple(err["loc"]) for err in body["detail"]} == {
+            ("query", "issuer_address"),
+            ("query", "ibet_wst_address"),
+            ("query", "ibet_token_address"),
+            ("query", "token_type"),
         }

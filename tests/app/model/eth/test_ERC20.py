@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import pytest
 
-from app.model.eth import ERC20
+from app.model.wst import EthereumERC20
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
@@ -140,7 +140,7 @@ class TestName:
         contract_address = await deploy_token("Test Token", self.deployer, self.issuer)
 
         # Generate contract instance
-        contract = ERC20(contract_address)
+        contract = EthereumERC20(contract_address)
 
         # Call name function
         name = await contract.name()
@@ -152,7 +152,7 @@ class TestName:
     # - Test that the name function returns an empty string when called on a contract at the zero address.
     async def test_normal_2(self):
         # Generate contract instance
-        contract = ERC20(ZERO_ADDRESS)
+        contract = EthereumERC20(ZERO_ADDRESS)
 
         # Call name function
         name = await contract.name()
@@ -191,7 +191,7 @@ class TestBalanceOf:
         )
 
         # Generate contract instance
-        contract = ERC20(contract_address)
+        contract = EthereumERC20(contract_address)
 
         # Call balanceOf function
         balance = await contract.balance_of(self.user1["address"])
@@ -204,7 +204,7 @@ class TestBalanceOf:
     #   when called on a contract which has not been deployed.
     async def test_normal_2(self):
         # Generate contract instance
-        contract = ERC20(ZERO_ADDRESS)
+        contract = EthereumERC20(ZERO_ADDRESS)
 
         # Call balanceOf function
         balance = await contract.balance_of(self.user1["address"])
@@ -252,7 +252,7 @@ class TestAllowance:
         )
 
         # Generate contract instance
-        contract = ERC20(contract_address)
+        contract = EthereumERC20(contract_address)
 
         # Call allowance function
         allowance = await contract.allowance(
@@ -267,7 +267,7 @@ class TestAllowance:
     #   when called on a contract which has not been deployed.
     async def test_normal_2(self):
         # Generate contract instance
-        contract = ERC20(ZERO_ADDRESS)
+        contract = EthereumERC20(ZERO_ADDRESS)
 
         # Call allowance function
         allowance = await contract.allowance(
@@ -298,7 +298,7 @@ class TestDecimals:
         contract_address = await deploy_token("Test Token", self.deployer, self.issuer)
 
         # Generate contract instance
-        contract = ERC20(contract_address)
+        contract = EthereumERC20(contract_address)
 
         # Call decimals function
         decimals = await contract.decimals()
@@ -310,7 +310,7 @@ class TestDecimals:
     # - Test that the decimals function returns 18 when called on a contract at the zero address.
     async def test_normal_2(self):
         # Generate contract instance
-        contract = ERC20(ZERO_ADDRESS)
+        contract = EthereumERC20(ZERO_ADDRESS)
 
         # Call decimals function
         decimals = await contract.decimals()

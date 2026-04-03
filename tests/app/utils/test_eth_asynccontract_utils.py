@@ -48,7 +48,7 @@ class TestGetContractCode:
         ) = EthAsyncContractUtils.get_contract_code(contract_name="AuthIbetWST")
 
         # Assert
-        expected_json = json.load(open("contracts/eth/AuthIbetWST.json", "r"))
+        expected_json = json.load(open("contracts/wst/AuthIbetWST.json", "r"))
         assert rtn_abi == expected_json["abi"]
         assert rtn_bytecode == expected_json["bytecode"]
         assert rtn_deploy_bytecode == expected_json["deployedBytecode"]

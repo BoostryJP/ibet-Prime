@@ -32,12 +32,14 @@ class TestGetERC20Allowance:
     # Normal
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Return allowance of account
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
-        "app.routers.misc.ibet_wst.ERC20.allowance", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumERC20.allowance",
+        AsyncMock(return_value=1000),
     )
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client, async_db):
         # Define parameters
         account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
         token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
@@ -50,6 +52,34 @@ class TestGetERC20Allowance:
                 "token_address": token_address,
                 "account_address": account_address,
                 "spender_address": spender_address,
+            },
+        )
+
+        # Check response status code
+        assert resp.status_code == 200
+        assert resp.json() == {"allowance": 1000}
+
+    # <Normal_1_2>
+    # Return allowance of account
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheERC20.allowance",
+        AsyncMock(return_value=1000),
+    )
+    async def test_normal_1_2(self, async_client, async_db):
+        # Define parameters
+        account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
+        token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
+        spender_address = "0x34567890abCdEF1234567890abcDeF1234567890"
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "token_address": token_address,
+                "account_address": account_address,
+                "spender_address": spender_address,
+                "blockchain_platform": "avalanche",
             },
         )
 
@@ -102,19 +132,19 @@ class TestGetERC20Allowance:
                     "type": "missing",
                     "loc": ["query", "token_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
                 {
                     "type": "missing",
                     "loc": ["query", "account_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
                 {
                     "type": "missing",
                     "loc": ["query", "spender_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
             ],
         }

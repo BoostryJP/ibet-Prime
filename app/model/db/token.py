@@ -48,6 +48,17 @@ class TokenStatus(IntEnum):
     FAILED = 2
 
 
+class IbetWSTBlockchain(StrEnum):
+    ETHEREUM = "ethereum"
+    AVALANCHE = "avalanche"
+    # NOTE: Add other blockchains that support IbetWST as needed
+
+
+type IbetWSTActivatedStatusByBlockchain = dict[IbetWSTBlockchain, bool]
+type IbetWSTDeployedStatusByBlockchain = dict[IbetWSTBlockchain, bool]
+type IbetWSTAddressByBlockchain = dict[IbetWSTBlockchain, str]
+
+
 class Token(Base):
     """Issued Token"""
 
@@ -72,21 +83,76 @@ class Token(Base):
     )
     # initial position synced
     initial_position_synced: Mapped[bool | None] = mapped_column(Boolean, default=False)
-    # IbetWST activated
-    ibet_wst_activated: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+
+    # IbetWST activated by blockchain
+    ibet_wst_activated_by_blockchain: Mapped[
+        IbetWSTActivatedStatusByBlockchain | None
+    ] = mapped_column(JSON, nullable=True)
+    # IbetWST deployed by blockchain
+    ibet_wst_deployed_by_blockchain: Mapped[
+        IbetWSTDeployedStatusByBlockchain | None
+    ] = mapped_column(JSON, nullable=True)
+    # IbetWST contract address by blockchain
+    ibet_wst_address_by_blockchain: Mapped[IbetWSTAddressByBlockchain | None] = (
+        mapped_column(JSON, nullable=True)
+    )
     # IbetWST version
     ibet_wst_version: Mapped[IbetWSTVersion | None] = mapped_column(
         String(2), nullable=True
     )
+    # IbetWST name
+    ibet_wst_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # IbetWST transaction ID
     # - This is the transaction ID of the IbetWST contract deployment
     ibet_wst_tx_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    # IbetWST deployed
-    ibet_wst_deployed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    # IbetWST contract address
-    ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
-    # IbetWST name
-    ibet_wst_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    @staticmethod
+    def _normalize_ibet_wst_blockchain(
+        blockchain: IbetWSTBlockchain | str,
+    ) -> IbetWSTBlockchain:
+        return IbetWSTBlockchain(str(blockchain))
+
+    def set_ibet_wst_activated(
+        self, blockchain: IbetWSTBlockchain | str, activated: bool
+    ) -> None:
+        blockchain_key = self._normalize_ibet_wst_blockchain(blockchain)
+        status_map = dict(self.ibet_wst_activated_by_blockchain or {})
+        status_map[blockchain_key] = activated
+        self.ibet_wst_activated_by_blockchain = status_map
+
+    def is_ibet_wst_activated(self, blockchain: IbetWSTBlockchain | str) -> bool:
+        blockchain_key = self._normalize_ibet_wst_blockchain(blockchain)
+        status_map = self.ibet_wst_activated_by_blockchain or {}
+        return bool(status_map.get(blockchain_key))
+
+    def set_ibet_wst_deployed(
+        self, blockchain: IbetWSTBlockchain | str, deployed: bool
+    ) -> None:
+        blockchain_key = self._normalize_ibet_wst_blockchain(blockchain)
+        status_map = dict(self.ibet_wst_deployed_by_blockchain or {})
+        status_map[blockchain_key] = deployed
+        self.ibet_wst_deployed_by_blockchain = status_map
+
+    def is_ibet_wst_deployed(self, blockchain: IbetWSTBlockchain | str) -> bool:
+        blockchain_key = self._normalize_ibet_wst_blockchain(blockchain)
+        status_map = self.ibet_wst_deployed_by_blockchain or {}
+        return bool(status_map.get(blockchain_key))
+
+    def set_ibet_wst_address(
+        self, blockchain: IbetWSTBlockchain | str, address: str | None
+    ) -> None:
+        blockchain_key = self._normalize_ibet_wst_blockchain(blockchain)
+        address_map = dict(self.ibet_wst_address_by_blockchain or {})
+        if address is None:
+            address_map.pop(blockchain_key, None)
+        else:
+            address_map[blockchain_key] = address
+        self.ibet_wst_address_by_blockchain = address_map
+
+    def get_ibet_wst_address(self, blockchain: IbetWSTBlockchain | str) -> str | None:
+        blockchain_key = self._normalize_ibet_wst_blockchain(blockchain)
+        address_map = self.ibet_wst_address_by_blockchain or {}
+        return address_map.get(blockchain_key)
 
 
 class TokenAttrUpdate(Base):

@@ -24,6 +24,7 @@ from unittest import mock
 import pytest
 
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTAuthorization,
     IbetWSTEventLogTradeRequested,
@@ -103,6 +104,7 @@ class TestListIbetWSTTransactions:
             self.api_url,
             params={
                 "ibet_wst_address": self.wst_token_address_1,
+                "blockchain_platform": "ethereum",
             },
         )
 
@@ -118,9 +120,10 @@ class TestListIbetWSTTransactions:
             "transactions": [],
         }
 
-    # <Normal_2_1>
+    # <Normal_2_1_1>
     # Return transactions for the specified address
-    async def test_normal_2_1(self, async_db, async_client):
+    # - blockchain_platform = "ethereum" (default)
+    async def test_normal_2_1_1(self, async_db, async_client):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -229,6 +232,53 @@ class TestListIbetWSTTransactions:
                 },
             ],
         }
+
+    # <Normal_2_1_2>
+    # Return transactions for the specified address
+    # - blockchain_platform = "avalanche"
+    async def test_normal_2_1_2(self, async_db, async_client):
+        tx_id_1 = str(uuid.uuid4())
+        tx_1 = AvaIbetWSTTx()
+        tx_1.tx_id = tx_id_1
+        tx_1.tx_type = IbetWSTTxType.TRANSFER
+        tx_1.version = IbetWSTVersion.V_1
+        tx_1.status = IbetWSTTxStatus.SUCCEEDED
+        tx_1.ibet_wst_address = self.wst_token_address_1
+        tx_1.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx_1.tx_sender = self.tx_sender["address"]
+        tx_1.authorizer = self.authorizer_1["address"]
+        tx_1.authorization = self.dummy_authorization
+        tx_1.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_1.block_number = 12345678
+        tx_1.finalized = True
+        tx_1.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+        )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
+        async_db.add(tx_1)
+        await async_db.commit()
+
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "ibet_wst_address": self.wst_token_address_1,
+                "blockchain_platform": "avalanche",
+            },
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["result_set"]["count"] == 1
+        assert resp.json()["transactions"][0]["tx_id"] == tx_id_1
 
     # <Normal_2_2>
     # Return transactions for the specified address
@@ -1235,7 +1285,7 @@ class TestListIbetWSTTransactions:
                     "type": "missing",
                     "loc": ["query", "ibet_wst_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 }
             ],
         }

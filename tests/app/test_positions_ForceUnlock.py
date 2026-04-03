@@ -29,6 +29,7 @@ from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
     Account,
     AuthToken,
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTTxParamsBurn,
     IbetWSTTxStatus,
@@ -315,8 +316,8 @@ class TestForceUnlock:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
-        token.ibet_wst_address = _ibet_wst_address
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_address("ethereum", _ibet_wst_address)
         async_db.add(token)
 
         tx_id = str(uuid.uuid4())
@@ -952,8 +953,8 @@ class TestForceUnlock:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
-        token.ibet_wst_address = _ibet_wst_address
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_address("ethereum", _ibet_wst_address)
         async_db.add(token)
 
         tx_id = str(uuid.uuid4())
@@ -990,6 +991,78 @@ class TestForceUnlock:
         )
 
         # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "There is a pending ibetWST Burn or ForceBurn transaction for this account",
+        }
+
+    # <Error_3_5>
+    # InvalidParameterError
+    # When there is a pending Avalanche IbetWST Burn transaction
+    @pytest.mark.asyncio
+    async def test_error_3_5(self, async_client, async_db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        _admin_account = default_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+        _ava_ibet_wst_address = "0x2234567890abcdef1234567890abcdef12345678"
+
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_activated("avalanche", True)
+        token.set_ibet_wst_address("avalanche", _ava_ibet_wst_address)
+        async_db.add(token)
+
+        tx_id = str(uuid.uuid4())
+        ava_ibet_wst_tx = AvaIbetWSTTx()
+        ava_ibet_wst_tx.tx_id = tx_id
+        ava_ibet_wst_tx.tx_type = IbetWSTTxType.BURN
+        ava_ibet_wst_tx.version = IbetWSTVersion.V_1
+        ava_ibet_wst_tx.status = IbetWSTTxStatus.SUCCEEDED
+        ava_ibet_wst_tx.ibet_wst_address = _ava_ibet_wst_address
+        ava_ibet_wst_tx.tx_params = IbetWSTTxParamsBurn(
+            from_address=account_address, value=10
+        )
+        ava_ibet_wst_tx.tx_sender = _admin_address
+        ava_ibet_wst_tx.authorizer = account_address
+        ava_ibet_wst_tx.finalized = False  # not finalized
+        async_db.add(ava_ibet_wst_tx)
+
+        await async_db.commit()
+
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
+            "recipient_address": _recipient_address,
+            "value": 10,
+        }
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {"code": 1, "title": "InvalidParameterError"},

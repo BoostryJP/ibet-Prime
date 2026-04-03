@@ -334,9 +334,13 @@ DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
 ####################################################
 # Settings for the "IbetWST" feature
 ####################################################
-IBET_WST_FEATURE_ENABLED = (
-    True if os.environ.get("IBET_WST_FEATURE_ENABLED") == "1" else False
+IBET_WST_ETH_FEATURE_ENABLED = (
+    True if os.environ.get("IBET_WST_ETH_FEATURE_ENABLED") == "1" else False
 )
+IBET_WST_AVA_FEATURE_ENABLED = (
+    True if os.environ.get("IBET_WST_AVA_FEATURE_ENABLED") == "1" else False
+)
+IBET_WST_FEATURE_ENABLED = IBET_WST_ETH_FEATURE_ENABLED or IBET_WST_AVA_FEATURE_ENABLED
 
 # IbetWST Bridge
 IBET_WST_BRIDGE_INTERVAL = int(os.environ.get("IBET_WST_BRIDGE_INTERVAL") or 10)

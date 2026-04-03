@@ -50,10 +50,10 @@ class TestRetrieveShareToken:
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_09
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = "eth_token_address_test1"
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
         await async_db.commit()
@@ -128,6 +128,11 @@ class TestRetrieveShareToken:
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
             "ibet_wst_address": "eth_token_address_test1",
+            "ibet_wst_settings_by_blockchain": {
+                "activated": {"ethereum": True},
+                "deployed": {"ethereum": True},
+                "address": {"ethereum": "eth_token_address_test1"},
+            },
             "ibet_wst_name": "ibet_wst_name_test1",
         }
 
@@ -147,10 +152,10 @@ class TestRetrieveShareToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = "eth_token_address_test1"
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
         await async_db.commit()
@@ -225,6 +230,11 @@ class TestRetrieveShareToken:
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
             "ibet_wst_address": "eth_token_address_test1",
+            "ibet_wst_settings_by_blockchain": {
+                "activated": {"ethereum": True},
+                "deployed": {"ethereum": True},
+                "address": {"ethereum": "eth_token_address_test1"},
+            },
             "ibet_wst_name": "ibet_wst_name_test1",
         }
 

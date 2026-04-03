@@ -202,13 +202,15 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     def expected_original_after_issue(
         create_token_param: dict, issuer_address: str, token_address: str
     ):
-        return {
+        expected_original = {
             **create_token_param,
             "contract_name": "IbetShare",
             "issuer_address": issuer_address,
             "memo": "",
             "token_address": token_address,
         }
+        expected_original.pop("ibet_wst_blockchains", None)
+        return expected_original
 
     ###########################################################################
     # Normal Case

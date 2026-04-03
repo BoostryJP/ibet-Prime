@@ -25,6 +25,7 @@ from sqlalchemy import select
 
 from app.model.db import (
     Account,
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -54,6 +55,8 @@ class TestAddIbetWSTWhitelist:
     ###########################################################################
 
     # <Normal_1>
+    # Force burn IbetWST position
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
         "app.routers.issuer.token_common.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
@@ -73,8 +76,8 @@ class TestAddIbetWSTWhitelist:
         token.token_address = self.token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
 
         await async_db.commit()
@@ -98,6 +101,71 @@ class TestAddIbetWSTWhitelist:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
+        assert wst_tx.tx_type == IbetWSTTxType.FORCE_BURN
+        assert wst_tx.version == IbetWSTVersion.V_1
+        assert wst_tx.status == IbetWSTTxStatus.PENDING
+        assert wst_tx.ibet_wst_address == self.ibet_wst_address
+        assert wst_tx.tx_params == {
+            "account": self.user["address"],
+            "value": 1000,
+        }
+        assert wst_tx.tx_sender == self.relayer["address"]
+        assert wst_tx.authorizer == self.issuer["address"]
+        assert wst_tx.authorization == {
+            "nonce": mock.ANY,
+            "v": mock.ANY,
+            "r": mock.ANY,
+            "s": mock.ANY,
+        }
+
+    # <Normal_2>
+    # Force burn IbetWST position
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.issuer.token_common.AVA_MASTER_ACCOUNT_ADDRESS",
+        relayer["address"],
+    )
+    async def test_normal_2(self, async_db, async_client):
+        # Prepare data
+        account = Account()
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = self.issuer["address"]
+        token.token_address = self.token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address)
+        async_db.add(token)
+
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(token_address=self.token_address),
+            json={
+                "account_address": self.user["address"],
+                "value": 1000,
+                "blockchain_platform": "avalanche",
+            },
+            headers={
+                "issuer-address": self.issuer["address"],
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # Check response status code and content
+        assert resp.status_code == 200
+        assert resp.json() == {"tx_id": mock.ANY}
+
+        # Check transaction creation
+        wst_tx = (await async_db.scalars(select(AvaIbetWSTTx).limit(1))).first()
         assert wst_tx.tx_type == IbetWSTTxType.FORCE_BURN
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -214,8 +282,8 @@ class TestAddIbetWSTWhitelist:
         token.token_address = self.token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
 
         await async_db.commit()

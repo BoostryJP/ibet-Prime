@@ -37,19 +37,20 @@ from app.model.db import (
     Account,
     EthIbetWSTTx,
     EthToIbetBridgeTx,
-    EthToIbetBridgeTxStatus,
-    EthToIbetBridgeTxType,
     IbetBridgeTxParamsForceChangeLockedAccount,
     IbetBridgeTxParamsForceUnlock,
     IbetWSTAuthorization,
+    IbetWSTBlockchain,
     IbetWSTBridgeSyncedBlockNumber,
     IbetWSTTxParamsMint,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
+    ToIbetBridgeTxStatus,
+    ToIbetBridgeTxType,
     Token,
 )
-from app.model.eth import IbetWST, IbetWSTDigestHelper
+from app.model.wst import EthereumIbetWST, IbetWSTDigestHelper
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.eth_contract_utils import (
     EthAsyncContractEventsView,
@@ -91,6 +92,10 @@ class BridgeEventViewer:
     wst_event_view: EthAsyncContractEventsView
 
     def __init__(self, token: Token):
+        wst_address = token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+        if wst_address is None:
+            raise ValueError("IbetWST address is not configured for ethereum")
+
         # Initialize issuer address
         self.issuer_address = token.issuer_address
 
@@ -107,10 +112,10 @@ class BridgeEventViewer:
 
         # Initialize IbetWST event view
         wst_contract = EthAsyncContractUtils.get_contract(
-            contract_name="AuthIbetWST", contract_address=token.ibet_wst_address
+            contract_name="AuthIbetWST", contract_address=wst_address
         )
         self.wst_event_view = EthAsyncContractEventsView(
-            address=token.ibet_wst_address, contract_events=wst_contract.events
+            address=wst_address, contract_events=wst_contract.events
         )
 
     async def get_ibet_event_logs(
@@ -161,7 +166,7 @@ class BridgeMessageTransfer(BaseModel):
     message: Literal["ibet_wst_bridge"]
 
 
-class WSTBridgeMonitoringProcessor:
+class EthWSTBridgeMonitoringProcessor:
     """
     Processor for handling IbetWST bridge operations.
     """
@@ -187,26 +192,26 @@ class WSTBridgeMonitoringProcessor:
         """
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
-            # Get the list of all WST tokens that have been deployed
-            wst_address_all: tuple[str, ...] = tuple(
-                [
-                    record[0]
-                    for record in (
-                        await db_session.execute(
-                            select(Token.ibet_wst_address)
-                            .join(
-                                Account,
-                                and_(
-                                    Account.issuer_address == Token.issuer_address,
-                                    Account.is_deleted == False,
-                                ),
-                            )
-                            .where(Token.ibet_wst_deployed.is_(True))
-                        )
+            load_target_tokens: Sequence[Token] = (
+                await db_session.scalars(
+                    select(Token).join(
+                        Account,
+                        and_(
+                            Account.issuer_address == Token.issuer_address,
+                            Account.is_deleted == False,
+                        ),
                     )
-                    .tuples()
-                    .all()
-                ]
+                )
+            ).all()
+
+            wst_address_all: tuple[str, ...] = tuple(
+                {
+                    token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+                    for token in load_target_tokens
+                    if token.is_ibet_wst_deployed(IbetWSTBlockchain.ETHEREUM)
+                    and token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+                    is not None
+                }
             )
 
             # Get the list of all WST tokens that have been loaded
@@ -221,16 +226,13 @@ class WSTBridgeMonitoringProcessor:
                 # If there are no additional tokens to load, skip process
                 return
 
-            # Get the list of WST tokens that need to be loaded
-            load_required_token_list: Sequence[Token] = (
-                await db_session.scalars(
-                    select(Token).where(
-                        Token.ibet_wst_address.in_(load_required_address_list),
-                    )
-                )
-            ).all()
-            for _token in load_required_token_list:
-                self.wst_list[_token.ibet_wst_address] = BridgeEventViewer(_token)
+            for _token in load_target_tokens:
+                wst_address = _token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+                if wst_address is None:
+                    continue
+                if wst_address not in load_required_address_list:
+                    continue
+                self.wst_list[wst_address] = BridgeEventViewer(_token)
         except Exception:
             await db_session.rollback()
             raise
@@ -428,7 +430,7 @@ class WSTBridgeMonitoringProcessor:
                 # Issue mintWithAuthorization transaction for IbetWST
                 try:
                     # Get the IbetWST contract
-                    wst_contract = IbetWST(wst_address)
+                    wst_contract = EthereumIbetWST(wst_address)
                     # Generate nonce
                     nonce = secrets.token_bytes(32)
                     # Get domain separator
@@ -491,8 +493,8 @@ class WSTBridgeMonitoringProcessor:
                 bridge_tx = EthToIbetBridgeTx()
                 bridge_tx.tx_id = tx_id
                 bridge_tx.token_address = bridge_event_viewer.ibet_token_address
-                bridge_tx.tx_type = EthToIbetBridgeTxType.FORCE_UNLOCK
-                bridge_tx.status = EthToIbetBridgeTxStatus.PENDING
+                bridge_tx.tx_type = ToIbetBridgeTxType.FORCE_UNLOCK
+                bridge_tx.status = ToIbetBridgeTxStatus.PENDING
                 bridge_tx.tx_params = IbetBridgeTxParamsForceUnlock(
                     lock_address=bridge_event_viewer.issuer_address,
                     account_address=args["from"],
@@ -525,8 +527,8 @@ class WSTBridgeMonitoringProcessor:
                 bridge_tx = EthToIbetBridgeTx()
                 bridge_tx.tx_id = tx_id
                 bridge_tx.token_address = bridge_event_viewer.ibet_token_address
-                bridge_tx.tx_type = EthToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
-                bridge_tx.status = EthToIbetBridgeTxStatus.PENDING
+                bridge_tx.tx_type = ToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
+                bridge_tx.status = ToIbetBridgeTxStatus.PENDING
                 bridge_tx.tx_params = IbetBridgeTxParamsForceChangeLockedAccount(
                     lock_address=bridge_event_viewer.issuer_address,
                     before_account_address=args["from"],
@@ -540,7 +542,7 @@ class WSTBridgeMonitoringProcessor:
 
 async def main():
     LOG.info("Service started successfully")
-    bridge_processor = WSTBridgeMonitoringProcessor()
+    bridge_processor = EthWSTBridgeMonitoringProcessor()
 
     while True:
         try:

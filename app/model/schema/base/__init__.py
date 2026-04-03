@@ -25,6 +25,7 @@ from .base import (
     IbetShareContractVersion,
     IbetStraightBond,
     IbetStraightBondContractVersion,
+    IbetWSTBlockchain,
     KeyManagerType,
     MMDD_constr,
     ResultSet,
