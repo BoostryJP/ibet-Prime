@@ -34,6 +34,7 @@ from app.model.db import (
     AuthToken,
     AvaIbetWSTTx,
     EthIbetWSTTx,
+    IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
     Token,
@@ -318,6 +319,80 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "initial_owner": _issuer_address,
         }
         assert ava_ibet_wst_tx.tx_sender == "0x1234567890123456789012345678901234567891"
+
+    # <Normal_1_4>
+    # Activate another blockchain without overwriting existing WST metadata
+    @pytest.mark.asyncio
+    async def test_normal_1_4(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
+        _keyfile = test_account["keyfile_json"]
+
+        token_contract = await deploy_share_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
+
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_activated("ethereum", True)
+        token.ibet_wst_version = IbetWSTVersion.V_1
+        token.ibet_wst_name = "existing_wst_name"
+        token.ibet_wst_tx_id = "00000000-0000-0000-0000-000000000001"
+        async_db.add(token)
+
+        await async_db.commit()
+
+        req_param = {
+            "activate_ibet_wst": True,
+            "ibet_wst_blockchains": ["avalanche"],
+            "ibet_wst_name": "new_wst_name_should_not_overwrite",
+        }
+        resp = await async_client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        assert resp.status_code == 200
+
+        token_af = (
+            await async_db.scalars(
+                select(Token).where(Token.token_address == _token_address).limit(1)
+            )
+        ).first()
+        assert token_af.is_ibet_wst_activated("ethereum") is True
+        assert token_af.is_ibet_wst_activated("avalanche") is True
+        assert token_af.ibet_wst_version == IbetWSTVersion.V_1
+        assert token_af.ibet_wst_name == "existing_wst_name"
+
+        ava_ibet_wst_tx: AvaIbetWSTTx = (
+            await async_db.scalars(select(AvaIbetWSTTx).limit(1))
+        ).first()
+        assert ava_ibet_wst_tx.tx_type == IbetWSTTxType.DEPLOY
+        assert ava_ibet_wst_tx.tx_params == {
+            "name": "new_wst_name_should_not_overwrite",
+            "initial_owner": _issuer_address,
+        }
 
     # <Normal_2>
     # No request parameters
@@ -1511,3 +1586,75 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                 }
             ],
         }
+
+    # <Error_20>
+    # IbetWST activation in progress
+    @pytest.mark.asyncio
+    async def test_error_20(self, async_client, async_db):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
+        _keyfile = test_account["keyfile_json"]
+
+        token_contract = await deploy_share_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
+
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.ibet_wst_tx_id = "00000000-0000-0000-0000-000000000001"
+        async_db.add(token)
+
+        eth_ibet_wst_tx = EthIbetWSTTx()
+        eth_ibet_wst_tx.tx_id = "00000000-0000-0000-0000-000000000001"
+        eth_ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+        eth_ibet_wst_tx.version = IbetWSTVersion.V_1
+        eth_ibet_wst_tx.status = IbetWSTTxStatus.SENT
+        eth_ibet_wst_tx.tx_params = {
+            "name": "ibet_wst_name_test",
+            "initial_owner": _issuer_address,
+        }
+        eth_ibet_wst_tx.tx_sender = "0x1234567890123456789012345678901234567890"
+        eth_ibet_wst_tx.finalized = False  # set False to simulate "in progress"
+        async_db.add(eth_ibet_wst_tx)
+
+        await async_db.commit()
+
+        req_param = {
+            "activate_ibet_wst": True,
+            "ibet_wst_blockchains": ["avalanche"],
+            "ibet_wst_name": "ibet_wst_name_test2",
+        }
+        resp = await async_client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 102, "title": "OperationNotAllowedStateError"},
+            "detail": "IbetWST activation is in progress",
+        }
+
+        ava_ibet_wst_tx = (await async_db.scalars(select(AvaIbetWSTTx))).all()
+        assert len(ava_ibet_wst_tx) == 0

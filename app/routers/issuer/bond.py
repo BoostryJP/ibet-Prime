@@ -217,6 +217,64 @@ def _resolve_ibet_wst_blockchains(
     )
 
 
+async def _is_ibet_wst_deploy_in_progress(
+    db: DBAsyncSession, tx_id: str | None
+) -> bool:
+    """
+    Check if there is an in-progress IbetWST deployment transaction with the given tx_id
+    """
+
+    if tx_id is None:
+        return False
+
+    # Check Ethereum IbetWST deployment transaction
+    in_progress_cond = or_(
+        EthIbetWSTTx.status.in_([IbetWSTTxStatus.PENDING, IbetWSTTxStatus.SENT]),
+        and_(
+            EthIbetWSTTx.status == IbetWSTTxStatus.SUCCEEDED,
+            EthIbetWSTTx.finalized.is_not(True),
+        ),
+    )
+    eth_deploy_tx = (
+        await db.scalars(
+            select(EthIbetWSTTx)
+            .where(
+                and_(
+                    EthIbetWSTTx.tx_id == tx_id,
+                    EthIbetWSTTx.tx_type == IbetWSTTxType.DEPLOY,
+                    in_progress_cond,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    if eth_deploy_tx is not None:
+        return True
+
+    # Check Avalanche IbetWST deployment transaction
+    in_progress_cond = or_(
+        AvaIbetWSTTx.status.in_([IbetWSTTxStatus.PENDING, IbetWSTTxStatus.SENT]),
+        and_(
+            AvaIbetWSTTx.status == IbetWSTTxStatus.SUCCEEDED,
+            AvaIbetWSTTx.finalized.is_not(True),
+        ),
+    )
+    ava_deploy_tx = (
+        await db.scalars(
+            select(AvaIbetWSTTx)
+            .where(
+                and_(
+                    AvaIbetWSTTx.tx_id == tx_id,
+                    AvaIbetWSTTx.tx_type == IbetWSTTxType.DEPLOY,
+                    in_progress_cond,
+                )
+            )
+            .limit(1)
+        )
+    ).first()
+    return ava_deploy_tx is not None
+
+
 # POST: /bond/tokens
 @router.post(
     "/tokens",
@@ -723,10 +781,27 @@ async def update_bond_token(
             if not _token.is_ibet_wst_activated(blockchain)
         ]
         if len(activate_blockchains) > 0:
+            # Check if there is an in-progress IbetWST deployment transaction.
+            # If there is, reject the request to prevent conflicts.
+            if await _is_ibet_wst_deploy_in_progress(db, _token.ibet_wst_tx_id):
+                raise OperationNotAllowedStateError(
+                    102,
+                    "IbetWST activation is in progress",
+                )
+
+            # Activate IbetWST on requested blockchains.
+            already_activated = any(
+                _token.is_ibet_wst_activated(blockchain)
+                for blockchain in IbetWSTBlockchain
+            )
             for blockchain in activate_blockchains:
                 _token.set_ibet_wst_activated(blockchain, True)
-            _token.ibet_wst_version = IbetWSTVersion.V_1
-            _token.ibet_wst_name = update_data.ibet_wst_name
+
+            # Check if IbetWST is already activated on any blockchain.
+            # If not, set the IbetWST version and name.
+            if not already_activated:
+                _token.ibet_wst_version = IbetWSTVersion.V_1
+                _token.ibet_wst_name = update_data.ibet_wst_name
 
             tx_id = str(uuid.uuid4())
             _token.ibet_wst_tx_id = tx_id
