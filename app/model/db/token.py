@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import IntEnum, StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -64,7 +65,7 @@ class Token(Base):
     # contract version
     version: Mapped[TokenVersion] = mapped_column(String(5), nullable=False)
     # contract ABI
-    abi: Mapped[dict] = mapped_column(JSON, nullable=False)
+    abi: Mapped[Any] = mapped_column(JSON, nullable=False)
     # token processing status (pending:0, succeeded:1, failed:2)
     token_status: Mapped[TokenStatus | None] = mapped_column(
         Integer, default=TokenStatus.SUCCEEDED
@@ -109,7 +110,7 @@ class TokenCache(Base):
     # token address
     token_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # token attributes
-    attributes: Mapped[dict] = mapped_column(JSON, nullable=False)
+    attributes: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # cached datetime
     cached_datetime: Mapped[datetime | None] = mapped_column(
         DateTime, default=naive_utcnow

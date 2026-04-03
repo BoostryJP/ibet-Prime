@@ -1,20 +1,33 @@
 {
+    "include": [
+        "config.py",
+        "app/main.py",
+        "app/database.py",
+        "app/exceptions.py",
+        "app/log.py",
+        "app/utils",
+        "tests/conftest.py",
+        "tests/app/utils",
+        "tests/app/test_docs_GET.py",
+        "tests/app/test_e2ee_GetE2EEncryptionKey.py",
+        "tests/app/test_sealed_tx_*.py",
+        "tests/app/test_ledger_*.py",
+        "tests/batch/test_indexer_token_cache.py",
+        "tests/batch/test_processor_create_ledger.py"
+    ],
     "exclude": [
         "**/node_modules",
         "**/__pycache__",
         "**/.*",
         ".venv",
         "__pycache__/",
-        "app/",
         "batch/",
         "cmd/",
-        "config.py",
         "docs/",
         "eth_config.py",
         "migrations/",
         "run.py",
-        "server.py",
-        "tests/",
+        "server.py"
     ],
     "typeCheckingMode": "strict"
 }

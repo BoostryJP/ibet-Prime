@@ -17,15 +17,19 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from collections.abc import Callable
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, List, Type, Union
+from typing import Any, TypeAlias, Union
 
+from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field, create_model
-from typing_extensions import get_type_hints
+from typing_extensions import TypeGuard, get_type_hints
 
 from app.exceptions import AppError
+
+OpenAPISchema: TypeAlias = dict[str, object]
 
 
 class MetaModel(BaseModel):
@@ -92,14 +96,14 @@ class Error422MetaModel(MetaModel):
 
 
 class Error422DetailModel(BaseModel):
-    loc: List[str] = Field(..., examples=[["header", "issuer-address"]])
+    loc: list[str] = Field(..., examples=[["header", "issuer-address"]])
     msg: str = Field(..., examples=["field required"])
     type: str = Field(..., examples=["value_error.missing"])
 
 
 class Error422Model(BaseModel):
     meta: Error422MetaModel
-    detail: List[Error422DetailModel]
+    detail: list[Error422DetailModel]
 
 
 class Error503MetaModel(MetaModel):
@@ -126,7 +130,7 @@ DEFAULT_RESPONSE: dict[int, dict[str, str | type[BaseModel]]] = {
 
 
 @lru_cache(None)
-def create_error_model(app_error: Type[AppError]):
+def create_error_model(app_error: type[AppError]) -> type[BaseModel]:
     """
     This function creates Pydantic Model from AppError.
     * create_model() generates a different model each time when called,
@@ -173,8 +177,8 @@ def create_error_model(app_error: Type[AppError]):
 
 
 def get_routers_responses(
-    *args: Type[AppError] | int,
-) -> Dict[int | str, Dict[str, Any]] | None:
+    *args: type[AppError] | int,
+) -> dict[int | str, dict[str, Any]] | None:
     """
     This function returns responses dictionary to be used for openapi document.
     Supposed to be used in router decorator.
@@ -194,7 +198,7 @@ def get_routers_responses(
                 error_model = default_response["model"]
                 responses_per_status_code[arg].append(error_model)
 
-    responses: Dict[int | str, Dict[str, Any]] = {}
+    responses: dict[int | str, dict[str, Any]] = {}
     for status_code, error_models in responses_per_status_code.items():
         if len(error_models) > 0:
             default_response = DEFAULT_RESPONSE.get(status_code)
@@ -208,11 +212,11 @@ def get_routers_responses(
     return responses
 
 
-def custom_openapi(app):
-    def openapi():
-        openapi_schema = app.openapi_schema
-        if openapi_schema is None:
-            openapi_schema = get_openapi(
+def custom_openapi(app: FastAPI) -> Callable[[], OpenAPISchema]:
+    def openapi() -> OpenAPISchema:
+        openapi_schema_raw = app.openapi_schema
+        if openapi_schema_raw is None:
+            openapi_schema_raw = get_openapi(
                 title=app.title,
                 version=app.version,
                 openapi_version=app.openapi_version,
@@ -221,10 +225,23 @@ def custom_openapi(app):
                 tags=app.openapi_tags,
                 servers=app.servers,
             )
+        openapi_schema: OpenAPISchema = openapi_schema_raw
 
-        def _get(src: dict, *keys):
-            tmp_src = src
+        def _is_schema(value: object) -> TypeGuard[OpenAPISchema]:
+            return isinstance(value, dict)
+
+        def _is_list(value: object) -> TypeGuard[list[object]]:
+            return isinstance(value, list)
+
+        def _schema_ref_key(value: OpenAPISchema) -> str:
+            ref = value.get("$ref")
+            return ref if isinstance(ref, str) else ""
+
+        def _get(src: OpenAPISchema, *keys: str) -> object | None:
+            tmp_src: object = src
             for key in keys:
+                if not _is_schema(tmp_src):
+                    return None
                 tmp_src = tmp_src.get(key)
                 if tmp_src is None:
                     return None
@@ -232,43 +249,54 @@ def custom_openapi(app):
 
         # Remove UI routes (block_explorer_ui) from OpenAPI docs
         paths = _get(openapi_schema, "paths")
-        if paths is not None:
+        if _is_schema(paths):
             remove_prefix = "/blockchain_explorer/ui"
             for p in list(paths.keys()):
                 if p.startswith(remove_prefix):
                     paths.pop(p, None)
 
         # Modify responses
-        if paths is not None:
+        if _is_schema(paths):
             for path_info in paths.values():
+                if not _is_schema(path_info):
+                    continue
                 for router in path_info.values():
+                    if not _is_schema(router):
+                        continue
                     # Remove Default Validation Error Response Structure
                     # NOTE:
                     # HTTPValidationError is automatically added to APIs docs that have path, header, query,
                     # and body parameters.
                     # But HTTPValidationError does not have 'meta',
                     # and some APIs do not generate a Validation Error(API with no-required string parameter only, etc).
-                    resp_422 = _get(router, "responses", "422")
-                    if resp_422 is not None:
-                        ref = _get(
-                            resp_422, "content", "application/json", "schema", "$ref"
-                        )
-                        if ref == "#/components/schemas/HTTPValidationError":
-                            router["responses"].pop("422")
-
-                    # Remove empty response's contents
                     responses = _get(router, "responses")
-                    if responses is not None:
-                        for resp in responses.values():
-                            schema = _get(resp, "content", "application/json", "schema")
-                            if schema == {}:
-                                resp.pop("content")
-                            any_of = (
-                                _get(schema, "anyOf") if schema is not None else None
+                    if _is_schema(responses):
+                        resp_422 = responses.get("422")
+                        if _is_schema(resp_422):
+                            ref = _get(
+                                resp_422,
+                                "content",
+                                "application/json",
+                                "schema",
+                                "$ref",
                             )
-                            if schema is not None and any_of is not None:
+                            if ref == "#/components/schemas/HTTPValidationError":
+                                responses.pop("422", None)
+
+                        # Remove empty response's contents
+                        for resp in responses.values():
+                            if not _is_schema(resp):
+                                continue
+                            schema = _get(resp, "content", "application/json", "schema")
+                            if _is_schema(schema) and len(schema) == 0:
+                                resp.pop("content", None)
+                            any_of = (
+                                _get(schema, "anyOf") if _is_schema(schema) else None
+                            )
+                            if _is_schema(schema) and _is_list(any_of):
                                 schema["anyOf"] = sorted(
-                                    any_of, key=lambda x: x["$ref"]
+                                    [item for item in any_of if _is_schema(item)],
+                                    key=_schema_ref_key,
                                 )
 
         return openapi_schema

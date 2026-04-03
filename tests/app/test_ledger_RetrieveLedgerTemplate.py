@@ -18,12 +18,15 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     LedgerDataType,
     LedgerDetailsTemplate,
     LedgerTemplate,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -32,7 +35,7 @@ from tests.account_config import default_eth_account
 
 class TestRetrieveLedgerTemplate:
     # target API endpoint
-    base_url = "/ledger/{token_address}/template"
+    base_url: str = "/ledger/{token_address}/template"
 
     ###########################################################################
     # Normal Case
@@ -41,7 +44,9 @@ class TestRetrieveLedgerTemplate:
     # <Normal_1_1>
     # set isuer-address
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -99,7 +104,7 @@ class TestRetrieveLedgerTemplate:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -120,7 +125,7 @@ class TestRetrieveLedgerTemplate:
             },
             {"f-test3": "a", "f-test4": "b"},
         ]
-        _details_2.data_type = LedgerDataType.DB.value
+        _details_2.data_type = LedgerDataType.DB
         _details_2.data_source = "data_id_2"
         async_db.add(_details_2)
 
@@ -207,7 +212,9 @@ class TestRetrieveLedgerTemplate:
     # <Normal_1_2>
     # set isuer-address
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -265,7 +272,7 @@ class TestRetrieveLedgerTemplate:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -286,7 +293,7 @@ class TestRetrieveLedgerTemplate:
             },
             {"f-test3": "a", "f-test4": "b"},
         ]
-        _details_2.data_type = LedgerDataType.DB.value
+        _details_2.data_type = LedgerDataType.DB
         _details_2.data_source = "data_id_2"
         async_db.add(_details_2)
 
@@ -370,7 +377,9 @@ class TestRetrieveLedgerTemplate:
     # <Normal_2>
     # All optional items are None
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -398,7 +407,7 @@ class TestRetrieveLedgerTemplate:
         _details_1.token_detail_type = "権利_test_1"
         _details_1.headers = None  # optional
         _details_1.footers = None  # optional
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = None  # optional
         async_db.add(_details_1)
 
@@ -438,7 +447,9 @@ class TestRetrieveLedgerTemplate:
     # <Error_1>
     # Parameter Error(issuer-address)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -467,7 +478,9 @@ class TestRetrieveLedgerTemplate:
     # Token Not Found
     # set issuer-address
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -481,7 +494,7 @@ class TestRetrieveLedgerTemplate:
         )
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 2
+        _token.token_status = TokenStatus.FAILED
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -506,7 +519,9 @@ class TestRetrieveLedgerTemplate:
     # Token Not Found
     # unset issuer-address
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -524,7 +539,9 @@ class TestRetrieveLedgerTemplate:
     # <Error_3>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -536,7 +553,7 @@ class TestRetrieveLedgerTemplate:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -560,7 +577,9 @@ class TestRetrieveLedgerTemplate:
     # <Error_4>
     # Ledger Template Not Found
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"

@@ -18,17 +18,24 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import sys
+from typing import TypedDict, cast
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
+from app.model.db import LedgerDetailsData, Token, TokenStatus, TokenType, TokenVersion
 from tests.account_config import default_eth_account
+
+
+class CreateLedgerDetailsDataResponse(TypedDict):
+    data_id: str
 
 
 class TestCreateLedgerDetailsData:
     # target API endpoint
-    base_url = "/ledger/{token_address}/details_data"
+    base_url: str = "/ledger/{token_address}/details_data"
 
     ###########################################################################
     # Normal Case
@@ -36,7 +43,9 @@ class TestCreateLedgerDetailsData:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -79,10 +88,11 @@ class TestCreateLedgerDetailsData:
                 "issuer-address": issuer_address,
             },
         )
+        body = cast(CreateLedgerDetailsDataResponse, resp.json())
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json()["data_id"] is not None
+        assert body["data_id"] is not None
         _details_data_list = (
             await async_db.scalars(
                 select(LedgerDetailsData).order_by(LedgerDetailsData.id)
@@ -91,7 +101,7 @@ class TestCreateLedgerDetailsData:
         assert len(_details_data_list) == 2
         _details_data = _details_data_list[0]
         assert _details_data.id == 1
-        assert _details_data.data_id == resp.json()["data_id"]
+        assert _details_data.data_id == body["data_id"]
         assert _details_data.name == "name_test_1"
         assert _details_data.address == "address_test_1"
         assert _details_data.amount == 100
@@ -100,7 +110,7 @@ class TestCreateLedgerDetailsData:
         assert _details_data.acquisition_date == "2020/01/01"
         _details_data = _details_data_list[1]
         assert _details_data.id == 2
-        assert _details_data.data_id == resp.json()["data_id"]
+        assert _details_data.data_id == body["data_id"]
         assert _details_data.name == "name_test_2"
         assert _details_data.address == "address_test_2"
         assert _details_data.amount == 10
@@ -111,7 +121,9 @@ class TestCreateLedgerDetailsData:
     # <Normal_2>
     # Max value
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -146,10 +158,11 @@ class TestCreateLedgerDetailsData:
                 "issuer-address": issuer_address,
             },
         )
+        body = cast(CreateLedgerDetailsDataResponse, resp.json())
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json()["data_id"] is not None
+        assert body["data_id"] is not None
 
         _details_data_list = (
             await async_db.scalars(
@@ -160,7 +173,7 @@ class TestCreateLedgerDetailsData:
 
         _details_data = _details_data_list[0]
         assert _details_data.id == 1
-        assert _details_data.data_id == resp.json()["data_id"]
+        assert _details_data.data_id == body["data_id"]
         assert _details_data.name == "name_test_1"
         assert _details_data.address == "address_test_1"
         assert _details_data.amount == 1_000_000_000_000
@@ -175,7 +188,9 @@ class TestCreateLedgerDetailsData:
     # <Error_1>
     # Parameter Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -206,7 +221,9 @@ class TestCreateLedgerDetailsData:
     # <Error_2>
     # Parameter Error(issuer-address)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -253,7 +270,9 @@ class TestCreateLedgerDetailsData:
     # <Error_3>
     # Parameter Error(body request)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -370,7 +389,9 @@ class TestCreateLedgerDetailsData:
     # <Error_4>
     # Token Not Found
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -412,7 +433,9 @@ class TestCreateLedgerDetailsData:
     # <Error_5>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -424,7 +447,7 @@ class TestCreateLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 

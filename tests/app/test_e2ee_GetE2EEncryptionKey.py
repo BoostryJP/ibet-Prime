@@ -17,12 +17,20 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import TypedDict, cast
+
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class E2EEPublicKeyResponse(TypedDict):
+    public_key: str
 
 
 class TestGetE2EEncryptionKey:
     # target API endpoint
-    apiurl = "/e2ee"
+    apiurl: str = "/e2ee"
 
     ###########################################################################
     # Normal Case
@@ -30,13 +38,16 @@ class TestGetE2EEncryptionKey:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # request target api
         resp = await async_client.get(self.apiurl)
+        body = cast(E2EEPublicKeyResponse, resp.json())
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {
+        assert body == {
             "public_key": "-----BEGIN PUBLIC KEY-----\n"
             "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuJ52ArJ9eEGjJdhUHE4c\n"
             "jekmlfNYztqPWMMj/JtfCMR/B0BOqWdrwOQ4eNTv0IgW+5pGPszD8KSctCI1vy47\n"

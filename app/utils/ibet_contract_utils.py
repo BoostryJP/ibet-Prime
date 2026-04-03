@@ -18,10 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-from typing import Tuple, Type, TypeVar
+from typing import Any, TypeAlias, cast
 
 from eth_typing import HexStr
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from hexbytes import HexBytes
 from sqlalchemy import AsyncAdaptedQueuePool, create_engine, select
 from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -35,7 +36,7 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
-from web3.types import TxData, TxReceipt
+from web3.types import TxData, TxParams, TxReceipt
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
@@ -45,18 +46,30 @@ from config import ASYNC_DATABASE_URL, CHAIN_ID, DATABASE_URL, TX_GAS_LIMIT
 web3 = Web3Wrapper()
 async_web3 = AsyncWeb3Wrapper()
 
+ContractArtifact: TypeAlias = dict[str, Any]
+EventArgumentFilters: TypeAlias = dict[str, Any] | None
+TransactionHashInput: TypeAlias = str | HexStr | HexBytes
+
+
+def _as_hex_str(tx_hash: TransactionHashInput) -> HexStr:
+    if isinstance(tx_hash, HexBytes):
+        return HexStr(tx_hash.to_0x_hex())
+    return HexStr(tx_hash)
+
 
 class ContractUtils:
-    factory_map: dict[str, Type[Contract]] = {}
+    factory_map: dict[str, type[Contract]] = {}
 
     @staticmethod
-    def get_contract_code(contract_name: str):
+    def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
         """Get contract code
 
         :param contract_name: contract name
         :return: ABI, bytecode, deployedBytecode
         """
-        contract_json = json.load(open(f"contracts/ibet/{contract_name}.json", "r"))
+        contract_json: ContractArtifact = json.load(
+            open(f"contracts/ibet/{contract_name}.json", "r")
+        )
 
         if "bytecode" not in contract_json.keys():
             contract_json["bytecode"] = None
@@ -70,8 +83,11 @@ class ContractUtils:
 
     @staticmethod
     def deploy_contract(
-        contract_name: str, args: list, deployer: str, private_key: bytes
-    ) -> Tuple[str, dict, str]:
+        contract_name: str,
+        args: list[Any],
+        deployer: str,
+        private_key: bytes,
+    ) -> tuple[str, Any, str]:
         """Deploy contract
 
         :param contract_name: contract name
@@ -82,7 +98,7 @@ class ContractUtils:
         """
         contract_file = f"contracts/ibet/{contract_name}.json"
         try:
-            contract_json = json.load(open(contract_file, "r"))
+            contract_json: ContractArtifact = json.load(open(contract_file, "r"))
         except FileNotFoundError as file_not_found_err:
             raise SendTransactionError(file_not_found_err)
 
@@ -112,16 +128,16 @@ class ContractUtils:
         except Exception as error:
             raise SendTransactionError(error)
 
-        contract_address = None
-        if tx_receipt is not None:
-            # Check if contract address is registered from transaction receipt result.
-            if "contractAddress" in tx_receipt.keys():
-                contract_address = tx_receipt["contractAddress"]
+        contract_address = tx_receipt.get("contractAddress")
+        if contract_address is None:
+            raise SendTransactionError(
+                "Contract address not found in transaction receipt"
+            )
 
-        return contract_address, contract_json["abi"], tx_hash
+        return cast(str, contract_address), contract_json["abi"], tx_hash
 
     @classmethod
-    def get_contract(cls, contract_name: str, contract_address: str):
+    def get_contract(cls, contract_name: str, contract_address: str) -> Contract:
         """Get contract
 
         :param contract_name: contract name
@@ -133,16 +149,17 @@ class ContractUtils:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/ibet/{contract_name}.json"
-        contract_json = json.load(open(contract_file, "r"))
+        contract_json: ContractArtifact = json.load(open(contract_file, "r"))
         contract_factory = web3.eth.contract(abi=contract_json["abi"])
         cls.factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
-    T = TypeVar("T")
-
     @staticmethod
-    def call_function(
-        contract: Contract, function_name: str, args: tuple, default_returns: T = None
+    def call_function[T](
+        contract: Contract,
+        function_name: str,
+        args: tuple[Any, ...],
+        default_returns: T = None,
     ) -> T:
         """Call contract function
 
@@ -168,9 +185,14 @@ class ContractUtils:
         return result
 
     @staticmethod
-    def send_transaction(transaction: dict, private_key: bytes):
+    def send_transaction(
+        transaction: TxParams, private_key: bytes
+    ) -> tuple[str, TxReceipt]:
         """Send transaction"""
-        _tx_from = transaction["from"]
+        tx_from_value = transaction.get("from")
+        if tx_from_value is None:
+            raise SendTransactionError("Transaction sender is required")
+        tx_from = to_checksum_address(cast(str, tx_from_value))
 
         # local database session
         DB_URI = DATABASE_URL
@@ -188,7 +210,7 @@ class ContractUtils:
         try:
             _tm = local_session.scalars(
                 select(TransactionLock)
-                .where(TransactionLock.tx_from == _tx_from)
+                .where(TransactionLock.tx_from == tx_from)
                 .limit(1)
                 .with_for_update()
             ).first()
@@ -199,7 +221,7 @@ class ContractUtils:
 
         try:
             # Get nonce
-            nonce = web3.eth.get_transaction_count(_tx_from)
+            nonce = web3.eth.get_transaction_count(tx_from)
             transaction["nonce"] = nonce
             signed_tx = web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
@@ -224,20 +246,26 @@ class ContractUtils:
         return tx_hash.to_0x_hex(), tx_receipt
 
     @staticmethod
-    def inspect_tx_failure(tx_hash: str) -> str:
-        tx = web3.eth.get_transaction(tx_hash)
+    def inspect_tx_failure(tx_hash: TransactionHashInput) -> str:
+        tx = web3.eth.get_transaction(_as_hex_str(tx_hash))
 
         # build a new transaction to replay:
-        replay_tx = {
-            "to": tx.get("to"),
-            "from": tx.get("from"),
-            "value": tx.get("value"),
-            "data": tx.get("input"),
-        }
+        replay_tx = cast(
+            TxParams,
+            {
+                "to": tx.get("to"),
+                "from": tx.get("from"),
+                "value": tx.get("value"),
+                "data": tx.get("input"),
+            },
+        )
+        block_number = tx.get("blockNumber")
+        if block_number is None:
+            raise SendTransactionError("Transaction has not been mined yet")
 
         # replay the transaction locally:
         try:
-            web3.eth.call(replay_tx, tx.blockNumber - 1)
+            web3.eth.call(replay_tx, block_number - 1)
         except ContractLogicError as e:
             if len(e.args) == 0:
                 return str(e)
@@ -251,34 +279,37 @@ class ContractUtils:
         raise Exception("Inspecting transaction revert is failed.")
 
     @staticmethod
-    def get_block_by_transaction_hash(tx_hash: str):
+    def get_block_by_transaction_hash(tx_hash: TransactionHashInput):
         """Get block by transaction hash
 
         :param tx_hash: transaction hash
         :return: block
         """
-        tx = web3.eth.get_transaction(tx_hash)
-        block = web3.eth.get_block(tx["blockNumber"])
+        tx = web3.eth.get_transaction(_as_hex_str(tx_hash))
+        block_number = tx.get("blockNumber")
+        if block_number is None:
+            raise SendTransactionError("Transaction has not been mined yet")
+        block = web3.eth.get_block(block_number)
         return block
 
     @staticmethod
-    def get_transaction(tx_hash: str) -> TxData:
+    def get_transaction(tx_hash: TransactionHashInput) -> TxData:
         """Get transaction by hash
 
         :param tx_hash: Transaction hash
         :return: Transaction details
         """
-        tx = web3.eth.get_transaction(tx_hash)
+        tx = web3.eth.get_transaction(_as_hex_str(tx_hash))
         return tx
 
     @staticmethod
     def get_event_logs(
         contract: Contract,
         event: str,
-        block_from: int = None,
-        block_to: int = None,
-        argument_filters: dict = None,
-    ):
+        block_from: int | None = None,
+        block_to: int | None = None,
+        argument_filters: EventArgumentFilters = None,
+    ) -> list[Any]:
         """Get contract event logs
 
         :param contract: Contract
@@ -290,15 +321,18 @@ class ContractUtils:
         """
         try:
             _event = getattr(contract.events, event)
-            result = _event.get_logs(
-                from_block=block_from,
-                to_block=block_to,
-                argument_filters=argument_filters,
-            )
+            get_logs_kwargs: dict[str, Any] = {}
+            if block_from is not None:
+                get_logs_kwargs["from_block"] = block_from
+            if block_to is not None:
+                get_logs_kwargs["to_block"] = block_to
+            if argument_filters is not None:
+                get_logs_kwargs["argument_filters"] = argument_filters
+            result = _event.get_logs(**get_logs_kwargs)
         except ABIEventNotFound:
             return []
 
-        return result
+        return cast(list[Any], result)
 
 
 class AsyncContractEventsView:
@@ -316,16 +350,18 @@ class AsyncContractEventsView:
 
 
 class AsyncContractUtils:
-    factory_map: dict[str, Type[AsyncContract]] = {}
+    factory_map: dict[str, type[AsyncContract]] = {}
 
     @staticmethod
-    def get_contract_code(contract_name: str):
+    def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
         """Get contract code
 
         :param contract_name: contract name
         :return: ABI, bytecode, deployedBytecode
         """
-        contract_json = json.load(open(f"contracts/ibet/{contract_name}.json", "r"))
+        contract_json: ContractArtifact = json.load(
+            open(f"contracts/ibet/{contract_name}.json", "r")
+        )
 
         if "bytecode" not in contract_json.keys():
             contract_json["bytecode"] = None
@@ -339,8 +375,11 @@ class AsyncContractUtils:
 
     @staticmethod
     async def deploy_contract(
-        contract_name: str, args: list, deployer: str, private_key: bytes
-    ) -> Tuple[str, dict, str]:
+        contract_name: str,
+        args: list[Any],
+        deployer: str,
+        private_key: bytes,
+    ) -> tuple[str, Any, str]:
         """Deploy contract
 
         :param contract_name: contract name
@@ -351,7 +390,7 @@ class AsyncContractUtils:
         """
         contract_file = f"contracts/ibet/{contract_name}.json"
         try:
-            contract_json = json.load(open(contract_file, "r"))
+            contract_json: ContractArtifact = json.load(open(contract_file, "r"))
         except FileNotFoundError as file_not_found_err:
             raise SendTransactionError(file_not_found_err)
 
@@ -381,16 +420,16 @@ class AsyncContractUtils:
         except Exception as error:
             raise SendTransactionError(error)
 
-        contract_address = None
-        if tx_receipt is not None:
-            # Check if contract address is registered from transaction receipt result.
-            if "contractAddress" in tx_receipt.keys():
-                contract_address = tx_receipt["contractAddress"]
+        contract_address = tx_receipt.get("contractAddress")
+        if contract_address is None:
+            raise SendTransactionError(
+                "Contract address not found in transaction receipt"
+            )
 
-        return contract_address, contract_json["abi"], tx_hash
+        return cast(str, contract_address), contract_json["abi"], tx_hash
 
     @classmethod
-    def get_contract(cls, contract_name: str, contract_address: str):
+    def get_contract(cls, contract_name: str, contract_address: str) -> AsyncContract:
         """Get contract
 
         :param contract_name: contract name
@@ -402,18 +441,16 @@ class AsyncContractUtils:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/ibet/{contract_name}.json"
-        contract_json = json.load(open(contract_file, "r"))
+        contract_json: ContractArtifact = json.load(open(contract_file, "r"))
         contract_factory = async_web3.eth.contract(abi=contract_json["abi"])
         cls.factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
-    T = TypeVar("T")
-
     @staticmethod
-    async def call_function(
+    async def call_function[T](
         contract: AsyncContract,
         function_name: str,
-        args: tuple,
+        args: tuple[Any, ...],
         default_returns: T = None,
     ) -> T:
         """Call contract function
@@ -440,9 +477,14 @@ class AsyncContractUtils:
         return result
 
     @staticmethod
-    async def send_transaction(transaction: dict, private_key: bytes):
+    async def send_transaction(
+        transaction: TxParams, private_key: bytes
+    ) -> tuple[str, TxReceipt]:
         """Send transaction"""
-        _tx_from = transaction["from"]
+        tx_from_value = transaction.get("from")
+        if tx_from_value is None:
+            raise SendTransactionError("Transaction sender is required")
+        tx_from = to_checksum_address(cast(str, tx_from_value))
 
         # local database session
         DB_URI = ASYNC_DATABASE_URL
@@ -466,7 +508,7 @@ class AsyncContractUtils:
             _tm = (
                 await local_session.scalars(
                     select(TransactionLock)
-                    .where(TransactionLock.tx_from == _tx_from)
+                    .where(TransactionLock.tx_from == tx_from)
                     .limit(1)
                     .with_for_update()
                 )
@@ -478,7 +520,7 @@ class AsyncContractUtils:
 
         try:
             # Get nonce
-            nonce = await async_web3.eth.get_transaction_count(_tx_from)
+            nonce = await async_web3.eth.get_transaction_count(tx_from)
             transaction["nonce"] = nonce
             signed_tx = async_web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
@@ -505,9 +547,14 @@ class AsyncContractUtils:
         return tx_hash.to_0x_hex(), tx_receipt
 
     @staticmethod
-    async def send_transaction_no_wait(transaction: dict, private_key: bytes):
+    async def send_transaction_no_wait(
+        transaction: TxParams, private_key: bytes
+    ) -> str:
         """Send transaction no wait"""
-        _tx_from = transaction["from"]
+        tx_from_value = transaction.get("from")
+        if tx_from_value is None:
+            raise SendTransactionError("Transaction sender is required")
+        tx_from = to_checksum_address(cast(str, tx_from_value))
 
         # local database session
         DB_URI = DATABASE_URL
@@ -530,7 +577,7 @@ class AsyncContractUtils:
             _tm = (
                 await local_session.scalars(
                     select(TransactionLock)
-                    .where(TransactionLock.tx_from == _tx_from)
+                    .where(TransactionLock.tx_from == tx_from)
                     .limit(1)
                     .with_for_update()
                 )
@@ -542,7 +589,7 @@ class AsyncContractUtils:
 
         try:
             # Get nonce
-            nonce = await async_web3.eth.get_transaction_count(_tx_from)
+            nonce = await async_web3.eth.get_transaction_count(tx_from)
             transaction["nonce"] = nonce
             signed_tx = async_web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
@@ -560,11 +607,13 @@ class AsyncContractUtils:
         return tx_hash.to_0x_hex()
 
     @staticmethod
-    async def wait_for_transaction_receipt(tx_hash: HexStr, timeout: int = 1):
+    async def wait_for_transaction_receipt(
+        tx_hash: TransactionHashInput, timeout: int = 1
+    ):
         """Wait for transaction receipt"""
         try:
             tx_receipt: TxReceipt = await async_web3.eth.wait_for_transaction_receipt(
-                transaction_hash=tx_hash, timeout=timeout
+                transaction_hash=_as_hex_str(tx_hash), timeout=timeout
             )
         except TimeExhausted:
             raise
@@ -572,20 +621,26 @@ class AsyncContractUtils:
         return tx_receipt
 
     @staticmethod
-    async def inspect_tx_failure(tx_hash: str) -> str:
-        tx = await async_web3.eth.get_transaction(tx_hash)
+    async def inspect_tx_failure(tx_hash: TransactionHashInput) -> str:
+        tx = await async_web3.eth.get_transaction(_as_hex_str(tx_hash))
 
         # build a new transaction to replay:
-        replay_tx = {
-            "to": tx.get("to"),
-            "from": tx.get("from"),
-            "value": tx.get("value"),
-            "data": tx.get("input"),
-        }
+        replay_tx = cast(
+            TxParams,
+            {
+                "to": tx.get("to"),
+                "from": tx.get("from"),
+                "value": tx.get("value"),
+                "data": tx.get("input"),
+            },
+        )
+        block_number = tx.get("blockNumber")
+        if block_number is None:
+            raise SendTransactionError("Transaction has not been mined yet")
 
         # replay the transaction locally:
         try:
-            await async_web3.eth.call(replay_tx, tx.blockNumber - 1)
+            await async_web3.eth.call(replay_tx, block_number - 1)
         except ContractLogicError as e:
             if len(e.args) == 0:
                 return str(e)
@@ -599,34 +654,37 @@ class AsyncContractUtils:
         raise Exception("Inspecting transaction revert is failed.")
 
     @staticmethod
-    async def get_block_by_transaction_hash(tx_hash: str):
+    async def get_block_by_transaction_hash(tx_hash: TransactionHashInput):
         """Get block by transaction hash
 
         :param tx_hash: transaction hash
         :return: block
         """
-        tx = await async_web3.eth.get_transaction(tx_hash)
-        block = await async_web3.eth.get_block(tx["blockNumber"])
+        tx = await async_web3.eth.get_transaction(_as_hex_str(tx_hash))
+        block_number = tx.get("blockNumber")
+        if block_number is None:
+            raise SendTransactionError("Transaction has not been mined yet")
+        block = await async_web3.eth.get_block(block_number)
         return block
 
     @staticmethod
-    async def get_transaction(tx_hash: str) -> TxData:
+    async def get_transaction(tx_hash: TransactionHashInput) -> TxData:
         """Get transaction by hash
 
         :param tx_hash: Transaction hash
         :return: Transaction details
         """
-        tx = await async_web3.eth.get_transaction(tx_hash)
+        tx = await async_web3.eth.get_transaction(_as_hex_str(tx_hash))
         return tx
 
     @staticmethod
     async def get_event_logs(
         contract: AsyncContract | AsyncContractEventsView,
         event: str,
-        block_from: int = None,
-        block_to: int = None,
-        argument_filters: dict = None,
-    ):
+        block_from: int | None = None,
+        block_to: int | None = None,
+        argument_filters: EventArgumentFilters = None,
+    ) -> list[Any]:
         """Get contract event logs
 
         :param contract: Contract
@@ -638,12 +696,15 @@ class AsyncContractUtils:
         """
         try:
             _event = getattr(contract.events, event)
-            result = await _event.get_logs(
-                from_block=block_from,
-                to_block=block_to,
-                argument_filters=argument_filters,
-            )
+            get_logs_kwargs: dict[str, Any] = {}
+            if block_from is not None:
+                get_logs_kwargs["from_block"] = block_from
+            if block_to is not None:
+                get_logs_kwargs["to_block"] = block_to
+            if argument_filters is not None:
+                get_logs_kwargs["argument_filters"] = argument_filters
+            result = await _event.get_logs(**get_logs_kwargs)
         except ABIEventNotFound:
             return []
 
-        return result
+        return cast(list[Any], result)

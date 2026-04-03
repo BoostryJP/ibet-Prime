@@ -18,13 +18,16 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     LedgerDataType,
     LedgerDetailsTemplate,
     LedgerTemplate,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -33,7 +36,7 @@ from tests.account_config import default_eth_account
 
 class TestDeleteLedgerTemplate:
     # target API endpoint
-    base_url = "/ledger/{token_address}/template"
+    base_url: str = "/ledger/{token_address}/template"
 
     ###########################################################################
     # Normal Case
@@ -41,7 +44,9 @@ class TestDeleteLedgerTemplate:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -99,7 +104,7 @@ class TestDeleteLedgerTemplate:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -120,7 +125,7 @@ class TestDeleteLedgerTemplate:
             },
             {"f-test3": "a", "f-test4": "b"},
         ]
-        _details_2.data_type = LedgerDataType.DB.value
+        _details_2.data_type = LedgerDataType.DB
         _details_2.data_source = "data_id_2"
         async_db.add(_details_2)
 
@@ -149,7 +154,9 @@ class TestDeleteLedgerTemplate:
     # <Error_1>
     # Parameter Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -174,7 +181,9 @@ class TestDeleteLedgerTemplate:
     # <Error_2>
     # Parameter Error(issuer-address)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -202,7 +211,9 @@ class TestDeleteLedgerTemplate:
     # <Error_3>
     # Token Not Found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -225,7 +236,9 @@ class TestDeleteLedgerTemplate:
     # <Error_4>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -237,7 +250,7 @@ class TestDeleteLedgerTemplate:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -261,7 +274,9 @@ class TestDeleteLedgerTemplate:
     # <Error_5>
     # Ledger Template Not Found
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"

@@ -18,25 +18,27 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json as j
+from collections.abc import Mapping
+from typing import Any
 
 from eth_account.datastructures import SignedMessage
 from eth_account.messages import encode_defunct
 from web3.auto import w3
 
 
-def _params_to_query_string(params):
-    kvs = []
-    for k, v in sorted(params.items()):
-        if type(v) == int:
-            v = str(v)
-        kvs.append(k + "=" + v)
+def _params_to_query_string(params: Mapping[str, str | int]) -> str:
+    kvs: list[str] = []
+    for key, value in sorted(params.items()):
+        kvs.append(f"{key}={value}")
 
     if len(kvs) == 0:
         return ""
     return "&".join(kvs)
 
 
-def _canonical_request(method, path, request_body, query_string):
+def _canonical_request(
+    method: str, path: str, request_body: str | None, query_string: str
+) -> str:
     if request_body is None:
         request_body = "{}"
 
@@ -51,8 +53,20 @@ def _canonical_request(method, path, request_body, query_string):
     return canonical_request
 
 
-def _generate_signature(private_key, **kwargs):
-    canonical_request = _canonical_request(**kwargs)
+def _generate_signature(
+    private_key: str,
+    *,
+    method: str,
+    path: str,
+    request_body: str | None,
+    query_string: str,
+) -> str:
+    canonical_request = _canonical_request(
+        method=method,
+        path=path,
+        request_body=request_body,
+        query_string=query_string,
+    )
     signable_message = encode_defunct(text=canonical_request)
     signed_message: SignedMessage = w3.eth.account.sign_message(
         signable_message, private_key=private_key
@@ -64,11 +78,11 @@ def generate_sealed_tx_signature(
     method: str,
     path: str,
     private_key: str,
-    params: dict | None = None,
-    json: dict | None = None,
-):
+    params: Mapping[str, str | int] | None = None,
+    json: dict[str, Any] | None = None,
+) -> str:
     query_string = ""
-    request_body = None
+    request_body: str | None = None
     if params is not None:
         query_string = _params_to_query_string(params)
     if json is not None:

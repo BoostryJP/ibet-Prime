@@ -22,11 +22,11 @@ import json
 import sys
 import threading
 from json import JSONDecodeError
-from typing import Any, Type, TypeVar
+from typing import Any, TypeAlias, cast
 
 from aiohttp import ClientError
-from eth_typing import URI
-from eth_utils import to_checksum_address
+from eth_typing import URI, HexStr
+from eth_utils.address import to_checksum_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncHTTPProvider, AsyncWeb3
@@ -39,7 +39,7 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
-from web3.types import Nonce, RPCEndpoint, RPCResponse, TxReceipt
+from web3.types import Nonce, RPCEndpoint, RPCResponse, TxParams, TxReceipt
 
 from app import log
 from app.database import async_engine
@@ -56,9 +56,17 @@ from eth_config import (
 thread_local = threading.local()
 LOG = log.get_logger()
 
+ContractArtifact: TypeAlias = dict[str, Any]
+EventArgumentFilters: TypeAlias = dict[str, Any] | None
+
 
 class EthFailOverHTTPProvider(AsyncHTTPProvider):
-    def __init__(self, fail_over_mode: bool = False, *args, **kwargs):
+    def __init__(
+        self,
+        fail_over_mode: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.fail_over_mode = fail_over_mode
         self.endpoint_uri = None
@@ -97,6 +105,7 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                             "Cannot connect to any Ethereum node"
                         )
 
+                    assert node.endpoint_uri is not None
                     self.endpoint_uri = URI(node.endpoint_uri)
                     try:
                         # Send request
@@ -119,6 +128,7 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                 # If fail_over_mode is False, connect to the primary node.
                 self.endpoint_uri = URI(ETH_WEB3_HTTP_PROVIDER)
                 return await super().make_request(method, params)
+            raise ServiceUnavailableError("Cannot connect to any Ethereum node")
         finally:
             await db_session.close()
 
@@ -135,7 +145,7 @@ except AttributeError:
 
 class EthTxUtils:
     @staticmethod
-    async def suggest_fees(reward_percentile: int = 50):
+    async def suggest_fees(reward_percentile: int = 50) -> dict[str, int]:
         """
         A function that returns recommended maxFeePerGas and maxPriorityFeePerGas for EIP-1559.
 
@@ -144,7 +154,9 @@ class EthTxUtils:
         """
 
         latest_block = await EthWeb3.eth.get_block("latest")
-        base_fee = latest_block["baseFeePerGas"]  # wei
+        base_fee = latest_block.get("baseFeePerGas")
+        if base_fee is None:
+            raise ValueError("latest block does not include baseFeePerGas")
 
         # Get fee history
         fee_history = await EthWeb3.eth.fee_history(5, "latest", [reward_percentile])
@@ -188,16 +200,18 @@ class EthAsyncContractEventsView:
 
 
 class EthAsyncContractUtils:
-    factory_map: dict[str, Type[AsyncContract]] = {}
+    factory_map: dict[str, type[AsyncContract]] = {}
 
     @staticmethod
-    def get_contract_code(contract_name: str):
+    def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
         """Get contract code
 
         :param contract_name: contract name
         :return: ABI, bytecode, deployedBytecode
         """
-        contract_json = json.load(open(f"contracts/eth/{contract_name}.json", "r"))
+        contract_json: ContractArtifact = json.load(
+            open(f"contracts/eth/{contract_name}.json", "r")
+        )
 
         if "bytecode" not in contract_json.keys():
             contract_json["bytecode"] = None
@@ -211,7 +225,10 @@ class EthAsyncContractUtils:
 
     @staticmethod
     async def deploy_contract(
-        contract_name: str, args: list, deployer: EthereumAddress, private_key: bytes
+        contract_name: str,
+        args: list[Any],
+        deployer: EthereumAddress,
+        private_key: bytes,
     ) -> tuple[str, Nonce]:
         """Deploy contract
 
@@ -223,7 +240,7 @@ class EthAsyncContractUtils:
         """
         contract_file = f"contracts/eth/{contract_name}.json"
         try:
-            contract_json = json.load(open(contract_file, "r"))
+            contract_json: ContractArtifact = json.load(open(contract_file, "r"))
         except FileNotFoundError as file_not_found_err:
             raise SendTransactionError(file_not_found_err)
 
@@ -255,7 +272,9 @@ class EthAsyncContractUtils:
         return tx_hash, nonce
 
     @classmethod
-    def get_contract(cls, contract_name: str, contract_address: EthereumAddress):
+    def get_contract(
+        cls, contract_name: str, contract_address: EthereumAddress
+    ) -> AsyncContract:
         """Get contract
 
         :param contract_name: contract name
@@ -267,18 +286,16 @@ class EthAsyncContractUtils:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/eth/{contract_name}.json"
-        contract_json = json.load(open(contract_file, "r"))
+        contract_json: ContractArtifact = json.load(open(contract_file, "r"))
         contract_factory = EthWeb3.eth.contract(abi=contract_json["abi"])
         cls.factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
-    T = TypeVar("T")
-
     @staticmethod
-    async def call_function(
+    async def call_function[T](
         contract: AsyncContract,
         function_name: str,
-        args: tuple,
+        args: tuple[Any, ...],
         default_returns: T = None,
     ) -> T:
         """Call contract function
@@ -305,18 +322,23 @@ class EthAsyncContractUtils:
         return result
 
     @staticmethod
-    async def send_transaction(transaction: dict, private_key: bytes):
+    async def send_transaction(
+        transaction: TxParams, private_key: bytes
+    ) -> tuple[str, Nonce]:
         """Send transaction
 
         :param transaction: Transaction parameters
         :param private_key: Private key of the sender
         :return: Tuple of transaction hash and nonce
         """
-        _tx_from = transaction["from"]
+        tx_from_value = transaction.get("from")
+        if tx_from_value is None:
+            raise SendTransactionError("Transaction sender is required")
+        tx_from = to_checksum_address(cast(str, tx_from_value))
 
         # Get nonce
         nonce = await EthWeb3.eth.get_transaction_count(
-            _tx_from, block_identifier="pending"
+            tx_from, block_identifier="pending"
         )
         transaction["nonce"] = nonce
         signed_tx = EthWeb3.eth.account.sign_transaction(
@@ -338,7 +360,7 @@ class EthAsyncContractUtils:
         """
         try:
             tx_receipt: TxReceipt = await EthWeb3.eth.wait_for_transaction_receipt(
-                transaction_hash=tx_hash, timeout=timeout
+                transaction_hash=HexStr(tx_hash), timeout=timeout
             )
         except TimeExhausted:
             raise
@@ -352,12 +374,15 @@ class EthAsyncContractUtils:
         :param tx_hash: transaction hash
         :return: block
         """
-        tx = await EthWeb3.eth.get_transaction(tx_hash)
-        block = await EthWeb3.eth.get_block(tx["blockNumber"])
+        tx = await EthWeb3.eth.get_transaction(HexStr(tx_hash))
+        block_number = tx.get("blockNumber")
+        if block_number is None:
+            raise SendTransactionError("Transaction has not been mined yet")
+        block = await EthWeb3.eth.get_block(block_number)
         return block
 
     @staticmethod
-    async def get_finalized_block_number():
+    async def get_finalized_block_number() -> int | None:
         """Get finalized block number
 
         :return: finalized block number
@@ -370,10 +395,10 @@ class EthAsyncContractUtils:
     async def get_event_logs(
         contract: AsyncContract | EthAsyncContractEventsView,
         event: str,
-        block_from: int = None,
-        block_to: int = None,
-        argument_filters: dict = None,
-    ):
+        block_from: int | None = None,
+        block_to: int | None = None,
+        argument_filters: EventArgumentFilters = None,
+    ) -> list[Any]:
         """Get contract event logs
 
         :param contract: Contract
@@ -385,12 +410,15 @@ class EthAsyncContractUtils:
         """
         try:
             _event = getattr(contract.events, event)
-            result = await _event.get_logs(
-                from_block=block_from,
-                to_block=block_to,
-                argument_filters=argument_filters,
-            )
+            get_logs_kwargs: dict[str, Any] = {}
+            if block_from is not None:
+                get_logs_kwargs["from_block"] = block_from
+            if block_to is not None:
+                get_logs_kwargs["to_block"] = block_to
+            if argument_filters is not None:
+                get_logs_kwargs["argument_filters"] = argument_filters
+            result = await _event.get_logs(**get_logs_kwargs)
         except ABIEventNotFound:
             return []
 
-        return result
+        return cast(list[Any], result)

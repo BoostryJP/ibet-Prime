@@ -18,11 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import ctypes
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from ctypes.util import find_library
 from datetime import UTC, datetime
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -154,7 +155,9 @@ app.add_middleware(CacheControlMiddleware)
 
 
 @app.middleware("http")
-async def api_call_handler(request: Request, call_next):
+async def api_call_handler(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     request_start_time = datetime.now(UTC).replace(tzinfo=None)
     response = await call_next(request)
     output_access_log(request, response, request_start_time)

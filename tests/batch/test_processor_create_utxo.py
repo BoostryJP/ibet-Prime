@@ -300,6 +300,73 @@ class TestProcessor:
             ]
         )
 
+    # <Normal_1_1>
+    # request_ledger_creation raises ValueError
+    # -> discard request and continue processing
+    @mock.patch(
+        "batch.processor_create_utxo.request_ledger_creation", side_effect=ValueError
+    )
+    async def test_normal_1_1(self, mock_func, processor, async_db):
+        user_1 = default_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_2 = default_eth_account("user2")
+        user_address_1 = user_2["address"]
+
+        # prepare data
+        token_address_1 = await deploy_bond_token_contract(
+            issuer_address, issuer_private_key
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_25_09
+        async_db.add(_token_1)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # Execute batch(Run 1st)
+        await processor.process()
+        async_db.expire_all()
+
+        # Execute Transfer Event
+        _transfer = IbetStraightBondTransferParams(
+            from_address=issuer_address, to_address=user_address_1, amount=40
+        )
+        await IbetStraightBondContract(token_address_1).forced_transfer(
+            _transfer, issuer_address, issuer_private_key
+        )
+        time.sleep(1)
+
+        # Execute batch(Run 2nd)
+        await processor.process()
+        async_db.expire_all()
+
+        # assertion
+        _utxo_list = (await async_db.scalars(select(UTXO).order_by(UTXO.created))).all()
+        assert len(_utxo_list) == 1
+        assert _utxo_list[0].account_address == user_address_1
+        assert _utxo_list[0].token_address == token_address_1
+        assert _utxo_list[0].amount == 40
+
+        assert len((await async_db.scalars(select(LedgerCreationRequest))).all()) == 0
+        assert (
+            len((await async_db.scalars(select(LedgerCreationRequestData))).all()) == 0
+        )
+
+        mock_func.assert_has_calls([call(token_address=token_address_1, db=ANY)])
+
     # <Normal_2>
     # Over max block lot
     @mock.patch("batch.processor_create_utxo.request_ledger_creation")

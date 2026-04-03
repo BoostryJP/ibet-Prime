@@ -157,7 +157,7 @@ class OperationNotAllowedStateError(BadRequestError):
         101,  # Transfer approval operations cannot be performed for accounts that do not have personal information registered.
     ]
 
-    def __init__(self, code: int, message: str = None):
+    def __init__(self, code: int, message: str | None = None):
         self.code = code
         super().__init__(message)
 

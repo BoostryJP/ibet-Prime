@@ -18,12 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 
 
 class TestCacheControl:
     @pytest.mark.asyncio
     async def test_success_no_header_when_absent_on_cache_enabled_status(
-        self, async_client
+        self, async_client: AsyncClient
     ):
         # No Cache-Control in request: for cache-enabled status (200),
         # middleware should not set any Cache-Control
@@ -33,7 +34,7 @@ class TestCacheControl:
         assert resp.headers.get("Cache-Control") is None
 
     @pytest.mark.asyncio
-    async def test_success_mirror_request_headers(self, async_client):
+    async def test_success_mirror_request_headers(self, async_client: AsyncClient):
         # Cache-Control in request: for cache-enabled status (200),
         # middleware should mirror Cache-Control from request
         headers = {
@@ -45,7 +46,7 @@ class TestCacheControl:
         assert resp.headers.get("Cache-Control") == "max-age=60, public"
 
     @pytest.mark.asyncio
-    async def test_method_not_allowed_without_header(self, async_client):
+    async def test_method_not_allowed_without_header(self, async_client: AsyncClient):
         # POST to GET-only endpoint returns 405 (Method not allowed).
         # Without request header, Cache-Control should not be set.
         resp = await async_client.post("/e2ee")
@@ -54,7 +55,9 @@ class TestCacheControl:
         assert resp.headers.get("Cache-Control") is None
 
     @pytest.mark.asyncio
-    async def test_method_not_allowed_with_header_mirrored(self, async_client):
+    async def test_method_not_allowed_with_header_mirrored(
+        self, async_client: AsyncClient
+    ):
         # 405 (Method not allowed) should mirror Cache-Control from request when provided
         headers = {"Cache-Control": "private, max-age=10"}
         resp = await async_client.post("/e2ee", headers=headers)
@@ -63,7 +66,9 @@ class TestCacheControl:
         assert resp.headers.get("Cache-Control") == "private, max-age=10"
 
     @pytest.mark.asyncio
-    async def test_error_cache_disabled_on_service_unavailable(self, async_client):
+    async def test_error_cache_disabled_on_service_unavailable(
+        self, async_client: AsyncClient
+    ):
         # Trigger 503 on /healthcheck by mocking DB connection error
         from unittest import mock
 

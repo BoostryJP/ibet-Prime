@@ -19,8 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 
 import logging
 import sys
-import urllib
+import urllib.parse
 from datetime import UTC, datetime
+from typing import cast
 
 from fastapi import Request, Response
 
@@ -98,7 +99,7 @@ if APP_ENV == "dev" or APP_ENV == "local":
     ACCESS_LOG.addHandler(stream_handler_access)
 
 
-def get_logger():
+def get_logger() -> logging.Logger:
     return LOG
 
 
@@ -114,7 +115,11 @@ def output_access_log(req: Request, res: Response, request_start_time: datetime)
     url = __get_url(req)
     if url != "/":
         method = req.scope.get("method", "")
+        if not isinstance(method, str):
+            method = ""
         http_version = req.scope.get("http_version", "")
+        if not isinstance(http_version, str):
+            http_version = ""
         status_code = res.status_code
         response_time = (
             datetime.now(UTC).replace(tzinfo=None) - request_start_time
@@ -128,17 +133,18 @@ def output_access_log(req: Request, res: Response, request_start_time: datetime)
         )
 
         address = "None"  # Initial value
-        headers = req.scope.get("headers", [])
-        for header in headers:
-            key_bytes, value_bytes = header
+        headers = cast(
+            list[tuple[bytes, bytes]] | tuple[tuple[bytes, bytes], ...],
+            req.scope.get("headers", []),
+        )
+        for key_bytes, value_bytes in headers:
             if "issuer-address" == key_bytes.decode():
                 address = value_bytes.decode()
-
         msg = __auth_format(req, address, access_msg)
         ACCESS_LOG.info(msg)
 
 
-def __auth_format(req: Request, address: str, msg: str):
+def __auth_format(req: Request, address: str, msg: str) -> str:
     if req.client is None:
         _host = ""
     else:
@@ -146,9 +152,18 @@ def __auth_format(req: Request, address: str, msg: str):
     return AUTH_FORMAT % (_host, address, msg)
 
 
-def __get_url(req: Request):
-    scope = req.scope
-    url = urllib.parse.quote(scope.get("root_path", "") + scope.get("path", ""))
-    if scope.get("query_string", None):
-        url = "{}?{}".format(url, scope["query_string"].decode("ascii"))
+def __get_url(req: Request) -> str:
+    root_path = req.scope.get("root_path", "")
+    if not isinstance(root_path, str):
+        root_path = ""
+
+    path = req.scope.get("path", "")
+    if not isinstance(path, str):
+        path = ""
+
+    url = urllib.parse.quote(root_path + path)
+
+    query_string = req.scope.get("query_string", b"")
+    if isinstance(query_string, bytes) and query_string:
+        url = f"{url}?{query_string.decode('ascii')}"
     return url

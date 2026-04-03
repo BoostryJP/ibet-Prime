@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncWeb3
 
 from app.exceptions import ServiceUnavailableError
@@ -41,7 +42,7 @@ class TestEthFailOverHTTPProvider:
         assert (await web3.is_connected()) is True
 
     # Normal_2
-    async def test_normal_2(self, async_db):
+    async def test_normal_2(self, async_db: AsyncSession):
         # Add a node information to the database
         node = EthereumNode(
             endpoint_uri=ETH_WEB3_HTTP_PROVIDER, priority=1, is_synced=True
@@ -60,7 +61,7 @@ class TestEthFailOverHTTPProvider:
     # Error_1
     # - Test that an error is raised when no nodes are available
     @mock.patch("app.utils.eth_contract_utils.ETH_WEB3_REQUEST_WAIT_TIME", 0.1)
-    async def test_error_1(self, async_db):
+    async def test_error_1(self, async_db: AsyncSession):
         # Add a node information to the database with is_synced=False
         node = EthereumNode(
             endpoint_uri=ETH_WEB3_HTTP_PROVIDER, priority=1, is_synced=False
@@ -78,7 +79,7 @@ class TestEthFailOverHTTPProvider:
     # Error_2
     # - Test that an error is raised when no nodes are available
     @mock.patch("app.utils.eth_contract_utils.ETH_WEB3_REQUEST_WAIT_TIME", 0.1)
-    async def test_error_2(self, async_db):
+    async def test_error_2(self, async_db: AsyncSession):
         # Add a node information to the database with an invalid endpoint URI
         node = EthereumNode(endpoint_uri="invalid_uri", priority=1, is_synced=True)
         async_db.add(node)
