@@ -68,6 +68,7 @@ from app.exceptions import (
 from app.model.db import (
     UTXO,
     Account,
+    AvaIbetWSTTx,
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
     BatchIssueRedeemUpload,
@@ -191,6 +192,7 @@ from app.utils.check_utils import (
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
 from app.utils.ibet_contract_utils import AsyncContractUtils
+from avalanche_config import AVA_MASTER_ACCOUNT_ADDRESS
 from eth_config import ETH_MASTER_ACCOUNT_ADDRESS
 
 router = APIRouter(
@@ -204,7 +206,7 @@ utc_tz = pytz.timezone("UTC")
 
 
 def _resolve_ibet_wst_blockchains(
-    ibet_wst_blockchains: list[str] | None,
+    ibet_wst_blockchains: Sequence[str | IbetWSTBlockchain] | None,
 ) -> list[IbetWSTBlockchain]:
     blockchains = ibet_wst_blockchains
     if not blockchains:
@@ -391,9 +393,21 @@ async def issue_share_token(
             _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
             db.add(_ibet_wst_tx)
 
-        # NOTE:
-        #   Currently, only Ethereum is supported.
-        #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+        # Register Avalanche IbetWST deployment transaction if avalanche is selected.
+        if IbetWSTBlockchain.AVALANCHE in ibet_wst_blockchains:
+            tx_id = str(uuid.uuid4())
+            _token.ibet_wst_tx_id = tx_id
+
+            _ibet_wst_tx = AvaIbetWSTTx()
+            _ibet_wst_tx.tx_id = tx_id
+            _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+            _ibet_wst_tx.version = IbetWSTVersion.V_1
+            _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+            _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                name=token.ibet_wst_name, initial_owner=issuer_address
+            )
+            _ibet_wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
+            db.add(_ibet_wst_tx)
 
     db.add(_token)
 
@@ -464,10 +478,15 @@ async def list_all_share_tokens(
         share_token["contract_version"] = token.version
         share_token["ibet_wst_version"] = token.ibet_wst_version
         share_token["ibet_wst_name"] = token.ibet_wst_name
+        share_token["ibet_wst_settings_by_blockchain"] = {
+            "activated": token.ibet_wst_activated_by_blockchain,
+            "deployed": token.ibet_wst_deployed_by_blockchain,
+            "address": token.ibet_wst_address_by_blockchain,
+        }
 
-        # TODO:
-        # Currently, IbetWST supports only Ethererum, so the IbetWST related information is set based on the Ethereum blockchain.
-        # If support for other blockchains is added in the future, the IbetWST related information should be set JSON response based on the corresponding blockchain.
+        # NOTE:
+        # ibet_wst_activated, ibet_wst_deployed, and ibet_wst_address are set based on the Ethereum blockchain for backward compatibility.
+        # These items will be removed in the future.
         share_token["ibet_wst_activated"] = token.is_ibet_wst_activated(
             IbetWSTBlockchain.ETHEREUM
         )
@@ -477,11 +496,6 @@ async def list_all_share_tokens(
         share_token["ibet_wst_address"] = token.get_ibet_wst_address(
             IbetWSTBlockchain.ETHEREUM
         )
-        share_token["ibet_wst_settings_by_blockchain"] = {
-            "activated": token.ibet_wst_activated_by_blockchain,
-            "deployed": token.ibet_wst_deployed_by_blockchain,
-            "address": token.ibet_wst_address_by_blockchain,
-        }
 
         share_tokens.append(share_token)
 
@@ -530,10 +544,15 @@ async def retrieve_share_token(
     share_token["contract_version"] = _token.version
     share_token["ibet_wst_version"] = _token.ibet_wst_version
     share_token["ibet_wst_name"] = _token.ibet_wst_name
+    share_token["ibet_wst_settings_by_blockchain"] = {
+        "activated": _token.ibet_wst_activated_by_blockchain,
+        "deployed": _token.ibet_wst_deployed_by_blockchain,
+        "address": _token.ibet_wst_address_by_blockchain,
+    }
 
-    # TODO:
-    # Currently, IbetWST supports only Ethererum, so the IbetWST related information is set based on the Ethereum blockchain.
-    # If support for other blockchains is added in the future, the IbetWST related information should be set JSON response based on the corresponding blockchain.
+    # NOTE:
+    # ibet_wst_activated, ibet_wst_deployed, and ibet_wst_address are set based on the Ethereum blockchain for backward compatibility.
+    # These items will be removed in the future.
     share_token["ibet_wst_activated"] = _token.is_ibet_wst_activated(
         IbetWSTBlockchain.ETHEREUM
     )
@@ -543,11 +562,6 @@ async def retrieve_share_token(
     share_token["ibet_wst_address"] = _token.get_ibet_wst_address(
         IbetWSTBlockchain.ETHEREUM
     )
-    share_token["ibet_wst_settings_by_blockchain"] = {
-        "activated": _token.ibet_wst_activated_by_blockchain,
-        "deployed": _token.ibet_wst_deployed_by_blockchain,
-        "address": _token.ibet_wst_address_by_blockchain,
-    }
 
     return json_response(share_token)
 
@@ -695,9 +709,21 @@ async def update_share_token(
                 _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
                 db.add(_ibet_wst_tx)
 
-            # NOTE:
-            #   Currently, only Ethereum is supported.
-            #   If other blockchains are added in the future, the transaction handling logic for those blockchains should be implemented here.
+            # Register Avalanche IbetWST deployment transaction if avalanche is selected.
+            if IbetWSTBlockchain.AVALANCHE in activate_blockchains:
+                tx_id = str(uuid.uuid4())
+                _token.ibet_wst_tx_id = tx_id
+
+                _ibet_wst_tx = AvaIbetWSTTx()
+                _ibet_wst_tx.tx_id = tx_id
+                _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
+                _ibet_wst_tx.version = IbetWSTVersion.V_1
+                _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+                _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
+                    name=update_data.ibet_wst_name, initial_owner=issuer_address
+                )
+                _ibet_wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
+                db.add(_ibet_wst_tx)
 
     # Register operation log
     operation_log = TokenUpdateOperationLog()
