@@ -128,6 +128,7 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                 # If fail_over_mode is False, connect to the primary node.
                 self.endpoint_uri = URI(ETH_WEB3_HTTP_PROVIDER)
                 return await super().make_request(method, params)
+
             raise ServiceUnavailableError("Cannot connect to any Ethereum node")
         finally:
             await db_session.close()

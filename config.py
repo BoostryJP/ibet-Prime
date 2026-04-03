@@ -40,19 +40,10 @@ TZ = os.environ.get("TZ") or "Asia/Tokyo"
 # Default currency code
 DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY") or "JPY"
 
-# Blockchain network
-NETWORK = os.environ.get("NETWORK") or "IBET"  # IBET or IBETFIN
-
 # Environment-specific settings
 APP_ENV = os.environ.get("APP_ENV") or "local"
 config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "conf")
-ini_file_name = (
-    f"{APP_ENV}.ini"
-    if APP_ENV != "live"
-    else "live.ini"
-    if NETWORK == "IBET"
-    else "live_fin.ini"
-)
+ini_file_name = f"{APP_ENV}.ini"
 INI_FILE = os.path.join(config_dir, ini_file_name)
 CONFIG = configparser.ConfigParser()
 CONFIG.read(INI_FILE)
