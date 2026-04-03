@@ -385,11 +385,11 @@ async def issue_bond_token(
         _token.ibet_wst_version = IbetWSTVersion.V_1
         _token.ibet_wst_name = token.ibet_wst_name
 
+        tx_id = str(uuid.uuid4())
+        _token.ibet_wst_tx_id = tx_id
+
         # Register Ethereum IbetWST deployment transaction if ethereum is selected.
         if IbetWSTBlockchain.ETHEREUM in ibet_wst_blockchains:
-            tx_id = str(uuid.uuid4())
-            _token.ibet_wst_tx_id = tx_id
-
             _ibet_wst_tx = EthIbetWSTTx()
             _ibet_wst_tx.tx_id = tx_id
             _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
@@ -403,9 +403,6 @@ async def issue_bond_token(
 
         # Register Avalanche IbetWST deployment transaction if avalanche is selected.
         if IbetWSTBlockchain.AVALANCHE in ibet_wst_blockchains:
-            tx_id = str(uuid.uuid4())
-            _token.ibet_wst_tx_id = tx_id
-
             _ibet_wst_tx = AvaIbetWSTTx()
             _ibet_wst_tx.tx_id = tx_id
             _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
@@ -731,11 +728,11 @@ async def update_bond_token(
             _token.ibet_wst_version = IbetWSTVersion.V_1
             _token.ibet_wst_name = update_data.ibet_wst_name
 
+            tx_id = str(uuid.uuid4())
+            _token.ibet_wst_tx_id = tx_id
+
             # Register Ethereum IbetWST deployment transaction if ethereum is selected.
             if IbetWSTBlockchain.ETHEREUM in activate_blockchains:
-                tx_id = str(uuid.uuid4())
-                _token.ibet_wst_tx_id = tx_id
-
                 _ibet_wst_tx = EthIbetWSTTx()
                 _ibet_wst_tx.tx_id = tx_id
                 _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
@@ -749,9 +746,6 @@ async def update_bond_token(
 
             # Register Avalanche IbetWST deployment transaction if avalanche is selected.
             if IbetWSTBlockchain.AVALANCHE in activate_blockchains:
-                tx_id = str(uuid.uuid4())
-                _token.ibet_wst_tx_id = tx_id
-
                 _ibet_wst_tx = AvaIbetWSTTx()
                 _ibet_wst_tx.tx_id = tx_id
                 _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
