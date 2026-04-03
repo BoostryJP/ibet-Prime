@@ -26,7 +26,7 @@ from typing import Annotated, Optional, Sequence
 import pytz
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from fastapi import APIRouter, Header, HTTPException, Path, Query, Request
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.orm import aliased

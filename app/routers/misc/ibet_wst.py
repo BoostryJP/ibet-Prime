@@ -22,7 +22,7 @@ from datetime import datetime
 from typing import Annotated
 
 import pytz
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, HTTPException, Path, Query, Request
 from sqlalchemy import and_, asc, desc, func, select
 

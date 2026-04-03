@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import base64
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional, Sequence
 
 import pytz
 from fastapi import APIRouter, Header, Path, Query
@@ -102,22 +102,32 @@ async def list_all_upload_files(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    _upload_file_list = (await db.execute(stmt)).tuples().all()
+    _upload_file_list: Sequence[tuple[Any, ...]] = (
+        (await db.execute(stmt)).tuples().all()
+    )
 
-    files = []
-    for _upload_file in _upload_file_list:
-        created_formatted = (
-            utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
-        )
+    files: list[dict[str, Any]] = []
+    for (
+        file_id,
+        _issuer_address,
+        relation,
+        file_name,
+        content_size,
+        description,
+        label,
+        created,
+    ) in _upload_file_list:
+        assert created is not None
+        created_formatted = utc_tz.localize(created).astimezone(local_tz).isoformat()
         files.append(
             {
-                "file_id": _upload_file.file_id,
-                "issuer_address": _upload_file.issuer_address,
-                "relation": _upload_file.relation,
-                "file_name": _upload_file.file_name,
-                "content_size": _upload_file.content_size,
-                "description": _upload_file.description,
-                "label": _upload_file.label,
+                "file_id": file_id,
+                "issuer_address": _issuer_address,
+                "relation": relation,
+                "file_name": file_name,
+                "content_size": content_size,
+                "description": description,
+                "label": label,
                 "created": created_formatted,
             }
         )
@@ -164,9 +174,11 @@ async def upload_file(
     _upload_file.content = content_binary
     _upload_file.content_size = len(content_binary)
     _upload_file.description = data.description
-    _upload_file.label = data.label
+    _upload_file.label = data.label or ""
     db.add(_upload_file)
     await db.commit()
+
+    assert _upload_file.created is not None
 
     resp = {
         "file_id": _upload_file.file_id,

@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence, cast
 
 import pytz
 from fastapi import APIRouter, Header, Query
@@ -48,9 +48,9 @@ utc_tz = pytz.timezone("UTC")
 async def list_all_notifications(
     db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
-    notice_type: str = Query(None),
-    offset: int = Query(None),
-    limit: int = Query(None),
+    notice_type: Optional[str] = Query(None),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
 ):
     """List all notifications"""
 
@@ -81,8 +81,10 @@ async def list_all_notifications(
 
     _notification_list: Sequence[Notification] = (await db.scalars(stmt)).all()
 
-    notifications = []
+    notifications: list[dict[str, Any]] = []
     for _notification in _notification_list:
+        assert _notification.created is not None
+        metainfo = cast(dict[str, Any] | None, getattr(_notification, "metainfo", None))
         created_formatted = (
             utc_tz.localize(_notification.created).astimezone(local_tz).isoformat()
         )
@@ -94,7 +96,7 @@ async def list_all_notifications(
                 "priority": _notification.priority,
                 "notice_type": _notification.type,
                 "notice_code": _notification.code,
-                "metainfo": _notification.metainfo,
+                "metainfo": metainfo,
                 "created": created_formatted,
             }
         )

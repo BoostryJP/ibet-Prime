@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 

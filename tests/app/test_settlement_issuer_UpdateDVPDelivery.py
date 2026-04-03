@@ -21,7 +21,7 @@ import hashlib
 from datetime import UTC, datetime
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 
 from app.model.db import (
     Account,

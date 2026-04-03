@@ -25,7 +25,7 @@ from unittest import mock
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from pydantic import ValidationError
 from sqlalchemy import select
 from web3 import Web3

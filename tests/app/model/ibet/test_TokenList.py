@@ -22,7 +22,7 @@ from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.exceptions import ContractLogicError, InvalidAddress, MismatchedABI
 from web3.middleware import ExtraDataToPOAMiddleware

@@ -401,15 +401,10 @@ async def __create_dataset_from_ibetfin(
     """Create ledger input data from ibet for Fin"""
 
     if token_type == TokenType.IBET_SHARE:
-        token_contract = cast(
-            IbetShareContract, await IbetShareContract(token_address).get()
-        )
+        token_contract = await IbetShareContract(token_address).get()
         price = token_contract.principal_value
     elif token_type == TokenType.IBET_STRAIGHT_BOND:
-        token_contract = cast(
-            IbetStraightBondContract,
-            await IbetStraightBondContract(token_address).get(),
-        )
+        token_contract = await IbetStraightBondContract(token_address).get()
         price = token_contract.face_value
     else:
         return

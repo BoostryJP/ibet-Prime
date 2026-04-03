@@ -22,7 +22,7 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from sqlalchemy import select
 
 from app.model.db import (

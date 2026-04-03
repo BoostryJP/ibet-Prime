@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Optional, Sequence
+from typing import Annotated, Any, Optional, Sequence, cast
 
 import pytz
 from fastapi import APIRouter, Header, Path, Query
@@ -90,12 +90,14 @@ async def list_all_token_holders_personal_info(
     match get_query.key_manager_type:
         case KeyManagerType.SELF:
             stmt = stmt.where(
-                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"
+                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"  # pyright: ignore[reportPrivateUsage]
             )
         case KeyManagerType.OTHERS:
             stmt = stmt.where(
-                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
+                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"  # pyright: ignore[reportPrivateUsage]
             )
+        case _:
+            pass
     total = await db.scalar(
         stmt.with_only_columns(func.count()).select_from(IDXPersonalInfo).order_by(None)
     )
@@ -141,12 +143,13 @@ async def list_all_token_holders_personal_info(
     )
 
     # Sort
-    sort_attr = getattr(IDXPersonalInfo, get_query.sort_item, None)
+    sort_item = get_query.sort_item or "created"
+    sort_attr = getattr(IDXPersonalInfo, str(sort_item), IDXPersonalInfo.created)
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if get_query.sort_item != IDXPersonalInfo.created:
+    if str(sort_item) != "created":
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(IDXPersonalInfo.created)
 
@@ -204,6 +207,8 @@ async def list_all_token_holders_personal_info_history(
                 IDXPersonalInfoHistory.personal_info["key_manager"].as_string()
                 != "SELF"
             )
+        case _:
+            pass
     total = await db.scalar(
         stmt.with_only_columns(func.count())
         .select_from(IDXPersonalInfoHistory)
@@ -369,7 +374,7 @@ async def create_token_holders_collection(
     _token_holders_list = TokenHoldersList()
     _token_holders_list.token_address = token_address
     _token_holders_list.list_id = data.list_id
-    _token_holders_list.batch_status = TokenHolderBatchStatus.PENDING.value
+    _token_holders_list.batch_status = TokenHolderBatchStatus.PENDING
     _token_holders_list.block_number = data.block_number
     db.add(_token_holders_list)
     await db.commit()
@@ -473,7 +478,7 @@ async def list_all_token_holders_collections(
         await db.scalars(stmt)
     ).all()
 
-    token_holders_collections = []
+    token_holders_collections: list[dict[str, Any]] = []
     for _collection in _token_holders_collections:
         token_holders_collections.append(
             {
@@ -616,13 +621,13 @@ async def retrieve_token_holders_collection(
 
     if get_query.tax_category is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["tax_category"].as_integer()
+            IDXPersonalInfo._personal_info["tax_category"].as_integer()  # pyright: ignore[reportPrivateUsage]
             == get_query.tax_category
         )
 
     if get_query.key_manager is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["key_manager"]
+            IDXPersonalInfo._personal_info["key_manager"]  # pyright: ignore[reportPrivateUsage]
             .as_string()
             .like("%" + get_query.key_manager + "%")
         )
@@ -633,11 +638,17 @@ async def retrieve_token_holders_collection(
 
     # Sort
     if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.tax_category:
-        sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()
+        sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()  # pyright: ignore[reportPrivateUsage]
     elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.key_manager:
-        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
+        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()  # pyright: ignore[reportPrivateUsage]
     else:
-        sort_attr = getattr(TokenHolder, get_query.sort_item)
+        sort_attr = getattr(
+            TokenHolder,
+            (
+                get_query.sort_item
+                or RetrieveTokenHoldersCollectionSortItem.account_address
+            ),
+        )
 
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(asc(sort_attr))
@@ -656,8 +667,9 @@ async def retrieve_token_holders_collection(
         stmt = stmt.offset(get_query.offset)
 
     # Get holder list
-    _token_holders: Sequence[tuple[TokenHolder, IDXPersonalInfo | None]] = (
-        (await db.execute(stmt)).tuples().all()
+    _token_holders = cast(
+        Sequence[tuple[TokenHolder, IDXPersonalInfo | None]],
+        (await db.execute(stmt)).tuples().all(),
     )
     personal_info_default = {
         "key_manager": None,
@@ -675,7 +687,6 @@ async def retrieve_token_holders_collection(
             "personal_information": (
                 _token_holder[1].personal_info
                 if _token_holder[1] is not None
-                and _token_holder[1].personal_info is not None
                 else personal_info_default
             ),
         }

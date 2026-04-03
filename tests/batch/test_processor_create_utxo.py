@@ -24,7 +24,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock, call
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware

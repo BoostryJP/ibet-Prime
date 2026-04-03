@@ -59,7 +59,7 @@ class UpdateParams(BaseModel):
 
     @field_validator("dividends")
     @classmethod
-    def dividends_13_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**13)
             int_data = int(Decimal(str(v)) * 10**13)

@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     IDXAvaIbetWSTWhitelist,
@@ -54,7 +56,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
 
     # <Normal_1>
     # Whitelist account is not registered for the specified WST token address.
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -98,7 +100,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Normal_2_1>
     # Whitelist accounts are registered for the specified WST token address.
     # - blockchain_platform = "ethereum" (default)
-    async def test_normal_2_1(self, async_db, async_client):
+    async def test_normal_2_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -187,7 +189,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Normal_2_2>
     # Whitelist accounts are registered for the specified WST token address.
     # - blockchain_platform = "avalanche"
-    async def test_normal_2_2(self, async_db, async_client):
+    async def test_normal_2_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -281,7 +283,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Error_1>
     # Request without issuer address
     # - Expected to return 422
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request without issuer address in header
         resp = await async_client.get(
             self.api_url.format(token_address=self.token_address_1),
@@ -304,7 +306,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Error_2>
     # Invalid token address format
     # - Expected to return 422
-    async def test_error_2(self, async_client):
+    async def test_error_2(self, async_client: AsyncClient):
         # Send request with invalid token address format
         resp = await async_client.get(
             self.api_url.format(token_address="invalid_address"),
@@ -329,7 +331,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Error_3>
     # Token not found for the specified address
     # - Expected to return 404
-    async def test_error_3(self, async_client):
+    async def test_error_3(self, async_client: AsyncClient):
         # Send request with a token address that does not exist
         resp = await async_client.get(
             self.api_url.format(token_address=self.token_address_1),

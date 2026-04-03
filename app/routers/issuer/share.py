@@ -25,7 +25,7 @@ from decimal import Decimal
 from typing import Annotated, List, Optional, Sequence
 
 import pytz
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import (

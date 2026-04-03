@@ -23,7 +23,7 @@ from typing import Optional, Sequence
 from unittest.mock import patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 
 from app.exceptions import ContractRevertError, SendTransactionError

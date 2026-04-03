@@ -19,11 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 
 import secrets
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional, cast
 
 import pytz
-from eth_keyfile import decode_keyfile_json
-from eth_utils import to_checksum_address
+from eth_keyfile.keyfile import decode_keyfile_json
+from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, Header, HTTPException, Path, Query
 from sqlalchemy import and_, asc, desc, func, select
 from starlette.requests import Request
@@ -182,13 +182,14 @@ async def list_all_issued_tokens(
     )
 
     # Sort
-    sort_attr = getattr(Token, request_query.sort_item, None)
+    sort_item = request_query.sort_item or "created"
+    sort_attr = getattr(Token, str(sort_item), Token.created)
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(asc(sort_attr))
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
 
-    if request_query.sort_item != "created":
+    if str(sort_item) != "created":
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(Token.created))
 
@@ -202,20 +203,25 @@ async def list_all_issued_tokens(
     issued_tokens = (await db.scalars(stmt)).all()
 
     # Get Token Attributes
-    tokens = []
+    tokens: list[dict[str, Any]] = []
     for _token in issued_tokens:
-        token_attr = None
+        token_attr: dict[str, Any] | None = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND:
-            token_attr = await IbetStraightBondContract(_token.token_address).get()
+            token_contract = await IbetStraightBondContract(_token.token_address).get()
+            token_attr = dict(token_contract.__dict__)
         elif _token.type == TokenType.IBET_SHARE:
-            token_attr = await IbetShareContract(_token.token_address).get()
+            token_contract = await IbetShareContract(_token.token_address).get()
+            token_attr = dict(token_contract.__dict__)
 
-        _issue_datetime = (
-            pytz.timezone("UTC")
-            .localize(_token.created)
-            .astimezone(local_tz)
-            .isoformat()
-        )
+        if _token.created is not None:
+            _issue_datetime = (
+                pytz.timezone("UTC")
+                .localize(_token.created)
+                .astimezone(local_tz)
+                .isoformat()
+            )
+        else:
+            _issue_datetime = None
 
         tokens.append(
             {
@@ -225,7 +231,7 @@ async def list_all_issued_tokens(
                 "created": _issue_datetime,
                 "token_status": _token.token_status,
                 "contract_version": _token.version,
-                "token_attributes": token_attr.__dict__,
+                "token_attributes": token_attr,
             }
         )
 
@@ -282,13 +288,14 @@ async def list_all_scheduled_events(
     )
 
     # Sort
-    sort_attr = getattr(ScheduledEvents, request_query.sort_item, None)
+    sort_item = request_query.sort_item or ListAllScheduledEventsSortItem.CREATED
+    sort_attr = getattr(ScheduledEvents, str(sort_item), ScheduledEvents.created)
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(asc(sort_attr))
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
 
-    if request_query.sort_item != ListAllScheduledEventsSortItem.CREATED:
+    if sort_item != ListAllScheduledEventsSortItem.CREATED:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(ScheduledEvents.created))
 
@@ -302,13 +309,15 @@ async def list_all_scheduled_events(
     rows = (await db.scalars(stmt)).all()
 
     # Get Token Attributes
-    schedule_events = []
+    schedule_events: list[dict[str, Any]] = []
     for _event in rows:
-        token_attr = None
+        token_attr: dict[str, Any] | None = None
         if _event.token_type == TokenType.IBET_STRAIGHT_BOND:
-            token_attr = await IbetStraightBondContract(_event.token_address).get()
+            token_contract = await IbetStraightBondContract(_event.token_address).get()
+            token_attr = dict(token_contract.__dict__)
         elif _event.token_type == TokenType.IBET_SHARE:
-            token_attr = await IbetShareContract(_event.token_address).get()
+            token_contract = await IbetShareContract(_event.token_address).get()
+            token_attr = dict(token_contract.__dict__)
 
         _scheduled_datetime = (
             pytz.timezone("UTC")
@@ -316,12 +325,15 @@ async def list_all_scheduled_events(
             .astimezone(local_tz)
             .isoformat()
         )
-        _created = (
-            pytz.timezone("UTC")
-            .localize(_event.created)
-            .astimezone(local_tz)
-            .isoformat()
-        )
+        if _event.created is not None:
+            _created = (
+                pytz.timezone("UTC")
+                .localize(_event.created)
+                .astimezone(local_tz)
+                .isoformat()
+            )
+        else:
+            _created = None
 
         schedule_events.append(
             {
@@ -331,10 +343,10 @@ async def list_all_scheduled_events(
                 "scheduled_datetime": _scheduled_datetime,
                 "event_type": _event.event_type,
                 "status": _event.status,
-                "data": _event.data,
+                "data": cast(dict[str, Any], cast(Any, _event).data),
                 "created": _created,
                 "is_soft_deleted": _event.is_soft_deleted,
-                "token_attributes": token_attr.__dict__,
+                "token_attributes": token_attr,
             }
         )
 
@@ -404,7 +416,8 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
 
     # Get whitelists
     whitelist_model = _get_wst_whitelist_model(blockchain_platform)
-    whitelist_list = (
+    whitelist_list = cast(
+        list[tuple[Any, IDXPersonalInfo | None]],
         (
             await db.execute(
                 select(whitelist_model, IDXPersonalInfo)
@@ -422,18 +435,18 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
             )
         )
         .tuples()
-        .all()
+        .all(),
     )
 
     # Response
-    account_list = []
+    account_list: list[dict[str, Any]] = []
     for item in whitelist_list:
         if item[1] is not None:
             personal_info = item[1].json()
             account_list.append(
                 {
                     "st_account_address": item[0].st_account_address,
-                    "st_account_personal_info": personal_info["personal_info"],
+                    "st_account_personal_info": personal_info.get("personal_info"),
                     "sc_account_address_in": item[0].sc_account_address_in,
                     "sc_account_address_out": item[0].sc_account_address_out,
                 }
@@ -588,7 +601,9 @@ async def add_ibet_wst_whitelist(
     )
 
     # Get private key
-    keyfile_json = _account.keyfile
+    keyfile_json = cast(dict[str, Any] | None, cast(Any, _account).keyfile)
+    if keyfile_json is None:
+        raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
     )
@@ -714,7 +729,9 @@ async def delete_ibet_wst_whitelist(
     )
 
     # Get private key
-    keyfile_json = _account.keyfile
+    keyfile_json = cast(dict[str, Any] | None, cast(Any, _account).keyfile)
+    if keyfile_json is None:
+        raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
     )
@@ -839,7 +856,9 @@ async def force_burn_ibet_wst_position(
     )
 
     # Get private key
-    keyfile_json = issuer_account.keyfile
+    keyfile_json = cast(dict[str, Any] | None, cast(Any, issuer_account).keyfile)
+    if keyfile_json is None:
+        raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
     )

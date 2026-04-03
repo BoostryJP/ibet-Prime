@@ -18,8 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+from typing import Any, cast
 
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -41,7 +42,9 @@ class FreezeLogContract:
         )
         self.log_account = log_account
 
-    async def record_log(self, log_message: str, freezing_grace_block_count: int):
+    async def record_log(
+        self, log_message: str, freezing_grace_block_count: int
+    ) -> tuple[str, int]:
         """Record new log
 
         :param log_message: Log text
@@ -50,9 +53,16 @@ class FreezeLogContract:
         """
 
         try:
+            if self.log_account.eoa_password is None:
+                raise SendTransactionError("log account eoa_password is not configured")
             password = E2EEUtils.decrypt(self.log_account.eoa_password)
+            keyfile_json = cast(
+                dict[str, Any] | None, cast(Any, self.log_account).keyfile
+            )
+            if keyfile_json is None:
+                raise SendTransactionError("log account keyfile is not configured")
             private_key = decode_keyfile_json(
-                raw_keyfile_json=self.log_account.keyfile,
+                raw_keyfile_json=keyfile_json,
                 password=password.encode("utf-8"),
             )
             tx = await self.log_contract.functions.recordLog(
@@ -85,7 +95,7 @@ class FreezeLogContract:
 
         return tx_hash, log_index
 
-    async def update_log(self, log_index: int, log_message: str):
+    async def update_log(self, log_index: int, log_message: str) -> str:
         """Update recorded log
 
         :param log_index: Log index
@@ -94,9 +104,16 @@ class FreezeLogContract:
         """
 
         try:
+            if self.log_account.eoa_password is None:
+                raise SendTransactionError("log account eoa_password is not configured")
             password = E2EEUtils.decrypt(self.log_account.eoa_password)
+            keyfile_json = cast(
+                dict[str, Any] | None, cast(Any, self.log_account).keyfile
+            )
+            if keyfile_json is None:
+                raise SendTransactionError("log account keyfile is not configured")
             private_key = decode_keyfile_json(
-                raw_keyfile_json=self.log_account.keyfile,
+                raw_keyfile_json=keyfile_json,
                 password=password.encode("utf-8"),
             )
             tx = await self.log_contract.functions.updateLog(
@@ -122,19 +139,24 @@ class FreezeLogContract:
 
         return tx_hash
 
-    async def get_log(self, log_index: int):
+    async def get_log(self, log_index: int) -> tuple[int, int, str]:
         """Get recorded log
 
         :param log_index: Log index
         :return: block_number, freezing_grace_block_count, log_message
         """
 
-        log = await AsyncContractUtils.call_function(
-            contract=self.log_contract,
-            function_name="getLog",
-            args=(
-                self.log_account.account_address,
-                log_index,
+        log = cast(
+            tuple[int, int, str] | None,
+            await AsyncContractUtils.call_function(
+                contract=self.log_contract,
+                function_name="getLog",
+                args=(
+                    self.log_account.account_address,
+                    log_index,
+                ),
             ),
         )
+        if log is None:
+            raise SendTransactionError("failed to get freeze log")
         return log[0], log[1], log[2]

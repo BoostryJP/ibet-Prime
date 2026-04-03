@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import UploadFile
 
@@ -38,7 +40,7 @@ class TestDownloadFile:
     # text file
     # unset header
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -83,7 +85,7 @@ abc def"""
     # text file
     # set header
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -130,7 +132,7 @@ abc def"""
     # <Normal_2>
     # binary file
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # prepare data
@@ -173,7 +175,7 @@ abc def"""
     # Parameter Error
     # Invalid
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
@@ -200,7 +202,7 @@ abc def"""
     # Not Found
     # unset header
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(file_id="file_id_1"),
@@ -217,7 +219,7 @@ abc def"""
     # Not Found
     # set header
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # prepare data

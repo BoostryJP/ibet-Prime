@@ -20,8 +20,10 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -62,7 +64,7 @@ class TestAddIbetWSTWhitelist:
         "app.routers.issuer.token_common.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -103,6 +105,7 @@ class TestAddIbetWSTWhitelist:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.ADD_WHITELIST
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -128,7 +131,7 @@ class TestAddIbetWSTWhitelist:
         "app.routers.issuer.token_common.AVA_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_2(self, async_db, async_client):
+    async def test_normal_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -170,6 +173,7 @@ class TestAddIbetWSTWhitelist:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(AvaIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.ADD_WHITELIST
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -194,7 +198,7 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_1>
     # Invalid account address
-    async def test_error_1(self, async_db, async_client):
+    async def test_error_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request with invalid account address
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
@@ -240,7 +244,7 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_2>
     # Invalid issuer address and password
-    async def test_error_2(self, async_db, async_client):
+    async def test_error_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
@@ -277,7 +281,7 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_3>
     # Issuer does not exist or password mismatch
-    async def test_error_3(self, async_db, async_client):
+    async def test_error_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -321,7 +325,7 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_4>
     # Token not found
-    async def test_error_4(self, async_db, async_client):
+    async def test_error_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         account = Account()
         account.issuer_address = self.issuer["address"]
