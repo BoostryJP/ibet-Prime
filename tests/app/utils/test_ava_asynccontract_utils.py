@@ -157,6 +157,7 @@ class TestGetContract:
         # Get transaction receipt
         tx_receipt = await AvaAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = AvaAsyncContractUtils.get_contract(
@@ -187,6 +188,7 @@ class TestGetContract:
         # Get transaction receipt
         tx_receipt = await AvaAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         with pytest.raises(FileNotFoundError):
@@ -223,6 +225,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await AvaAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = AvaAsyncContractUtils.get_contract(
@@ -259,6 +262,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await AvaAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = AvaAsyncContractUtils.get_contract(
@@ -290,6 +294,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await AvaAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = AvaAsyncContractUtils.get_contract(
@@ -336,7 +341,9 @@ class TestGetBlockByTransactionHash:
 
         # Assert
         assert block is not None
-        assert HexBytes(tx_hash) in block["transactions"]
+        block_transactions = block.get("transactions")
+        assert block_transactions is not None
+        assert HexBytes(tx_hash) in block_transactions
 
 
 # Test for get_finalized_block_number
@@ -372,7 +379,9 @@ class TestGetFinalizedBlockNumber:
         block_number = await AvaAsyncContractUtils.get_finalized_block_number()
 
         # Assert
-        assert block_number == latest_block["number"]
+        latest_block_number = latest_block.get("number")
+        assert latest_block_number is not None
+        assert block_number == latest_block_number
 
 
 # Test for get_event_logs
@@ -402,6 +411,7 @@ class TestGetEventLogs:
         # Get transaction receipt
         tx_receipt = await AvaAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = AvaAsyncContractUtils.get_contract(
@@ -429,7 +439,7 @@ class TestGetEventLogs:
         logs = await AvaAsyncContractUtils.get_event_logs(
             contract=contract,
             event="Mint",
-            block_from=tx_receipt["blockNumber"],
+            block_from=tx_receipt.get("blockNumber"),
         )
 
         # Assert
@@ -457,6 +467,7 @@ class TestGetEventLogs:
         # Get transaction receipt
         tx_receipt = await AvaAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = AvaAsyncContractUtils.get_contract(
@@ -484,7 +495,7 @@ class TestGetEventLogs:
         logs = await AvaAsyncContractUtils.get_event_logs(
             contract=contract,
             event="NotExistEvent",  # This event does not exist
-            block_from=tx_receipt["blockNumber"],
+            block_from=tx_receipt.get("blockNumber"),
         )
 
         # Assert

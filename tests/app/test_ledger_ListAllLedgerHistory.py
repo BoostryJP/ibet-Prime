@@ -20,14 +20,16 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Ledger, Token, TokenType, TokenVersion
+from app.model.db import Ledger, Token, TokenStatus, TokenType, TokenVersion
 from tests.account_config import default_eth_account
 
 
 class TestListAllLedgerHistory:
     # target API endpoint
-    base_url = "/ledger/{token_address}/history"
+    base_url: str = "/ledger/{token_address}/history"
 
     ###########################################################################
     # Normal Case
@@ -36,7 +38,9 @@ class TestListAllLedgerHistory:
     # <Normal_1_1>
     # set issuer-address
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -102,7 +106,9 @@ class TestListAllLedgerHistory:
     # <Normal_1_2>
     # unset issuer-address
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -165,7 +171,9 @@ class TestListAllLedgerHistory:
     # <Normal_2>
     # limit-offset
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -254,7 +262,9 @@ class TestListAllLedgerHistory:
     # <Error_1>
     # Parameter Error(issuer-address)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -283,7 +293,9 @@ class TestListAllLedgerHistory:
     # Token Not Found
     # set issuer-address
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -297,7 +309,7 @@ class TestListAllLedgerHistory:
         )
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 2
+        _token.token_status = TokenStatus.FAILED
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -324,7 +336,9 @@ class TestListAllLedgerHistory:
     # Token Not Found
     # unset issuer-address
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -346,7 +360,9 @@ class TestListAllLedgerHistory:
     # <Error_3>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -358,7 +374,7 @@ class TestListAllLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 

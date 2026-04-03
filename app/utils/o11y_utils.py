@@ -24,17 +24,16 @@ from config import PROFILING_MODE, PYROSCOPE_SERVER_URL, RUN_MODE, SERVER_NAME
 
 def setup_pyroscope():
     if PROFILING_MODE is True and PYROSCOPE_SERVER_URL is not None:
-        import pyroscope
+        import pyroscope  # type: ignore
 
-        pyroscope.configure(
+        pyroscope.configure(  # type: ignore
             application_name=SERVER_NAME,
             server_address=PYROSCOPE_SERVER_URL,
             sample_rate=100,  # default is 100
-            detect_subprocesses=True,  # detect subprocesses started by the main process; default is False
             oncpu=False,  # report cpu time only; default is True
             gil_only=False,  # only include traces for threads that are holding on to the Global Interpreter Lock; default is True
             enable_logging=False,  # does enable logging facility; default is False
-            tags={"RUN_MODE": RUN_MODE},
+            tags={"RUN_MODE": RUN_MODE} if RUN_MODE is not None else None,
         )
 
 
@@ -95,7 +94,7 @@ def setup_otel(app: FastAPI | None = None) -> None:
             OTLPSpanExporter,
         )
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from pyroscope.otel import PyroscopeSpanProcessor
+        from pyroscope.otel import PyroscopeSpanProcessor  # type: ignore
 
         otlp_exporter = OTLPSpanExporter()
         batch_span_processor = BatchSpanProcessor(otlp_exporter)

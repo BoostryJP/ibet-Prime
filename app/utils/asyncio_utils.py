@@ -17,12 +17,15 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import asyncio
-from asyncio import Semaphore, TaskGroup
+from asyncio import Semaphore, Task, TaskGroup
 from typing import Any, Coroutine, TypeVar
+
+T = TypeVar("T")
 
 
 class SemaphoreTaskGroup(TaskGroup):
+    _semaphore: Semaphore | None
+
     def __init__(self, *, max_concurrency: int = 0):
         """
         @param max_concurrency: the number of concurrent tasks running
@@ -33,12 +36,10 @@ class SemaphoreTaskGroup(TaskGroup):
         else:
             self._semaphore = None
 
-    T = TypeVar("T")
-
     @classmethod
     async def run(
         cls, *args: Coroutine[Any, Any, T], max_concurrency: int
-    ) -> list[asyncio.Future[T]]:
+    ) -> list[Task[T]]:
         """
 
         @param args: coroutines
@@ -46,10 +47,12 @@ class SemaphoreTaskGroup(TaskGroup):
         @return: dispatched tasks
         """
         async with SemaphoreTaskGroup(max_concurrency=max_concurrency) as tg:
-            dispatched = [tg.create_task(coro) for coro in args]
+            dispatched: list[Task[T]] = [tg.create_task(coro) for coro in args]
         return dispatched
 
-    def create_task(self, coro, *args, **kwargs):
+    def create_task(
+        self, coro: Coroutine[Any, Any, T], *args: Any, **kwargs: Any
+    ) -> Task[T]:
         """
         @param coro: awaitable object
         @param args: args
@@ -58,7 +61,7 @@ class SemaphoreTaskGroup(TaskGroup):
         """
         if self._semaphore:
 
-            async def _wrapped_coro(sem, coro):
+            async def _wrapped_coro(sem: Semaphore, coro: Coroutine[Any, Any, T]) -> T:
                 async with sem:
                     return await coro
 

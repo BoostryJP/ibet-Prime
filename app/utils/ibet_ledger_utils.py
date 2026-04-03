@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import UTC, datetime
-from typing import Sequence
+from typing import Any, Sequence, TypeAlias, TypedDict, cast
 
 import pytz
 from sqlalchemy import and_, delete, func, select, tuple_
@@ -52,6 +52,46 @@ from config import TZ
 LOG = log.get_logger()
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
+
+TemplateList: TypeAlias = list[dict[str, Any]] | None
+
+
+class PersonalInfo(TypedDict, total=False):
+    key_manager: str | None
+    name: str | None
+    address: str | None
+    postal_code: str | None
+    email: str | None
+    birth: str | None
+    is_corporate: bool | None
+    tax_category: int | None
+
+
+class LedgerDetailData(TypedDict):
+    account_address: str | None
+    name: str | None
+    address: str | None
+    amount: int | None
+    price: int | None
+    balance: int | None
+    acquisition_date: str
+
+
+class LedgerDetail(TypedDict):
+    token_detail_type: str
+    headers: TemplateList
+    data: list[LedgerDetailData]
+    footers: TemplateList
+    some_personal_info_not_registered: bool
+
+
+class LedgerPayload(TypedDict):
+    created: str
+    token_name: str
+    currency: str | None
+    headers: TemplateList
+    details: list[LedgerDetail]
+    footers: TemplateList
 
 
 async def request_ledger_creation(db: AsyncSession, token_address: str):
@@ -145,9 +185,12 @@ async def sync_request_with_registered_personal_info(
     initial_unset_count = len(unset_data_list)
     final_set_count = 0
     for unset_data in unset_data_list:
+        account_address = unset_data.account_address
+        if account_address is None:
+            continue
         personal_info = await __get_personal_info(
             db=db,
-            account_address=unset_data.account_address,
+            account_address=account_address,
             issuer_address=issuer_address,
         )
         if personal_info is None:
@@ -199,8 +242,9 @@ async def finalize_ledger(
         )
     ).all()
 
-    ledger_details = []
+    ledger_details: list[LedgerDetail] = []
     for _details_template in _details_template_list:
+        details_template = cast(Any, _details_template)
         _details_data_list: Sequence[LedgerCreationRequestData] = (
             await db.scalars(
                 select(LedgerCreationRequestData).where(
@@ -214,7 +258,7 @@ async def finalize_ledger(
                 )
             )
         ).all()
-        data_list = [
+        data_list: list[LedgerDetailData] = [
             {
                 "account_address": _details_data.account_address,
                 "name": _details_data.name,
@@ -226,11 +270,11 @@ async def finalize_ledger(
             }
             for _details_data in _details_data_list
         ]
-        details = {
+        details: LedgerDetail = {
             "token_detail_type": _details_template.token_detail_type,
-            "headers": _details_template.headers,
+            "headers": cast(TemplateList, details_template.headers),
             "data": data_list,
-            "footers": _details_template.footers,
+            "footers": cast(TemplateList, details_template.footers),
             "some_personal_info_not_registered": False
             if _details_template.data_type == LedgerDataType.DB
             else some_personal_info_not_registered,  # Always False for LedgerDataType.DB
@@ -243,13 +287,14 @@ async def finalize_ledger(
         .strftime("%Y/%m/%d")
     )
     # NOTE: Merge with template with ledger GET API
-    ledger = {
+    template = cast(Any, _template)
+    ledger: LedgerPayload = {
         "created": created_ymd,
         "token_name": _template.token_name,
         "currency": currency_code,
-        "headers": _template.headers,
+        "headers": cast(TemplateList, template.headers),
         "details": ledger_details,
-        "footers": _template.footers,
+        "footers": cast(TemplateList, template.footers),
     }
 
     # Register ledger data to the DB
@@ -257,7 +302,7 @@ async def finalize_ledger(
     _ledger = Ledger()
     _ledger.token_address = token_address
     _ledger.token_type = _token.type
-    _ledger.ledger = ledger
+    _ledger.ledger = cast(dict[str, Any], ledger)
     db.add(_ledger)
 
     # Although autoflush is enabled, there is no operation invoking flush.
@@ -324,12 +369,20 @@ async def __create_dataset_from_db(
         )
     ).all()
     for _details_data in _details_data_list:
+        acquisition_date = _details_data.acquisition_date
+        if acquisition_date is None:
+            # Raise an explicit error so rows missing acquisition_date are not
+            # silently skipped, matching the previous behavior.
+            raise ValueError(
+                "LedgerDetailsData.acquisition_date must not be None: "
+                f"token_address={token_address}, data_id={data_source}"
+            )
         ledger_req_data = LedgerCreationRequestData()
         ledger_req_data.request_id = request_id
         ledger_req_data.data_type = LedgerDataType.DB
         ledger_req_data.data_source = data_source
         ledger_req_data.account_address = ""
-        ledger_req_data.acquisition_date = _details_data.acquisition_date
+        ledger_req_data.acquisition_date = acquisition_date
         ledger_req_data.name = _details_data.name
         ledger_req_data.address = _details_data.address
         ledger_req_data.amount = _details_data.amount
@@ -348,10 +401,15 @@ async def __create_dataset_from_ibetfin(
     """Create ledger input data from ibet for Fin"""
 
     if token_type == TokenType.IBET_SHARE:
-        token_contract = await IbetShareContract(token_address).get()
+        token_contract = cast(
+            IbetShareContract, await IbetShareContract(token_address).get()
+        )
         price = token_contract.principal_value
     elif token_type == TokenType.IBET_STRAIGHT_BOND:
-        token_contract = await IbetStraightBondContract(token_address).get()
+        token_contract = cast(
+            IbetStraightBondContract,
+            await IbetStraightBondContract(token_address).get(),
+        )
         price = token_contract.face_value
     else:
         return
@@ -373,20 +431,29 @@ async def __create_dataset_from_ibetfin(
     #       account_address
     #       - block_timestamp(YYYY/MM/DD)
     #         - sum(amount)
-    utxo_grouped = {}
+    utxo_grouped: dict[str, dict[str, int]] = {}
     for _utxo in _utxo_list:
+        block_timestamp = _utxo.block_timestamp
+        if block_timestamp is None:
+            # Raise an explicit error so rows missing block_timestamp are not
+            # silently skipped during grouping, matching the previous behavior.
+            raise ValueError(
+                "UTXO.block_timestamp must not be None: "
+                f"tx_hash={_utxo.transaction_hash}, account_address={_utxo.account_address}"
+            )
+        amount = _utxo.amount
+        if amount is None:
+            continue
         date_ymd = (
-            utc_tz.localize(_utxo.block_timestamp)
-            .astimezone(local_tz)
-            .strftime("%Y/%m/%d")
+            utc_tz.localize(block_timestamp).astimezone(local_tz).strftime("%Y/%m/%d")
         )
         if _utxo.account_address not in utxo_grouped:
-            utxo_grouped[_utxo.account_address] = {date_ymd: _utxo.amount}
+            utxo_grouped[_utxo.account_address] = {date_ymd: amount}
         else:
             if date_ymd not in utxo_grouped[_utxo.account_address]:
-                utxo_grouped[_utxo.account_address][date_ymd] = _utxo.amount
+                utxo_grouped[_utxo.account_address][date_ymd] = amount
             else:
-                utxo_grouped[_utxo.account_address][date_ymd] += _utxo.amount
+                utxo_grouped[_utxo.account_address][date_ymd] += amount
 
     for account_address, date_ymd_amount in utxo_grouped.items():
         for date_ymd, amount in date_ymd_amount.items():
@@ -408,7 +475,7 @@ async def __get_personal_info(
     db: AsyncSession,
     account_address: str,
     issuer_address: str,
-) -> dict | None:
+) -> PersonalInfo | None:
     # Search indexed personal information
     _idx_personal_info: IDXPersonalInfo | None = (
         await db.scalars(
@@ -422,10 +489,10 @@ async def __get_personal_info(
             .limit(1)
         )
     ).first()
-    if (
-        _idx_personal_info is not None
-        and any(_idx_personal_info.personal_info.values()) is not False
-    ):
-        return _idx_personal_info.personal_info
-    else:
+    if _idx_personal_info is None:
         return None
+
+    personal_info = cast(PersonalInfo, cast(Any, _idx_personal_info).personal_info)
+    if any(personal_info.values()):
+        return personal_info
+    return None

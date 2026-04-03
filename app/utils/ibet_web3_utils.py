@@ -48,7 +48,7 @@ thread_local = threading.local()
 class Web3Wrapper:
     DEFAULT_TIMEOUT = 5
 
-    def __init__(self, request_timeout: int | None = DEFAULT_TIMEOUT):
+    def __init__(self, request_timeout: int = DEFAULT_TIMEOUT):
         if "pytest" not in sys.modules:
             FailOverHTTPProvider.set_fail_over_mode(True)
         self.request_timeout = request_timeout
@@ -86,7 +86,7 @@ class Web3Wrapper:
 class AsyncWeb3Wrapper:
     DEFAULT_TIMEOUT = 5
 
-    def __init__(self, request_timeout: int | None = DEFAULT_TIMEOUT):
+    def __init__(self, request_timeout: int = DEFAULT_TIMEOUT):
         if "pytest" not in sys.modules:
             AsyncFailOverHTTPProvider.set_fail_over_mode(True)
         self.request_timeout = request_timeout
@@ -124,9 +124,13 @@ class AsyncWeb3Wrapper:
 class FailOverHTTPProvider(HTTPProvider):
     fail_over_mode = False  # If False, use only the default(primary) provider
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
-        self.endpoint_uri = None
+        self.endpoint_uri: URI | None = None
 
     def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
@@ -137,41 +141,38 @@ class FailOverHTTPProvider(HTTPProvider):
                 if db_session.scalars(select(Node).limit(1)).first() is None:
                     self.endpoint_uri = URI(WEB3_HTTP_PROVIDER)
                     return super().make_request(method, params)
-                else:
-                    counter = 0
-                    while counter <= WEB3_REQUEST_RETRY_COUNT:
-                        # Switch alive node
-                        _node = db_session.scalars(
-                            select(Node)
-                            .where(Node.is_synced == True)
-                            .order_by(Node.priority, Node.id)
-                            .limit(1)
-                        ).first()
-                        if _node is None:
-                            counter += 1
-                            if counter <= WEB3_REQUEST_RETRY_COUNT:
-                                time.sleep(WEB3_REQUEST_WAIT_TIME)
-                                continue
-                            raise ServiceUnavailableError(
-                                "Block synchronization is down"
-                            )
-                        self.endpoint_uri = URI(_node.endpoint_uri)
-                        try:
-                            return super().make_request(method, params)
-                        except (ConnectionError, JSONDecodeError, HTTPError):
-                            # NOTE:
-                            #  JSONDecodeError will be raised if a request is sent
-                            #  while Quorum is terminating.
-                            counter += 1
-                            if counter <= WEB3_REQUEST_RETRY_COUNT:
-                                time.sleep(WEB3_REQUEST_WAIT_TIME)
-                                continue
-                            raise ServiceUnavailableError(
-                                "Block synchronization is down"
-                            )
+                counter = 0
+                while counter <= WEB3_REQUEST_RETRY_COUNT:
+                    # Switch alive node
+                    _node = db_session.scalars(
+                        select(Node)
+                        .where(Node.is_synced == True)
+                        .order_by(Node.priority, Node.id)
+                        .limit(1)
+                    ).first()
+                    if _node is None:
+                        counter += 1
+                        if counter <= WEB3_REQUEST_RETRY_COUNT:
+                            time.sleep(WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        raise ServiceUnavailableError("Block synchronization is down")
+                    assert _node.endpoint_uri is not None
+                    self.endpoint_uri = URI(_node.endpoint_uri)
+                    try:
+                        return super().make_request(method, params)
+                    except (ConnectionError, JSONDecodeError, HTTPError):
+                        # NOTE:
+                        #  JSONDecodeError will be raised if a request is sent
+                        #  while Quorum is terminating.
+                        counter += 1
+                        if counter <= WEB3_REQUEST_RETRY_COUNT:
+                            time.sleep(WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        raise ServiceUnavailableError("Block synchronization is down")
             else:  # Use default provider
                 self.endpoint_uri = URI(WEB3_HTTP_PROVIDER)
                 return super().make_request(method, params)
+            raise ServiceUnavailableError("Block synchronization is down")
         finally:
             db_session.close()
 
@@ -183,9 +184,13 @@ class FailOverHTTPProvider(HTTPProvider):
 class AsyncFailOverHTTPProvider(AsyncHTTPProvider):
     fail_over_mode = False  # If False, use only the default(primary) provider
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
-        self.endpoint_uri = None
+        self.endpoint_uri: URI | None = None
 
     async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
@@ -196,43 +201,40 @@ class AsyncFailOverHTTPProvider(AsyncHTTPProvider):
                 if (await db_session.scalars(select(Node).limit(1))).first() is None:
                     self.endpoint_uri = URI(WEB3_HTTP_PROVIDER)
                     return await super().make_request(method, params)
-                else:
-                    counter = 0
-                    while counter <= WEB3_REQUEST_RETRY_COUNT:
-                        # Switch alive node
-                        _node = (
-                            await db_session.scalars(
-                                select(Node)
-                                .where(Node.is_synced == True)
-                                .order_by(Node.priority, Node.id)
-                                .limit(1)
-                            )
-                        ).first()
-                        if _node is None:
-                            counter += 1
-                            if counter <= WEB3_REQUEST_RETRY_COUNT:
-                                await asyncio.sleep(WEB3_REQUEST_WAIT_TIME)
-                                continue
-                            raise ServiceUnavailableError(
-                                "Block synchronization is down"
-                            )
-                        self.endpoint_uri = URI(_node.endpoint_uri)
-                        try:
-                            return await super().make_request(method, params)
-                        except (ClientError, JSONDecodeError):
-                            # NOTE:
-                            #  JSONDecodeError will be raised if a request is sent
-                            #  while Quorum is terminating.
-                            counter += 1
-                            if counter <= WEB3_REQUEST_RETRY_COUNT:
-                                await asyncio.sleep(WEB3_REQUEST_WAIT_TIME)
-                                continue
-                            raise ServiceUnavailableError(
-                                "Block synchronization is down"
-                            )
+                counter = 0
+                while counter <= WEB3_REQUEST_RETRY_COUNT:
+                    # Switch alive node
+                    _node = (
+                        await db_session.scalars(
+                            select(Node)
+                            .where(Node.is_synced == True)
+                            .order_by(Node.priority, Node.id)
+                            .limit(1)
+                        )
+                    ).first()
+                    if _node is None:
+                        counter += 1
+                        if counter <= WEB3_REQUEST_RETRY_COUNT:
+                            await asyncio.sleep(WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        raise ServiceUnavailableError("Block synchronization is down")
+                    assert _node.endpoint_uri is not None
+                    self.endpoint_uri = URI(_node.endpoint_uri)
+                    try:
+                        return await super().make_request(method, params)
+                    except (ClientError, JSONDecodeError):
+                        # NOTE:
+                        #  JSONDecodeError will be raised if a request is sent
+                        #  while Quorum is terminating.
+                        counter += 1
+                        if counter <= WEB3_REQUEST_RETRY_COUNT:
+                            await asyncio.sleep(WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        raise ServiceUnavailableError("Block synchronization is down")
             else:  # Use default provider
                 self.endpoint_uri = URI(WEB3_HTTP_PROVIDER)
                 return await super().make_request(method, params)
+            raise ServiceUnavailableError("Block synchronization is down")
         finally:
             await db_session.close()
 

@@ -23,6 +23,8 @@ from unittest import mock
 
 import pytest
 from fastapi import Request
+from freezegun.api import FrozenDateTimeFactory
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import AuthorizationError
 from app.model.db import Account, AuthToken
@@ -42,7 +44,7 @@ class TestCheckAuth:
     # Normal_1_1
     # Authentication by eoa_password(encrypted)
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_db):
+    async def test_normal_1_1(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -68,7 +70,7 @@ class TestCheckAuth:
     # Authentication by eoa_password(not encrypted)
     @mock.patch("app.utils.check_utils.E2EE_REQUEST_ENABLED", False)
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_db):
+    async def test_normal_1_2(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -94,7 +96,7 @@ class TestCheckAuth:
     # Authentication by auth_token
     # valid duration = 0
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_db):
+    async def test_normal_2_1(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -127,7 +129,9 @@ class TestCheckAuth:
     # Authentication by auth_token
     # valid duration != 0
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, freezer, async_db):
+    async def test_normal_2_2(
+        self, freezer: FrozenDateTimeFactory, async_db: AsyncSession
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -167,7 +171,7 @@ class TestCheckAuth:
     # Error_1
     # issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db):
+    async def test_error_1(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # test function
@@ -184,7 +188,7 @@ class TestCheckAuth:
     # Error_2
     # eoa_password is None and auth_token is None
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db):
+    async def test_error_2(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -209,7 +213,7 @@ class TestCheckAuth:
     # Error_3_1
     # eoa_password is mismatched (encrypted)
     @pytest.mark.asyncio
-    async def test_error_3_1(self, async_db):
+    async def test_error_3_1(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -238,7 +242,7 @@ class TestCheckAuth:
     # eoa_password is mismatched (not encrypted)
     @mock.patch("app.utils.check_utils.E2EE_REQUEST_ENABLED", False)
     @pytest.mark.asyncio
-    async def test_error_3_2(self, async_db):
+    async def test_error_3_2(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -264,7 +268,7 @@ class TestCheckAuth:
     # Error_4_1
     # auth_token does not exist
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_db):
+    async def test_error_4_1(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -290,7 +294,7 @@ class TestCheckAuth:
     # Error_4_2
     # auth_token is mismatched
     @pytest.mark.asyncio
-    async def test_error_4_2(self, async_db):
+    async def test_error_4_2(self, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -322,7 +326,9 @@ class TestCheckAuth:
     # Error_4_3
     # auth_token has been expired
     @pytest.mark.asyncio
-    async def test_error_4_3(self, freezer, async_db):
+    async def test_error_4_3(
+        self, freezer: FrozenDateTimeFactory, async_db: AsyncSession
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data

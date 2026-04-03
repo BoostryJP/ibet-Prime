@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, BigInteger, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -38,9 +39,9 @@ class LedgerTemplate(Base):
     # token name
     token_name: Mapped[str] = mapped_column(String(200), nullable=False)
     # headers(any object array)
-    headers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
+    headers: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, default=[])
     # footers(any object array)
-    footers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
+    footers: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, default=[])
 
 
 class LedgerDataType(StrEnum):
@@ -63,9 +64,9 @@ class LedgerDetailsTemplate(Base):
     # token detail type
     token_detail_type: Mapped[str] = mapped_column(String(100), nullable=False)
     # headers(any object array)
-    headers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
+    headers: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, default=[])
     # footers(any object array)
-    footers: Mapped[list[dict] | None] = mapped_column(JSON, default=[])
+    footers: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, default=[])
     # data type
     data_type: Mapped[LedgerDataType] = mapped_column(String(20), nullable=False)
     # data source (address or UUID)
@@ -137,7 +138,7 @@ class Ledger(Base):
     # token type (TokenType)
     token_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # ledger info
-    ledger: Mapped[dict] = mapped_column(JSON, nullable=False)
+    ledger: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # created datetime(UTC)
     # NOTE: Because Base's created column is subject to change in the data patch, define another column.
     ledger_created: Mapped[datetime] = mapped_column(

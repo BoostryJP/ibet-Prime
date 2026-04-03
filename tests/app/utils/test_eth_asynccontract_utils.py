@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from hexbytes import HexBytes
@@ -26,7 +26,7 @@ from web3 import Web3
 from web3.exceptions import Web3Exception
 
 from app.exceptions import SendTransactionError
-from app.utils.eth_contract_utils import EthAsyncContractUtils
+from app.utils.eth_contract_utils import EthAsyncContractUtils, EthTxUtils
 from tests.account_config import default_eth_account
 
 
@@ -157,6 +157,7 @@ class TestGetContract:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -187,6 +188,7 @@ class TestGetContract:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         with pytest.raises(FileNotFoundError):
@@ -223,6 +225,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -259,6 +262,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -290,6 +294,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -336,7 +341,9 @@ class TestGetBlockByTransactionHash:
 
         # Assert
         assert block is not None
-        assert HexBytes(tx_hash) in block["transactions"]
+        transactions = block.get("transactions")
+        assert transactions is not None
+        assert HexBytes(tx_hash) in transactions
 
 
 # Test for get_finalized_block_number
@@ -372,7 +379,9 @@ class TestGetFinalizedBlockNumber:
         block_number = await EthAsyncContractUtils.get_finalized_block_number()
 
         # Assert
-        assert block_number == latest_block["number"]
+        latest_block_number = latest_block.get("number")
+        assert latest_block_number is not None
+        assert block_number == latest_block_number
 
 
 # Test for get_event_logs
@@ -402,6 +411,7 @@ class TestGetEventLogs:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -457,6 +467,7 @@ class TestGetEventLogs:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -489,3 +500,21 @@ class TestGetEventLogs:
 
         # Assert
         assert logs == []
+
+
+# Test for suggest_fees
+@pytest.mark.asyncio
+class TestSuggestFees:
+    # <Error_1>
+    # baseFeePerGas is missing from the latest block
+    async def test_error_1(self):
+        get_block_mock = patch(
+            target="app.utils.eth_contract_utils.EthWeb3.eth.get_block",
+            new=AsyncMock(return_value={"number": 1}),
+        )
+
+        with get_block_mock:
+            with pytest.raises(
+                ValueError, match="latest block does not include baseFeePerGas"
+            ):
+                await EthTxUtils.suggest_fees()

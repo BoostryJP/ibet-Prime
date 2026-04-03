@@ -22,6 +22,8 @@ from unittest import mock
 from unittest.mock import call
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     IDXPersonalInfo,
@@ -30,6 +32,7 @@ from app.model.db import (
     LedgerDetailsTemplate,
     PersonalInfoDataSource,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -39,7 +42,7 @@ from tests.account_config import default_eth_account
 
 class TestRetrieveLedgerHistory:
     # target API endpoint
-    base_url = "/ledger/{token_address}/history/{ledger_id}"
+    base_url: str = "/ledger/{token_address}/history/{ledger_id}"
 
     ###########################################################################
     # Normal Case
@@ -48,7 +51,9 @@ class TestRetrieveLedgerHistory:
     # <Normal_1_1>
     # Set issue-address in the header
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -298,7 +303,9 @@ class TestRetrieveLedgerHistory:
     # <Normal_1_2>
     # Do not set issue-address in the header
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -546,7 +553,9 @@ class TestRetrieveLedgerHistory:
     # latest_flg = 0 (Get the latest personal info)
     # - ledger detail contains None value in "name" and "value": some_personal_info_not_registered = True
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -692,7 +701,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -826,7 +835,9 @@ class TestRetrieveLedgerHistory:
     #   - address_2 has no personal info in the DB
     # token.require_personal_info_registered = True
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -984,7 +995,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -1143,7 +1154,9 @@ class TestRetrieveLedgerHistory:
     #   - address_2 has no personal info in the DB
     # token.require_personal_info_registered = True
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1298,7 +1311,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -1456,7 +1469,9 @@ class TestRetrieveLedgerHistory:
     # token.require_personal_info_registered = False
     # Personal information has not been indexed yet
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1554,7 +1569,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -1644,7 +1659,9 @@ class TestRetrieveLedgerHistory:
     # latest_flg = 1 (Get the latest personal info)
     #   - address_1 is issuer's address
     @pytest.mark.asyncio
-    async def test_normal_3_4(self, async_client, async_db):
+    async def test_normal_3_4(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1741,7 +1758,7 @@ class TestRetrieveLedgerHistory:
             },
             {"f-test1": "a", "f-test2": "b"},
         ]
-        _details_1.data_type = LedgerDataType.IBET_FIN.value
+        _details_1.data_type = LedgerDataType.IBET_FIN
         _details_1.data_source = token_address
         async_db.add(_details_1)
 
@@ -1835,7 +1852,9 @@ class TestRetrieveLedgerHistory:
     #   - address_1 has personal info in the DB but the values are null
     #   - address_2 has personal info in the DB
     @pytest.mark.asyncio
-    async def test_normal_3_5(self, async_client, async_db):
+    async def test_normal_3_5(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2163,7 +2182,9 @@ class TestRetrieveLedgerHistory:
     # <Normal_4>
     # Test `currency` backward compatibility
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2414,7 +2435,9 @@ class TestRetrieveLedgerHistory:
     # Test backward compatibility for specifications earlier than v24.6
     # latest_flg != 1
     @pytest.mark.asyncio
-    async def test_normal_5_1(self, async_client, async_db):
+    async def test_normal_5_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2661,7 +2684,9 @@ class TestRetrieveLedgerHistory:
     # Test backward compatibility for specifications earlier than v24.6
     # latest_flg == 1
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, async_client, async_db):
+    async def test_normal_5_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -2929,7 +2954,9 @@ class TestRetrieveLedgerHistory:
     # <Normal_6>
     # Response data includes over 64-bit range int
     @pytest.mark.asyncio
-    async def test_normal_6(self, async_client, async_db):
+    async def test_normal_6(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -3041,7 +3068,9 @@ class TestRetrieveLedgerHistory:
     # <Error_1>
     # Parameter Error(issuer-address)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -3072,7 +3101,9 @@ class TestRetrieveLedgerHistory:
     # <Error_2>
     # Parameter Error(latest_flg less)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -3106,7 +3137,9 @@ class TestRetrieveLedgerHistory:
     # <Error_3>
     # Parameter Error(latest_flg greater)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -3141,7 +3174,9 @@ class TestRetrieveLedgerHistory:
     # Token Not Found
     # set issuer-address
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_client, async_db):
+    async def test_error_4_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -3155,7 +3190,7 @@ class TestRetrieveLedgerHistory:
         )
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 2
+        _token.token_status = TokenStatus.FAILED
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -3183,7 +3218,9 @@ class TestRetrieveLedgerHistory:
     # Token Not Found
     # unset issuer-address
     @pytest.mark.asyncio
-    async def test_error_4_2(self, async_client, async_db):
+    async def test_error_4_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -3204,7 +3241,9 @@ class TestRetrieveLedgerHistory:
     # <Error_5>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -3216,7 +3255,7 @@ class TestRetrieveLedgerHistory:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -3243,7 +3282,9 @@ class TestRetrieveLedgerHistory:
     # <Error_6>
     # Ledger Not Found
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"

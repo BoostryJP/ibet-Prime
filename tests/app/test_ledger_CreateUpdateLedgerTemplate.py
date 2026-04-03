@@ -17,25 +17,32 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import cast
 from unittest import mock
+from unittest.mock import AsyncMock
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     LedgerDataType,
     LedgerDetailsTemplate,
     LedgerTemplate,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
 from tests.account_config import default_eth_account
 
+TemplateElements = list[dict[str, str]]
+
 
 class TestCreateUpdateLedgerTemplate:
     # target API endpoint
-    base_url = "/ledger/{token_address}/template"
+    base_url: str = "/ledger/{token_address}/template"
 
     ###########################################################################
     # Normal Case
@@ -45,7 +52,12 @@ class TestCreateUpdateLedgerTemplate:
     # Create
     @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
     @pytest.mark.asyncio
-    async def test_normal_1(self, mock_func, async_client, async_db):
+    async def test_normal_1(
+        self,
+        mock_func: AsyncMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -154,10 +166,11 @@ class TestCreateUpdateLedgerTemplate:
         assert resp.status_code == 200
         assert resp.json() is None
         _template = (await async_db.scalars(select(LedgerTemplate).limit(1))).first()
+        assert _template is not None
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿"
-        assert _template.headers == [
+        assert cast(TemplateElements, _template.headers) == [
             {
                 "key": "aaa",
                 "value": "bbb",
@@ -167,7 +180,7 @@ class TestCreateUpdateLedgerTemplate:
                 "fuga": "bbb",
             },
         ]
-        assert _template.footers == [
+        assert cast(TemplateElements, _template.footers) == [
             {
                 "key": "aaa",
                 "value": "bbb",
@@ -187,7 +200,7 @@ class TestCreateUpdateLedgerTemplate:
         assert _details.id == 1
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_1"
-        assert _details.headers == [
+        assert cast(TemplateElements, _details.headers) == [
             {
                 "key": "aaa",
                 "value": "bbb",
@@ -197,7 +210,7 @@ class TestCreateUpdateLedgerTemplate:
                 "fuga-1": "bbb-1",
             },
         ]
-        assert _details.footers == [
+        assert cast(TemplateElements, _details.footers) == [
             {
                 "key": "aaa",
                 "value": "bbb",
@@ -213,7 +226,7 @@ class TestCreateUpdateLedgerTemplate:
         assert _details.id == 2
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_2"
-        assert _details.headers == [
+        assert cast(TemplateElements, _details.headers) == [
             {
                 "key": "aaa",
                 "value": "bbb",
@@ -223,7 +236,7 @@ class TestCreateUpdateLedgerTemplate:
                 "fuga-2": "bbb-2",
             },
         ]
-        assert _details.footers == [
+        assert cast(TemplateElements, _details.footers) == [
             {
                 "key": "aaa",
                 "value": "bbb",
@@ -240,7 +253,12 @@ class TestCreateUpdateLedgerTemplate:
     # Update
     @mock.patch("app.routers.issuer.ledger.request_ledger_creation")
     @pytest.mark.asyncio
-    async def test_normal_2(self, mock_func, async_client, async_db):
+    async def test_normal_2(
+        self,
+        mock_func: AsyncMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -428,10 +446,11 @@ class TestCreateUpdateLedgerTemplate:
         # assertion
         assert resp.status_code == 200
         _template = (await async_db.scalars(select(LedgerTemplate).limit(1))).first()
+        assert _template is not None
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿_update"
-        assert _template.headers == [
+        assert cast(TemplateElements, _template.headers) == [
             {
                 "key_update": "aaa_update",
                 "value_update": "bbb_update",
@@ -441,7 +460,7 @@ class TestCreateUpdateLedgerTemplate:
                 "fuga_update": "bbb_update",
             },
         ]
-        assert _template.footers == [
+        assert cast(TemplateElements, _template.footers) == [
             {
                 "key_update": "aaa_update",
                 "value_update": "bbb_update",
@@ -461,7 +480,7 @@ class TestCreateUpdateLedgerTemplate:
         assert _details.id == 1
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_2"
-        assert _details.headers == [
+        assert cast(TemplateElements, _details.headers) == [
             {
                 "key_update": "aaa_update",
                 "value_update": "bbb_update",
@@ -471,7 +490,7 @@ class TestCreateUpdateLedgerTemplate:
                 "fuga-2_update": "bbb-2_update",
             },
         ]
-        assert _details.footers == [
+        assert cast(TemplateElements, _details.footers) == [
             {
                 "key_update": "aaa_update",
                 "value_update": "bbb_update",
@@ -487,7 +506,7 @@ class TestCreateUpdateLedgerTemplate:
         assert _details.id == 3
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_1"
-        assert _details.headers == [
+        assert cast(TemplateElements, _details.headers) == [
             {
                 "key_update": "aaa_update",
                 "value_update": "bbb_update",
@@ -497,7 +516,7 @@ class TestCreateUpdateLedgerTemplate:
                 "fuga-1": "bbb-1",
             },
         ]
-        assert _details.footers == [
+        assert cast(TemplateElements, _details.footers) == [
             {
                 "key_update": "aaa_update",
                 "value_update": "bbb_update",
@@ -517,7 +536,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_1>
     # Parameter Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -548,7 +569,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_2>
     # Parameter Error(issuer-address)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -656,7 +679,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_3>
     # Parameter Error(body request required)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -696,7 +721,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_4>
     # Parameter Error(body request)
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -761,7 +788,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_5>
     # Parameter Error(body request:details)
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -906,7 +935,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_6>
     # Parameter Error(body request:headers/footers json)
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -995,7 +1026,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_7>
     # Token Not Found
     @pytest.mark.asyncio
-    async def test_error_7(self, async_client, async_db):
+    async def test_error_7(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1098,7 +1131,9 @@ class TestCreateUpdateLedgerTemplate:
     # <Error_8>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_8(self, async_client, async_db):
+    async def test_error_8(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1110,7 +1145,7 @@ class TestCreateUpdateLedgerTemplate:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 

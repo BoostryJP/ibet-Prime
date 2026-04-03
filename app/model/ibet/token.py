@@ -21,7 +21,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from random import randint
-from typing import List, TypeVar
+from typing import Any, List, TypeVar
 
 from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
@@ -800,8 +800,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         super().__init__(contract_address, "IbetStraightBond")
 
     async def create(
-        self, args: list, tx_sender: EthereumAddress, tx_sender_key: bytes
-    ):
+        self, args: list[Any], tx_sender: EthereumAddress, tx_sender_key: bytes
+    ) -> tuple[str, Any, str]:
         """
         Deploy token
 
@@ -1496,8 +1496,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
         super().__init__(contract_address, "IbetShare")
 
     async def create(
-        self, args: list, tx_sender: EthereumAddress, tx_sender_key: bytes
-    ):
+        self, args: list[Any], tx_sender: EthereumAddress, tx_sender_key: bytes
+    ) -> tuple[str, Any, str]:
         """
         Deploy token
 

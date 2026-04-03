@@ -19,12 +19,15 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import logging
+from collections.abc import Generator
 from datetime import datetime
 from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import LedgerCreationRequest, LedgerCreationStatus, TokenType
 from app.model.ibet import (
@@ -35,7 +38,7 @@ from batch.processor_create_ledger import LOG, Processor
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession) -> Generator[Processor, None, None]:
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -56,7 +59,12 @@ class TestProcessor:
     # <Normal_1>
     # The ledger creation request does not exist.
     # -> skip end
-    async def test_normal_1(self, processor, async_db, caplog):
+    async def test_normal_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: LogCaptureFixture,
+    ) -> None:
         # Execute batch
         await processor.process()
 
@@ -71,7 +79,13 @@ class TestProcessor:
         "batch.processor_create_ledger.sync_request_with_registered_personal_info",
         AsyncMock(return_value=(1, 0)),
     )
-    async def test_normal_2(self, token_mock, processor, async_db, caplog):
+    async def test_normal_2(
+        self,
+        token_mock: AsyncMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: LogCaptureFixture,
+    ) -> None:
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -113,7 +127,13 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_3_1(self, token_mock, processor, async_db, caplog):
+    async def test_normal_3_1(
+        self,
+        token_mock: AsyncMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: LogCaptureFixture,
+    ) -> None:
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -141,6 +161,7 @@ class TestProcessor:
         ledger_req = (
             await async_db.scalars(select(LedgerCreationRequest).limit(1))
         ).first()
+        assert ledger_req is not None
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [
@@ -161,7 +182,13 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_3_2(self, token_mock, processor, async_db, caplog):
+    async def test_normal_3_2(
+        self,
+        token_mock: AsyncMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: LogCaptureFixture,
+    ) -> None:
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -190,6 +217,7 @@ class TestProcessor:
         ledger_req = (
             await async_db.scalars(select(LedgerCreationRequest).limit(1))
         ).first()
+        assert ledger_req is not None
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [
@@ -211,7 +239,13 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_4_1(self, token_mock, processor, async_db, caplog):
+    async def test_normal_4_1(
+        self,
+        token_mock: AsyncMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: LogCaptureFixture,
+    ) -> None:
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -240,6 +274,7 @@ class TestProcessor:
         ledger_req = (
             await async_db.scalars(select(LedgerCreationRequest).limit(1))
         ).first()
+        assert ledger_req is not None
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [
@@ -261,7 +296,13 @@ class TestProcessor:
     @mock.patch(
         "batch.processor_create_ledger.finalize_ledger", AsyncMock(return_value=None)
     )
-    async def test_normal_4_2(self, token_mock, processor, async_db, caplog):
+    async def test_normal_4_2(
+        self,
+        token_mock: AsyncMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: LogCaptureFixture,
+    ) -> None:
         request_id = "test_request_id"
         token_address = "test_token_address"
         issuer_address = "test_issuer_address"
@@ -291,6 +332,7 @@ class TestProcessor:
         ledger_req = (
             await async_db.scalars(select(LedgerCreationRequest).limit(1))
         ).first()
+        assert ledger_req is not None
         assert ledger_req.status == LedgerCreationStatus.COMPLETED
 
         assert caplog.messages == [

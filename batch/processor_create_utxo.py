@@ -113,7 +113,7 @@ class Processor:
                                     db=db_session, token_address=token_contract.address
                                 )
                                 await db_session.flush()
-                        except DBAPIError:
+                        except (DBAPIError, ValueError):
                             LOG.error(
                                 f"Invalid record detected. Ledger creation request has been discarded and not saved: token_address={token_contract.address}"
                             )

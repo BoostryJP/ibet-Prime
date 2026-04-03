@@ -38,32 +38,33 @@ class TestVerifySealedTxSignature:
     address = "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf"
 
     apiurl = "/test/TestVerifySignature"
+    cli: TestClient
 
-    def setup_class(self):
+    def setup_class(self) -> None:
         # Test API (POST）
-        @app.post("/test/TestVerifySignature", tags=["Test"])
-        def test_post(
+        def post_endpoint(
             request: Request,
             raw_body: RawRequestBody,
             x_sealed_tx_signature: SealedTxSignatureHeader,
-        ):
+        ) -> PlainTextResponse:
             recovered_address = VerifySealedTxSignature(
                 req=request,
                 body=json.loads(raw_body.decode()) if len(raw_body) > 0 else {},
                 signature=x_sealed_tx_signature,
             )
             return PlainTextResponse(recovered_address)
+        app.post("/test/TestVerifySignature", tags=["Test"])(post_endpoint)
 
         # Test API（GET）
-        @app.get("/test/TestVerifySignature", tags=["Test"])
-        def test_get(
+        def get_endpoint(
             request: Request,
             x_ibet_signature: SealedTxSignatureHeader,
-        ):
+        ) -> PlainTextResponse:
             recovered_address = VerifySealedTxSignature(
                 req=request, body=None, signature=x_ibet_signature
             )
             return PlainTextResponse(recovered_address)
+        app.get("/test/TestVerifySignature", tags=["Test"])(get_endpoint)
 
         self.cli = TestClient(app)
 
@@ -107,7 +108,7 @@ class TestVerifySealedTxSignature:
     # With query string and no request body
     # POST
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client):
+    async def test_normal_2_1(self):
         signature = generate_sealed_tx_signature(
             "POST",
             self.apiurl,
@@ -133,7 +134,7 @@ class TestVerifySealedTxSignature:
     # With query string and no request body
     # GET
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client):
+    async def test_normal_2_2(self):
         signature = generate_sealed_tx_signature(
             "GET",
             self.apiurl,
@@ -160,7 +161,7 @@ class TestVerifySealedTxSignature:
     # Standard JSON format
     # POST
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client):
+    async def test_normal_3_1(self):
         signature = generate_sealed_tx_signature(
             "POST",
             self.apiurl,
@@ -185,7 +186,7 @@ class TestVerifySealedTxSignature:
     # JSON format without whitespace
     # POST
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client):
+    async def test_normal_3_2(self):
         signature = generate_sealed_tx_signature(
             "POST",
             self.apiurl,

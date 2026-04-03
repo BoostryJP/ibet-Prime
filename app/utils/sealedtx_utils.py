@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 
 from eth_account.messages import encode_defunct
 from fastapi import Depends, Header, Request
@@ -39,7 +39,9 @@ RawRequestBody = Annotated[bytes, Depends(get_body)]
 SealedTxSignatureHeader = Annotated[str, Header(alias="X-SealedTx-Signature")]
 
 
-def VerifySealedTxSignature(req: Request, body: dict | None, signature: str):
+def VerifySealedTxSignature(
+    req: Request, body: dict[str, Any] | None, signature: str
+) -> str:
     """
     Verify X-SealedTx-Signature
     - https://github.com/BoostryJP/ibet-Prime/issues/689
@@ -58,10 +60,8 @@ def VerifySealedTxSignature(req: Request, body: dict | None, signature: str):
     request_body_hash = w3.keccak(text=request_body).hex()
 
     # Normalize the query parameters
-    kvs = []
+    kvs: list[str] = []
     for k, v in sorted(req.query_params.items()):
-        if type(v) == int:
-            v = str(v)
         kvs.append(k + "=" + v)
 
     if len(kvs) == 0:
