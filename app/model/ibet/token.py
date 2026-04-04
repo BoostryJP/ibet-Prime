@@ -21,7 +21,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from random import randint
-from typing import Any, List, NamedTuple, Self, TypeAlias, cast
+from typing import Any, List, Self
 
 from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
@@ -73,121 +73,6 @@ from config import (
 LOG = log.get_logger()
 
 web3 = Web3Wrapper()
-
-StraightBondGetRawResults: TypeAlias = tuple[
-    str,
-    str,
-    str,
-    int,
-    str,
-    str,
-    str,
-    bool,
-    str,
-    bool,
-    bool,
-    bool,
-    bool,
-    int,
-    str,
-    int,
-    str,
-    str,
-    str,
-    int,
-    str,
-    str,
-    str,
-    str | int | float,
-    str,
-    str,
-    bool,
-]
-
-
-class StraightBondGetResults(NamedTuple):
-    issuer_address: str
-    name: str
-    symbol: str
-    total_supply: int
-    tradable_exchange_contract_address: str
-    contact_information: str
-    privacy_policy: str
-    status: bool
-    personal_info_contract_address: str
-    require_personal_info_registered: bool
-    transferable: bool
-    is_offering: bool
-    transfer_approval_required: bool
-    face_value: int
-    face_value_currency: str
-    interest_rate: int
-    interest_payment_currency: str
-    interest_payment_date: str
-    redemption_date: str
-    redemption_value: int
-    redemption_value_currency: str
-    return_date: str
-    return_amount: str
-    base_fx_rate: str | int | float
-    purpose: str
-    memo: str
-    is_redeemed: bool
-
-
-ShareGetRawResults: TypeAlias = tuple[
-    str,
-    str,
-    str,
-    int,
-    str,
-    str,
-    str,
-    bool,
-    str,
-    bool,
-    bool,
-    bool,
-    bool,
-    int,
-    str,
-    str,
-    int,
-    bool,
-    tuple[int, str, str],
-]
-
-
-class ShareGetResults(NamedTuple):
-    issuer_address: str
-    name: str
-    symbol: str
-    total_supply: int
-    tradable_exchange_contract_address: str
-    contact_information: str
-    privacy_policy: str
-    status: bool
-    personal_info_contract_address: str
-    require_personal_info_registered: bool
-    transferable: bool
-    is_offering: bool
-    transfer_approval_required: bool
-    issue_price: int
-    cancellation_date: str
-    memo: str
-    principal_value: int
-    is_canceled: bool
-    dividend_info: tuple[int, str, str]
-
-
-def _to_straight_bond_get_results(
-    raw_results: tuple[Any, ...],
-) -> StraightBondGetResults:
-    return StraightBondGetResults(*cast(StraightBondGetRawResults, raw_results))
-
-
-def _to_share_get_results(raw_results: tuple[Any, ...]) -> ShareGetResults:
-    return ShareGetResults(*cast(ShareGetRawResults, raw_results))
 
 
 class IbetStandardTokenInterface:
@@ -977,97 +862,159 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             )
 
             try:
-                tasks = await SemaphoreTaskGroup.run(
-                    # IbetStandardTokenInterface attribute
-                    AsyncContractUtils.call_function(
-                        contract, "owner", (), ZERO_ADDRESS
-                    ),
-                    AsyncContractUtils.call_function(contract, "name", (), ""),
-                    AsyncContractUtils.call_function(contract, "symbol", (), ""),
-                    AsyncContractUtils.call_function(contract, "totalSupply", (), 0),
-                    AsyncContractUtils.call_function(
-                        contract, "tradableExchange", (), ZERO_ADDRESS
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "contactInformation", (), ""
-                    ),
-                    AsyncContractUtils.call_function(contract, "privacyPolicy", (), ""),
-                    AsyncContractUtils.call_function(contract, "status", (), True),
-                    # IbetSecurityTokenInterface attribute
-                    AsyncContractUtils.call_function(
-                        contract, "personalInfoAddress", (), ZERO_ADDRESS
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "requirePersonalInfoRegistered", (), True
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "transferable", (), False
-                    ),
-                    AsyncContractUtils.call_function(contract, "isOffering", (), False),
-                    AsyncContractUtils.call_function(
-                        contract, "transferApprovalRequired", (), False
-                    ),
-                    # IbetStraightBondToken attribute
-                    AsyncContractUtils.call_function(contract, "faceValue", (), 0),
-                    AsyncContractUtils.call_function(
-                        contract, "faceValueCurrency", (), DEFAULT_CURRENCY
-                    ),
-                    AsyncContractUtils.call_function(contract, "interestRate", (), 0),
-                    AsyncContractUtils.call_function(
-                        contract, "interestPaymentCurrency", (), ""
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "interestPaymentDate", (), ""
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "redemptionDate", (), ""
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "redemptionValue", (), 0
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "redemptionValueCurrency", (), ""
-                    ),
-                    AsyncContractUtils.call_function(contract, "returnDate", (), ""),
-                    AsyncContractUtils.call_function(contract, "returnAmount", (), ""),
-                    AsyncContractUtils.call_function(contract, "baseFXRate", (), ""),
-                    AsyncContractUtils.call_function(contract, "purpose", (), ""),
-                    AsyncContractUtils.call_function(contract, "memo", (), ""),
-                    AsyncContractUtils.call_function(contract, "isRedeemed", (), False),
-                    max_concurrency=3,
+                async with SemaphoreTaskGroup(max_concurrency=3) as tg:
+                    owner_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "owner", (), ZERO_ADDRESS
+                        )
+                    )
+                    name_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "name", (), "")
+                    )
+                    symbol_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "symbol", (), "")
+                    )
+                    total_supply_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "totalSupply", (), 0)
+                    )
+                    tradable_exchange_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "tradableExchange", (), ZERO_ADDRESS
+                        )
+                    )
+                    contact_information_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "contactInformation", (), ""
+                        )
+                    )
+                    privacy_policy_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "privacyPolicy", (), ""
+                        )
+                    )
+                    status_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "status", (), True)
+                    )
+                    personal_info_address_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "personalInfoAddress", (), ZERO_ADDRESS
+                        )
+                    )
+                    require_personal_info_registered_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "requirePersonalInfoRegistered", (), True
+                        )
+                    )
+                    transferable_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "transferable", (), False
+                        )
+                    )
+                    is_offering_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "isOffering", (), False
+                        )
+                    )
+                    transfer_approval_required_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "transferApprovalRequired", (), False
+                        )
+                    )
+                    face_value_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "faceValue", (), 0)
+                    )
+                    face_value_currency_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "faceValueCurrency", (), DEFAULT_CURRENCY
+                        )
+                    )
+                    interest_rate_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "interestRate", (), 0
+                        )
+                    )
+                    interest_payment_currency_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "interestPaymentCurrency", (), ""
+                        )
+                    )
+                    interest_payment_date_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "interestPaymentDate", (), ""
+                        )
+                    )
+                    redemption_date_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "redemptionDate", (), ""
+                        )
+                    )
+                    redemption_value_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "redemptionValue", (), 0
+                        )
+                    )
+                    redemption_value_currency_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "redemptionValueCurrency", (), ""
+                        )
+                    )
+                    return_date_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "returnDate", (), "")
+                    )
+                    return_amount_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "returnAmount", (), ""
+                        )
+                    )
+                    base_fx_rate_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "baseFXRate", (), "")
+                    )
+                    purpose_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "purpose", (), "")
+                    )
+                    memo_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "memo", (), "")
+                    )
+                    is_redeemed_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "isRedeemed", (), False
+                        )
+                    )
+                self.issuer_address = owner_task.result()
+                self.name = name_task.result()
+                self.symbol = symbol_task.result()
+                self.total_supply = total_supply_task.result()
+                self.tradable_exchange_contract_address = (
+                    tradable_exchange_task.result()
                 )
-                results = _to_straight_bond_get_results(
-                    tuple(task.result() for task in tasks)
+                self.contact_information = contact_information_task.result()
+                self.privacy_policy = privacy_policy_task.result()
+                self.status = status_task.result()
+                self.personal_info_contract_address = (
+                    personal_info_address_task.result()
                 )
-                (
-                    self.issuer_address,
-                    self.name,
-                    self.symbol,
-                    self.total_supply,
-                    self.tradable_exchange_contract_address,
-                    self.contact_information,
-                    self.privacy_policy,
-                    self.status,
-                    self.personal_info_contract_address,
-                    self.require_personal_info_registered,
-                    self.transferable,
-                    self.is_offering,
-                    self.transfer_approval_required,
-                    self.face_value,
-                    self.face_value_currency,
-                    _interest_rate,
-                    self.interest_payment_currency,
-                    _interest_payment_date,
-                    self.redemption_date,
-                    self.redemption_value,
-                    self.redemption_value_currency,
-                    self.return_date,
-                    self.return_amount,
-                    _base_fx_rate,
-                    self.purpose,
-                    self.memo,
-                    self.is_redeemed,
-                ) = results
+                self.require_personal_info_registered = (
+                    require_personal_info_registered_task.result()
+                )
+                self.transferable = transferable_task.result()
+                self.is_offering = is_offering_task.result()
+                self.transfer_approval_required = (
+                    transfer_approval_required_task.result()
+                )
+                self.face_value = face_value_task.result()
+                self.face_value_currency = face_value_currency_task.result()
+                _interest_rate = interest_rate_task.result()
+                self.interest_payment_currency = interest_payment_currency_task.result()
+                _interest_payment_date = interest_payment_date_task.result()
+                self.redemption_date = redemption_date_task.result()
+                self.redemption_value = redemption_value_task.result()
+                self.redemption_value_currency = redemption_value_currency_task.result()
+                self.return_date = return_date_task.result()
+                self.return_amount = return_amount_task.result()
+                _base_fx_rate = base_fx_rate_task.result()
+                self.purpose = purpose_task.result()
+                self.memo = memo_task.result()
+                self.is_redeemed = is_redeemed_task.result()
             except ExceptionGroup:
                 LOG.warning("Failed to get ibet token attributes")
                 raise ServiceUnavailableError from None
@@ -1677,71 +1624,118 @@ class IbetShareContract(IbetSecurityTokenInterface):
             )
 
             try:
-                tasks = await SemaphoreTaskGroup.run(
-                    # IbetStandardTokenInterface attribute
-                    AsyncContractUtils.call_function(
-                        contract, "owner", (), ZERO_ADDRESS
-                    ),
-                    AsyncContractUtils.call_function(contract, "name", (), ""),
-                    AsyncContractUtils.call_function(contract, "symbol", (), ""),
-                    AsyncContractUtils.call_function(contract, "totalSupply", (), 0),
-                    AsyncContractUtils.call_function(
-                        contract, "tradableExchange", (), ZERO_ADDRESS
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "contactInformation", (), ""
-                    ),
-                    AsyncContractUtils.call_function(contract, "privacyPolicy", (), ""),
-                    AsyncContractUtils.call_function(contract, "status", (), True),
-                    # IbetSecurityTokenInterface attribute
-                    AsyncContractUtils.call_function(
-                        contract, "personalInfoAddress", (), ZERO_ADDRESS
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "requirePersonalInfoRegistered", (), True
-                    ),
-                    AsyncContractUtils.call_function(
-                        contract, "transferable", (), False
-                    ),
-                    AsyncContractUtils.call_function(contract, "isOffering", (), False),
-                    AsyncContractUtils.call_function(
-                        contract, "transferApprovalRequired", (), False
-                    ),
-                    # IbetShareToken attribute
-                    AsyncContractUtils.call_function(contract, "issuePrice", (), 0),
-                    AsyncContractUtils.call_function(
-                        contract, "cancellationDate", (), ""
-                    ),
-                    AsyncContractUtils.call_function(contract, "memo", (), ""),
-                    AsyncContractUtils.call_function(contract, "principalValue", (), 0),
-                    AsyncContractUtils.call_function(contract, "isCanceled", (), False),
-                    AsyncContractUtils.call_function(
-                        contract, "dividendInformation", (), (0, "", "")
-                    ),
-                    max_concurrency=3,
+                async with SemaphoreTaskGroup(max_concurrency=3) as tg:
+                    owner_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "owner", (), ZERO_ADDRESS
+                        )
+                    )
+                    name_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "name", (), "")
+                    )
+                    symbol_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "symbol", (), "")
+                    )
+                    total_supply_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "totalSupply", (), 0)
+                    )
+                    tradable_exchange_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "tradableExchange", (), ZERO_ADDRESS
+                        )
+                    )
+                    contact_information_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "contactInformation", (), ""
+                        )
+                    )
+                    privacy_policy_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "privacyPolicy", (), ""
+                        )
+                    )
+                    status_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "status", (), True)
+                    )
+                    personal_info_address_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "personalInfoAddress", (), ZERO_ADDRESS
+                        )
+                    )
+                    require_personal_info_registered_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "requirePersonalInfoRegistered", (), True
+                        )
+                    )
+                    transferable_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "transferable", (), False
+                        )
+                    )
+                    is_offering_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "isOffering", (), False
+                        )
+                    )
+                    transfer_approval_required_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "transferApprovalRequired", (), False
+                        )
+                    )
+                    issue_price_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "issuePrice", (), 0)
+                    )
+                    cancellation_date_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "cancellationDate", (), ""
+                        )
+                    )
+                    memo_task = tg.create_task(
+                        AsyncContractUtils.call_function(contract, "memo", (), "")
+                    )
+                    principal_value_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "principalValue", (), 0
+                        )
+                    )
+                    is_canceled_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "isCanceled", (), False
+                        )
+                    )
+                    dividend_info_task = tg.create_task(
+                        AsyncContractUtils.call_function(
+                            contract, "dividendInformation", (), (0, "", "")
+                        )
+                    )
+
+                self.issuer_address = owner_task.result()
+                self.name = name_task.result()
+                self.symbol = symbol_task.result()
+                self.total_supply = total_supply_task.result()
+                self.tradable_exchange_contract_address = (
+                    tradable_exchange_task.result()
                 )
-                results = _to_share_get_results(tuple(task.result() for task in tasks))
-                (
-                    self.issuer_address,
-                    self.name,
-                    self.symbol,
-                    self.total_supply,
-                    self.tradable_exchange_contract_address,
-                    self.contact_information,
-                    self.privacy_policy,
-                    self.status,
-                    self.personal_info_contract_address,
-                    self.require_personal_info_registered,
-                    self.transferable,
-                    self.is_offering,
-                    self.transfer_approval_required,
-                    self.issue_price,
-                    self.cancellation_date,
-                    self.memo,
-                    self.principal_value,
-                    self.is_canceled,
-                    _dividend_info,
-                ) = results
+                self.contact_information = contact_information_task.result()
+                self.privacy_policy = privacy_policy_task.result()
+                self.status = status_task.result()
+                self.personal_info_contract_address = (
+                    personal_info_address_task.result()
+                )
+                self.require_personal_info_registered = (
+                    require_personal_info_registered_task.result()
+                )
+                self.transferable = transferable_task.result()
+                self.is_offering = is_offering_task.result()
+                self.transfer_approval_required = (
+                    transfer_approval_required_task.result()
+                )
+                self.issue_price = issue_price_task.result()
+                self.cancellation_date = cancellation_date_task.result()
+                self.memo = memo_task.result()
+                self.principal_value = principal_value_task.result()
+                self.is_canceled = is_canceled_task.result()
+                _dividend_info = dividend_info_task.result()
             except ExceptionGroup:
                 LOG.warning("Failed to get ibet token attributes")
                 raise ServiceUnavailableError from None
