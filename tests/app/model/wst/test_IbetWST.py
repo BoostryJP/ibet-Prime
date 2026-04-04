@@ -29,12 +29,13 @@ from app.model.wst import (
 from app.utils.eth_contract_utils import EthAsyncContractUtils, EthWeb3
 from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
+from tests.types import UnitTestAccount
 
 
 async def deploy_wst_token(
     name: str,
-    deployer: dict,
-    owner: dict,
+    deployer: UnitTestAccount,
+    owner: UnitTestAccount,
 ) -> str:
     """
     Deploy an AuthIbetWST token contract.
@@ -55,6 +56,8 @@ async def deploy_wst_token(
     )
     tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
     contract_address = tx_receipt.get("contractAddress")
+    if contract_address is None:
+        raise AssertionError("contractAddress is missing in transaction receipt")
     return contract_address
 
 
@@ -62,7 +65,7 @@ async def mint_wst_token(
     contract_address: str,
     to: str,
     value: int,
-    tx_from: dict,
+    tx_from: UnitTestAccount,
 ) -> None:
     """
     Mint WST tokens to a specified recipient.
@@ -97,7 +100,7 @@ async def wst_add_account_to_whitelist(
     st_account: str,
     sc_account_in: str,
     sc_account_out: str,
-    tx_from: dict,
+    tx_from: UnitTestAccount,
 ) -> None:
     """
     Add an account to the WST whitelist.
@@ -137,7 +140,7 @@ async def wst_request_trade(
     st_value: int,
     sc_value: int,
     memo: str,
-    tx_from: dict,
+    tx_from: UnitTestAccount,
 ) -> None:
     """
     Request a trade on the AuthIbetWST contract.
@@ -178,8 +181,8 @@ async def wst_request_trade(
 
 async def deploy_erc20_token(
     name: str,
-    deployer: dict,
-    owner: dict,
+    deployer: UnitTestAccount,
+    owner: UnitTestAccount,
 ) -> str:
     """
     Deploy an ERC20 token contract.
@@ -200,6 +203,8 @@ async def deploy_erc20_token(
     )
     tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
     contract_address = tx_receipt.get("contractAddress")
+    if contract_address is None:
+        raise AssertionError("contractAddress is missing in transaction receipt")
     return contract_address
 
 
@@ -207,7 +212,7 @@ async def mint_erc20_token(
     contract_address: str,
     to: str,
     value: int,
-    tx_from: dict,
+    tx_from: UnitTestAccount,
 ) -> None:
     """
     Mint ERC20 tokens to a specified recipient.
@@ -241,7 +246,7 @@ async def erc20_approve_token(
     contract_address: str,
     spender: str,
     value: int,
-    tx_from: dict,
+    tx_from: UnitTestAccount,
 ) -> None:
     """
     Approve a spender to spend ERC20 tokens on behalf of the owner.

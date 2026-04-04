@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -26,6 +27,7 @@ from app.model.ibet import IbetExchangeInterface, IbetStraightBondContract
 from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import default_eth_account
+from tests.types import UnitTestAccount
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -75,7 +77,7 @@ def deploy_escrow_contract():
     return escrow_contract
 
 
-async def issue_bond_token(issuer: dict, exchange_address: str):
+async def issue_bond_token(issuer: UnitTestAccount, exchange_address: str):
     issuer_address = issuer["address"]
     issuer_pk = decode_keyfile_json(
         raw_keyfile_json=issuer.get("keyfile_json"),
@@ -137,7 +139,7 @@ class TestGetAccountBalance:
     # balance = 0, commitment = 0
     # Default value
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         user1_account = default_eth_account("user1")
 
         # deploy contract
@@ -159,7 +161,7 @@ class TestGetAccountBalance:
 
     # <Normal_2>
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_db):
+    async def test_normal_2(self, async_db: AsyncSession):
         user1_account = default_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -217,7 +219,7 @@ class TestGetAccountBalance:
     # <Normal_3>
     # Not deployed contract
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_db):
+    async def test_normal_3(self, async_db: AsyncSession):
         user1_account = default_eth_account("user1")
 
         # test IbetExchangeInterface.get_account_balance
