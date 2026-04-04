@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import logging
-from typing import Any, Final, cast
+from typing import Any, Final
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
@@ -200,14 +200,12 @@ class PersonalInfoContract:
         try:
             if self.private_key is None:
                 assert self.issuer.eoa_password is not None
-                password = E2EEUtils.decrypt(self.issuer.eoa_password)
-                keyfile_json = cast(
-                    dict[str, Any] | None, cast(Any, self.issuer).keyfile
-                )
-                assert keyfile_json is not None
+                assert self.issuer.keyfile is not None
                 self.private_key = decode_keyfile_json(
-                    raw_keyfile_json=keyfile_json,
-                    password=password.encode("utf-8"),
+                    raw_keyfile_json=self.issuer.keyfile,
+                    password=E2EEUtils.decrypt(self.issuer.eoa_password).encode(
+                        "utf-8"
+                    ),
                 )
             tx = await self.personal_info_contract.functions.forceRegister(
                 account_address, ciphertext.decode("utf-8")
@@ -270,14 +268,12 @@ class PersonalInfoContract:
         try:
             if self.private_key is None:
                 assert self.issuer.eoa_password is not None
-                password = E2EEUtils.decrypt(self.issuer.eoa_password)
-                keyfile_json = cast(
-                    dict[str, Any] | None, cast(Any, self.issuer).keyfile
-                )
-                assert keyfile_json is not None
+                assert self.issuer.keyfile is not None
                 self.private_key = decode_keyfile_json(
-                    raw_keyfile_json=keyfile_json,
-                    password=password.encode("utf-8"),
+                    raw_keyfile_json=self.issuer.keyfile,
+                    password=E2EEUtils.decrypt(self.issuer.eoa_password).encode(
+                        "utf-8"
+                    ),
                 )
             tx = await self.personal_info_contract.functions.modify(
                 account_address, ciphertext.decode("utf-8")

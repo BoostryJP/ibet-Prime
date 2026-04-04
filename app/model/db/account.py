@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import Enum
+from typing import Any
 
 from sqlalchemy import JSON, BigInteger, Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -36,7 +37,7 @@ class Account(Base):
     # - NOTE: The value will be set in versions after v24.12.
     issuer_public_key: Mapped[str | None] = mapped_column(String(66))
     # ethereum private-key keyfile
-    keyfile: Mapped[dict | None] = mapped_column(JSON)
+    keyfile: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     # keyfile password (encrypted)
     eoa_password: Mapped[str | None] = mapped_column(String(2000))
     # rsa private key

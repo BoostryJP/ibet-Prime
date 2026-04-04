@@ -343,7 +343,7 @@ async def list_all_scheduled_events(
                 "scheduled_datetime": _scheduled_datetime,
                 "event_type": _event.event_type,
                 "status": _event.status,
-                "data": cast(dict[str, Any], cast(Any, _event).data),
+                "data": _event.data,
                 "created": _created,
                 "is_soft_deleted": _event.is_soft_deleted,
                 "token_attributes": token_attr,
@@ -601,11 +601,10 @@ async def add_ibet_wst_whitelist(
     )
 
     # Get private key
-    keyfile_json = cast(dict[str, Any] | None, cast(Any, _account).keyfile)
-    if keyfile_json is None:
+    if _account.keyfile is None:
         raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+        raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
 
     # Get Token
@@ -729,11 +728,10 @@ async def delete_ibet_wst_whitelist(
     )
 
     # Get private key
-    keyfile_json = cast(dict[str, Any] | None, cast(Any, _account).keyfile)
-    if keyfile_json is None:
+    if _account.keyfile is None:
         raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+        raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
 
     # Get Token
@@ -856,11 +854,11 @@ async def force_burn_ibet_wst_position(
     )
 
     # Get private key
-    keyfile_json = cast(dict[str, Any] | None, cast(Any, issuer_account).keyfile)
-    if keyfile_json is None:
+    if issuer_account.keyfile is None:
         raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+        raw_keyfile_json=issuer_account.keyfile,
+        password=decrypt_password.encode("utf-8"),
     )
 
     # Get Token

@@ -225,7 +225,7 @@ class TestRegisterTokenList:
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE,
                 tx_sender=issuer_address,
-                tx_sender_key=cast(bytes, "not private key"),
+                tx_sender_key="not private key",  # type: ignore
             )
         assert isinstance(exc_info.value.args[0], Error)
 

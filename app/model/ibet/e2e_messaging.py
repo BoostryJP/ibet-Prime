@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import secrets
-from typing import Any, cast
+from typing import Any
 
 import boto3
 from Crypto.Cipher import AES, PKCS1_OAEP
@@ -108,18 +108,16 @@ class E2EMessaging:
         # Encrypt message with AES-256-CBC
         if AWS_KMS_GENERATE_RANDOM_ENABLED:
             kms = boto3.client(service_name="kms", region_name=AWS_REGION_NAME)
-            result = cast(
-                dict[str, bytes], kms.generate_random(NumberOfBytes=AES.block_size * 2)
+            result: dict[str, bytes] = kms.generate_random(
+                NumberOfBytes=AES.block_size * 2
             )
             aes_key = result["Plaintext"]
-            result = cast(
-                dict[str, bytes], kms.generate_random(NumberOfBytes=AES.block_size)
-            )
+            result: dict[str, bytes] = kms.generate_random(NumberOfBytes=AES.block_size)
             aes_iv = result["Plaintext"]
         else:
             aes_key = secrets.token_bytes(AES.block_size * 2)
             aes_iv = secrets.token_bytes(AES.block_size)
-        aes_cipher = cast(Any, AES).new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad(message_org.encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)

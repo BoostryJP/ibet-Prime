@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Any, Optional, Sequence, cast
+from typing import Any, Optional, Sequence
 
 import pytz
 from fastapi import APIRouter, Header, Query
@@ -84,7 +84,6 @@ async def list_all_notifications(
     notifications: list[dict[str, Any]] = []
     for _notification in _notification_list:
         assert _notification.created is not None
-        metainfo = cast(dict[str, Any] | None, getattr(_notification, "metainfo", None))
         created_formatted = (
             utc_tz.localize(_notification.created).astimezone(local_tz).isoformat()
         )
@@ -96,7 +95,7 @@ async def list_all_notifications(
                 "priority": _notification.priority,
                 "notice_type": _notification.type,
                 "notice_code": _notification.code,
-                "metainfo": metainfo,
+                "metainfo": _notification.metainfo,
                 "created": created_formatted,
             }
         )

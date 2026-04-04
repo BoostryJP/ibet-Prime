@@ -281,13 +281,11 @@ async def list_all_locked_position(
         # Get Token Name
         token_name: str | None = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND:
-            _bond = (
-                await IbetStraightBondContract(_token.token_address).get()
-            ).__dict__
-            token_name = cast(str | None, _bond.get("name") if _bond else None)
+            _bond = await IbetStraightBondContract(_token.token_address).get()
+            token_name = _bond.name
         elif _token.type == TokenType.IBET_SHARE:
-            _share = (await IbetShareContract(_token.token_address).get()).__dict__
-            token_name = cast(str | None, _share.get("name") if _share else None)
+            _share = await IbetShareContract(_token.token_address).get()
+            token_name = _share.name
         positions.append(
             {
                 "issuer_address": _token.issuer_address,
@@ -341,7 +339,7 @@ async def list_account_lock_unlock_events(
             IDXLock.account_address.label("account_address"),
             null().label("recipient_address"),
             IDXLock.value.label("value"),
-            cast(Any, IDXLock.data).label("data"),  # pyright: ignore[reportUnknownMemberType]
+            IDXLock.data.label("data"),
             IDXLock.block_timestamp.label("block_timestamp"),
             Token,
         )
@@ -369,7 +367,7 @@ async def list_account_lock_unlock_events(
             IDXUnlock.account_address.label("account_address"),
             IDXUnlock.recipient_address.label("recipient_address"),
             IDXUnlock.value.label("value"),
-            cast(Any, IDXUnlock.data).label("data"),  # pyright: ignore[reportUnknownMemberType]
+            IDXUnlock.data.label("data"),
             IDXUnlock.block_timestamp.label("block_timestamp"),
             Token,
         )
@@ -504,13 +502,11 @@ async def list_account_lock_unlock_events(
 
         token_name: str | None = None
         if token.type == TokenType.IBET_STRAIGHT_BOND:
-            _contract = (
-                await IbetStraightBondContract(token.token_address).get()
-            ).__dict__
-            token_name = cast(str | None, _contract.get("name") if _contract else None)
+            _contract = await IbetStraightBondContract(token.token_address).get()
+            token_name = _contract.name
         elif token.type == TokenType.IBET_SHARE:
-            _contract = (await IbetShareContract(token.token_address).get()).__dict__
-            token_name = cast(str | None, _contract.get("name") if _contract else None)
+            _contract = await IbetShareContract(token.token_address).get()
+            token_name = _contract.name
 
         block_timestamp_utc = timezone("UTC").localize(block_timestamp)
         resp_data.append(
@@ -591,11 +587,10 @@ async def force_lock(
         raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
-    keyfile_json = cast(dict[str, Any] | None, cast(Any, _account).keyfile)
-    if keyfile_json is None:
+    if _account.keyfile is None:
         raise InvalidParameterError("keyfile not found")
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+        raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
 
     # Verify that the token is issued by the issuer_address
@@ -689,11 +684,10 @@ async def force_unlock(
         raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
-    keyfile_json = cast(dict[str, Any] | None, cast(Any, _account).keyfile)
-    if keyfile_json is None:
+    if _account.keyfile is None:
         raise InvalidParameterError("keyfile not found")
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+        raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
 
     # Verify that the token is issued by the issuer_address

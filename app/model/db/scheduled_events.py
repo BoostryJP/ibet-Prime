@@ -16,6 +16,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from enum import IntEnum, StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -57,7 +58,7 @@ class ScheduledEvents(Base):
         Integer, nullable=False, index=True
     )
     # transaction data
-    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # soft deleted
     is_soft_deleted: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
