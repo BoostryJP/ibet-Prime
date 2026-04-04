@@ -1176,7 +1176,9 @@ class TestProcessor:
         # Run mainloop once and fail with connection to blockchain
         with (
             patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),
-            patch.object(AsyncContractUtils, "call_function", ConnectionError()),
+            patch.object(
+                IbetStraightBondContract, "get", side_effect=ConnectionError()
+            ),
             pytest.raises(TypeError),
         ):
             await main_func()
