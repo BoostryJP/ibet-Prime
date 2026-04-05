@@ -76,12 +76,6 @@ class IDXPersonalInfo(Base):
         ),
     )
 
-    def __init__(self, **kwargs):
-        personal_info = kwargs.pop("personal_info", None)
-        super().__init__(**kwargs)
-        if personal_info is not None:
-            self.personal_info = personal_info
-
     @hybrid_property
     def personal_info(self) -> dict[str, Any]:
         if self._personal_info:
