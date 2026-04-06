@@ -23,7 +23,6 @@
         "app/routers/issuer/position.py",
         "app/routers/issuer/file.py",
         "app/routers/issuer/notification.py",
-        "app/routers/misc/freeze_log.py",
         "app/routers/misc/e2e_messaging.py",
         "app/routers/misc/freeze_log.py",
         "app/routers/misc/settlement_agent.py",
@@ -39,6 +38,9 @@
         "tests/app/test_position_*.py",
         "tests/app/test_file_*.py",
         "tests/app/test_notification_*.py",
+        "tests/app/test_freeze_log_*.py",
+        "tests/app/test_e2e_messaging_*.py",
+        "tests/app/test_settlement_agent_*.py",
         "tests/batch/test_indexer_token_cache.py",
         "tests/batch/test_processor_create_ledger.py"
     ],

@@ -23,7 +23,10 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.exceptions import SendTransactionError
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey, TransactionLock
@@ -51,7 +54,12 @@ class TestCreateE2EMessagingAccount:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         _accounts_before = (await async_db.scalars(select(E2EMessagingAccount))).all()
         _rsa_key_before = (
             await async_db.scalars(select(E2EMessagingAccountRsaKey))
@@ -93,13 +101,13 @@ class TestCreateE2EMessagingAccount:
             resp = await async_client.post(self.base_url, json=req_param)
 
             # assertion
-            E2EMessaging.set_public_key.assert_called_with(
+            E2EMessaging.set_public_key.assert_called_with(  # type: ignore
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_sender=resp.json()["account_address"],
                 tx_sender_key=ANY,
             )
-            AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
+            AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(  # type: ignore
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
             )
 
@@ -124,6 +132,7 @@ class TestCreateE2EMessagingAccount:
         _account = _accounts_after[0]
         assert _account.account_address == resp.json()["account_address"]
         assert _account.keyfile is not None
+        assert _account.eoa_password is not None
         assert E2EEUtils.decrypt(_account.eoa_password) == self.valid_password
         assert _account.rsa_key_generate_interval == 24
         assert _account.rsa_generation == 7
@@ -139,6 +148,7 @@ class TestCreateE2EMessagingAccount:
         assert _rsa_key.account_address == resp.json()["account_address"]
         assert _rsa_key.rsa_private_key == ANY
         assert _rsa_key.rsa_public_key == resp.json()["rsa_public_key"]
+        assert _rsa_key.rsa_passphrase is not None
         assert (
             E2EEUtils.decrypt(_rsa_key.rsa_passphrase)
             == E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
@@ -152,7 +162,12 @@ class TestCreateE2EMessagingAccount:
     # <Normal_2>
     # use AWS KMS
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         _accounts_before = (await async_db.scalars(select(E2EMessagingAccount))).all()
         _rsa_key_before = (
             await async_db.scalars(select(E2EMessagingAccountRsaKey))
@@ -161,7 +176,7 @@ class TestCreateE2EMessagingAccount:
 
         # mock
         class KMSClientMock:
-            def generate_random(self, NumberOfBytes):
+            def generate_random(self, NumberOfBytes: int):
                 assert NumberOfBytes == 32
                 return {"Plaintext": b"12345678901234567890123456789012"}
 
@@ -211,13 +226,13 @@ class TestCreateE2EMessagingAccount:
             resp = await async_client.post(self.base_url, json=req_param)
 
             # assertion
-            E2EMessaging.set_public_key.assert_called_with(
+            E2EMessaging.set_public_key.assert_called_with(  # type: ignore
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_sender=resp.json()["account_address"],
                 tx_sender_key=ANY,
             )
-            AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
+            AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(  # type: ignore
                 tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
             )
 
@@ -242,6 +257,7 @@ class TestCreateE2EMessagingAccount:
         _account = _accounts_after[0]
         assert _account.account_address == resp.json()["account_address"]
         assert _account.keyfile is not None
+        assert _account.eoa_password is not None
         assert E2EEUtils.decrypt(_account.eoa_password) == self.valid_password
         assert _account.rsa_key_generate_interval == 1
         assert _account.rsa_generation == 2
@@ -257,6 +273,7 @@ class TestCreateE2EMessagingAccount:
         assert _rsa_key.account_address == resp.json()["account_address"]
         assert _rsa_key.rsa_private_key == ANY
         assert _rsa_key.rsa_public_key == resp.json()["rsa_public_key"]
+        assert _rsa_key.rsa_passphrase is not None
         assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == self.valid_password_rsa
         assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 56)
         assert 0 == len(_transaction_before)
@@ -272,7 +289,7 @@ class TestCreateE2EMessagingAccount:
     # Parameter Error
     # no body
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.post(self.base_url)
 
         # assertion
@@ -293,9 +310,9 @@ class TestCreateE2EMessagingAccount:
     # Parameter Error
     # required field
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         req_param = {}
-        resp = await async_client.post(self.base_url, json=req_param)
+        resp = await async_client.post(self.base_url, json=req_param)  # type: ignore
 
         # assertion
         assert resp.status_code == 422
@@ -315,7 +332,7 @@ class TestCreateE2EMessagingAccount:
     # Parameter Error
     # not encrypted, min
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         req_param = {
             "eoa_password": base64.encodebytes("password".encode("utf-8")).decode(),
             "rsa_passphrase": base64.encodebytes(
@@ -369,7 +386,7 @@ class TestCreateE2EMessagingAccount:
     # Parameter Error
     # max
     @pytest.mark.asyncio
-    async def test_error_1_4(self, async_client, async_db):
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         password = self.valid_password
         req_param = {
             "eoa_password": E2EEUtils.encrypt(password),
@@ -405,7 +422,7 @@ class TestCreateE2EMessagingAccount:
     # Passphrase Policy Violation
     # eoa_password
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}
 
         resp = await async_client.post(self.base_url, json=req_param)
@@ -421,7 +438,7 @@ class TestCreateE2EMessagingAccount:
     # Passphrase Policy Violation
     # rsa_passphrase
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         req_param = {
             "eoa_password": E2EEUtils.encrypt(self.valid_password),
             "rsa_passphrase": E2EEUtils.encrypt(self.invalid_password),
@@ -443,10 +460,19 @@ class TestCreateE2EMessagingAccount:
         MagicMock(side_effect=SendTransactionError),
     )
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_error_3(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         # request target api
-        req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
-        resp = await async_client.post(self.base_url, json=req_param)
+        with mock.patch(
+            "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+            ibet_e2e_messaging_contract.address,
+        ):
+            req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
+            resp = await async_client.post(self.base_url, json=req_param)
 
         # assertion
         assert resp.status_code == 503

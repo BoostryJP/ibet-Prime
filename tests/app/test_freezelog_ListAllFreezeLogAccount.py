@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import FreezeLogAccount
 
@@ -33,7 +35,7 @@ class TestListAllFreezeLogAccount:
     # <Normal_1>
     # Data does not exist
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target api
         resp = await async_client.get(self.test_url)
 
@@ -44,17 +46,17 @@ class TestListAllFreezeLogAccount:
     # <Normal_2>
     # Data exist
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         log_account = FreezeLogAccount()
         log_account.account_address = "0x1234567890123456789012345678900000000000"
-        log_account.keyfile = "test_keyfile_0"
+        log_account.keyfile = "test_keyfile_0"  # type: ignore
         log_account.eoa_password = "test_password_0"
         async_db.add(log_account)
 
         log_account = FreezeLogAccount()
         log_account.account_address = "0x1234567890123456789012345678900000000001"
-        log_account.keyfile = "test_keyfile_1"
+        log_account.keyfile = "test_keyfile_1"  # type: ignore
         log_account.eoa_password = "test_password_1"
         async_db.add(log_account)
 

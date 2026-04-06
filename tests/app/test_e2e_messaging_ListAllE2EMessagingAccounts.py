@@ -21,6 +21,8 @@ import time
 from datetime import UTC, datetime
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
@@ -36,7 +38,9 @@ class TestListAllE2EMessagingAccounts:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # request target api
         resp = await async_client.get(
             self.base_url,
@@ -49,7 +53,9 @@ class TestListAllE2EMessagingAccounts:
     # <Normal_2>
     # 1 record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
@@ -86,7 +92,9 @@ class TestListAllE2EMessagingAccounts:
     # <Normal_3>
     # multi record
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
