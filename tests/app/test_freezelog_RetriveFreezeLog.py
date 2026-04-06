@@ -20,6 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.model.db import FreezeLogAccount
 from app.utils.e2ee_utils import E2EEUtils
@@ -37,7 +40,12 @@ class TestRetrieveFreezeLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -90,7 +98,12 @@ class TestRetrieveFreezeLog:
     # Missing required fields
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_1_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -142,7 +155,12 @@ class TestRetrieveFreezeLog:
     # Missing required fields
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_1_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -200,7 +218,12 @@ class TestRetrieveFreezeLog:
     # Log account is not exists
     # -> NotFound
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 

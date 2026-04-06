@@ -19,9 +19,12 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 from datetime import datetime
+from typing import Any
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import E2EMessagingAccount, IDXE2EMessaging
 
@@ -30,7 +33,7 @@ class TestRetrieveE2EMessage:
     # target API endpoint
     base_url = "/e2e_messaging/messages/{id}"
 
-    async def insert_data(self, async_db, e2e_messaging):
+    async def insert_data(self, async_db: AsyncSession, e2e_messaging: dict[str, Any]):
         _e2e_messaging = IDXE2EMessaging()
         if "id" in e2e_messaging:
             _e2e_messaging.id = e2e_messaging["id"]
@@ -64,7 +67,7 @@ class TestRetrieveE2EMessage:
     # <Normal_1_1>
     # string message
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "id": 10,
@@ -97,7 +100,7 @@ class TestRetrieveE2EMessage:
     # <Normal_1_2>
     # json-string message
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "id": 10,
@@ -130,7 +133,7 @@ class TestRetrieveE2EMessage:
     # <Normal_1_3>
     # listed string message
     @pytest.mark.asyncio
-    async def test_normal_1_3(self, async_client, async_db):
+    async def test_normal_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "id": 10,
@@ -163,7 +166,7 @@ class TestRetrieveE2EMessage:
     # <Normal_1_4>
     # listed json string message
     @pytest.mark.asyncio
-    async def test_normal_1_4(self, async_client, async_db):
+    async def test_normal_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "id": 10,
@@ -209,7 +212,7 @@ class TestRetrieveE2EMessage:
     # Not Found Error
     # no data
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(self.base_url.format(id="id"))
 
@@ -232,7 +235,7 @@ class TestRetrieveE2EMessage:
     # Not Found Error
     # no data
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "id": 10,

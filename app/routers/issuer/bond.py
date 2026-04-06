@@ -2495,6 +2495,7 @@ async def list_all_bond_token_holders(
     if get_query.sort_item != ListAllHoldersSortItem.created:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(asc(IDXPosition.created))
+    stmt = stmt.order_by(asc(IDXPosition.modified))
 
     # Pagination
     if get_query.limit is not None:

@@ -19,9 +19,12 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 from datetime import datetime
+from typing import Any
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import E2EMessagingAccount, IDXE2EMessaging
 
@@ -30,7 +33,9 @@ class TestListAllE2EMessages:
     # target API endpoint
     base_url = "/e2e_messaging/messages"
 
-    async def insert_data(self, async_db, e2e_messaging):
+    async def insert_data(
+        self, async_db: AsyncSession, e2e_messaging: dict[str, Any]
+    ) -> None:
         _e2e_messaging = IDXE2EMessaging()
         _e2e_messaging.from_address = e2e_messaging["from_address"]
         _e2e_messaging.to_address = e2e_messaging["to_address"]
@@ -62,7 +67,9 @@ class TestListAllE2EMessages:
     # <Normal_1>
     # 0 record(not E2E account)
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # request target api
         resp = await async_client.get(
             self.base_url,
@@ -78,7 +85,9 @@ class TestListAllE2EMessages:
     # <Normal_2>
     # 1 record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -115,7 +124,9 @@ class TestListAllE2EMessages:
     # <Normal_3>
     # multi record
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -233,7 +244,9 @@ class TestListAllE2EMessages:
     # Search Filter
     # from_address
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db):
+    async def test_normal_4_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -300,7 +313,7 @@ class TestListAllE2EMessages:
     # Search Filter
     # to_address
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db):
+    async def test_normal_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -367,7 +380,7 @@ class TestListAllE2EMessages:
     # Search Filter
     # type
     @pytest.mark.asyncio
-    async def test_normal_4_3(self, async_client, async_db):
+    async def test_normal_4_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -431,7 +444,7 @@ class TestListAllE2EMessages:
     # Search Filter
     # message
     @pytest.mark.asyncio
-    async def test_normal_4_4(self, async_client, async_db):
+    async def test_normal_4_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -530,7 +543,7 @@ class TestListAllE2EMessages:
     # <Normal_5>
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -629,7 +642,7 @@ class TestListAllE2EMessages:
     # Parameter Error
     # Query
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url,

@@ -4271,13 +4271,17 @@ paths:
           in: query
           required: false
           schema:
-            type: integer
+            anyOf:
+              - type: integer
+              - type: 'null'
             title: Offset
         - name: limit
           in: query
           required: false
           schema:
-            type: integer
+            anyOf:
+              - type: integer
+              - type: 'null'
             title: Limit
         - name: issuer-address
           in: header
@@ -4532,13 +4536,17 @@ paths:
           in: query
           required: false
           schema:
-            type: integer
+            anyOf:
+              - type: integer
+              - type: 'null'
             title: Offset
         - name: limit
           in: query
           required: false
           schema:
-            type: integer
+            anyOf:
+              - type: integer
+              - type: 'null'
             title: Limit
         - name: issuer-address
           in: header
@@ -4800,19 +4808,25 @@ paths:
           in: query
           required: false
           schema:
-            type: string
+            anyOf:
+              - type: string
+              - type: 'null'
             title: Notice Type
         - name: offset
           in: query
           required: false
           schema:
-            type: integer
+            anyOf:
+              - type: integer
+              - type: 'null'
             title: Offset
         - name: limit
           in: query
           required: false
           schema:
-            type: integer
+            anyOf:
+              - type: integer
+              - type: 'null'
             title: Limit
         - name: issuer-address
           in: header
@@ -11231,7 +11245,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
             title: Delivery Id
       requestBody:
         required: true
@@ -11824,6 +11838,8 @@ components:
           title: Valid Duration
           description: Valid duration (seconds)
       type: object
+      required:
+        - valid_duration
       title: AccountAuthTokenRequest
       description: Generate Account Auth Token schema (REQUEST)
     AccountAuthTokenResponse:
@@ -13728,8 +13744,10 @@ components:
               type: array
           title: Message
         send_timestamp:
-          type: string
-          format: date-time
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
           title: Send Timestamp
       type: object
       required:

@@ -22,9 +22,10 @@ import secrets
 from typing import Annotated, Sequence
 
 import boto3
-import eth_keyfile
 from coincurve import PublicKey
-from eth_utils import keccak, to_checksum_address
+from eth_keyfile.keyfile import create_keyfile_json, decode_keyfile_json
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import select
 
@@ -89,7 +90,7 @@ async def create_account(
         private_key = keccak(secrets.token_bytes(32))
     public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
     addr = to_checksum_address(keccak(public_key)[-20:])
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -195,7 +196,7 @@ async def change_eoa_password(
             .limit(1)
         )
     ).first()
-    if _account is None:
+    if _account is None or _account.eoa_password is None or _account.keyfile is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Check Old Password
@@ -218,12 +219,12 @@ async def change_eoa_password(
         raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
 
     # Get Ethereum Key
-    private_key = eth_keyfile.decode_keyfile_json(
+    private_key = decode_keyfile_json(
         raw_keyfile_json=_account.keyfile, password=old_eoa_password.encode("utf-8")
     )
 
     # Create New Ethereum Key File
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -258,7 +259,11 @@ async def record_new_log(
             .limit(1)
         )
     ).first()
-    if log_account is None:
+    if (
+        log_account is None
+        or log_account.eoa_password is None
+        or log_account.keyfile is None
+    ):
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Authentication
@@ -272,6 +277,10 @@ async def record_new_log(
         raise InvalidParameterError("password mismatch")
 
     # Record new log
+    if FREEZE_LOG_CONTRACT_ADDRESS is None:
+        raise HTTPException(
+            status_code=500, detail="FREEZE_LOG_CONTRACT_ADDRESS is not set"
+        )
     log_contract = FreezeLogContract(
         log_account=log_account, contract_address=FREEZE_LOG_CONTRACT_ADDRESS
     )
@@ -308,7 +317,7 @@ async def update_log(
             .limit(1)
         )
     ).first()
-    if log_account is None:
+    if log_account is None or log_account.eoa_password is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Authentication
@@ -322,6 +331,10 @@ async def update_log(
         raise InvalidParameterError("password mismatch")
 
     # Update log
+    if FREEZE_LOG_CONTRACT_ADDRESS is None:
+        raise HTTPException(
+            status_code=500, detail="FREEZE_LOG_CONTRACT_ADDRESS is not set"
+        )
     log_contract = FreezeLogContract(
         log_account=log_account, contract_address=FREEZE_LOG_CONTRACT_ADDRESS
     )
@@ -360,6 +373,10 @@ async def retrieve_log(
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Get frozen log
+    if FREEZE_LOG_CONTRACT_ADDRESS is None:
+        raise HTTPException(
+            status_code=500, detail="FREEZE_LOG_CONTRACT_ADDRESS is not set"
+        )
     log_contract = FreezeLogContract(
         log_account=log_account, contract_address=FREEZE_LOG_CONTRACT_ADDRESS
     )

@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import DVPAgentAccount
 
@@ -36,13 +38,13 @@ class TestDeleteDVPAgentAccount:
     # <Normal_1>
     # DEDICATED_DVP_AGENT_MODE = False (default)
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_address = "0x1234567890123456789012345678900000000000"
 
         # Prepare data
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = test_account_address
-        dvp_agent_account.keyfile = "test_keyfile_0"
+        dvp_agent_account.keyfile = "test_keyfile_0"  # type: ignore
         dvp_agent_account.eoa_password = "test_password_0"
         async_db.add(dvp_agent_account)
 
@@ -67,6 +69,7 @@ class TestDeleteDVPAgentAccount:
                 .limit(1)
             )
         ).first()
+        assert dvp_agent_account_af is not None
         assert dvp_agent_account_af.is_deleted is True
 
     # <Normal_2>
@@ -76,13 +79,13 @@ class TestDeleteDVPAgentAccount:
     @mock.patch(
         "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_0"
     )
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_address = "0x1234567890123456789012345678900000000000"
 
         # Prepare data
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = test_account_address
-        dvp_agent_account.keyfile = "test_keyfile_0"
+        dvp_agent_account.keyfile = "test_keyfile_0"  # type: ignore
         dvp_agent_account.eoa_password = "test_password_0"
         dvp_agent_account.dedicated_agent_id = "test_agent_0"
         async_db.add(dvp_agent_account)
@@ -108,6 +111,7 @@ class TestDeleteDVPAgentAccount:
                 .limit(1)
             )
         ).first()
+        assert dvp_agent_account_af is not None
         assert dvp_agent_account_af.is_deleted is True
 
     ###########################################################################
@@ -116,7 +120,7 @@ class TestDeleteDVPAgentAccount:
 
     # <Error_1>
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_address = "0x1234567890123456789012345678900000000000"
 
         # Request target api

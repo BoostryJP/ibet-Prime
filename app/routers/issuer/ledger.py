@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import datetime
-from typing import List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 import pytz
 from fastapi import APIRouter, Header, Query
@@ -85,8 +85,8 @@ async def list_all_ledger_history(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    offset: int = Query(None),
-    limit: int = Query(None),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
 ):
     """List all ledger history"""
 
@@ -146,7 +146,7 @@ async def list_all_ledger_history(
 
     _ledger_list: Sequence[Ledger] = (await db.scalars(stmt)).all()
 
-    ledgers = []
+    ledgers: list[dict[str, Any]] = []
     for _ledger in _ledger_list:
         created_formatted = (
             utc_tz.localize(_ledger.ledger_created).astimezone(local_tz).isoformat()
@@ -236,7 +236,7 @@ async def retrieve_ledger_history(
     if _ledger is None:
         raise HTTPException(status_code=404, detail="ledger does not exist")
 
-    resp: dict = _ledger.ledger
+    resp: dict[str, Any] = _ledger.ledger
 
     # For backward compatibility, set the default value if `currency` is not set.
     if resp.get("currency") is None:
@@ -365,7 +365,7 @@ async def retrieve_ledger_template(
             .order_by(LedgerDetailsTemplate.id)
         )
     ).all()
-    details = []
+    details: list[dict[str, Any]] = []
     for _details in _details_list:
         details.append(
             {
@@ -485,14 +485,14 @@ async def create_update_ledger_template(
             _details.token_address = token_address
             _details.token_detail_type = details.token_detail_type
             _details.headers = details.headers
-            _details.data_type = details.data.type.value
+            _details.data_type = LedgerDataType(details.data.type.value)
             _details.data_source = details.data.source
             _details.footers = details.footers
             db.add(_details)
         else:
             # Update Ledger Details Template
             _details.headers = details.headers
-            _details.data_type = details.data.type.value
+            _details.data_type = LedgerDataType(details.data.type.value)
             _details.data_source = details.data.source
             _details.footers = details.footers
             await db.merge(_details)
@@ -591,8 +591,8 @@ async def list_all_ledger_details_data(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    offset: int = Query(None),
-    limit: int = Query(None),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
 ):
     """List all ledger details data"""
 
@@ -646,7 +646,9 @@ async def list_all_ledger_details_data(
 
     # NOTE: This API does not filter the data, so count equals total.
     total = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
     count = total
 
@@ -656,11 +658,11 @@ async def list_all_ledger_details_data(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _details_data_list: Sequence[tuple[str, int, datetime]] = (
+    _details_data_list: Sequence[tuple[str | None, int, datetime]] = (
         (await db.execute(stmt)).tuples().all()
     )
 
-    details_data = []
+    details_data: list[dict[str, Any]] = []
     for _data_id, _count, _created in _details_data_list:
         created_formatted = utc_tz.localize(_created).astimezone(local_tz).isoformat()
         details_data.append(
@@ -801,7 +803,7 @@ async def retrieve_ledger_details_data(
         )
     ).all()
 
-    resp = []
+    resp: list[dict[str, Any]] = []
     for _details_data in _details_data_list:
         resp.append(
             {
@@ -864,16 +866,16 @@ async def update_ledger_details_data(
             )
         )
     )
-    for data_list in data_list:
+    for data in data_list:
         _details_data = LedgerDetailsData()
         _details_data.token_address = token_address
         _details_data.data_id = data_id
-        _details_data.name = data_list.name
-        _details_data.address = data_list.address
-        _details_data.amount = data_list.amount
-        _details_data.price = data_list.price
-        _details_data.balance = data_list.balance
-        _details_data.acquisition_date = data_list.acquisition_date
+        _details_data.name = data.name
+        _details_data.address = data.address
+        _details_data.amount = data.amount
+        _details_data.price = data.price
+        _details_data.balance = data.balance
+        _details_data.acquisition_date = data.acquisition_date
         db.add(_details_data)
 
     # Request Ledger Creation
@@ -936,7 +938,7 @@ async def delete_ledger_details_data(
 
 async def __get_personal_info(
     token_address: str, token_type: str, account_address: str, db: AsyncSession
-) -> tuple[dict, bool]:
+) -> tuple[dict[str, Any], bool]:
     # NOTE:
     # For tokens with require_personal_info_registered = False, search only indexed data.
     # If indexed data does not exist, return the default value.
@@ -993,7 +995,10 @@ async def __get_personal_info(
     elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
         token_contract = await IbetStraightBondContract(token_address).get()
 
-    if token_contract.require_personal_info_registered is True:
+    if (
+        token_contract is not None
+        and token_contract.require_personal_info_registered is True
+    ):
         # Get issuer account
         issuer_account = (
             await db.scalars(
@@ -1004,18 +1009,22 @@ async def __get_personal_info(
         ).first()
 
         # Retrieve personal info from contract storage
-        personal_info_contract = PersonalInfoContract(
-            logger=LOG,
-            issuer=issuer_account,
-            contract_address=token_contract.personal_info_contract_address,
-        )
-        personal_info = await personal_info_contract.get_info(
-            account_address=account_address, default_value=None
-        )
-        if any(personal_info.values()) is False:
+        if issuer_account is None:
+            personal_info = ContractPersonalInfoType().model_dump()
             personal_info_not_registered = True
         else:
-            personal_info_not_registered = False
+            personal_info_contract = PersonalInfoContract(
+                logger=LOG,
+                issuer=issuer_account,
+                contract_address=token_contract.personal_info_contract_address,
+            )
+            personal_info = await personal_info_contract.get_info(
+                account_address=account_address, default_value=None
+            )
+            if any(personal_info.values()) is False:
+                personal_info_not_registered = True
+            else:
+                personal_info_not_registered = False
     else:
         # Do not retrieve contract data and return the default value
         personal_info = ContractPersonalInfoType().model_dump()

@@ -21,6 +21,9 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.model.db import FreezeLogAccount
 from app.model.ibet import FreezeLogContract
@@ -39,7 +42,12 @@ class TestUpdateFreezeLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -92,7 +100,12 @@ class TestUpdateFreezeLog:
     # <Normal_2>
     # E2EE_REQUEST_ENABLED = False
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_normal_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -160,7 +173,12 @@ class TestUpdateFreezeLog:
     # Missing required fields
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_1_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -226,7 +244,12 @@ class TestUpdateFreezeLog:
     # Invalid ethereum address: account_address
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_1_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -285,7 +308,12 @@ class TestUpdateFreezeLog:
     # Password is not encrypted
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_1_3(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -344,7 +372,12 @@ class TestUpdateFreezeLog:
     # Log account is not exists
     # -> NotFound
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         password = "password"
@@ -374,7 +407,12 @@ class TestUpdateFreezeLog:
     # Password mismatch
     # -> InvalidParameterError
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_3(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -413,7 +451,12 @@ class TestUpdateFreezeLog:
     # <Error_4>
     # SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_4(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]

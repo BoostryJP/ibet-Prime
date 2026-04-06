@@ -21,7 +21,9 @@ import time
 from datetime import UTC, datetime
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
@@ -37,7 +39,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # <Normal_1>
     # RSA key is None
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
@@ -87,6 +91,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         _account = (
             await async_db.scalars(select(E2EMessagingAccount).limit(1))
         ).first()
+        assert _account is not None
         assert _account.is_deleted is True
         _rsa_key_list = (
             await async_db.scalars(select(E2EMessagingAccountRsaKey))
@@ -100,7 +105,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # <Error_1>
     # no data
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         resp = await async_client.delete(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"

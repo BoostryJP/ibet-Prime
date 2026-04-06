@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import FreezeLogAccount
 
@@ -33,13 +35,13 @@ class TestDeleteFreezeLogAccount:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_address = "0x1234567890123456789012345678900000000000"
 
         # Prepare data
         log_account = FreezeLogAccount()
         log_account.account_address = test_account_address
-        log_account.keyfile = "test_keyfile_0"
+        log_account.keyfile = "test_keyfile_0"  # type: ignore
         log_account.eoa_password = "test_password_0"
         async_db.add(log_account)
 
@@ -62,6 +64,7 @@ class TestDeleteFreezeLogAccount:
                 .limit(1)
             )
         ).first()
+        assert log_account_af is not None
         assert log_account_af.is_deleted is True
 
     ###########################################################################
@@ -70,7 +73,7 @@ class TestDeleteFreezeLogAccount:
 
     # <Error_1>
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_address = "0x1234567890123456789012345678900000000000"
 
         # Request target api

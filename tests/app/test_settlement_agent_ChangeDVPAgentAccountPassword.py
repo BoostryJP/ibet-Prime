@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import DVPAgentAccount
 from app.utils.e2ee_utils import E2EEUtils
@@ -38,7 +40,7 @@ class TestChangeDVPAgentAccountPassword:
     # <Normal_1>
     # DEDICATED_DVP_AGENT_MODE = False (default)
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -73,6 +75,8 @@ class TestChangeDVPAgentAccountPassword:
                 .limit(1)
             )
         ).first()
+        assert dvp_agent_account_af is not None
+        assert dvp_agent_account_af.eoa_password is not None
         assert E2EEUtils.decrypt(dvp_agent_account_af.eoa_password) == new_password
 
     # <Normal_2>
@@ -82,7 +86,7 @@ class TestChangeDVPAgentAccountPassword:
     @mock.patch(
         "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_0"
     )
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -118,6 +122,8 @@ class TestChangeDVPAgentAccountPassword:
                 .limit(1)
             )
         ).first()
+        assert dvp_agent_account_af is not None
+        assert dvp_agent_account_af.eoa_password is not None
         assert E2EEUtils.decrypt(dvp_agent_account_af.eoa_password) == new_password
 
     ###########################################################################
@@ -128,14 +134,15 @@ class TestChangeDVPAgentAccountPassword:
     # Missing required fields
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api
         req_param = {}
         resp = await async_client.post(
-            self.base_url.format(account_address=user_address_1), json=req_param
+            self.base_url.format(account_address=user_address_1),
+            json=req_param,  # type: ignore
         )
 
         # Assertion
@@ -162,7 +169,7 @@ class TestChangeDVPAgentAccountPassword:
     # Password is not encrypted
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -201,7 +208,7 @@ class TestChangeDVPAgentAccountPassword:
     # Log account is not exists
     # -> NotFound
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         old_password = "password"
@@ -227,7 +234,7 @@ class TestChangeDVPAgentAccountPassword:
     # New password violates password policy
     # -> InvalidParameterError
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]

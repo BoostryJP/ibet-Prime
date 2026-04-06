@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import sys
 from datetime import datetime
 from enum import StrEnum
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -49,22 +49,24 @@ class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
     """Create or Update Ledger Details Template schema (Request)"""
 
     token_detail_type: str = Field(..., max_length=100)
-    headers: Optional[List[dict]] = None
+    headers: Optional[List[dict[Any, Any]]] = None
     data: CreateUpdateLedgerDetailsDataTemplateRequest
-    footers: Optional[List[dict]] = None
+    footers: Optional[List[dict[Any, Any]]] = None
 
 
 class CreateUpdateLedgerTemplateRequest(BaseModel):
     """Create or Update Ledger Template schema (Request)"""
 
     token_name: str = Field(..., max_length=200)
-    headers: Optional[List[dict]] = None
+    headers: Optional[List[dict[Any, Any]]] = None
     details: List[CreateUpdateLedgerDetailsTemplateRequest]
-    footers: Optional[List[dict]] = None
+    footers: Optional[List[dict[Any, Any]]] = None
 
     @field_validator("details")
     @classmethod
-    def details_length_is_greater_than_1(cls, v):
+    def details_length_is_greater_than_1(
+        cls, v: List[CreateUpdateLedgerDetailsTemplateRequest]
+    ) -> List[CreateUpdateLedgerDetailsTemplateRequest]:
         if len(v) < 1:
             raise ValueError("The length must be greater than or equal to 1")
         return v
@@ -84,7 +86,9 @@ class CreateUpdateLedgerDetailsDataRequest(BaseModel):
 
     @field_validator("acquisition_date")
     @classmethod
-    def acquisition_date_format_is_YYYYMMDD_slash(cls, v):
+    def acquisition_date_format_is_YYYYMMDD_slash(
+        cls, v: Optional[str]
+    ) -> Optional[str]:
         if v is not None and len(v) == 10:
             try:
                 datetime.strptime(v, "%Y/%m/%d")
@@ -128,9 +132,9 @@ class RetrieveLedgerDetailsHistoryResponse(BaseModel):
     """Retrieve Ledger Details History schema (Response)"""
 
     token_detail_type: str
-    headers: Optional[List[dict]] = None
+    headers: Optional[List[dict[Any, Any]]] = None
     data: List[RetrieveLedgerDetailsDataHistoryResponse]
-    footers: Optional[List[dict]] = None
+    footers: Optional[List[dict[Any, Any]]] = None
     some_personal_info_not_registered: bool
 
 
@@ -140,9 +144,9 @@ class RetrieveLedgerHistoryResponse(BaseModel):
     created: str
     token_name: str
     currency: str
-    headers: Optional[List[dict]] = None
+    headers: Optional[List[dict[Any, Any]]] = None
     details: List[RetrieveLedgerDetailsHistoryResponse]
-    footers: Optional[List[dict]] = None
+    footers: Optional[List[dict[Any, Any]]] = None
 
 
 class LedgerDetailsDataTemplateResponse(BaseModel):
@@ -156,18 +160,18 @@ class LedgerDetailsTemplateResponse(BaseModel):
     """Ledger Details Template schema (Response)"""
 
     token_detail_type: str
-    headers: Optional[List[dict]] = Field(...)
+    headers: Optional[List[dict[Any, Any]]] = Field(...)
     data: LedgerDetailsDataTemplateResponse
-    footers: Optional[List[dict]] = Field(...)
+    footers: Optional[List[dict[Any, Any]]] = Field(...)
 
 
 class LedgerTemplateResponse(BaseModel):
     """Ledger Template schema (Response)"""
 
     token_name: str
-    headers: Optional[List[dict]] = Field(...)
+    headers: Optional[List[dict[Any, Any]]] = Field(...)
     details: List[LedgerDetailsTemplateResponse]
-    footers: Optional[List[dict]] = Field(...)
+    footers: Optional[List[dict[Any, Any]]] = Field(...)
 
 
 class LedgerDetailsDataListAllResponse(BaseModel):

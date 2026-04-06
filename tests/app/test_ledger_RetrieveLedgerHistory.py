@@ -26,6 +26,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
+    Account,
     IDXPersonalInfo,
     Ledger,
     LedgerDataType,
@@ -69,6 +70,10 @@ class TestRetrieveLedgerHistory:
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
+
+        _issuer_account = Account()
+        _issuer_account.issuer_address = issuer_address
+        async_db.add(_issuer_account)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
@@ -322,6 +327,10 @@ class TestRetrieveLedgerHistory:
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
+        _issuer_account = Account()
+        _issuer_account.issuer_address = issuer_address
+        async_db.add(_issuer_account)
+
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
@@ -572,6 +581,10 @@ class TestRetrieveLedgerHistory:
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
+
+        _issuer_account = Account()
+        _issuer_account.issuer_address = issuer_address
+        async_db.add(_issuer_account)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
@@ -854,6 +867,10 @@ class TestRetrieveLedgerHistory:
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
+
+        _issuer_account = Account()
+        _issuer_account.issuer_address = issuer_address
+        async_db.add(_issuer_account)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
@@ -1174,6 +1191,10 @@ class TestRetrieveLedgerHistory:
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
+        _issuer_account = Account()
+        _issuer_account.issuer_address = issuer_address
+        async_db.add(_issuer_account)
+
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
@@ -1487,6 +1508,10 @@ class TestRetrieveLedgerHistory:
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
+
+        _issuer_account = Account()
+        _issuer_account.issuer_address = issuer_address
+        async_db.add(_issuer_account)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
@@ -1871,6 +1896,10 @@ class TestRetrieveLedgerHistory:
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
+
+        _issuer_account = Account()
+        _issuer_account.issuer_address = issuer_address
+        async_db.add(_issuer_account)
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address

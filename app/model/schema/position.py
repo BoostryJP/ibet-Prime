@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel, Field, PositiveInt, RootModel
 
@@ -107,7 +107,7 @@ class LockEvent(BaseModel):
         default=None, description="Recipient address"
     )
     value: int = Field(description="Lock/Unlock amount")
-    data: LockDataMessage | UnlockDataMessage | dict = Field(
+    data: LockDataMessage | UnlockDataMessage | dict[str, Any] = Field(
         description="Message at lock/unlock"
     )
     block_timestamp: str = Field(
@@ -138,7 +138,7 @@ class ListAllLockEventsSortItem(StrEnum):
     token_address = "token_address"
     lock_address = "lock_address"
     recipient_address = "recipient_address"
-    value = "value"
+    value = "value"  # type: ignore
     block_timestamp = "block_timestamp"
 
 

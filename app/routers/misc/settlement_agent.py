@@ -21,14 +21,14 @@ import json
 import re
 import secrets
 from datetime import UTC
-from typing import Annotated, Sequence
+from typing import Annotated, Any, Sequence
 
 import boto3
-import eth_keyfile
 import pytz
 from coincurve import PublicKey
-from eth_keyfile.keyfile import decode_keyfile_json
-from eth_utils import keccak, to_checksum_address
+from eth_keyfile.keyfile import create_keyfile_json, decode_keyfile_json
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import and_, desc, func, select
 
@@ -100,7 +100,7 @@ async def create_account(
         private_key = keccak(secrets.token_bytes(32))
     public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
     addr = to_checksum_address(keccak(public_key)[-20:])
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -247,7 +247,7 @@ async def change_eoa_password(
                 .limit(1)
             )
         ).first()
-    if _account is None:
+    if _account is None or _account.eoa_password is None or _account.keyfile is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Check Old Password
@@ -270,12 +270,12 @@ async def change_eoa_password(
         raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
 
     # Get Ethereum Key
-    private_key = eth_keyfile.decode_keyfile_json(
+    private_key = decode_keyfile_json(
         raw_keyfile_json=_account.keyfile, password=old_eoa_password.encode("utf-8")
     )
 
     # Create New Ethereum Key File
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -364,16 +364,13 @@ async def list_all_dvp_agent_deliveries(
 
     _deliveries: Sequence[IDXDelivery] = (await db.scalars(stmt)).all()
 
-    deliveries = []
+    deliveries: list[dict[str, Any]] = []
     for _delivery in _deliveries:
-        if _delivery.create_blocktimestamp is not None:
-            create_blocktimestamp = (
-                local_tz.localize(_delivery.create_blocktimestamp)
-                .astimezone(tz=UTC)
-                .isoformat()
-            )
-        else:
-            create_blocktimestamp = None
+        create_blocktimestamp = (
+            local_tz.localize(_delivery.create_blocktimestamp)
+            .astimezone(tz=UTC)
+            .isoformat()
+        )
         if _delivery.cancel_blocktimestamp is not None:
             cancel_blocktimestamp = (
                 local_tz.localize(_delivery.cancel_blocktimestamp)
@@ -459,7 +456,7 @@ async def list_all_dvp_agent_deliveries(
 async def update_dvp_agent_delivery(
     db: DBAsyncSession,
     exchange_address: Annotated[str, Path()],
-    delivery_id: Annotated[str, Path()],
+    delivery_id: Annotated[int, Path()],
     data: FinishDVPDeliveryRequest | AbortDVPDeliveryRequest,
 ):
     """Finish/Abort DVP delivery"""
@@ -486,7 +483,11 @@ async def update_dvp_agent_delivery(
                 .limit(1)
             )
         ).first()
-    if agent_account is None:
+    if (
+        agent_account is None
+        or agent_account.eoa_password is None
+        or agent_account.keyfile is None
+    ):
         raise HTTPException(status_code=404, detail="agent account is not exists")
 
     # Authentication
