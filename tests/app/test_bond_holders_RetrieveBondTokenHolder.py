@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -29,6 +31,7 @@ from app.model.db import (
     PersonalInfoDataSource,
     Token,
     TokenHolderExtraInfo,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -47,7 +50,7 @@ class TestRetrieveBondTokenHolder:
     # position is None
     # locked_position is None
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -127,7 +130,7 @@ class TestRetrieveBondTokenHolder:
     # position is not None
     # locked_position is None
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -218,7 +221,7 @@ class TestRetrieveBondTokenHolder:
     # position is not None
     # locked_position is not None
     @pytest.mark.asyncio
-    async def test_normal_1_3(self, async_client, async_db):
+    async def test_normal_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -329,7 +332,7 @@ class TestRetrieveBondTokenHolder:
     # <Normal_2_1>
     # PersonalInfo not registry
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -400,7 +403,7 @@ class TestRetrieveBondTokenHolder:
     # <Normal_2_2>
     # PersonalInfo is partially registered
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -486,7 +489,7 @@ class TestRetrieveBondTokenHolder:
     # <Normal_3>
     # Holder's extra information is set
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -572,7 +575,7 @@ class TestRetrieveBondTokenHolder:
     # <Error_1>
     # RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
 
@@ -599,7 +602,7 @@ class TestRetrieveBondTokenHolder:
     # <Error_2>
     # InvalidParameterError: issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -621,7 +624,7 @@ class TestRetrieveBondTokenHolder:
     # <Error_3>
     # HTTPException 404: token not found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -650,7 +653,7 @@ class TestRetrieveBondTokenHolder:
     # <Error_4>
     # InvalidParameterError: processing token
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -667,7 +670,7 @@ class TestRetrieveBondTokenHolder:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 

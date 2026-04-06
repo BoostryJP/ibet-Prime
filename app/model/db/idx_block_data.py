@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
+
 from sqlalchemy import JSON, BigInteger, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -50,7 +52,7 @@ class IDXBlockData(Base):
     # Other data
     hash: Mapped[str] = mapped_column(String(66), nullable=False, index=True)
     size: Mapped[int | None] = mapped_column(Integer)
-    transactions: Mapped[dict | None] = mapped_column(JSON)
+    transactions: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
     __table_args__ = (
         Index(

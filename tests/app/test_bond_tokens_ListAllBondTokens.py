@@ -17,13 +17,17 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import datetime
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 import pytz
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3.datastructures import AttributeDict
 
-from app.model.db import IbetWSTVersion, Token, TokenType, TokenVersion
+from app.model.db import IbetWSTVersion, Token, TokenStatus, TokenType, TokenVersion
 from app.model.ibet import IbetStraightBondContract
 from config import TZ
 from tests.account_config import default_eth_account
@@ -34,6 +38,12 @@ class TestListAllBondTokens:
     apiurl = "/bond/tokens"
     local_tz = pytz.timezone(TZ)
 
+    def localize_created(self, created: datetime | None) -> str:
+        assert created is not None
+        return (
+            pytz.timezone("UTC").localize(created).astimezone(self.local_tz).isoformat()
+        )
+
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -41,7 +51,7 @@ class TestListAllBondTokens:
     # <Normal Case 1>
     # parameter unset address, 0 Record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.get(self.apiurl)
 
         assert resp.status_code == 200
@@ -51,7 +61,9 @@ class TestListAllBondTokens:
     # parameter unset address, 1 Record
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
-    async def test_normal_2(self, mock_get, async_client, async_db):
+    async def test_normal_2(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
@@ -69,12 +81,7 @@ class TestListAllBondTokens:
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
         await async_db.commit()
-        _issue_datetime = (
-            pytz.timezone("UTC")
-            .localize(token.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime = self.localize_created(token.created)
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token.issuer_address
@@ -193,7 +200,9 @@ class TestListAllBondTokens:
     # parameter unset address, Multi Record
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
-    async def test_normal_3(self, mock_get, async_client, async_db):
+    async def test_normal_3(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -214,12 +223,7 @@ class TestListAllBondTokens:
         token_1.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token_1)
         await async_db.commit()
-        _issue_datetime_1 = (
-            pytz.timezone("UTC")
-            .localize(token_1.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_1 = self.localize_created(token_1.created)
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -275,16 +279,11 @@ class TestListAllBondTokens:
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
         await async_db.commit()
-        _issue_datetime_2 = (
-            pytz.timezone("UTC")
-            .localize(token_2.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_2 = self.localize_created(token_2.created)
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -461,7 +460,7 @@ class TestListAllBondTokens:
     # <Normal Case 4>
     # parameter set address, 0 Record
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -488,7 +487,9 @@ class TestListAllBondTokens:
     # parameter set address, 1 Record
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
-    async def test_normal_5(self, mock_get, async_client, async_db):
+    async def test_normal_5(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -503,12 +504,7 @@ class TestListAllBondTokens:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
         await async_db.commit()
-        _issue_datetime = (
-            pytz.timezone("UTC")
-            .localize(token_1.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime = self.localize_created(token_1.created)
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token_1.issuer_address
@@ -639,7 +635,9 @@ class TestListAllBondTokens:
     # parameter set address, Multi Record
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
-    async def test_normal_6(self, mock_get, async_client, async_db):
+    async def test_normal_6(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -655,12 +653,7 @@ class TestListAllBondTokens:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
         await async_db.commit()
-        _issue_datetime_1 = (
-            pytz.timezone("UTC")
-            .localize(token_1.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_1 = self.localize_created(token_1.created)
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -716,16 +709,11 @@ class TestListAllBondTokens:
         token_2.issuer_address = issuer_address_1
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
         await async_db.commit()
-        _issue_datetime_2 = (
-            pytz.timezone("UTC")
-            .localize(token_2.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_2 = self.localize_created(token_2.created)
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -918,7 +906,7 @@ class TestListAllBondTokens:
     # <Error_1>
     # parameter error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.get(
             self.apiurl, headers={"issuer-address": "issuer_address"}
         )

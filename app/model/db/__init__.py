@@ -1,3 +1,4 @@
+# pyright: reportUnusedImport=false
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -137,7 +138,7 @@ from .ledger import (
 )
 from .node import AvalancheNode, EthereumNode, Node
 from .notification import Notification, NotificationType
-from .scheduled_events import ScheduledEvents, ScheduledEventType
+from .scheduled_events import ScheduledEvents, ScheduledEventStatus, ScheduledEventType
 from .token import (
     IbetWSTBlockchain,
     Token,

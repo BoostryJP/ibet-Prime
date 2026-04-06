@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 from sqlalchemy import JSON, BigInteger, DateTime, String
@@ -71,7 +71,7 @@ class IDXTransfer(Base):
     #     => None
     #   source_event = "Unlock", "ForceUnlock", "ForceChangeLockedAccount"
     #     =>  DataMessage
-    data: Mapped[dict | None] = mapped_column(JSON)
+    data: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     # Message
     #   source_event = "Transfer", "Reallocation"
     #     => None

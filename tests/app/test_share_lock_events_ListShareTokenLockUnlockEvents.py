@@ -19,11 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 from unittest import mock
-from unittest.mock import ANY, AsyncMock
+from unittest.mock import ANY, AsyncMock, MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
+from app.model.db import IDXLock, IDXUnlock, Token, TokenStatus, TokenType, TokenVersion
 from app.model.ibet import IbetShareContract
 
 
@@ -46,7 +48,11 @@ class TestListShareTokenLockUnlockEvents:
     token_name_1 = "test_share_1"
     token_address_2 = "0x1234567890123456789012345678900000000020"
 
-    async def setup_data(self, async_db, token_status: int = 1):
+    async def setup_data(
+        self,
+        async_db: AsyncSession,
+        token_status: TokenStatus = TokenStatus.SUCCEEDED,
+    ) -> None:
         # prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -123,8 +129,8 @@ class TestListShareTokenLockUnlockEvents:
         await async_db.commit()
 
     @staticmethod
-    def get_contract_mock_data(token_name_list: list[str]):
-        token_contract_list = []
+    def get_contract_mock_data(token_name_list: list[str]) -> list[IbetShareContract]:
+        token_contract_list: list[IbetShareContract] = []
         for toke_name in token_name_list:
             token = IbetShareContract()
             token.name = toke_name
@@ -203,7 +209,7 @@ class TestListShareTokenLockUnlockEvents:
     # Normal_1
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -237,7 +243,12 @@ class TestListShareTokenLockUnlockEvents:
     # Multiple record
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_2(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         await self.setup_data(async_db=async_db)
 
@@ -268,9 +279,14 @@ class TestListShareTokenLockUnlockEvents:
     # token_status
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_3(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_3(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
-        await self.setup_data(async_db=async_db, token_status=2)
+        await self.setup_data(async_db=async_db, token_status=TokenStatus.FAILED)
 
         # request target api
         resp = await async_client.get(
@@ -288,7 +304,12 @@ class TestListShareTokenLockUnlockEvents:
     # issuer_address is not None
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_4(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_4(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         await self.setup_data(async_db=async_db)
 
@@ -319,7 +340,12 @@ class TestListShareTokenLockUnlockEvents:
     # Search filter: category
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_5_1(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_1(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         await self.setup_data(async_db=async_db)
 
@@ -345,7 +371,12 @@ class TestListShareTokenLockUnlockEvents:
     # Search filter: account_address
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_2(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         await self.setup_data(async_db=async_db)
 
@@ -371,7 +402,12 @@ class TestListShareTokenLockUnlockEvents:
     # Search filter: lock_address
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_5_3(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_3(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         await self.setup_data(async_db=async_db)
 
@@ -397,7 +433,12 @@ class TestListShareTokenLockUnlockEvents:
     # Search filter: recipient_address
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_5_4(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_4(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         await self.setup_data(async_db=async_db)
 
@@ -498,7 +539,13 @@ class TestListShareTokenLockUnlockEvents:
     )
     @pytest.mark.asyncio
     async def test_normal_6(
-        self, sort_item, sort_order, data, expect, async_client, async_db
+        self,
+        sort_item: str,
+        sort_order: int,
+        data: list[IbetShareContract],
+        expect: list[dict[str, object]],
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # prepare data
         await self.setup_data(async_db=async_db)
@@ -524,7 +571,12 @@ class TestListShareTokenLockUnlockEvents:
     # Pagination
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_7(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_7(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         await self.setup_data(async_db=async_db)
 
@@ -554,7 +606,7 @@ class TestListShareTokenLockUnlockEvents:
     # RequestValidationError
     # header
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.get(
             self.base_url.format(token_address=self.token_address_1),
@@ -581,7 +633,7 @@ class TestListShareTokenLockUnlockEvents:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.get(
             self.base_url.format(token_address=self.token_address_1),

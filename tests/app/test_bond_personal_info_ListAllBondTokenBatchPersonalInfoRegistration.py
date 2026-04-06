@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     BatchRegisterPersonalInfoUpload,
@@ -51,7 +53,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # Normal_1
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -85,7 +87,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # Normal_2
     # multi records
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -143,7 +145,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # Normal_3
     # filter by status
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -197,7 +199,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # Normal_4
     # pagination
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -251,7 +253,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # Normal_5
     # sort
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -314,7 +316,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # Error_1
     # RequestValidationError: issuer_address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
 
@@ -355,7 +357,7 @@ class TestListAllBondTokenBatchPersonalInfoRegistration:
     # NotFound
     # token not found
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account_1 = default_eth_account("user1")
         _issuer_address_1 = _issuer_account_1["address"]
 

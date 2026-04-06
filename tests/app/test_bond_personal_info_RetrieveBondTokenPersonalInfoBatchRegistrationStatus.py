@@ -17,7 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any, TypedDict
+
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -30,6 +34,11 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
+
+
+class PersonalInfoAccount(TypedDict):
+    address: str
+    keyfile: dict[str, Any]
 
 
 class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
@@ -45,7 +54,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
         "1f33d48f-9e6e-4a36-a55e-5bbcbda69c80",
     ]
 
-    account_list = [
+    account_list: list[PersonalInfoAccount] = [
         {
             "address": default_eth_account("user1")["address"],
             "keyfile": default_eth_account("user1")["keyfile_json"],
@@ -75,7 +84,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
     # <Normal_1>
     # With issuer_address(header)
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -186,7 +195,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
     # <Error_1>
     # RequestValidationError: issuer_address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -213,7 +222,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
     # <Error_2>
     # Batch not found
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"

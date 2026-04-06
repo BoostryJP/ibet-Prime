@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -76,7 +77,9 @@ class BatchRegisterPersonalInfo(Base):
     #       "is_corporate": "boolean",
     #       "tax_category": "integer"
     #   }
-    _personal_info = mapped_column("personal_info", JSON, nullable=False)
+    _personal_info: Mapped[dict[str, Any]] = mapped_column(
+        "personal_info", JSON, nullable=False
+    )
 
     @hybrid_property
     def personal_info(self):
@@ -94,14 +97,14 @@ class BatchRegisterPersonalInfo(Base):
         return self._personal_info
 
     @personal_info.inplace.setter
-    def _personal_info_setter(self, personal_info_dict: dict):
+    def _personal_info_setter(self, value: dict[str, Any]):
         self._personal_info = {
-            "key_manager": personal_info_dict.get("key_manager", None),
-            "name": personal_info_dict.get("name", None),
-            "address": personal_info_dict.get("address", None),
-            "postal_code": personal_info_dict.get("postal_code", None),
-            "email": personal_info_dict.get("email", None),
-            "birth": personal_info_dict.get("birth", None),
-            "is_corporate": personal_info_dict.get("is_corporate", None),
-            "tax_category": personal_info_dict.get("tax_category", None),
+            "key_manager": value.get("key_manager", None),
+            "name": value.get("name", None),
+            "address": value.get("address", None),
+            "postal_code": value.get("postal_code", None),
+            "email": value.get("email", None),
+            "birth": value.get("birth", None),
+            "is_corporate": value.get("is_corporate", None),
+            "tax_category": value.get("tax_category", None),
         }

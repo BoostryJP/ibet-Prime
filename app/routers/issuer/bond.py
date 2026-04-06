@@ -21,13 +21,15 @@ import json
 import uuid
 from collections import defaultdict
 from datetime import UTC, datetime
-from typing import Annotated, List, Optional, Sequence
+from typing import Annotated, Any, List, Optional, Sequence, cast as typing_cast
 
 import pytz
 from eth_keyfile.keyfile import decode_keyfile_json
 from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import (
+    Integer,
+    Nullable,
     String,
     and_,
     asc,
@@ -84,7 +86,6 @@ from app.model.db import (
     IbetWSTVersion,
     IDXIssueRedeem,
     IDXIssueRedeemEventType,
-    IDXIssueRedeemSortItem,
     IDXLock,
     IDXLockedPosition,
     IDXPersonalInfo,
@@ -94,8 +95,10 @@ from app.model.db import (
     IDXTransferApproval,
     IDXTransferApprovalsSortItem,
     IDXUnlock,
+    PersonalInfoDataSource as PersonalInfoDataSourceEnum,
     PersonalInfoEventType,
     ScheduledEvents,
+    ScheduledEventStatus,
     Token,
     TokenHolderExtraInfo,
     TokenStatus,
@@ -145,6 +148,7 @@ from app.model.schema import (
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
     IssueRedeemHistoryResponse,
+    IssueRedeemSortItem,
     ListAdditionalIssuanceHistoryQuery,
     ListAllAdditionalIssueUploadQuery,
     ListAllHoldersQuery,
@@ -161,9 +165,11 @@ from app.model.schema import (
     ListBulkTransferUploadQuery,
     ListRedeemHistoryQuery,
     ListSpecificTokenTransferApprovalHistoryQuery,
+    ListTokenHistorySortItem,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
     ListTransferApprovalHistoryQuery,
+    ListTransferApprovalHistorySortItem,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     LockEventCategory,
@@ -275,6 +281,17 @@ async def _is_ibet_wst_deploy_in_progress(
     return ava_deploy_tx is not None
 
 
+def _decode_private_key(
+    keyfile_json: dict[str, Any] | None,
+    decrypt_password: str,
+) -> bytes:
+    assert keyfile_json is not None
+    return decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8"),
+    )
+
+
 # POST: /bond/tokens
 @router.post(
     "/tokens",
@@ -311,9 +328,7 @@ async def issue_bond_token(
 
     # Get private key
     keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
-    )
+    private_key = _decode_private_key(keyfile_json, decrypt_password)
 
     # Deploy
     _symbol = token.symbol if token.symbol is not None else ""
@@ -381,7 +396,7 @@ async def issue_bond_token(
         _update_token.token_address = contract_address
         _update_token.issuer_address = issuer_address
         _update_token.type = TokenType.IBET_STRAIGHT_BOND
-        _update_token.arguments = token_dict
+        _update_token.arguments = dict(token_dict)
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
         db.add(_update_token)
@@ -390,7 +405,7 @@ async def issue_bond_token(
     else:
         # Register token_address token list
         try:
-            await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+            await TokenListContract(str(config.TOKEN_LIST_CONTRACT_ADDRESS)).register(
                 token_address=contract_address,
                 token_template=TokenType.IBET_STRAIGHT_BOND,
                 tx_sender=issuer_address,
@@ -416,10 +431,11 @@ async def issue_bond_token(
         _utxo.account_address = issuer_address
         _utxo.token_address = contract_address
         _utxo.amount = token.total_supply
-        _utxo.block_number = block["number"]
-        _utxo.block_timestamp = datetime.fromtimestamp(block["timestamp"], UTC).replace(
-            tzinfo=None
-        )
+        _utxo.block_number = block["number"]  # type: ignore
+        _utxo.block_timestamp = datetime.fromtimestamp(
+            block["timestamp"],  # type: ignore
+            UTC,
+        ).replace(tzinfo=None)
         db.add(_utxo)
 
         token_status = TokenStatus.SUCCEEDED
@@ -433,7 +449,7 @@ async def issue_bond_token(
     _token.abi = abi
     _token.token_status = token_status
     _token.version = TokenVersion.V_25_09
-    if token.activate_ibet_wst:
+    if token.activate_ibet_wst and token.ibet_wst_name is not None:
         ibet_wst_blockchains = _resolve_ibet_wst_blockchains(token.ibet_wst_blockchains)
 
         # Activate IbetWST on requested blockchains.
@@ -456,6 +472,7 @@ async def issue_bond_token(
             _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
                 name=token.ibet_wst_name, initial_owner=issuer_address
             )
+            assert ETH_MASTER_ACCOUNT_ADDRESS is not None
             _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
             db.add(_ibet_wst_tx)
 
@@ -469,6 +486,7 @@ async def issue_bond_token(
             _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
                 name=token.ibet_wst_name, initial_owner=issuer_address
             )
+            assert AVA_MASTER_ACCOUNT_ADDRESS is not None
             _ibet_wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
             db.add(_ibet_wst_tx)
 
@@ -530,7 +548,7 @@ async def list_all_bond_tokens(
             )
         ).all()
 
-    bond_tokens = []
+    bond_tokens: list[dict[str, Any]] = []
     for token in tokens:
         # Get response data from contract
         bond_token = (
@@ -539,6 +557,7 @@ async def list_all_bond_tokens(
         bond_token.pop("contract_name")
 
         # Set other response items
+        assert token.created is not None
         bond_token["issue_datetime"] = (
             pytz.timezone("UTC")
             .localize(token.created)
@@ -608,6 +627,7 @@ async def retrieve_bond_token(
     bond_token.pop("contract_name")
 
     # Set other response items
+    assert _token.created is not None
     bond_token["issue_datetime"] = (
         pytz.timezone("UTC").localize(_token.created).astimezone(local_tz).isoformat()
     )
@@ -682,9 +702,7 @@ async def update_bond_token(
 
     # Get private key
     keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
-    )
+    private_key = _decode_private_key(keyfile_json, decrypt_password)
 
     # Get Token
     _token: Token | None = (
@@ -814,9 +832,11 @@ async def update_bond_token(
                 _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
                 _ibet_wst_tx.version = IbetWSTVersion.V_1
                 _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+                assert _token.ibet_wst_name is not None
                 _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-                    name=update_data.ibet_wst_name, initial_owner=issuer_address
+                    name=_token.ibet_wst_name, initial_owner=issuer_address
                 )
+                assert ETH_MASTER_ACCOUNT_ADDRESS is not None
                 _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
                 db.add(_ibet_wst_tx)
 
@@ -827,9 +847,11 @@ async def update_bond_token(
                 _ibet_wst_tx.tx_type = IbetWSTTxType.DEPLOY
                 _ibet_wst_tx.version = IbetWSTVersion.V_1
                 _ibet_wst_tx.status = IbetWSTTxStatus.PENDING
+                assert _token.ibet_wst_name is not None
                 _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
-                    name=update_data.ibet_wst_name, initial_owner=issuer_address
+                    name=_token.ibet_wst_name, initial_owner=issuer_address
                 )
+                assert AVA_MASTER_ACCOUNT_ADDRESS is not None
                 _ibet_wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
                 db.add(_ibet_wst_tx)
 
@@ -907,12 +929,17 @@ async def list_bond_operation_log_history(
     )
 
     # Sort
-    sort_attr = getattr(TokenUpdateOperationLog, request_query.sort_item, None)
+    match request_query.sort_item:
+        case ListTokenHistorySortItem.operation_category:
+            sort_attr = TokenUpdateOperationLog.operation_category
+        case _:
+            sort_attr = TokenUpdateOperationLog.created
+
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if request_query.sort_item != TokenUpdateOperationLog.created:
+    if request_query.sort_item != ListTokenHistorySortItem.created:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(TokenUpdateOperationLog.created))
 
@@ -937,7 +964,9 @@ async def list_bond_operation_log_history(
                     "original_contents": h.original_contents,
                     "modified_contents": h.arguments,
                     "operation_category": h.operation_category,
-                    "created": utc_tz.localize(h.created).astimezone(local_tz),
+                    "created": utc_tz.localize(h.created).astimezone(local_tz)
+                    if h.created
+                    else None,
                 }
                 for h in history
             ],
@@ -990,12 +1019,21 @@ async def list_bond_additional_issuance_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, request_query.sort_item, None)
+    match request_query.sort_item:
+        case IssueRedeemSortItem.LOCKED_ADDRESS:
+            sort_attr = IDXIssueRedeem.locked_address
+        case IssueRedeemSortItem.TARGET_ADDRESS:
+            sort_attr = IDXIssueRedeem.target_address
+        case IssueRedeemSortItem.AMOUNT:
+            sort_attr = IDXIssueRedeem.amount
+        case _:
+            sort_attr = IDXIssueRedeem.block_timestamp
+
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if request_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+    if request_query.sort_item != IssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
 
@@ -1007,8 +1045,10 @@ async def list_bond_additional_issuance_history(
 
     _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
-    history = []
+    history: list[dict[str, Any]] = []
     for _event in _events:
+        if _event.block_timestamp is None:
+            continue
         block_timestamp_utc = pytz.timezone("UTC").localize(_event.block_timestamp)
         history.append(
             {
@@ -1077,9 +1117,7 @@ async def issue_additional_bond(
 
     # Get private key
     keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
-    )
+    private_key = _decode_private_key(keyfile_json, decrypt_password)
 
     # Get Token
     _token: Token | None = (
@@ -1169,8 +1207,10 @@ async def list_all_batch_additional_bond_issue(
 
     _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
 
-    uploads = []
+    uploads: list[dict[str, Any]] = []
     for _upload in _upload_list:
+        if _upload.created is None:
+            continue
         created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
@@ -1183,7 +1223,7 @@ async def list_all_batch_additional_bond_issue(
             }
         )
 
-    resp = {
+    resp: dict[str, Any] = {
         "result_set": {
             "count": count,
             "offset": get_query.offset,
@@ -1412,12 +1452,21 @@ async def list_bond_redemption_history(
     count = total
 
     # Sort
-    sort_attr = getattr(IDXIssueRedeem, get_query.sort_item, None)
+    match get_query.sort_item:
+        case IssueRedeemSortItem.LOCKED_ADDRESS:
+            sort_attr = IDXIssueRedeem.locked_address
+        case IssueRedeemSortItem.TARGET_ADDRESS:
+            sort_attr = IDXIssueRedeem.target_address
+        case IssueRedeemSortItem.AMOUNT:
+            sort_attr = IDXIssueRedeem.amount
+        case _:
+            sort_attr = IDXIssueRedeem.block_timestamp
+
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if get_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+    if get_query.sort_item != IssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
 
@@ -1429,8 +1478,10 @@ async def list_bond_redemption_history(
 
     _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
-    history = []
+    history: list[dict[str, Any]] = []
     for _event in _events:
+        if _event.block_timestamp is None:
+            continue
         block_timestamp_utc = pytz.timezone("UTC").localize(_event.block_timestamp)
         history.append(
             {
@@ -1499,9 +1550,7 @@ async def redeem_bond(
 
     # Get private key
     keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
-    )
+    private_key = _decode_private_key(keyfile_json, decrypt_password)
 
     # Get Token
     _token: Token | None = (
@@ -1626,9 +1675,12 @@ async def list_all_batch_bond_redemption(
         )
 
     # Group records by upload_id
-    record_list_by_upload_id = defaultdict(list)
+    record_list_by_upload_id: defaultdict[
+        str, list[tuple[BatchIssueRedeem, IDXPersonalInfo | None]]
+    ] = defaultdict(list)
     for record in record_list:
-        record_list_by_upload_id[record[0].upload_id].append(record)
+        if record[0].upload_id is not None:
+            record_list_by_upload_id[record[0].upload_id].append(record)
 
     personal_info_default = {
         "key_manager": None,
@@ -1640,8 +1692,10 @@ async def list_all_batch_bond_redemption(
         "is_corporate": None,
         "tax_category": None,
     }
-    uploads = []
+    uploads: list[dict[str, Any]] = []
     for _upload in _upload_list:
+        if _upload.created is None:
+            continue
         created_utc = pytz.timezone("UTC").localize(_upload.created)
         results = [
             {
@@ -1666,7 +1720,7 @@ async def list_all_batch_bond_redemption(
             }
         )
 
-    resp = {
+    resp: dict[str, Any] = {
         "result_set": {
             "count": count,
             "offset": get_query.offset,
@@ -1891,12 +1945,14 @@ async def list_all_scheduled_bond_token_update_events(
             )
         ).all()
 
-    token_events = []
+    token_events: list[dict[str, Any]] = []
     for _token_event in _token_events:
+        if _token_event.created is None:
+            continue
+        created_utc = pytz.timezone("UTC").localize(_token_event.created)
         scheduled_datetime_utc = pytz.timezone("UTC").localize(
             _token_event.scheduled_datetime
         )
-        created_utc = pytz.timezone("UTC").localize(_token_event.created)
         token_events.append(
             {
                 "scheduled_event_id": _token_event.event_id,
@@ -2013,7 +2069,7 @@ async def schedule_bond_token_update_event(
     ).replace(tzinfo=None)
     _scheduled_event.event_type = event_data.event_type
     _scheduled_event.data = event_data.data.model_dump()
-    _scheduled_event.status = 0
+    _scheduled_event.status = ScheduledEventStatus.PROCESSING
     db.add(_scheduled_event)
     await db.commit()
 
@@ -2080,7 +2136,7 @@ async def schedule_bond_token_update_events_in_batch(
     if _token.token_status == TokenStatus.PENDING:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    _event_id_list = []
+    _event_id_list: list[str] = []
     for event_data in event_data_list:
         # Verify that the token version supports the operation
         if _token.version < TokenVersion.V_23_12:
@@ -2120,10 +2176,11 @@ async def schedule_bond_token_update_events_in_batch(
         ).replace(tzinfo=None)
         _scheduled_event.event_type = event_data.event_type
         _scheduled_event.data = event_data.data.model_dump()
-        _scheduled_event.status = 0
+        _scheduled_event.status = ScheduledEventStatus.PROCESSING
         db.add(_scheduled_event)
 
-        _event_id_list.append(_scheduled_event.event_id)
+        assert _scheduled_event.event_id is not None
+        _event_id_list.append(typing_cast(str, _scheduled_event.event_id))
 
     await db.commit()
 
@@ -2180,6 +2237,7 @@ async def retrieve_scheduled_bond_token_update_event(
     scheduled_datetime_utc = pytz.timezone("UTC").localize(
         _token_event.scheduled_datetime
     )
+    assert _token_event.created is not None
     created_utc = pytz.timezone("UTC").localize(_token_event.created)
     return json_response(
         {
@@ -2253,6 +2311,7 @@ async def delete_scheduled_bond_token_update_event(
     scheduled_datetime_utc = pytz.timezone("UTC").localize(
         _token_event.scheduled_datetime
     )
+    assert _token_event.created is not None
     created_utc = pytz.timezone("UTC").localize(_token_event.created)
     rtn = {
         "scheduled_event_id": _token_event.event_id,
@@ -2328,10 +2387,10 @@ async def list_all_bond_token_holders(
     stmt = (
         select(
             IDXPosition,
-            locked_value,
-            IDXPersonalInfo,
-            TokenHolderExtraInfo,
-            func.max(IDXLockedPosition.modified),
+            Nullable(locked_value),
+            Nullable(IDXPersonalInfo),
+            Nullable(TokenHolderExtraInfo),
+            Nullable(func.max(IDXLockedPosition.modified)),
         )
         .outerjoin(
             IDXLockedPosition,
@@ -2369,12 +2428,14 @@ async def list_all_bond_token_holders(
     match get_query.key_manager_type:
         case KeyManagerType.SELF:
             stmt = stmt.where(
-                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"
+                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"  # type: ignore
             )
         case KeyManagerType.OTHERS:
             stmt = stmt.where(
-                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
+                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"  # type: ignore
             )
+        case _:
+            pass
 
     total = await db.scalar(
         select(func.count()).select_from(
@@ -2458,14 +2519,14 @@ async def list_all_bond_token_holders(
 
     if get_query.holder_name is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["name"]
+            IDXPersonalInfo._personal_info["name"]  # type: ignore
             .as_string()
             .like("%" + get_query.holder_name + "%")
         )
 
     if get_query.key_manager is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["key_manager"]
+            IDXPersonalInfo._personal_info["key_manager"]  # type: ignore
             .as_string()
             .like("%" + get_query.key_manager + "%")
         )
@@ -2478,9 +2539,9 @@ async def list_all_bond_token_holders(
 
     # Sort
     if get_query.sort_item == ListAllHoldersSortItem.holder_name:
-        sort_attr = IDXPersonalInfo._personal_info["name"].as_string()
+        sort_attr = IDXPersonalInfo._personal_info["name"].as_string()  # type: ignore
     elif get_query.sort_item == ListAllHoldersSortItem.key_manager:
-        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
+        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()  # type: ignore
     elif get_query.sort_item == ListAllHoldersSortItem.locked:
         sort_attr = locked_value
     elif get_query.sort_item == ListAllHoldersSortItem.balance_and_pending_transfer:
@@ -2506,7 +2567,7 @@ async def list_all_bond_token_holders(
     _holders: Sequence[
         tuple[
             IDXPosition,
-            int,
+            int | None,
             IDXPersonalInfo | None,
             TokenHolderExtraInfo | None,
             datetime | None,
@@ -2524,7 +2585,7 @@ async def list_all_bond_token_holders(
         "tax_category": None,
     }
 
-    holders = []
+    holders: list[dict[str, Any]] = []
     for (
         _position,
         _locked,
@@ -2537,11 +2598,13 @@ async def list_all_bond_token_holders(
             if _personal_info is not None
             else personal_info_default
         )
-        if _position is None and _lock_event_latest_created is not None:
+        if _position.modified is None and _lock_event_latest_created is not None:
             modified: datetime = _lock_event_latest_created
-        elif _position is not None and _lock_event_latest_created is None:
+        elif _lock_event_latest_created is None and _position.modified is not None:
             modified: datetime = _position.modified
         else:
+            assert _position.modified is not None
+            assert _lock_event_latest_created is not None
             modified: datetime = (
                 _position.modified
                 if (_position.modified > _lock_event_latest_created)
@@ -2653,7 +2716,9 @@ async def count_bond_token_holders(
         )
     )
     _count = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
     return json_response({"count": _count})
@@ -2707,13 +2772,13 @@ async def retrieve_bond_token_holder(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
-    _holder: tuple[IDXPosition, int, datetime | None] = (
+    _holder = (
         (
             await db.execute(
                 select(
                     IDXPosition,
-                    func.sum(IDXLockedPosition.value),
-                    func.max(IDXLockedPosition.modified),
+                    Nullable(func.sum(IDXLockedPosition.value)),
+                    Nullable(func.max(IDXLockedPosition.modified)),
                 )
                 .outerjoin(
                     IDXLockedPosition,
@@ -2754,13 +2819,15 @@ async def retrieve_bond_token_holder(
         exchange_balance = _holder[0].exchange_balance
         exchange_commitment = _holder[0].exchange_commitment
         pending_transfer = _holder[0].pending_transfer
-        locked = _holder[1]
+        locked = _holder[1] if _holder[1] is not None else 0
 
-        if _holder[0] is None and _holder[2] is not None:
+        if _holder[0].modified is None and _holder[2] is not None:
             modified = _holder[2]
-        elif _holder[0] is not None and _holder[2] is None:
+        elif _holder[0].modified is not None and _holder[2] is None:
             modified = _holder[0].modified
         else:
+            assert _holder[0].modified is not None
+            assert _holder[2] is not None
             modified = (
                 _holder[0].modified
                 if (_holder[0].modified > _holder[2])
@@ -2821,7 +2888,7 @@ async def retrieve_bond_token_holder(
         "exchange_balance": exchange_balance,
         "exchange_commitment": exchange_commitment,
         "pending_transfer": pending_transfer,
-        "locked": locked if locked is not None else 0,
+        "locked": locked,
         "modified": modified,
     }
 
@@ -2983,7 +3050,7 @@ async def register_bond_token_holder_personal_info(
         _off_personal_info.issuer_address = issuer_address
         _off_personal_info.account_address = personal_info.account_address
         _off_personal_info.personal_info = input_personal_info
-        _off_personal_info.data_source = PersonalInfoDataSource.OFF_CHAIN
+        _off_personal_info.data_source = PersonalInfoDataSourceEnum.OFF_CHAIN
         await db.merge(_off_personal_info)
         # Add personal info history
         _personal_info_history = IDXPersonalInfoHistory()
@@ -3089,8 +3156,10 @@ async def list_all_bond_token_batch_personal_info_registration(
         await db.scalars(stmt)
     ).all()
 
-    uploads = []
+    uploads: list[dict[str, Any]] = []
     for _upload in _upload_list:
+        if _upload.created is None:
+            continue
         created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
@@ -3183,8 +3252,8 @@ async def initiate_bond_token_batch_personal_info_registration(
     batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING
     db.add(batch)
 
-    errs = []
-    bulk_register_record_list = []
+    errs: list[RecordErrorDetail] = []
+    bulk_register_record_list: list[BatchRegisterPersonalInfo] = []
 
     for i, personal_info in enumerate(personal_info_list):
         bulk_register_record = BatchRegisterPersonalInfo()
@@ -3219,6 +3288,7 @@ async def initiate_bond_token_batch_personal_info_registration(
 
     await db.commit()
 
+    assert batch.created is not None
     return json_response(
         {
             "batch_id": batch_id,
@@ -3374,19 +3444,13 @@ async def list_bond_token_lock_unlock_events(
     if issuer_address is not None:
         stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
-    total = (
-        await db.scalar(
-            stmt_lock.with_only_columns(func.count())
-            .select_from(IDXLock)
-            .order_by(None)
-        )
-    ) + (
-        await db.scalar(
-            stmt_unlock.with_only_columns(func.count())
-            .select_from(IDXUnlock)
-            .order_by(None)
-        )
+    lock_total = await db.scalar(
+        select(func.count()).select_from(stmt_lock.subquery()).order_by(None)
     )
+    unlock_total = await db.scalar(
+        select(func.count()).select_from(stmt_unlock.subquery()).order_by(None)
+    )
+    total = (lock_total or 0) + (unlock_total or 0)
 
     # Filter
     match request_query.category:
@@ -3422,7 +3486,18 @@ async def list_bond_token_lock_unlock_events(
     )
 
     # Sort
-    sort_attr = column(request_query.sort_item)
+    match request_query.sort_item:
+        case ListAllTokenLockEventsSortItem.account_address:
+            sort_attr = all_lock_event_alias.c.account_address
+        case ListAllTokenLockEventsSortItem.lock_address:
+            sort_attr = all_lock_event_alias.c.lock_address
+        case ListAllTokenLockEventsSortItem.recipient_address:
+            sort_attr = all_lock_event_alias.c.recipient_address
+        case ListAllTokenLockEventsSortItem.value:
+            sort_attr = all_lock_event_alias.c.value
+        case _:
+            sort_attr = all_lock_event_alias.c.block_timestamp
+
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
@@ -3458,7 +3533,7 @@ async def list_bond_token_lock_unlock_events(
         (await db.execute(select(*entries).from_statement(stmt))).tuples().all()
     )
 
-    resp_data = []
+    resp_data: list[dict[str, Any]] = []
     for lock_event in lock_events:
         token: Token = lock_event.Token
         bond_contract = await IbetStraightBondContract(token.token_address).get()
@@ -3535,9 +3610,7 @@ async def transfer_bond_token_ownership(
 
     # Get private key
     keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
-    )
+    private_key = _decode_private_key(keyfile_json, decrypt_password)
 
     # Verify that the token is issued by the issuer_address
     _token: Token | None = (
@@ -3607,7 +3680,11 @@ async def list_bond_token_transfer_history(
     from_address_personal_info = aliased(IDXPersonalInfo)
     to_address_personal_info = aliased(IDXPersonalInfo)
     stmt = (
-        select(IDXTransfer, from_address_personal_info, to_address_personal_info)
+        select(
+            IDXTransfer,
+            Nullable(from_address_personal_info),
+            Nullable(to_address_personal_info),
+        )
         .join(Token, IDXTransfer.token_address == Token.token_address)
         .outerjoin(
             from_address_personal_info,
@@ -3650,13 +3727,13 @@ async def list_bond_token_transfer_history(
         stmt = stmt.where(IDXTransfer.to_address == query.to_address)
     if query.from_address_name:
         stmt = stmt.where(
-            from_address_personal_info._personal_info["name"]
+            from_address_personal_info._personal_info["name"]  # type: ignore
             .as_string()
             .like("%" + query.from_address_name + "%")
         )
     if query.to_address_name:
         stmt = stmt.where(
-            to_address_personal_info._personal_info["name"]
+            to_address_personal_info._personal_info["name"]  # type: ignore
             .as_string()
             .like("%" + query.to_address_name + "%")
         )
@@ -3680,12 +3757,18 @@ async def list_bond_token_transfer_history(
 
     # Sort
     match query.sort_item:
+        case ListTransferHistorySortItem.FROM_ADDRESS:
+            sort_attr = IDXTransfer.from_address
+        case ListTransferHistorySortItem.TO_ADDRESS:
+            sort_attr = IDXTransfer.to_address
         case ListTransferHistorySortItem.FROM_ADDRESS_NAME:
-            sort_attr = from_address_personal_info._personal_info["name"].as_string()
+            sort_attr = from_address_personal_info._personal_info["name"].as_string()  # type: ignore
         case ListTransferHistorySortItem.TO_ADDRESS_NAME:
-            sort_attr = to_address_personal_info._personal_info["name"].as_string()
+            sort_attr = to_address_personal_info._personal_info["name"].as_string()  # type: ignore
+        case ListTransferHistorySortItem.AMOUNT:
+            sort_attr = IDXTransfer.amount
         case _:
-            sort_attr = getattr(IDXTransfer, query.sort_item.value, None)
+            sort_attr = IDXTransfer.block_timestamp
 
     if query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
@@ -3703,10 +3786,12 @@ async def list_bond_token_transfer_history(
 
     _transfers: Sequence[
         tuple[IDXTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
-    ] = (await db.execute(stmt)).all()
+    ] = (await db.execute(stmt)).tuples().all()
 
-    transfer_history = []
+    transfer_history: list[dict[str, Any]] = []
     for _transfer, _from_address_personal_info, _to_address_personal_info in _transfers:
+        if _transfer.block_timestamp is None:
+            continue
         block_timestamp_utc = pytz.timezone("UTC").localize(_transfer.block_timestamp)
         transfer_history.append(
             {
@@ -3816,10 +3901,10 @@ async def list_all_bond_token_transfer_approval_history(
             Token.issuer_address,
             subquery.token_address,
             func.count(subquery.id),
-            func.count(or_(literal_column("status") == 0, None)),
-            func.count(or_(literal_column("status") == 1, None)),
-            func.count(or_(literal_column("status") == 2, None)),
-            func.count(or_(literal_column("status") == 3, None)),
+            func.count(case((literal_column("status") == 0, 1))),
+            func.count(case((literal_column("status") == 1, 1))),
+            func.count(case((literal_column("status") == 2, 1))),
+            func.count(case((literal_column("status") == 3, 1))),
         )
         .join(Token, subquery.token_address == Token.token_address)
         .where(
@@ -3837,12 +3922,16 @@ async def list_all_bond_token_transfer_approval_history(
     )
 
     total = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
     # NOTE: Because no filtering is performed, `total` and `count` have the same value.
     count = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
     # Pagination
@@ -3853,7 +3942,7 @@ async def list_all_bond_token_transfer_approval_history(
 
     _transfer_approvals = (await db.execute(stmt)).tuples().all()
 
-    transfer_approvals = []
+    transfer_approvals: list[dict[str, Any]] = []
     for (
         issuer_address,
         token_address,
@@ -3925,7 +4014,7 @@ async def list_specific_bond_token_transfer_approval_history(
         IDXTransferApproval,
         select(
             IDXTransferApproval,
-            TransferApprovalHistory,
+            Nullable(TransferApprovalHistory),
             case(
                 (
                     and_(
@@ -3979,13 +4068,13 @@ async def list_specific_bond_token_transfer_approval_history(
     stmt = (
         select(
             subquery,
-            literal_column("status"),
+            literal_column("status", type_=Integer),
             # Snapshot Personal Information
-            TransferApprovalHistory.from_address_personal_info,
-            TransferApprovalHistory.to_address_personal_info,
+            Nullable(TransferApprovalHistory.from_address_personal_info),
+            Nullable(TransferApprovalHistory.to_address_personal_info),
             # Latest Personal Information
-            from_address_personal_info,
-            to_address_personal_info,
+            Nullable(from_address_personal_info),
+            Nullable(to_address_personal_info),
         )
         .join(Token, subquery.token_address == Token.token_address)
         .outerjoin(
@@ -4015,7 +4104,9 @@ async def list_specific_bond_token_transfer_approval_history(
     )
 
     total = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
     # Search Filter
@@ -4027,14 +4118,32 @@ async def list_specific_bond_token_transfer_approval_history(
         stmt = stmt.where(literal_column("status").in_(get_query.status))
 
     count = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
+        select(func.count()).select_from(
+            stmt.with_only_columns(1).order_by(None).subquery()
+        )
     )
 
     # Sort
-    if get_query.sort_item != IDXTransferApprovalsSortItem.STATUS:
-        sort_attr = getattr(subquery, get_query.sort_item, None)
-    else:
-        sort_attr = literal_column("status")
+    match get_query.sort_item:
+        case ListTransferApprovalHistorySortItem.ID:
+            sort_attr = subquery.id
+        case ListTransferApprovalHistorySortItem.EXCHANGE_ADDRESS:
+            sort_attr = subquery.exchange_address
+        case ListTransferApprovalHistorySortItem.APPLICATION_ID:
+            sort_attr = subquery.application_id
+        case ListTransferApprovalHistorySortItem.FROM_ADDRESS:
+            sort_attr = subquery.from_address
+        case ListTransferApprovalHistorySortItem.TO_ADDRESS:
+            sort_attr = subquery.to_address
+        case ListTransferApprovalHistorySortItem.AMOUNT:
+            sort_attr = subquery.amount
+        case ListTransferApprovalHistorySortItem.APPLICATION_DATETIME:
+            sort_attr = subquery.application_datetime
+        case ListTransferApprovalHistorySortItem.APPROVAL_DATETIME:
+            sort_attr = subquery.approval_datetime
+        case _:
+            sort_attr = literal_column("status", type_=Integer)
+
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
@@ -4053,14 +4162,14 @@ async def list_specific_bond_token_transfer_approval_history(
         tuple[
             IDXTransferApproval,
             int,
-            dict | None,
-            dict | None,
+            dict[str, Any] | None,
+            dict[str, Any] | None,
             IDXPersonalInfo | None,
             IDXPersonalInfo | None,
         ]
-    ] = (await db.execute(stmt)).all()
+    ] = (await db.execute(stmt)).tuples().all()
 
-    transfer_approval_history = []
+    transfer_approval_history: list[dict[str, Any]] = []
     for (
         _transfer_approval,
         status,
@@ -4089,11 +4198,15 @@ async def list_specific_bond_token_transfer_approval_history(
         else:
             issuer_cancelable = True
 
+        if _transfer_approval.application_datetime is None:
+            continue
         application_datetime_utc = pytz.timezone("UTC").localize(
             _transfer_approval.application_datetime
         )
         application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
 
+        if _transfer_approval.application_blocktimestamp is None:
+            continue
         application_blocktimestamp_utc = pytz.timezone("UTC").localize(
             _transfer_approval.application_blocktimestamp
         )
@@ -4228,9 +4341,7 @@ async def update_bond_token_transfer_approval_status(
 
     # Get private key
     keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
-    )
+    private_key = _decode_private_key(keyfile_json, decrypt_password)
 
     # Get token
     _token: Token | None = (
@@ -4353,7 +4464,7 @@ async def update_bond_token_transfer_approval_status(
                 }
                 try:
                     await IbetStraightBondContract(token_address).approve_transfer(
-                        tx_params=ApproveTransferParams(**_data),
+                        tx_params=ApproveTransferParams(**_data),  # type: ignore
                         tx_sender=issuer_address,
                         tx_sender_key=private_key,
                     )
@@ -4363,7 +4474,7 @@ async def update_bond_token_transfer_approval_status(
                     # After cancelTransfer, ContractRevertError is returned.
                     try:
                         await IbetStraightBondContract(token_address).cancel_transfer(
-                            tx_params=CancelTransferParams(**_data),
+                            tx_params=CancelTransferParams(**_data),  # type: ignore
                             tx_sender=issuer_address,
                             tx_sender_key=private_key,
                         )
@@ -4378,7 +4489,7 @@ async def update_bond_token_transfer_approval_status(
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
                 try:
                     await escrow.approve_transfer(
-                        tx_params=EscrowApproveTransferParams(**_data),
+                        tx_params=EscrowApproveTransferParams(**_data),  # type: ignore
                         tx_sender=issuer_address,
                         tx_sender_key=private_key,
                     )
@@ -4391,7 +4502,7 @@ async def update_bond_token_transfer_approval_status(
             _data = {"application_id": _transfer_approval.application_id, "data": now}
             try:
                 await IbetStraightBondContract(token_address).cancel_transfer(
-                    tx_params=CancelTransferParams(**_data),
+                    tx_params=CancelTransferParams(**_data),  # type: ignore
                     tx_sender=issuer_address,
                     tx_sender_key=private_key,
                 )
@@ -4534,11 +4645,13 @@ async def retrieve_bond_token_transfer_approval_status(
     else:
         issuer_cancelable = True
 
+    assert _transfer_approval.application_datetime is not None
     application_datetime_utc = pytz.timezone("UTC").localize(
         _transfer_approval.application_datetime
     )
     application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
 
+    assert _transfer_approval.application_blocktimestamp is not None
     application_blocktimestamp_utc = pytz.timezone("UTC").localize(
         _transfer_approval.application_blocktimestamp
     )
@@ -4687,7 +4800,7 @@ async def bulk_transfer_bond_token_ownership(
     )
 
     # Verify that the same token address is set.
-    token_addr_set = set()
+    token_addr_set: set[str] = set()
     for _transfer in transfer_req.transfer_list:
         token_addr_set.add(_transfer.token_address)
 
@@ -4807,8 +4920,10 @@ async def list_bond_token_bulk_transfers(
 
     # Get bulk transfer upload list
     _uploads: Sequence[BulkTransferUpload] = (await db.scalars(stmt)).all()
-    uploads = []
+    uploads: list[dict[str, Any]] = []
     for _upload in _uploads:
+        if _upload.created is None:
+            continue
         created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append(
             {
@@ -4885,7 +5000,11 @@ async def retrieve_bond_token_bulk_transfer(
         )
     else:
         stmt = (
-            select(BulkTransfer, from_address_personal_info, to_address_personal_info)
+            select(
+                BulkTransfer,
+                Nullable(from_address_personal_info),
+                Nullable(to_address_personal_info),
+            )
             .where(
                 and_(
                     BulkTransfer.issuer_address == issuer_address,
@@ -4926,8 +5045,8 @@ async def retrieve_bond_token_bulk_transfer(
     # Get bulk transfer upload list
     _bulk_transfers: Sequence[
         tuple[BulkTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
-    ] = (await db.execute(stmt)).all()
-    bulk_transfers = []
+    ] = (await db.execute(stmt)).tuples().all()
+    bulk_transfers: list[dict[str, Any]] = []
     for (
         _bulk_transfer,
         _from_address_personal_info,
