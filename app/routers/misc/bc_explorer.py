@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import sys
 from typing import Annotated, Any, Dict, Sequence, Tuple
 
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import desc, func, select
 from web3.contract.contract import ContractFunction

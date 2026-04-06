@@ -21,7 +21,9 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.exceptions import TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -44,7 +46,9 @@ class TestRecordLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, ibet_freeze_log_contract):
+    async def test_normal_1(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 
@@ -70,7 +74,7 @@ class TestRecordLog:
             log_account.account_address, last_index - 1
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
-        assert last_message[0] == block["number"]
+        assert last_message[0] == block["number"]  # type: ignore
         assert last_message[1] == 100
         assert last_message[2] == "test message"
 
@@ -81,7 +85,9 @@ class TestRecordLog:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, ibet_freeze_log_contract):
+    async def test_error_1(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 
@@ -111,7 +117,9 @@ class TestRecordLog:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, ibet_freeze_log_contract):
+    async def test_error_2(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 
@@ -146,7 +154,9 @@ class TestUpdateLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, ibet_freeze_log_contract):
+    async def test_normal_1(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 
@@ -172,7 +182,7 @@ class TestUpdateLog:
             log_account.account_address, log_index
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
-        assert last_message[0] == block["number"]
+        assert last_message[0] == block["number"]  # type: ignore
         assert last_message[1] == 100
         assert last_message[2] == "after message"
 
@@ -183,7 +193,9 @@ class TestUpdateLog:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, ibet_freeze_log_contract):
+    async def test_error_1(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 
@@ -213,7 +225,9 @@ class TestUpdateLog:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, ibet_freeze_log_contract):
+    async def test_error_2(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 
@@ -248,7 +262,9 @@ class TestGetLog:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, ibet_freeze_log_contract):
+    async def test_normal_1(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 
@@ -271,14 +287,16 @@ class TestGetLog:
 
         # Assertion
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
-        assert _block_number == block["number"]
+        assert _block_number == block["number"]  # type: ignore
         assert _grace_block_count == 100
         assert _log_message == "test message"
 
     # <Normal_2>
     # Default value
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_db, ibet_freeze_log_contract):
+    async def test_normal_2(
+        self, async_db: AsyncSession, ibet_freeze_log_contract: Contract
+    ):
         user = default_eth_account("user1")
         user_address = user["address"]
 

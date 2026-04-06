@@ -26,7 +26,8 @@ from unittest.mock import MagicMock
 import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.exceptions import ContractLogicError, TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -38,12 +39,13 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
+from tests.types import UnitTestAccount
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
-async def initialize(issuer, async_db):
+async def initialize(issuer: UnitTestAccount, async_db: AsyncSession):
     _account = Account()
     _account.issuer_address = issuer["address"]
     _account.keyfile = issuer["keyfile_json"]
@@ -78,7 +80,7 @@ class TestGetInfo:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -86,7 +88,8 @@ class TestGetInfo:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -107,7 +110,7 @@ class TestGetInfo:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -129,7 +132,7 @@ class TestGetInfo:
     # <Normal_2>
     # Unset Information
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_db):
+    async def test_normal_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -138,7 +141,7 @@ class TestGetInfo:
         contract = personal_info_contract.personal_info_contract
         tx = await contract.functions.register(issuer["address"], "").build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -175,7 +178,7 @@ class TestGetInfo:
     # <Error_1>
     # Invalid RSA Private Key
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db):
+    async def test_error_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -183,7 +186,8 @@ class TestGetInfo:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -204,7 +208,7 @@ class TestGetInfo:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -240,7 +244,7 @@ class TestGetInfo:
     # <Error_2>
     # Decrypt Fail
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db):
+    async def test_error_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -251,7 +255,7 @@ class TestGetInfo:
             issuer["address"], "testtest"
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -290,7 +294,7 @@ class TestRegisterInfo:
     # <Normal_1>
     # not register
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -317,7 +321,7 @@ class TestRegisterInfo:
     # <Normal_2>
     # registered
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_db):
+    async def test_normal_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -325,7 +329,8 @@ class TestRegisterInfo:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -346,7 +351,7 @@ class TestRegisterInfo:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -384,7 +389,7 @@ class TestRegisterInfo:
     # <Error_1>
     # SendTransactionError(Timeout)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db):
+    async def test_error_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -412,7 +417,7 @@ class TestRegisterInfo:
     # <Error_2>
     # SendTransactionError(Other Error)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db):
+    async def test_error_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -440,7 +445,7 @@ class TestRegisterInfo:
     # <Error_3>
     # Transaction REVERT
     @pytest.mark.asyncio
-    async def test_error_3(self, async_db):
+    async def test_error_3(self, async_db: AsyncSession):
         # Transaction REVERT would not occur in PersonalInfo_register
         pass
 
@@ -452,7 +457,7 @@ class TestModifyInfo:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -460,7 +465,8 @@ class TestModifyInfo:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -481,7 +487,7 @@ class TestModifyInfo:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -519,7 +525,7 @@ class TestModifyInfo:
     # <Error_1>
     # SendTransactionError(Timeout)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db):
+    async def test_error_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -527,7 +533,8 @@ class TestModifyInfo:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -548,7 +555,7 @@ class TestModifyInfo:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -585,7 +592,7 @@ class TestModifyInfo:
     # <Error_2>
     # SendTransactionError(Other Error)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db):
+    async def test_error_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -593,7 +600,8 @@ class TestModifyInfo:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -614,7 +622,7 @@ class TestModifyInfo:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -651,7 +659,7 @@ class TestModifyInfo:
     # <Error_3>
     # Transaction REVERT(not registered)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_db):
+    async def test_error_3(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -693,7 +701,7 @@ class TestGetRegisterEvent:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -703,7 +711,8 @@ class TestGetRegisterEvent:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -724,7 +733,7 @@ class TestGetRegisterEvent:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -756,7 +765,7 @@ class TestGetModifyEvent:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         personal_info_contract = await initialize(issuer, async_db)
 
@@ -764,7 +773,8 @@ class TestGetModifyEvent:
         setting_user = default_eth_account("user2")
         rsa_password = "password"
         rsa = RSA.importKey(
-            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+            personal_info_contract.issuer.rsa_public_key,  # type: ignore
+            passphrase=rsa_password,
         )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
@@ -785,7 +795,7 @@ class TestGetModifyEvent:
             issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
@@ -820,7 +830,7 @@ class TestGetModifyEvent:
             setting_user["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(issuer["address"]),
+                "nonce": web3.eth.get_transaction_count(issuer["address"]),  # type: ignore
                 "from": issuer["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,

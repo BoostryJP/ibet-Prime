@@ -21,7 +21,7 @@ import secrets
 from unittest import mock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from sqlalchemy import select
 
 from app.model.db import (

@@ -25,7 +25,7 @@ from unittest.mock import patch
 import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,7 +48,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_personal_info import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
@@ -1176,7 +1176,9 @@ class TestProcessor:
         # Run mainloop once and fail with connection to blockchain
         with (
             patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),
-            patch.object(AsyncContractUtils, "call_function", ConnectionError()),
+            patch.object(
+                IbetStraightBondContract, "get", side_effect=ConnectionError()
+            ),
             pytest.raises(TypeError),
         ):
             await main_func()

@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -89,7 +90,7 @@ class Notification(Base):
     # notification code
     code: Mapped[int | None] = mapped_column(Integer)
     # meta information
-    metainfo: Mapped[dict | None] = mapped_column(JSON)
+    metainfo: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
 
 class NotificationType(StrEnum):

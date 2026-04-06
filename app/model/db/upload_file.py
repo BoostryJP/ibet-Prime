@@ -37,7 +37,7 @@ class UploadFile(Base):
     # file_name
     file_name: Mapped[str] = mapped_column(String(256), nullable=False)
     # content
-    content: Mapped[str] = mapped_column(LargeBinary, nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     # content size
     content_size: Mapped[int | None] = mapped_column(Integer)
     # description

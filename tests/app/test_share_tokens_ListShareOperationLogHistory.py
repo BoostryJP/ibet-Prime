@@ -22,7 +22,7 @@ from unittest import mock
 from unittest.mock import ANY
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from httpx import AsyncClient
 from pytz import timezone
 from web3 import Web3

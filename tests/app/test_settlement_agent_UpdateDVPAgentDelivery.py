@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 
 from app.model.db import Account, DVPAgentAccount, Token, TokenType, TokenVersion
 from app.model.ibet import IbetStraightBondContract

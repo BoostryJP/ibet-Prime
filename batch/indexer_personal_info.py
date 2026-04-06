@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from typing import Sequence
 
 import uvloop
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession

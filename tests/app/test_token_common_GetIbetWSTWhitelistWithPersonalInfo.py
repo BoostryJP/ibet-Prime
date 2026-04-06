@@ -21,7 +21,9 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     IDXPersonalInfo,
@@ -66,7 +68,7 @@ class TestGetIbetWSTWhiteList:
             )
         ),
     )
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -119,7 +121,7 @@ class TestGetIbetWSTWhiteList:
             )
         ),
     )
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -172,7 +174,7 @@ class TestGetIbetWSTWhiteList:
             )
         ),
     )
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -243,7 +245,7 @@ class TestGetIbetWSTWhiteList:
     # <Error_1>
     # Missing issuer address in request header
     # - Expected to return 422
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request without issuer address in header
         resp = await async_client.get(
             self.api_url.format(
@@ -269,7 +271,7 @@ class TestGetIbetWSTWhiteList:
     # <Error_2>
     # Invalid addresses
     # - Expected to return 422
-    async def test_error_2(self, async_client):
+    async def test_error_2(self, async_client: AsyncClient):
         # Send request with invalid addresses
         resp = await async_client.get(
             self.api_url.format(
@@ -304,7 +306,7 @@ class TestGetIbetWSTWhiteList:
     # <Error_3>
     # Token not found
     # - Expected to return 404
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         # Send request
         resp = await async_client.get(

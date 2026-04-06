@@ -17,11 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Literal
+from typing import Any, Literal
 
-from eth_abi import encode
+from eth_abi.abi import encode
 from eth_abi.packed import encode_packed
-from eth_utils import keccak, to_checksum_address
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from pydantic import BaseModel, Field
 from web3.contract import AsyncContract
 from web3.types import Nonce
@@ -1153,7 +1154,7 @@ class _BaseIbetWST(_BaseERC20):
         :param index: Trade ID (index)
         :return: Trade information
         """
-        trade = await self.contract_utils.call_function(
+        trade: Any = await self.contract_utils.call_function(
             contract=self.contract,
             function_name="getTrade",
             args=(index,),
@@ -1169,6 +1170,8 @@ class _BaseIbetWST(_BaseERC20):
                 _state = "Cancelled"
             case 3:
                 _state = "Rejected"
+            case _:
+                _state = "Pending"
 
         return IbetWSTTrade(
             seller_st_account=to_checksum_address(trade[0]),

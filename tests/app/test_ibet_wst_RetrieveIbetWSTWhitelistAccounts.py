@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 
 from app.model.db import IDXAvaIbetWSTWhitelist, IDXEthIbetWSTWhitelist
 from tests.account_config import default_eth_account

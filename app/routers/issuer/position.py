@@ -17,9 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Annotated, Optional, Sequence
+from datetime import datetime
+from typing import Annotated, Any, Optional, Sequence, cast
 
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
@@ -148,17 +149,15 @@ async def list_all_positions(
     if issuer_address is not None:
         stmt = stmt.where(Token.issuer_address == issuer_address)
 
-    total = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
-    )
+    total_stmt = stmt.with_only_columns(1).order_by(None).subquery()
+    total = await db.scalar(select(func.count()).select_from(total_stmt))
 
     # Search Filter
     if request_query.token_type is not None:
         stmt = stmt.where(Token.type == request_query.token_type)
 
-    count = await db.scalar(
-        select(func.count()).select_from(stmt.with_only_columns(1).order_by(None))
-    )
+    count_stmt = stmt.with_only_columns(1).order_by(None).subquery()
+    count = await db.scalar(select(func.count()).select_from(count_stmt))
 
     # Pagination
     if request_query.limit is not None:
@@ -166,26 +165,30 @@ async def list_all_positions(
     if request_query.offset is not None:
         stmt = stmt.offset(request_query.offset)
 
-    _position_list: Sequence[tuple[IDXPosition, int, Token]] = (
+    _position_list: Sequence[tuple[IDXPosition, int | None, Token]] = (
         (await db.execute(stmt)).tuples().all()
     )
 
-    positions = []
+    positions: list[dict[str, Any]] = []
     for _position, _locked, _token in _position_list:
         # Get Token Attributes
-        token_attr = None
+        token_attr: dict[str, Any] | None = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND:
-            token_attr = await IbetStraightBondContract(_token.token_address).get()
+            token_contract = await IbetStraightBondContract(_token.token_address).get()
+            token_attr = token_contract.__dict__
         elif _token.type == TokenType.IBET_SHARE:
-            token_attr = await IbetShareContract(_token.token_address).get()
+            token_contract = await IbetShareContract(_token.token_address).get()
+            token_attr = token_contract.__dict__
 
         positions.append(
             {
                 "issuer_address": _token.issuer_address,
                 "token_address": _token.token_address,
                 "token_type": _token.type,
-                "token_name": token_attr.name if token_attr is not None else None,
-                "token_attributes": token_attr.__dict__
+                "token_name": token_attr.get("name")
+                if token_attr is not None
+                else None,
+                "token_attributes": dict(token_attr)
                 if (
                     request_query.include_token_attributes is True
                     and token_attr is not None
@@ -195,7 +198,7 @@ async def list_all_positions(
                 "exchange_balance": _position.exchange_balance,
                 "exchange_commitment": _position.exchange_commitment,
                 "pending_transfer": _position.pending_transfer,
-                "locked": _locked if _locked is not None else 0,
+                "locked": int(_locked or 0),
             }
         )
 
@@ -273,14 +276,14 @@ async def list_all_locked_position(
         (await db.execute(stmt)).tuples().all()
     )
 
-    positions = []
+    positions: list[dict[str, Any]] = []
     for _locked_position, _token in _position_list:
         # Get Token Name
-        token_name = None
-        if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
+        token_name: str | None = None
+        if _token.type == TokenType.IBET_STRAIGHT_BOND:
             _bond = await IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
-        elif _token.type == TokenType.IBET_SHARE.value:
+        elif _token.type == TokenType.IBET_SHARE:
             _share = await IbetShareContract(_token.token_address).get()
             token_name = _share.name
         positions.append(
@@ -379,19 +382,15 @@ async def list_account_lock_unlock_events(
     if issuer_address is not None:
         stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
-    total = (
-        await db.scalar(
-            stmt_lock.with_only_columns(func.count())
-            .select_from(IDXLock)
-            .order_by(None)
-        )
-    ) + (
-        await db.scalar(
-            stmt_unlock.with_only_columns(func.count())
-            .select_from(IDXUnlock)
-            .order_by(None)
-        )
+    lock_total = await db.scalar(
+        stmt_lock.with_only_columns(func.count()).select_from(IDXLock).order_by(None)
     )
+    unlock_total = await db.scalar(
+        stmt_unlock.with_only_columns(func.count())
+        .select_from(IDXUnlock)
+        .order_by(None)
+    )
+    total = (lock_total or 0) + (unlock_total or 0)
 
     # Filter
     match request_query.category:
@@ -431,13 +430,14 @@ async def list_account_lock_unlock_events(
     )
 
     # Sort
-    sort_attr = column(request_query.sort_item)
+    sort_item = request_query.sort_item or ListAllLockEventsSortItem.block_timestamp
+    sort_attr = cast(Any, column(sort_item.value))
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
 
-    if request_query.sort_item != ListAllLockEventsSortItem.block_timestamp.value:
+    if sort_item != ListAllLockEventsSortItem.block_timestamp:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(
             desc(column(ListAllLockEventsSortItem.block_timestamp.value))
@@ -463,37 +463,67 @@ async def list_account_lock_unlock_events(
         all_lock_event_alias.c.block_timestamp,
         Token,
     ]
-    lock_events = (
-        (await db.execute(select(*entries).from_statement(stmt))).tuples().all()
+    lock_events = cast(
+        Sequence[
+            tuple[
+                str,
+                bool,
+                str,
+                str | None,
+                str,
+                str,
+                str,
+                str | None,
+                int,
+                dict[str, Any],
+                datetime,
+                Token,
+            ]
+        ],
+        (await db.execute(select(*entries).from_statement(stmt))).tuples().all(),
     )
 
-    resp_data = []
+    resp_data: list[dict[str, Any]] = []
     for lock_event in lock_events:
-        token_name = None
-        token: Token = lock_event.Token
-        if token.type == TokenType.IBET_STRAIGHT_BOND.value:
+        (
+            category,
+            is_forced,
+            transaction_hash,
+            msg_sender,
+            token_address,
+            lock_address,
+            event_account_address,
+            recipient_address,
+            value,
+            event_data,
+            block_timestamp,
+            token,
+        ) = lock_event
+
+        token_name: str | None = None
+        if token.type == TokenType.IBET_STRAIGHT_BOND:
             _contract = await IbetStraightBondContract(token.token_address).get()
             token_name = _contract.name
-        elif token.type == TokenType.IBET_SHARE.value:
+        elif token.type == TokenType.IBET_SHARE:
             _contract = await IbetShareContract(token.token_address).get()
             token_name = _contract.name
 
-        block_timestamp_utc = timezone("UTC").localize(lock_event.block_timestamp)
+        block_timestamp_utc = timezone("UTC").localize(block_timestamp)
         resp_data.append(
             {
-                "category": lock_event.category,
-                "is_forced": lock_event.is_forced,
-                "transaction_hash": lock_event.transaction_hash,
-                "msg_sender": lock_event.msg_sender,
+                "category": category,
+                "is_forced": is_forced,
+                "transaction_hash": transaction_hash,
+                "msg_sender": msg_sender,
                 "issuer_address": token.issuer_address,
-                "token_address": token.token_address,
+                "token_address": token_address,
                 "token_type": token.type,
                 "token_name": token_name,
-                "lock_address": lock_event.lock_address,
-                "account_address": lock_event.account_address,
-                "recipient_address": lock_event.recipient_address,
-                "value": lock_event.value,
-                "data": lock_event.data,
+                "lock_address": lock_address,
+                "account_address": event_account_address,
+                "recipient_address": recipient_address,
+                "value": value,
+                "data": event_data,
                 "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat(),
             }
         )
@@ -557,9 +587,10 @@ async def force_lock(
         raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
-    keyfile_json = _account.keyfile
+    if _account.keyfile is None:
+        raise InvalidParameterError("keyfile not found")
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+        raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
 
     # Verify that the token is issued by the issuer_address
@@ -588,18 +619,17 @@ async def force_lock(
         )
 
     # Force lock
-    lock_message_data = LockDataMessage(message=data.message).model_dump_json(
-        exclude_none=True
-    )
-    lock_data = {
-        "lock_address": data.lock_address,
-        "account_address": account_address,
-        "value": data.value,
-        "data": lock_message_data,
-    }
+    lock_message_data = LockDataMessage(
+        message=(data.message or LockDataMessage.model_fields["message"].default)
+    ).model_dump_json(exclude_none=True)
     try:
         await IbetSecurityTokenInterface(data.token_address).force_lock(
-            tx_params=ForceLockParams(**lock_data),
+            tx_params=ForceLockParams(
+                lock_address=data.lock_address,
+                account_address=account_address,
+                value=data.value,
+                data=lock_message_data,
+            ),
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
@@ -654,9 +684,10 @@ async def force_unlock(
         raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
-    keyfile_json = _account.keyfile
+    if _account.keyfile is None:
+        raise InvalidParameterError("keyfile not found")
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
+        raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
 
     # Verify that the token is issued by the issuer_address
@@ -711,19 +742,18 @@ async def force_unlock(
                 )
 
     # Force unlock
-    unlock_message_data = UnlockDataMessage(message=data.message).model_dump_json(
-        exclude_none=True
-    )
-    unlock_data = {
-        "lock_address": data.lock_address,
-        "account_address": account_address,
-        "recipient_address": data.recipient_address,
-        "value": data.value,
-        "data": unlock_message_data,
-    }
+    unlock_message_data = UnlockDataMessage(
+        message=(data.message or UnlockDataMessage.model_fields["message"].default)
+    ).model_dump_json(exclude_none=True)
     try:
         await IbetSecurityTokenInterface(data.token_address).force_unlock(
-            tx_params=ForceUnlockParams(**unlock_data),
+            tx_params=ForceUnlockParams(
+                lock_address=data.lock_address,
+                account_address=account_address,
+                recipient_address=data.recipient_address,
+                value=data.value,
+                data=unlock_message_data,
+            ),
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
@@ -787,31 +817,36 @@ async def retrieve_position(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Position
-    _record: tuple[IDXPosition, int] = (
-        await db.execute(
-            select(IDXPosition, func.sum(IDXLockedPosition.value))
-            .outerjoin(
-                IDXLockedPosition,
-                and_(
-                    IDXLockedPosition.token_address == IDXPosition.token_address,
-                    IDXLockedPosition.account_address == IDXPosition.account_address,
-                ),
-            )
-            .where(
-                and_(
-                    IDXPosition.token_address == token_address,
-                    IDXPosition.account_address == account_address,
+    _record: tuple[IDXPosition, int | None] | None = (
+        (
+            await db.execute(
+                select(IDXPosition, func.sum(IDXLockedPosition.value))
+                .outerjoin(
+                    IDXLockedPosition,
+                    and_(
+                        IDXLockedPosition.token_address == IDXPosition.token_address,
+                        IDXLockedPosition.account_address
+                        == IDXPosition.account_address,
+                    ),
                 )
+                .where(
+                    and_(
+                        IDXPosition.token_address == token_address,
+                        IDXPosition.account_address == account_address,
+                    )
+                )
+                .group_by(
+                    IDXPosition.token_address,
+                    IDXPosition.account_address,
+                    IDXLockedPosition.token_address,
+                    IDXLockedPosition.account_address,
+                )
+                .limit(1)
             )
-            .group_by(
-                IDXPosition.token_address,
-                IDXPosition.account_address,
-                IDXLockedPosition.token_address,
-                IDXLockedPosition.account_address,
-            )
-            .limit(1)
         )
-    ).first()
+        .tuples()
+        .first()
+    )
 
     if _record is not None:
         _position = _record[0]
@@ -827,18 +862,20 @@ async def retrieve_position(
         )
 
     # Get Token Attributes
-    token_attr = None
+    token_attr: dict[str, Any] | None = None
     if _token.type == TokenType.IBET_STRAIGHT_BOND:
-        token_attr = await IbetStraightBondContract(_token.token_address).get()
+        token_attr = (
+            await IbetStraightBondContract(_token.token_address).get()
+        ).__dict__
     elif _token.type == TokenType.IBET_SHARE:
-        token_attr = await IbetShareContract(_token.token_address).get()
+        token_attr = (await IbetShareContract(_token.token_address).get()).__dict__
 
     resp = {
         "issuer_address": _token.issuer_address,
         "token_address": _token.token_address,
         "token_type": _token.type,
-        "token_name": token_attr.name if token_attr is not None else None,
-        "token_attributes": token_attr.__dict__ if token_attr is not None else None,
+        "token_name": token_attr.get("name") if token_attr is not None else None,
+        "token_attributes": dict(token_attr) if token_attr is not None else None,
         "balance": _position.balance,
         "exchange_balance": _position.exchange_balance,
         "exchange_commitment": _position.exchange_commitment,

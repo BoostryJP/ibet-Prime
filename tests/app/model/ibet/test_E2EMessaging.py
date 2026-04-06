@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import os
+from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -27,8 +28,10 @@ import pytest
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import unpad
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.exceptions import TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -49,7 +52,9 @@ class TestSendMessage:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_1(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -78,7 +83,7 @@ class TestSendMessage:
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
         assert last_message[0] == user_address_1
         assert last_message[1] == message
-        assert last_message[2] == block["timestamp"]
+        assert last_message[2] == block["timestamp"]  # type: ignore
 
     ###########################################################################
     # Error Case
@@ -87,7 +92,9 @@ class TestSendMessage:
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -118,7 +125,9 @@ class TestSendMessage:
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
+    async def test_error_2(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -224,7 +233,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_1(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -253,29 +264,38 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         last_message = ibet_e2e_messaging_contract.functions.getLastMessage(
             user_address_2
         ).call()
+
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
         assert last_message[0] == user_address_1
+
         message_dict = json.loads(last_message[1])
         assert message_dict["type"] == _type
+
         cipher_key = message_dict["text"]["cipher_key"]
         rsa_key = RSA.importKey(self.rsa_private_key, passphrase=self.rsa_passphrase)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         aes_key = rsa_cipher.decrypt(base64.decodebytes(cipher_key.encode("utf-8")))
         assert len(aes_key) == AES.block_size * 2
+
         encrypt_message = base64.b64decode(message_dict["text"]["message"])
         aes_iv = encrypt_message[: AES.block_size]
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = aes_cipher.decrypt(encrypt_message[AES.block_size :])
         decrypt_message = unpad(pad_message, AES.block_size).decode()
         assert decrypt_message == message_org
-        assert last_message[2] == block["timestamp"]
+        assert last_message[2] == block["timestamp"]  # type: ignore
 
     # <Normal_2>
     # use AWS KMS
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
     @mock.patch("boto3.client")
-    async def test_normal_2(self, boto3_mock, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_2(
+        self,
+        boto3_mock: Any,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -291,7 +311,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             def __init__(self):
                 self.call_cnt = 0
 
-            def generate_random(self, NumberOfBytes):
+            def generate_random(self, NumberOfBytes: int):
                 if self.call_cnt == 0:
                     assert NumberOfBytes == 32
                 else:
@@ -317,25 +337,29 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
+
         last_message = ibet_e2e_messaging_contract.functions.getLastMessage(
             user_address_2
         ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
         assert last_message[0] == user_address_1
+
         message_dict = json.loads(last_message[1])
         assert message_dict["type"] == _type
+
         cipher_key = message_dict["text"]["cipher_key"]
         rsa_key = RSA.importKey(self.rsa_private_key, passphrase=self.rsa_passphrase)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         aes_key = rsa_cipher.decrypt(base64.decodebytes(cipher_key.encode("utf-8")))
         assert len(aes_key) == AES.block_size * 2
+
         encrypt_message = base64.b64decode(message_dict["text"]["message"])
         aes_iv = encrypt_message[: AES.block_size]
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = aes_cipher.decrypt(encrypt_message[AES.block_size :])
         decrypt_message = unpad(pad_message, AES.block_size).decode()
         assert decrypt_message == message_org
-        assert last_message[2] == block["timestamp"]
+        assert last_message[2] == block["timestamp"]  # type: ignore
 
     ###########################################################################
     # Error Case
@@ -344,7 +368,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -381,7 +407,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
+    async def test_error_2(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -438,7 +466,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_1(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -472,7 +502,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1>
     # Transaction Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -502,7 +534,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_2>
     # Transaction Timeout
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db, ibet_e2e_messaging_contract):
+    async def test_error_2(
+        self, async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(

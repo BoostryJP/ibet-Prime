@@ -27,7 +27,7 @@ import boto3
 import eth_keyfile
 import pytz
 from coincurve import PublicKey
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from eth_utils import keccak, to_checksum_address
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import and_, desc, func, select

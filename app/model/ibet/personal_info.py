@@ -20,11 +20,11 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import logging
-from typing import Final
+from typing import Any, Final
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from pydantic import BaseModel
 from web3.contract import AsyncContract
 from web3.exceptions import TimeExhausted
@@ -55,18 +55,27 @@ class PersonalInfoContract:
 
     personal_info_contract: AsyncContract
     issuer: Final[Account]
+    cipher: Any | None
     private_key: bytes | None
 
-    def __init__(self, logger: logging.Logger, issuer: Account, contract_address=None):
+    def __init__(
+        self,
+        logger: logging.Logger,
+        issuer: Account,
+        contract_address: str | None = None,
+    ):
         self.logger = logger
         self.personal_info_contract = AsyncContractUtils.get_contract(
-            contract_name="PersonalInfo", contract_address=contract_address
+            contract_name="PersonalInfo",
+            contract_address=contract_address or ZERO_ADDRESS,
         )
         self.issuer = issuer
         self.cipher = None
         self.private_key = None
 
-    async def get_info(self, account_address: str, default_value=None):
+    async def get_info(
+        self, account_address: str, default_value: Any | None = None
+    ) -> dict[str, Any]:
         """Get personal information from contract storage
 
         :param account_address: Token holder account address
@@ -99,6 +108,8 @@ class PersonalInfoContract:
             # Get issuer's RSA private key
             try:
                 if self.cipher is None:
+                    assert self.issuer.rsa_passphrase is not None
+                    assert self.issuer.rsa_private_key is not None
                     passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
                     key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
                     self.cipher = PKCS1_OAEP.new(key)
@@ -112,44 +123,49 @@ class PersonalInfoContract:
                     email=default_value,
                     birth=default_value,
                 ).model_dump()
-            if self.cipher is not None:
-                try:
-                    ciphertext = base64.decodebytes(encrypted_info.encode("utf-8"))
-                    # NOTE:
-                    # When using JavaScript to encrypt RSA, if the first character is 0x00,
-                    # the data is requested with the 00 character removed.
-                    # Since decrypting this data will result in a ValueError (Ciphertext with incorrect length),
-                    # decrypt the data with 00 added to the beginning.
-                    if len(ciphertext) == 1279:
-                        hex_fixed = "00" + ciphertext.hex()
-                        ciphertext = base64.b16decode(hex_fixed.upper())
-                    decrypted_info = json.loads(self.cipher.decrypt(ciphertext))
+            try:
+                cipher = self.cipher
+                if cipher is None:
+                    raise ValueError("cipher is not initialized")
+                ciphertext = base64.decodebytes(encrypted_info.encode("utf-8"))
+                # NOTE:
+                # When using JavaScript to encrypt RSA, if the first character is 0x00,
+                # the data is requested with the 00 character removed.
+                # Since decrypting this data will result in a ValueError (Ciphertext with incorrect length),
+                # decrypt the data with 00 added to the beginning.
+                if len(ciphertext) == 1279:
+                    hex_fixed = "00" + ciphertext.hex()
+                    ciphertext = base64.b16decode(hex_fixed.upper())
+                decrypted_info = json.loads(cipher.decrypt(ciphertext))
 
-                    return ContractPersonalInfoType(
-                        key_manager=decrypted_info.get("key_manager", default_value),
-                        name=decrypted_info.get("name", default_value),
-                        address=decrypted_info.get("address", default_value),
-                        postal_code=decrypted_info.get("postal_code", default_value),
-                        email=decrypted_info.get("email", default_value),
-                        birth=decrypted_info.get("birth", default_value),
-                        is_corporate=decrypted_info.get("is_corporate", None),
-                        tax_category=decrypted_info.get("tax_category", None),
-                    ).model_dump()
-                except Exception as err:
-                    self.logger.error(
-                        f"Failed to decrypt: issuer_address={self.issuer.issuer_address}, account_address={account_address}: {err}"
-                    )
-                    return ContractPersonalInfoType(
-                        key_manager=default_value,
-                        name=default_value,
-                        address=default_value,
-                        postal_code=default_value,
-                        email=default_value,
-                        birth=default_value,
-                    ).model_dump()
+                return ContractPersonalInfoType(
+                    key_manager=decrypted_info.get("key_manager", default_value),
+                    name=decrypted_info.get("name", default_value),
+                    address=decrypted_info.get("address", default_value),
+                    postal_code=decrypted_info.get("postal_code", default_value),
+                    email=decrypted_info.get("email", default_value),
+                    birth=decrypted_info.get("birth", default_value),
+                    is_corporate=decrypted_info.get("is_corporate", None),
+                    tax_category=decrypted_info.get("tax_category", None),
+                ).model_dump()
+            except Exception as err:
+                self.logger.error(
+                    f"Failed to decrypt: issuer_address={self.issuer.issuer_address}, account_address={account_address}: {err}"
+                )
+                return ContractPersonalInfoType(
+                    key_manager=default_value,
+                    name=default_value,
+                    address=default_value,
+                    postal_code=default_value,
+                    email=default_value,
+                    birth=default_value,
+                ).model_dump()
 
     async def register_info(
-        self, account_address: str, data: dict, default_value=None
+        self,
+        account_address: str,
+        data: dict[str, Any],
+        default_value: Any | None = None,
     ) -> str:
         """Register personal information
 
@@ -172,6 +188,8 @@ class PersonalInfoContract:
         }
 
         # Encrypt personal info
+        assert self.issuer.rsa_passphrase is not None
+        assert self.issuer.rsa_public_key is not None
         passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
         rsa_key = RSA.importKey(self.issuer.rsa_public_key, passphrase=passphrase)
         cipher = PKCS1_OAEP.new(rsa_key)
@@ -181,10 +199,13 @@ class PersonalInfoContract:
 
         try:
             if self.private_key is None:
-                password = E2EEUtils.decrypt(self.issuer.eoa_password)
+                assert self.issuer.eoa_password is not None
+                assert self.issuer.keyfile is not None
                 self.private_key = decode_keyfile_json(
                     raw_keyfile_json=self.issuer.keyfile,
-                    password=password.encode("utf-8"),
+                    password=E2EEUtils.decrypt(self.issuer.eoa_password).encode(
+                        "utf-8"
+                    ),
                 )
             tx = await self.personal_info_contract.functions.forceRegister(
                 account_address, ciphertext.decode("utf-8")
@@ -208,7 +229,12 @@ class PersonalInfoContract:
             raise SendTransactionError(err)
         return tx_hash
 
-    async def modify_info(self, account_address: str, data: dict, default_value=None):
+    async def modify_info(
+        self,
+        account_address: str,
+        data: dict[str, Any],
+        default_value: Any | None = None,
+    ) -> None:
         """Modify personal information
 
         :param account_address: Token holder account address
@@ -230,6 +256,8 @@ class PersonalInfoContract:
         }
 
         # Encrypt personal info
+        assert self.issuer.rsa_passphrase is not None
+        assert self.issuer.rsa_public_key is not None
         passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
         rsa_key = RSA.importKey(self.issuer.rsa_public_key, passphrase=passphrase)
         cipher = PKCS1_OAEP.new(rsa_key)
@@ -239,10 +267,13 @@ class PersonalInfoContract:
 
         try:
             if self.private_key is None:
-                password = E2EEUtils.decrypt(self.issuer.eoa_password)
+                assert self.issuer.eoa_password is not None
+                assert self.issuer.keyfile is not None
                 self.private_key = decode_keyfile_json(
                     raw_keyfile_json=self.issuer.keyfile,
-                    password=password.encode("utf-8"),
+                    password=E2EEUtils.decrypt(self.issuer.eoa_password).encode(
+                        "utf-8"
+                    ),
                 )
             tx = await self.personal_info_contract.functions.modify(
                 account_address, ciphertext.decode("utf-8")
@@ -265,7 +296,9 @@ class PersonalInfoContract:
             self.logger.exception(f"{err}")
             raise SendTransactionError(err)
 
-    async def get_register_event(self, block_from, block_to):
+    async def get_register_event(
+        self, block_from: int | None, block_to: int | None
+    ) -> list[Any]:
         """Get Register event
 
         :param block_from: block from
@@ -280,7 +313,9 @@ class PersonalInfoContract:
         )
         return events
 
-    async def get_modify_event(self, block_from, block_to):
+    async def get_modify_event(
+        self, block_from: int | None, block_to: int | None
+    ) -> list[Any]:
         """Get Modify event
 
         :param block_from: block from

@@ -21,6 +21,8 @@ from datetime import UTC, datetime
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import IDXPersonalInfo, PersonalInfoDataSource
 from tests.account_config import default_eth_account
@@ -37,7 +39,7 @@ class TestListTokenHoldersPersonalInfo:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 
@@ -59,7 +61,7 @@ class TestListTokenHoldersPersonalInfo:
     # 1 record
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -118,7 +120,7 @@ class TestListTokenHoldersPersonalInfo:
     # No search filter
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -241,7 +243,9 @@ class TestListTokenHoldersPersonalInfo:
     # Search filter: key_manager_type = "SELF"
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_4_1_1(self, async_client, async_db):
+    async def test_normal_4_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -337,7 +341,9 @@ class TestListTokenHoldersPersonalInfo:
     # Search filter: key_manager_type = "OTHERS"
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_4_1_2(self, async_client, async_db):
+    async def test_normal_4_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -447,7 +453,7 @@ class TestListTokenHoldersPersonalInfo:
     # Multiple records
     # Search filter: account_address
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db):
+    async def test_normal_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -560,7 +566,7 @@ class TestListTokenHoldersPersonalInfo:
     # Multiple records
     # Search filter: created_from, created_to
     @pytest.mark.asyncio
-    async def test_normal_4_3(self, async_client, async_db):
+    async def test_normal_4_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -674,7 +680,7 @@ class TestListTokenHoldersPersonalInfo:
     # Multiple records
     # Search filter: modified_from, modified_to
     @pytest.mark.asyncio
-    async def test_normal_4_4(self, async_client, async_db):
+    async def test_normal_4_4(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -789,7 +795,7 @@ class TestListTokenHoldersPersonalInfo:
     # - sort_item: None(created)
     # - sort_order: DESC
     @pytest.mark.asyncio
-    async def test_normal_5_1(self, async_client, async_db):
+    async def test_normal_5_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -931,7 +937,7 @@ class TestListTokenHoldersPersonalInfo:
     # - sort_item: account_address
     # - sort_order: ASC
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, async_client, async_db):
+    async def test_normal_5_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -1064,7 +1070,7 @@ class TestListTokenHoldersPersonalInfo:
     # - sort_item: modified
     # - sort_order: ASC
     @pytest.mark.asyncio
-    async def test_normal_5_3(self, async_client, async_db):
+    async def test_normal_5_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -1205,7 +1211,7 @@ class TestListTokenHoldersPersonalInfo:
     # Pagination
     @pytest.mark.freeze_time("2024-05-13 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_6(self, async_client, async_db):
+    async def test_normal_6(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         account_address1 = "account_address1"
@@ -1317,7 +1323,7 @@ class TestListTokenHoldersPersonalInfo:
     # <Error_1_1>
     # RequestValidationError: created_from, created_to, modified_from, modified_to
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 
@@ -1373,7 +1379,7 @@ class TestListTokenHoldersPersonalInfo:
     # <Error_1_2>
     # RequestValidationError: sort_item, sort_order
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
 

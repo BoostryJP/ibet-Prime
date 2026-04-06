@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import UploadFile
 
@@ -42,7 +44,7 @@ abc def"""
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.get(self.base_url)
 
@@ -56,7 +58,7 @@ abc def"""
     # <Normal_2>
     # 1 record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_1_bin = self.file_content.encode()
 
         # prepare data
@@ -102,7 +104,7 @@ abc def"""
     # <Normal_3>
     # 2 record
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -173,7 +175,7 @@ abc def"""
     # Search Filter
     # issuer_address
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db):
+    async def test_normal_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -239,7 +241,7 @@ abc def"""
     # Search Filter
     # relation
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db):
+    async def test_normal_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -303,7 +305,7 @@ abc def"""
     # Search Filter
     # file_name
     @pytest.mark.asyncio
-    async def test_normal_4_3(self, async_client, async_db):
+    async def test_normal_4_3(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -367,7 +369,9 @@ abc def"""
     # Search Filter
     # label: default value
     @pytest.mark.asyncio
-    async def test_normal_4_4_1(self, async_client, async_db):
+    async def test_normal_4_4_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -459,7 +463,9 @@ abc def"""
     # Search Filter
     # label
     @pytest.mark.asyncio
-    async def test_normal_4_4_2(self, async_client, async_db):
+    async def test_normal_4_4_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -576,7 +582,7 @@ abc def"""
     # <Normal_5>
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content_bin = self.file_content.encode()
 
         # prepare data
@@ -686,7 +692,7 @@ abc def"""
     # Parameter Error
     # Query
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url,
@@ -719,7 +725,7 @@ abc def"""
     # Parameter Error
     # Header
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url,

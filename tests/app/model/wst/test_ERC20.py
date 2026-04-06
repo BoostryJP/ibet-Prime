@@ -23,12 +23,13 @@ from app.model.wst import EthereumERC20
 from app.utils.eth_contract_utils import EthAsyncContractUtils
 from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
+from tests.types import UnitTestAccount
 
 
 async def deploy_token(
     name: str,
-    deployer: dict,
-    owner: dict,
+    deployer: UnitTestAccount,
+    owner: UnitTestAccount,
 ) -> str:
     """
     Deploy an ERC20 token contract.
@@ -49,6 +50,8 @@ async def deploy_token(
     )
     tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
     contract_address = tx_receipt.get("contractAddress")
+    if contract_address is None:
+        raise AssertionError("contractAddress is missing in transaction receipt")
     return contract_address
 
 
@@ -56,7 +59,7 @@ async def mint_token(
     contract_address: str,
     to: str,
     value: int,
-    tx_from: dict,
+    tx_from: UnitTestAccount,
 ) -> None:
     """
     Mint tokens to a specified recipient.
@@ -90,7 +93,7 @@ async def approve_token(
     contract_address: str,
     spender: str,
     value: int,
-    tx_from: dict,
+    tx_from: UnitTestAccount,
 ) -> None:
     """
     Approve a spender to spend tokens on behalf of the owner.
