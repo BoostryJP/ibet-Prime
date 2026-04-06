@@ -195,7 +195,7 @@ class TestGetIbetWSTWhiteList:
         account_personal_info = IDXPersonalInfo(
             account_address=to_checksum_address(self.st_account_address),
             issuer_address=to_checksum_address(self.issuer_address),
-            personal_info={
+            _personal_info={
                 "key_manager": "test_key_manager",
                 "name": "User One",
                 "postal_code": "1234567",
