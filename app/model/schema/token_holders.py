@@ -117,7 +117,7 @@ class CreateTokenHoldersListRequest(BaseModel):
 
     @field_validator("list_id")
     @classmethod
-    def list_id_is_uuid_v4(cls, v):
+    def list_id_is_uuid_v4(cls, v: str) -> str:
         try:
             _uuid = uuid.UUID(v, version=4)
         except ValueError:

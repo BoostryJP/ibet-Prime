@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, RootModel
 from typing_extensions import Annotated
@@ -29,7 +29,7 @@ from app.model.schema.base import ResultSet
 class IssueErrorMetaInfo(BaseModel):
     token_address: str
     token_type: TokenType
-    arguments: dict
+    arguments: dict[str, Any]
 
 
 class BulkTransferErrorMetaInfo(BaseModel):
@@ -77,7 +77,7 @@ class LockInfoMetaInfo(BaseModel):
     lock_address: str
     account_address: str
     value: int
-    data: dict
+    data: dict[str, Any]
 
 
 class UnlockInfoMetaInfo(BaseModel):
@@ -87,7 +87,7 @@ class UnlockInfoMetaInfo(BaseModel):
     account_address: str
     recipient_address: str
     value: int
-    data: dict
+    data: dict[str, Any]
 
 
 class DVPDeliveryInfoMetaInfo(BaseModel):

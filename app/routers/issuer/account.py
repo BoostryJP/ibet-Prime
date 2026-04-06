@@ -22,14 +22,15 @@ import json
 import re
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, List, Optional, Sequence
+from typing import Annotated, Any, List, Optional, Sequence, cast
 
 import boto3
-import eth_keyfile
 import pytz
 from coincurve import PublicKey
 from Crypto.PublicKey import RSA
-from eth_utils import keccak, to_checksum_address
+from eth_keyfile.keyfile import create_keyfile_json, decode_keyfile_json
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
@@ -138,7 +139,7 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
         private_key = keccak(secrets.token_bytes(32))
     public_key = PublicKey.from_valid_secret(private_key)
     addr = to_checksum_address(keccak(public_key.format(compressed=False)[1:])[-20:])
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -187,7 +188,7 @@ async def list_all_issuers(db: DBAsyncSession):
         await db.scalars(select(Account).order_by(Account.issuer_address))
     ).all()
 
-    account_list = []
+    account_list: list[dict[str, Any]] = []
     for _account in _accounts:
         account_list.append(
             {
@@ -281,7 +282,7 @@ async def change_issuer_eoa_password(
             select(Account).where(Account.issuer_address == issuer_address).limit(1)
         )
     ).first()
-    if _account is None:
+    if _account is None or _account.eoa_password is None or _account.keyfile is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
     # Check Password Policy
@@ -305,12 +306,12 @@ async def change_issuer_eoa_password(
 
     # Get Ethereum Key
     old_keyfile_json = _account.keyfile
-    private_key = eth_keyfile.decode_keyfile_json(
+    private_key = decode_keyfile_json(
         raw_keyfile_json=old_keyfile_json, password=old_eoa_password.encode("utf-8")
     )
 
     # Create New Ethereum Key File
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -418,7 +419,11 @@ async def change_issuer_rsa_passphrase(
             select(Account).where(Account.issuer_address == issuer_address).limit(1)
         )
     ).first()
-    if _account is None:
+    if (
+        _account is None
+        or _account.rsa_passphrase is None
+        or _account.rsa_private_key is None
+    ):
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
     # Check Old Passphrase
@@ -513,11 +518,15 @@ async def generate_issuer_auth_token(
         if auth_token.valid_duration == 0:
             raise AuthTokenAlreadyExistsError()
         else:
-            expiration_datetime = auth_token.usage_start + timedelta(
-                seconds=auth_token.valid_duration
-            )
-            if datetime.now(UTC).replace(tzinfo=None) <= expiration_datetime:
-                raise AuthTokenAlreadyExistsError()
+            if (
+                auth_token.usage_start is not None
+                and auth_token.valid_duration is not None
+            ):
+                expiration_datetime = auth_token.usage_start + timedelta(
+                    seconds=auth_token.valid_duration
+                )
+                if datetime.now(UTC).replace(tzinfo=None) <= expiration_datetime:
+                    raise AuthTokenAlreadyExistsError()
         # Update auth token
         auth_token.auth_token = hashed_token
         auth_token.usage_start = current_datetime_utc.replace(tzinfo=None)
@@ -642,6 +651,7 @@ async def create_child_account(
             "Creation of child accounts for this issuer is temporarily unavailable"
         )
 
+    assert _child_index is not None
     index = _child_index.next_index
     index_sk = int(index).to_bytes(32)
     index_pk = PublicKey.from_valid_secret(index_sk)
@@ -740,9 +750,10 @@ async def create_child_account_in_batch(
         )
 
     # Insert temporary table
+    assert _child_index is not None
     _next_index = _child_index.next_index
-    _index_list = []
-    errs = []
+    _index_list: list[int] = []
+    errs: list[RecordErrorDetail] = []
     for i, _personal_info in enumerate(account_list_req.personal_information_list):
         personal_info = _personal_info.model_dump()
         personal_info["key_manager"] = "SELF"
@@ -829,7 +840,7 @@ async def list_all_child_account(
         )
     if get_query.name is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["name"]
+            IDXPersonalInfo._personal_info["name"]  # pyright: ignore[reportPrivateUsage]
             .as_string()
             .like("%" + get_query.name + "%")
         )
@@ -871,13 +882,13 @@ async def list_all_child_account(
     )
 
     # Sort
-    def _order(_order):
+    def _order(_order: int):
         if _order == 0:
             return asc
         else:
             return desc
 
-    _sort_order = get_query.sort_order
+    _sort_order = get_query.sort_order if get_query.sort_order is not None else 0
     match get_query.sort_item:
         case ListAllChildAccountSortItem.child_account_index:
             stmt = stmt.order_by(_order(_sort_order)(ChildAccount.child_account_index))
@@ -887,12 +898,14 @@ async def list_all_child_account(
             )
         case ListAllChildAccountSortItem.name:
             stmt = stmt.order_by(
-                _order(_sort_order)(IDXPersonalInfo._personal_info["name"].as_string())
+                _order(_sort_order)(IDXPersonalInfo._personal_info["name"].as_string())  # pyright: ignore[reportPrivateUsage]
             )
         case ListAllChildAccountSortItem.created:
             stmt = stmt.order_by(_order(_sort_order)(IDXPersonalInfo.created))
         case ListAllChildAccountSortItem.modified:
             stmt = stmt.order_by(_order(_sort_order)(IDXPersonalInfo.modified))
+        case _:
+            pass
 
     # Pagination
     if get_query.limit is not None:
@@ -900,11 +913,12 @@ async def list_all_child_account(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    _tmp_child_accounts: Sequence[tuple[ChildAccount, IDXPersonalInfo | None]] = (
-        (await db.execute(stmt)).tuples().all()
+    _tmp_child_accounts = cast(
+        Sequence[tuple[ChildAccount, IDXPersonalInfo | None]],
+        (await db.execute(stmt)).tuples().all(),
     )
 
-    child_accounts = []
+    child_accounts: list[dict[str, Any]] = []
     for _tmp_child_account in _tmp_child_accounts:
         if _tmp_child_account[1] is not None:
             _personal_info = _tmp_child_account[1].json()
@@ -964,7 +978,8 @@ async def retrieve_child_account(
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
     # Search child accounts
-    _child_account = (
+    _child_account = cast(
+        tuple[ChildAccount, IDXPersonalInfo | None] | None,
         (
             await db.execute(
                 select(ChildAccount, IDXPersonalInfo)
@@ -987,7 +1002,7 @@ async def retrieve_child_account(
             )
         )
         .tuples()
-        .first()
+        .first(),
     )
     if _child_account is None:
         raise HTTPException(status_code=404, detail="child account does not exist")

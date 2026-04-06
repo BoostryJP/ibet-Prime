@@ -64,7 +64,7 @@ class AccountCreateKeyRequest(BaseModel):
 
     @field_validator("eoa_password")
     @classmethod
-    def eoa_password_is_encrypted_value(cls, v):
+    def eoa_password_is_encrypted_value(cls, v: str) -> str:
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
         return v
@@ -77,7 +77,7 @@ class AccountGenerateRsaKeyRequest(BaseModel):
 
     @field_validator("rsa_passphrase")
     @classmethod
-    def rsa_passphrase_is_encrypted_value(cls, v):
+    def rsa_passphrase_is_encrypted_value(cls, v: Optional[str]) -> Optional[str]:
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("rsa_passphrase", v)
         return v
@@ -91,14 +91,14 @@ class AccountChangeEOAPasswordRequest(BaseModel):
 
     @field_validator("old_eoa_password")
     @classmethod
-    def old_eoa_password_is_encrypted_value(cls, v):
+    def old_eoa_password_is_encrypted_value(cls, v: str) -> str:
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("old_eoa_password", v)
         return v
 
     @field_validator("eoa_password")
     @classmethod
-    def eoa_password_is_encrypted_value(cls, v):
+    def eoa_password_is_encrypted_value(cls, v: str) -> str:
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
         return v
@@ -112,14 +112,14 @@ class AccountChangeRSAPassphraseRequest(BaseModel):
 
     @field_validator("old_rsa_passphrase")
     @classmethod
-    def old_rsa_passphrase_is_encrypted_value(cls, v):
+    def old_rsa_passphrase_is_encrypted_value(cls, v: str) -> str:
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("old_rsa_passphrase", v)
         return v
 
     @field_validator("rsa_passphrase")
     @classmethod
-    def rsa_passphrase_is_encrypted_value(cls, v):
+    def rsa_passphrase_is_encrypted_value(cls, v: str) -> str:
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("rsa_passphrase", v)
         return v
@@ -128,7 +128,7 @@ class AccountChangeRSAPassphraseRequest(BaseModel):
 class AccountAuthTokenRequest(BaseModel):
     """Generate Account Auth Token schema (REQUEST)"""
 
-    valid_duration: int = Field(None, ge=0, description="Valid duration (seconds)")
+    valid_duration: int = Field(..., ge=0, description="Valid duration (seconds)")
 
 
 class CreateUpdateChildAccountRequest(BaseModel):
@@ -146,7 +146,7 @@ class BatchCreateChildAccountRequest(BaseModel):
 class ListAllChildAccountSortItem(StrEnum):
     child_account_index = "child_account_index"
     child_account_address = "child_account_address"
-    name = "name"
+    name = "name"  # type: ignore
     created = "created"
     modified = "modified"
 

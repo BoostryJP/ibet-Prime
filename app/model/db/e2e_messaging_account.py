@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -33,7 +34,7 @@ class E2EMessagingAccount(Base):
     # account address
     account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # ethereum keyfile
-    keyfile: Mapped[dict | None] = mapped_column(JSON)
+    keyfile: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     # ethereum account password(encrypted)
     eoa_password: Mapped[str | None] = mapped_column(String(2000))
     # RSA key auto-generation interval(hour)

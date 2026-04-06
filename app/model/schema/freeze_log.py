@@ -34,7 +34,7 @@ class CreateFreezeLogAccountRequest(BaseModel):
 
     @field_validator("eoa_password")
     @classmethod
-    def eoa_password_is_encrypted_value(cls, v):
+    def eoa_password_is_encrypted_value(cls, v: str):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
         return v
@@ -48,14 +48,14 @@ class FreezeLogAccountChangeEOAPasswordRequest(BaseModel):
 
     @field_validator("old_eoa_password")
     @classmethod
-    def old_eoa_password_is_encrypted_value(cls, v):
+    def old_eoa_password_is_encrypted_value(cls, v: str):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("old_eoa_password", v)
         return v
 
     @field_validator("eoa_password")
     @classmethod
-    def eoa_password_is_encrypted_value(cls, v):
+    def eoa_password_is_encrypted_value(cls, v: str):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
         return v
@@ -73,7 +73,7 @@ class RecordNewFreezeLogRequest(BaseModel):
 
     @field_validator("eoa_password")
     @classmethod
-    def eoa_password_is_encrypted_value(cls, v):
+    def eoa_password_is_encrypted_value(cls, v: str):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
         return v
@@ -88,7 +88,7 @@ class UpdateFreezeLogRequest(BaseModel):
 
     @field_validator("eoa_password")
     @classmethod
-    def eoa_password_is_encrypted_value(cls, v):
+    def eoa_password_is_encrypted_value(cls, v: str):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
         return v
