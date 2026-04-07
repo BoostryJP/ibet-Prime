@@ -6,6 +6,7 @@ RUN mkdir -p /hardhat
 # Copy files
 COPY package.json /hardhat
 COPY package-lock.json /hardhat
+COPY .npmrc /hardhat
 COPY hardhat-ibet.config.js /hardhat
 
 WORKDIR /hardhat
