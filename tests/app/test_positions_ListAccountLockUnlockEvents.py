@@ -19,9 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 from unittest import mock
-from unittest.mock import ANY
+from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
@@ -1397,7 +1399,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_8(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
@@ -1463,7 +1468,7 @@ class TestListAccountLockUnlockEvents:
         bond_1.name = token_name_1
         mock_IbetStraightBondContract_get.return_value = bond_1
 
-        returned_events = []
+        returned_events: list[tuple[str, str]] = []
         for offset in range(0, 3):
             resp = await async_client.get(
                 self.base_url.format(account_address=account_address),

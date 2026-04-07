@@ -602,7 +602,12 @@ class TestListShareTokenLockUnlockEvents:
     # Pagination with same block_timestamp
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_8(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_8(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data: Token
         _token = Token()
         _token.token_address = self.token_address_1
@@ -659,7 +664,7 @@ class TestListShareTokenLockUnlockEvents:
             [self.token_name_1]
         )[0]
 
-        returned_events = []
+        returned_events: list[tuple[str, str]] = []
         for offset in range(0, 3):
             resp = await async_client.get(
                 self.base_url.format(token_address=self.token_address_1),

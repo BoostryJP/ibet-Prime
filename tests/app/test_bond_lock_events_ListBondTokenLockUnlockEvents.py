@@ -605,7 +605,10 @@ class TestListBondTokenLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_8(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # prepare data: Token
         _token = Token()
@@ -663,7 +666,7 @@ class TestListBondTokenLockUnlockEvents:
             [self.token_name_1]
         )[0]
 
-        returned_events = []
+        returned_events: list[tuple[str, str]] = []
         for offset in range(0, 3):
             resp = await async_client.get(
                 self.base_url.format(token_address=self.token_address_1),

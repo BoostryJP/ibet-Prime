@@ -347,7 +347,7 @@ class TestListBondAdditionalIssuanceHistory:
     # Normal_5
     # Pagination with same block_timestamp
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -371,7 +371,7 @@ class TestListBondAdditionalIssuanceHistory:
 
         await async_db.commit()
 
-        returned_amounts = []
+        returned_amounts: list[int] = []
         for offset in range(0, 3):
             resp = await async_client.get(
                 self.base_url.format(self.test_token_address),
