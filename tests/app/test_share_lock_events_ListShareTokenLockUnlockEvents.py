@@ -598,6 +598,101 @@ class TestListShareTokenLockUnlockEvents:
             "events": [self.expected_unlock_1],
         }
 
+    # Normal_8
+    # Pagination with same block_timestamp
+    @mock.patch("app.model.ibet.token.IbetShareContract.get")
+    @pytest.mark.asyncio
+    async def test_normal_8(
+        self, mock_IbetShareContract_get, async_client, async_db
+    ):
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = self.token_address_1
+        _token.issuer_address = self.issuer_address
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = ""
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        same_timestamp = datetime(2024, 1, 1, tzinfo=UTC).replace(tzinfo=None)
+
+        _lock = IDXLock()
+        _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = self.account_address_1
+        _lock.block_number = 1
+        _lock.token_address = self.token_address_1
+        _lock.lock_address = self.lock_address_1
+        _lock.account_address = self.account_address_1
+        _lock.value = 1
+        _lock.data = {"message": "locked_1"}
+        _lock.block_timestamp = same_timestamp
+        async_db.add(_lock)
+
+        _unlock = IDXUnlock()
+        _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = self.lock_address_1
+        _unlock.block_number = 2
+        _unlock.token_address = self.token_address_1
+        _unlock.lock_address = self.lock_address_1
+        _unlock.account_address = self.account_address_1
+        _unlock.recipient_address = self.other_account_address_1
+        _unlock.value = 1
+        _unlock.data = {"message": "unlocked_1"}
+        _unlock.block_timestamp = same_timestamp
+        async_db.add(_unlock)
+
+        _unlock = IDXUnlock()
+        _unlock.transaction_hash = "tx_hash_3"
+        _unlock.msg_sender = self.lock_address_1
+        _unlock.block_number = 3
+        _unlock.token_address = self.token_address_1
+        _unlock.lock_address = self.lock_address_1
+        _unlock.account_address = self.account_address_1
+        _unlock.recipient_address = self.other_account_address_2
+        _unlock.value = 1
+        _unlock.data = {"message": "unlocked_2"}
+        _unlock.block_timestamp = same_timestamp
+        async_db.add(_unlock)
+
+        await async_db.commit()
+
+        mock_IbetShareContract_get.return_value = self.get_contract_mock_data(
+            [self.token_name_1]
+        )[0]
+
+        returned_events = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.base_url.format(token_address=self.token_address_1),
+                params={
+                    "sort_item": "block_timestamp",
+                    "sort_order": 0,
+                    "offset": offset,
+                    "limit": 1,
+                },
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "offset": offset,
+                "limit": 1,
+                "total": 3,
+            }
+            returned_events.append(
+                (
+                    body["events"][0]["category"],
+                    body["events"][0]["transaction_hash"],
+                )
+            )
+
+        assert returned_events == [
+            ("Lock", "tx_hash_1"),
+            ("Unlock", "tx_hash_2"),
+            ("Unlock", "tx_hash_3"),
+        ]
+
     # ###########################################################################
     # # Error Case
     # ###########################################################################
