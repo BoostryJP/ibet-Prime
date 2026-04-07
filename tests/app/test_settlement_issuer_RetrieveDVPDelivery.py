@@ -21,6 +21,8 @@ import json
 from datetime import UTC, datetime
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     DeliveryStatus,
@@ -49,7 +51,7 @@ class TestRetrieveDVPDelivery:
 
     # Normal_1_1
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
 
@@ -75,7 +77,7 @@ class TestRetrieveDVPDelivery:
         _personal_info = IDXPersonalInfo()
         _personal_info.account_address = buyer_address
         _personal_info.issuer_address = issuer_address
-        _personal_info._personal_info = {
+        _personal_info.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -91,7 +93,7 @@ class TestRetrieveDVPDelivery:
         _personal_info = IDXPersonalInfo()
         _personal_info.account_address = seller_address_1
         _personal_info.issuer_address = issuer_address
-        _personal_info._personal_info = {
+        _personal_info.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -197,7 +199,7 @@ class TestRetrieveDVPDelivery:
 
     # Normal_1_2 (PersonalInfo is not set)
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
 
@@ -223,7 +225,7 @@ class TestRetrieveDVPDelivery:
         _personal_info = IDXPersonalInfo()
         _personal_info.account_address = buyer_address
         _personal_info.issuer_address = "other_issuer_address"  # Other issuer
-        _personal_info._personal_info = {
+        _personal_info.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -239,7 +241,7 @@ class TestRetrieveDVPDelivery:
         _personal_info = IDXPersonalInfo()
         _personal_info.account_address = seller_address_1
         _personal_info.issuer_address = "other_issuer_address"  # Other issuer
-        _personal_info._personal_info = {
+        _personal_info.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -319,7 +321,7 @@ class TestRetrieveDVPDelivery:
     # RequestValidationError
     # Missing header
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
 
         # request target API
@@ -344,7 +346,7 @@ class TestRetrieveDVPDelivery:
     # Error_2
     # NotFound
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         issuer_address = "0x1234567890123456789012345678900000000100"
 

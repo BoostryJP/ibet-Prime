@@ -21,11 +21,15 @@ import base64
 import hashlib
 import json
 import secrets
+from typing import Optional
 from unittest import mock
 
 import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.model.db import (
     Account,
@@ -45,12 +49,12 @@ from tests.account_config import default_eth_account
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: Optional[str] = None,
+    transfer_approval_required: Optional[bool] = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -94,10 +98,10 @@ class TestCreateDVPDelivery:
     @pytest.mark.asyncio
     async def test_normal_1_1(
         self,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
-        async_client,
-        async_db,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -193,10 +197,10 @@ class TestCreateDVPDelivery:
     @pytest.mark.asyncio
     async def test_normal_1_2(
         self,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
-        async_client,
-        async_db,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -305,10 +309,10 @@ class TestCreateDVPDelivery:
     )
     async def test_normal_2(
         self,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
-        async_client,
-        async_db,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -388,6 +392,7 @@ class TestCreateDVPDelivery:
         assert _async_process.amount == 10
         assert _async_process.agent_address == agent_address
 
+        assert _async_process.data is not None
         _data = json.loads(_async_process.data)
         assert _data["encryption_algorithm"] == "aes-256-cbc"
         assert _data["encryption_key_ref"] == "local"
@@ -409,7 +414,10 @@ class TestCreateDVPDelivery:
     # RequestValidationError: token_address, buyer_address, agent_address
     @pytest.mark.asyncio
     async def test_error_1(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -481,7 +489,10 @@ class TestCreateDVPDelivery:
     # RequestValidationError: amount(min)
     @pytest.mark.asyncio
     async def test_error_2(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -539,7 +550,10 @@ class TestCreateDVPDelivery:
     # RequestValidationError: amount(max)
     @pytest.mark.asyncio
     async def test_error_3(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -585,7 +599,10 @@ class TestCreateDVPDelivery:
     # RequestValidationError: headers and body required
     @pytest.mark.asyncio
     async def test_error_4(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         # request target API
         resp = await async_client.post(
@@ -618,7 +635,10 @@ class TestCreateDVPDelivery:
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
     async def test_error_5(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         # request target API
         req_param = {
@@ -656,7 +676,10 @@ class TestCreateDVPDelivery:
     # RequestValidationError: eoa-password(not decrypt)
     @pytest.mark.asyncio
     async def test_error_6(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -706,7 +729,10 @@ class TestCreateDVPDelivery:
     # issuer does not exist
     @pytest.mark.asyncio
     async def test_error_7(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -756,7 +782,10 @@ class TestCreateDVPDelivery:
     # password mismatch
     @pytest.mark.asyncio
     async def test_error_8(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -803,10 +832,10 @@ class TestCreateDVPDelivery:
     @pytest.mark.asyncio
     async def test_error_9(
         self,
-        async_client,
-        async_db,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]

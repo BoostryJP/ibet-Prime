@@ -21,14 +21,14 @@ import base64
 import json
 import secrets
 from datetime import UTC
-from typing import Annotated, Optional, Sequence
+from typing import Annotated, Any, Optional, Sequence
 
 import pytz
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from eth_keyfile.keyfile import decode_keyfile_json
 from fastapi import APIRouter, Header, HTTPException, Path, Query, Request
-from sqlalchemy import and_, desc, func, select
+from sqlalchemy import Nullable, and_, desc, func, select
 from sqlalchemy.orm import aliased
 
 import config
@@ -89,7 +89,9 @@ async def list_all_dvp_deliveries(
     seller_personal_info = aliased(IDXPersonalInfo)
 
     stmt = (
-        select(IDXDelivery, buyer_personal_info, seller_personal_info)
+        select(
+            IDXDelivery, Nullable(buyer_personal_info), Nullable(seller_personal_info)
+        )
         .join(Token, Token.token_address == IDXDelivery.token_address)
         .outerjoin(
             buyer_personal_info,
@@ -163,16 +165,13 @@ async def list_all_dvp_deliveries(
         tuple[IDXDelivery, IDXPersonalInfo | None, IDXPersonalInfo | None]
     ] = (await db.execute(stmt)).tuples().all()
 
-    deliveries = []
+    deliveries: list[dict[str, Any]] = []
     for _delivery, _buyer_info, _seller_info in _deliveries:
-        if _delivery.create_blocktimestamp is not None:
-            create_blocktimestamp = (
-                local_tz.localize(_delivery.create_blocktimestamp)
-                .astimezone(tz=UTC)
-                .isoformat()
-            )
-        else:
-            create_blocktimestamp = None
+        create_blocktimestamp = (
+            local_tz.localize(_delivery.create_blocktimestamp)
+            .astimezone(tz=UTC)
+            .isoformat()
+        )
         if _delivery.cancel_blocktimestamp is not None:
             cancel_blocktimestamp = (
                 local_tz.localize(_delivery.cancel_blocktimestamp)
@@ -306,6 +305,7 @@ async def create_dvp_delivery(
 
     # Get private key
     keyfile_json = _account.keyfile
+    assert keyfile_json is not None
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
     )
@@ -330,8 +330,9 @@ async def create_dvp_delivery(
     if config.DVP_DATA_ENCRYPTION_MODE == "aes-256-cbc":
         pad_message = pad(create_req.data.encode("utf-8"), AES.block_size)
         aes_iv = secrets.token_bytes(AES.block_size)
+        assert config.DVP_DATA_ENCRYPTION_KEY is not None
         aes_encryption_key = base64.b64decode(config.DVP_DATA_ENCRYPTION_KEY)
-        cipher = AES.new(aes_encryption_key, AES.MODE_CBC, aes_iv)
+        cipher = AES.new(aes_encryption_key, AES.MODE_CBC, aes_iv)  # type: ignore
         encrypted_message = base64.b64encode(
             aes_iv + cipher.encrypt(pad_message)
         ).decode()
@@ -397,7 +398,11 @@ async def retrieve_dvp_delivery(
     ) = (
         (
             await db.execute(
-                select(IDXDelivery, buyer_personal_info, seller_personal_info)
+                select(
+                    IDXDelivery,
+                    Nullable(buyer_personal_info),
+                    Nullable(seller_personal_info),
+                )
                 .join(Token, Token.token_address == IDXDelivery.token_address)
                 .outerjoin(
                     buyer_personal_info,
@@ -431,14 +436,11 @@ async def retrieve_dvp_delivery(
     if _delivery is None:
         raise HTTPException(status_code=404, detail="delivery not found")
 
-    if _delivery[0].create_blocktimestamp is not None:
-        create_blocktimestamp = (
-            local_tz.localize(_delivery[0].create_blocktimestamp)
-            .astimezone(tz=UTC)
-            .isoformat()
-        )
-    else:
-        create_blocktimestamp = None
+    create_blocktimestamp = (
+        local_tz.localize(_delivery[0].create_blocktimestamp)
+        .astimezone(tz=UTC)
+        .isoformat()
+    )
     if _delivery[0].cancel_blocktimestamp is not None:
         cancel_blocktimestamp = (
             local_tz.localize(_delivery[0].cancel_blocktimestamp)
@@ -562,6 +564,7 @@ async def update_dvp_delivery(
         case "Cancel":
             # Get private key
             keyfile_json = _account.keyfile
+            assert keyfile_json is not None
             private_key = decode_keyfile_json(
                 raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
             )
