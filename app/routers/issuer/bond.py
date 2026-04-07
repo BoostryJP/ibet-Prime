@@ -825,8 +825,12 @@ async def list_bond_additional_issuance_history(
     sort_attr = getattr(IDXIssueRedeem, request_query.sort_item, None)
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
+        if request_query.sort_item == IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+            stmt = stmt.order_by(IDXIssueRedeem.id)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
+        if request_query.sort_item == IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+            stmt = stmt.order_by(desc(IDXIssueRedeem.id))
     if request_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
@@ -1247,8 +1251,12 @@ async def list_bond_redemption_history(
     sort_attr = getattr(IDXIssueRedeem, get_query.sort_item, None)
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
+        if get_query.sort_item == IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+            stmt = stmt.order_by(IDXIssueRedeem.id)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
+        if get_query.sort_item == IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+            stmt = stmt.order_by(desc(IDXIssueRedeem.id))
     if get_query.sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXIssueRedeem.block_timestamp))
@@ -3152,6 +3160,8 @@ async def list_bond_token_lock_unlock_events(
     stmt_lock = (
         select(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
+            literal(0).label("source_event_order"),
+            IDXLock.id.label("source_event_id"),
             IDXLock.is_forced.label("is_forced"),
             IDXLock.transaction_hash.label("transaction_hash"),
             IDXLock.msg_sender.label("msg_sender"),
@@ -3181,6 +3191,8 @@ async def list_bond_token_lock_unlock_events(
             literal(value=LockEventCategory.Unlock.value, type_=String).label(
                 "category"
             ),
+            literal(1).label("source_event_order"),
+            IDXUnlock.id.label("source_event_id"),
             IDXUnlock.is_forced.label("is_forced"),
             IDXUnlock.transaction_hash.label("transaction_hash"),
             IDXUnlock.msg_sender.label("msg_sender"),
@@ -3256,8 +3268,18 @@ async def list_bond_token_lock_unlock_events(
     sort_attr = column(request_query.sort_item)
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
+        if request_query.sort_item == ListAllTokenLockEventsSortItem.block_timestamp.value:
+            stmt = stmt.order_by(
+                all_lock_event_alias.c.source_event_order,
+                all_lock_event_alias.c.source_event_id,
+            )
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
+        if request_query.sort_item == ListAllTokenLockEventsSortItem.block_timestamp.value:
+            stmt = stmt.order_by(
+                desc(all_lock_event_alias.c.source_event_order),
+                desc(all_lock_event_alias.c.source_event_id),
+            )
 
     if request_query.sort_item != ListAllTokenLockEventsSortItem.block_timestamp.value:
         # NOTE: Set secondary sort for consistent results
@@ -3520,8 +3542,12 @@ async def list_bond_token_transfer_history(
 
     if query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
+        if query.sort_item == ListTransferHistorySortItem.BLOCK_TIMESTAMP:
+            stmt = stmt.order_by(IDXTransfer.id)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
+        if query.sort_item == ListTransferHistorySortItem.BLOCK_TIMESTAMP:
+            stmt = stmt.order_by(desc(IDXTransfer.id))
     if query.sort_item != ListTransferHistorySortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(IDXTransfer.block_timestamp))

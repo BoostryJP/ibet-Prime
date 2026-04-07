@@ -341,6 +341,53 @@ class TestListBondRedemptionHistory:
             ],
         }
 
+    # Normal_5
+    # Pagination with same block_timestamp
+    @pytest.mark.asyncio
+    async def test_normal_5(
+        self, async_client, async_db
+    ):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        for amount in self.test_amount:
+            _record = IDXIssueRedeem()
+            _record.event_type = IDXIssueRedeemEventType.REDEEM
+            _record.transaction_hash = self.test_transaction_hash
+            _record.token_address = self.test_token_address
+            _record.locked_address = self.test_locked_address
+            _record.target_address = self.test_target_address
+            _record.amount = amount
+            _record.block_timestamp = self.test_block_timestamp[0]
+            async_db.add(_record)
+
+        await async_db.commit()
+
+        returned_amounts = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.base_url.format(self.test_token_address),
+                params={"offset": offset, "limit": 1},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "offset": offset,
+                "limit": 1,
+                "total": 3,
+            }
+            returned_amounts.append(body["history"][0]["amount"])
+
+        assert returned_amounts == [30, 20, 10]
+
     ###########################################################################
     # Error Case
     ###########################################################################
