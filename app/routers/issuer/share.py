@@ -462,7 +462,8 @@ async def issue_share_token(
             _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
                 name=token.ibet_wst_name, initial_owner=issuer_address
             )
-            _ibet_wst_tx.tx_sender = str(ETH_MASTER_ACCOUNT_ADDRESS)
+            assert ETH_MASTER_ACCOUNT_ADDRESS is not None
+            _ibet_wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
             db.add(_ibet_wst_tx)
 
         # Register Avalanche IbetWST deployment transaction if avalanche is selected.
@@ -475,7 +476,8 @@ async def issue_share_token(
             _ibet_wst_tx.tx_params = IbetWSTTxParamsDeploy(
                 name=token.ibet_wst_name, initial_owner=issuer_address
             )
-            _ibet_wst_tx.tx_sender = str(AVA_MASTER_ACCOUNT_ADDRESS)
+            assert AVA_MASTER_ACCOUNT_ADDRESS is not None
+            _ibet_wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
             db.add(_ibet_wst_tx)
 
     db.add(_token)
