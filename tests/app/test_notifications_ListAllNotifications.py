@@ -22,6 +22,8 @@ from datetime import datetime
 from unittest.mock import ANY
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     BatchIssueRedeemProcessingCategory,
@@ -43,7 +45,7 @@ class TestListAllNotifications:
     # <Normal_1>
     # Non filtered
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_token_address = "test_token_address"
 
         user_1 = default_eth_account("user1")
@@ -400,7 +402,7 @@ class TestListAllNotifications:
     # <Normal_2>
     # filtered
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_token_address = "test_token_address"
 
         user_1 = default_eth_account("user1")
@@ -511,7 +513,7 @@ class TestListAllNotifications:
     # <Normal_3>
     # limit-offset
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_token_address = "test_token_address"
 
         user_1 = default_eth_account("user1")
@@ -631,7 +633,7 @@ class TestListAllNotifications:
     # <Error_1>
     # Parameter Error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url,

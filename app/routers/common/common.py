@@ -56,7 +56,7 @@ async def service_health_check(db: DBAsyncSession):
     - Avalanche Node (if IbetWST AVA feature is enabled)
     - E2EE Setting
     """
-    errors = []
+    errors: list[str] = []
 
     try:
         # Check database is available
@@ -86,7 +86,7 @@ async def service_health_check(db: DBAsyncSession):
     return
 
 
-async def __check_ibet_node_is_synced(errors: list, db: AsyncSession):
+async def __check_ibet_node_is_synced(errors: list[str], db: AsyncSession):
     """Check if ibet node is synced"""
     _node = (
         await db.scalars(select(Node).where(Node.is_synced == True).limit(1))
@@ -97,7 +97,7 @@ async def __check_ibet_node_is_synced(errors: list, db: AsyncSession):
         errors.append(msg)
 
 
-async def __check_ethereum_node_is_synced(errors: list, db: AsyncSession):
+async def __check_ethereum_node_is_synced(errors: list[str], db: AsyncSession):
     """Check if ethereum node is synced"""
     _node = (
         await db.scalars(
@@ -110,7 +110,7 @@ async def __check_ethereum_node_is_synced(errors: list, db: AsyncSession):
         errors.append(msg)
 
 
-async def __check_avalanche_node_is_synced(errors: list, db: AsyncSession):
+async def __check_avalanche_node_is_synced(errors: list[str], db: AsyncSession):
     """Check if avalanche node is synced"""
     _node = (
         await db.scalars(

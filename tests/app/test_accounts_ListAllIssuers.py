@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, AccountRsaStatus
 from tests.account_config import default_eth_account
@@ -34,7 +36,7 @@ class TestListAllIssuers:
     # <Normal_1>
     # rsa_public_key is None
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -62,7 +64,7 @@ class TestListAllIssuers:
     # <Normal_2>
     # rsa_public_key is not None
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -92,7 +94,7 @@ class TestListAllIssuers:
     # <Normal_3>
     # No data
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.get(self.apiurl)
 
         assert resp.status_code == 200

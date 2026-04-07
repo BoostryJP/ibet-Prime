@@ -23,7 +23,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     AvaIbetWSTTx,
@@ -81,7 +83,7 @@ class TestTransferIbetWST:
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_1_1(self, async_db, async_client):
+    async def test_normal_1_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -143,6 +145,7 @@ class TestTransferIbetWST:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.TRANSFER
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -178,7 +181,7 @@ class TestTransferIbetWST:
         "app.routers.misc.ibet_wst.AVA_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_1_2(self, async_db, async_client):
+    async def test_normal_1_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -241,6 +244,7 @@ class TestTransferIbetWST:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(AvaIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.TRANSFER
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -275,7 +279,7 @@ class TestTransferIbetWST:
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_2(self, async_db, async_client):
+    async def test_normal_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -333,6 +337,7 @@ class TestTransferIbetWST:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.TRANSFER
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -360,7 +365,7 @@ class TestTransferIbetWST:
 
     # <Error_1>
     # Missing required fields in request body
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.post(
             self.api_url.format(ibet_wst_address=self.ibet_wst_address), json={}
@@ -408,7 +413,7 @@ class TestTransferIbetWST:
     # Invalid `valid_after` and `valid_before` values
     # - `valid_after` should be greater than 0
     # - `valid_before` should be less than 2**64
-    async def test_error_2_1(self, async_db, async_client):
+    async def test_error_2_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -490,7 +495,7 @@ class TestTransferIbetWST:
     # Invalid `valid_after` and `valid_before` values
     # - `valid_after` should be an integer if provided
     # - `valid_before` should be an integer if provided
-    async def test_error_2_2(self, async_db, async_client):
+    async def test_error_2_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -567,7 +572,7 @@ class TestTransferIbetWST:
     # <Error_2_3>
     # Invalid `from_address` and `to_address`
     # - `from_address` and `to_address` must not be zero address
-    async def test_error_2_3(self, async_db, async_client):
+    async def test_error_2_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -643,7 +648,7 @@ class TestTransferIbetWST:
 
     # <Error_3>
     # IbetWST token not found
-    async def test_error_3(self, async_db, async_client):
+    async def test_error_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Generate nonce
         nonce = secrets.token_bytes(32)
 
@@ -699,7 +704,7 @@ class TestTransferIbetWST:
         "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
         AsyncMock(return_value=999),
     )
-    async def test_error_4(self, async_db, async_client):
+    async def test_error_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -774,7 +779,7 @@ class TestTransferIbetWST:
             side_effect=[IbetWSTWhiteList(listed=False), IbetWSTWhiteList(listed=True)]
         ),
     )
-    async def test_error_5_1(self, async_db, async_client):
+    async def test_error_5_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -849,7 +854,7 @@ class TestTransferIbetWST:
             side_effect=[IbetWSTWhiteList(listed=True), IbetWSTWhiteList(listed=False)]
         ),
     )
-    async def test_error_5_2(self, async_db, async_client):
+    async def test_error_5_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address

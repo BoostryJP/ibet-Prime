@@ -18,8 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Token, TokenType, TokenVersion
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
@@ -49,7 +52,7 @@ class TestListAllIbetWSTTokens:
     # <Normal_1>
     # This test case checks that no tokens are returned when there are no IbetWST tokens.
     # - IbetWST tokens are not deployed yet.
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.ibet_token_address_1
@@ -83,7 +86,10 @@ class TestListAllIbetWSTTokens:
     @pytest.mark.freeze_time("2025-01-31 12:34:56")
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_2_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # Prepare data: Token
         _token = Token()
@@ -177,7 +183,12 @@ class TestListAllIbetWSTTokens:
     # - This test case checks that the IbetShare token can be retrieved correctly.
     @pytest.mark.freeze_time("2025-01-31 12:34:56")
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
-    async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_2_2(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.ibet_token_address_1
@@ -253,10 +264,10 @@ class TestListAllIbetWSTTokens:
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     async def test_normal_3(
         self,
-        mock_IbetShareContract_get,
-        mock_IbetStraightBondContract_get,
-        async_client,
-        async_db,
+        mock_IbetShareContract_get: MagicMock,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # Prepare data: Token
         _token = Token()
@@ -400,7 +411,10 @@ class TestListAllIbetWSTTokens:
     # - This test case checks that the tokens can be filtered by issuer address.
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_4(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # Prepare data: Token
         _token = Token()
@@ -512,7 +526,12 @@ class TestListAllIbetWSTTokens:
     # Search filtering: ibet_wst_address
     # - This test case checks that the tokens can be filtered by IbetWST address.
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
-    async def test_normal_5_1(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_1(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.ibet_token_address_1
@@ -600,7 +619,12 @@ class TestListAllIbetWSTTokens:
     # Search filtering: ibet_token_address
     # - This test case checks that the tokens can be filtered by Ibet token address.
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
-    async def test_normal_5_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_2(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.ibet_token_address_1
@@ -688,7 +712,12 @@ class TestListAllIbetWSTTokens:
     # Search filtering: token_type
     # - This test case checks that the tokens can be filtered by token type.
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
-    async def test_normal_5_3(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_3(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # Prepare data: Token
         _token = Token()
         _token.token_address = self.ibet_token_address_1
@@ -775,7 +804,10 @@ class TestListAllIbetWSTTokens:
     # - This test case checks that the tokens can be sorted by creation date.
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_6_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # Prepare data: Token
         _token = Token()
@@ -940,7 +972,10 @@ class TestListAllIbetWSTTokens:
     # - This test case checks that the tokens can be sorted by token address.
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_6_2(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # Prepare data: Token
         _token = Token()
@@ -1104,7 +1139,10 @@ class TestListAllIbetWSTTokens:
     # Offset/Limit
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_7(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         # Prepare data: Token
         _token = Token()
@@ -1226,7 +1264,7 @@ class TestListAllIbetWSTTokens:
     # <Error_1>
     # RequestValidationError
     # - This test case checks that the API returns a validation error when invalid parameters are provided.
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(
             self.api_url,

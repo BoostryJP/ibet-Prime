@@ -22,6 +22,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Token, TokenType, TokenVersion
 
@@ -42,7 +44,7 @@ class TestGetIbetWSTBalance:
         "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
         AsyncMock(return_value=1000),
     )
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         issuer_address = "0x1234567890abcdef1234567890abcdef12345678"
         account_address = "0x234567890abcdef1234567890abcdef123456789"
@@ -81,7 +83,7 @@ class TestGetIbetWSTBalance:
         "app.routers.misc.ibet_wst.AvalancheIbetWST.balance_of",
         AsyncMock(return_value=1000),
     )
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_address = "0x1234567890abcdef1234567890abcdef12345678"
         account_address = "0x234567890abcdef1234567890abcdef123456789"
         ibet_token_address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
@@ -117,7 +119,7 @@ class TestGetIbetWSTBalance:
     # <Error_1>
     # Invalid addresses
     # - Return 422 error
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request with invalid addresses
         resp = await async_client.get(
             self.api_url.format(
@@ -150,7 +152,7 @@ class TestGetIbetWSTBalance:
 
     # <Error_2>
     # IbetWST token not found
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         account_address = "0x234567890abcdef1234567890abcdef123456789"
         ibet_wst_address = "0xbcdefabcdefabcdefabcdefabcdefabcdefabcde"

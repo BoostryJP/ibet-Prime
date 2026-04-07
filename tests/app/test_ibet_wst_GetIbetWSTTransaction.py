@@ -23,6 +23,8 @@ from decimal import Decimal
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     AvaIbetWSTTx,
@@ -63,7 +65,7 @@ class TestGetIbetWSTTransaction:
 
     # <Normal_1_1>
     # Return transaction details
-    async def test_normal_1_1(self, async_db, async_client):
+    async def test_normal_1_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id = str(uuid.uuid4())
         tx = EthIbetWSTTx()
@@ -118,7 +120,7 @@ class TestGetIbetWSTTransaction:
     # <Normal_1_2>
     # Return transaction details
     # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
-    async def test_normal_1_2(self, async_db, async_client):
+    async def test_normal_1_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id = str(uuid.uuid4())
         tx = EthIbetWSTTx()
@@ -201,7 +203,7 @@ class TestGetIbetWSTTransaction:
     # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
     # - Test with sc_value set to uint256 max value to confirm that
     #   display_sc_value can handle large values without overflow or precision loss
-    async def test_normal_1_3(self, async_db, async_client):
+    async def test_normal_1_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id = str(uuid.uuid4())
         tx = EthIbetWSTTx()
@@ -270,7 +272,7 @@ class TestGetIbetWSTTransaction:
 
     # <Normal_2>
     # Return avalanche transaction details
-    async def test_normal_2(self, async_db, async_client):
+    async def test_normal_2(self, async_db: AsyncSession, async_client: AsyncClient):
         tx_id = str(uuid.uuid4())
         tx = AvaIbetWSTTx()
         tx.tx_id = tx_id
@@ -317,7 +319,7 @@ class TestGetIbetWSTTransaction:
 
     # <Error_1>
     # Transaction not found
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request with non-existent transaction ID
         resp = await async_client.get(self.api_url.format(tx_id=str(uuid.uuid4())))
 

@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 
 import pytest
 from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import IDXAvaIbetWSTWhitelist, IDXEthIbetWSTWhitelist
 from tests.account_config import default_eth_account
@@ -41,7 +43,7 @@ class TestRetrieveIbetWSTWhitelistAccounts:
 
     # <Normal_1>
     # Whitelist account is not registered for the specified WST token address.
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         whitelist = IDXEthIbetWSTWhitelist(
             ibet_wst_address=to_checksum_address(
@@ -68,7 +70,7 @@ class TestRetrieveIbetWSTWhitelistAccounts:
     # <Normal_2_1>
     # Whitelist accounts are registered for the specified WST token address.
     # - blockchain_platform = "ethereum" (default)
-    async def test_normal_2_1(self, async_db, async_client):
+    async def test_normal_2_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         whitelist_1 = IDXEthIbetWSTWhitelist(
             ibet_wst_address=to_checksum_address(self.wst_token_address_1),
@@ -111,7 +113,7 @@ class TestRetrieveIbetWSTWhitelistAccounts:
     # <Normal_2_2>
     # Whitelist accounts are registered for the specified WST token address.
     # - blockchain_platform = "avalanche"
-    async def test_normal_2_2(self, async_db, async_client):
+    async def test_normal_2_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         whitelist_1 = IDXAvaIbetWSTWhitelist(
             ibet_wst_address=to_checksum_address(self.wst_token_address_1),
@@ -158,7 +160,7 @@ class TestRetrieveIbetWSTWhitelistAccounts:
 
     # <Error_1>
     # Invalid WST token address format.
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request with invalid WST token address format
         resp = await async_client.get(
             self.api_url.format(ibet_wst_address="invalid_address"),

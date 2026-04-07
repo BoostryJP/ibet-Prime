@@ -18,8 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     IDXLockedPosition,
@@ -42,7 +45,7 @@ class TestListAllPositions:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -93,7 +96,10 @@ class TestListAllPositions:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
@@ -190,10 +196,10 @@ class TestListAllPositions:
     @pytest.mark.asyncio
     async def test_normal_3_1(
         self,
-        mock_IbetStraightBondContract_get,
-        mock_IbetShareContract_get,
-        async_client,
-        async_db,
+        mock_IbetStraightBondContract_get: MagicMock,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
@@ -391,10 +397,10 @@ class TestListAllPositions:
     @pytest.mark.asyncio
     async def test_normal_3_2(
         self,
-        mock_IbetStraightBondContract_get,
-        mock_IbetShareContract_get,
-        async_client,
-        async_db,
+        mock_IbetStraightBondContract_get: MagicMock,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
@@ -543,10 +549,10 @@ class TestListAllPositions:
     @pytest.mark.asyncio
     async def test_normal_4(
         self,
-        mock_IbetStraightBondContract_get,
-        mock_IbetShareContract_get,
-        async_client,
-        async_db,
+        mock_IbetStraightBondContract_get: MagicMock,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -674,7 +680,10 @@ class TestListAllPositions:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -796,7 +805,12 @@ class TestListAllPositions:
     # IbetShare
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_5_2(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -905,10 +919,10 @@ class TestListAllPositions:
     @pytest.mark.asyncio
     async def test_normal_5_3(
         self,
-        mock_IbetStraightBondContract_get,
-        mock_IbetShareContract_get,
-        async_client,
-        async_db,
+        mock_IbetStraightBondContract_get: MagicMock,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -1080,10 +1094,10 @@ class TestListAllPositions:
     @pytest.mark.asyncio
     async def test_normal_6(
         self,
-        mock_IbetStraightBondContract_get,
-        mock_IbetShareContract_get,
-        async_client,
-        async_db,
+        mock_IbetStraightBondContract_get: MagicMock,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -1229,7 +1243,10 @@ class TestListAllPositions:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_7_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
@@ -1368,7 +1385,12 @@ class TestListAllPositions:
     # - IbetShare
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_7_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_7_2(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         other_account_address = "0x1234567890123456789012345678911111111111"
@@ -1490,7 +1512,7 @@ class TestListAllPositions:
     # RequestValidationError
     # header
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
@@ -1519,7 +1541,7 @@ class TestListAllPositions:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api

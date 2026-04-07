@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 import pytz
 from eth_utils.address import to_checksum_address
@@ -259,8 +259,11 @@ async def list_all_ibet_wst_tokens(
         issued_tokens = issued_tokens[offset:]
 
     # Get Token Attributes
-    tokens = []
+    tokens: list[dict[str, Any]] = []
     for _token in issued_tokens:
+        if _token.created is None:
+            continue
+
         token_attr = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND:
             token_attr = await IbetStraightBondContract(_token.token_address).get()
@@ -477,8 +480,11 @@ async def list_ibet_wst_transactions(
     wst_txs = (await db.scalars(stmt)).all()
 
     # Response
-    tx_list = []
+    tx_list: list[dict[str, Any]] = []
     for wst_tx in wst_txs:
+        if wst_tx.created is None:
+            continue
+
         # Set event_log
         event_log = _build_event_log_for_response(wst_tx)
 
@@ -555,6 +561,7 @@ async def get_ibet_wst_transaction(
     event_log = _build_event_log_for_response(wst_tx)
 
     # Set created datetime
+    assert wst_tx.created is not None
     _created_datetime = (
         pytz.timezone("UTC").localize(wst_tx.created).astimezone(local_tz).isoformat()
     )
@@ -616,7 +623,7 @@ async def retrieve_ibet_wst_whitelist_accounts(
     ).all()
 
     # Response
-    account_list = []
+    account_list: list[dict[str, str]] = []
     for whitelist in whitelist_list:
         account_list.append(
             {
@@ -1241,17 +1248,30 @@ async def get_erc20_allowance(
 ###################################################################
 # Utility Functions
 ###################################################################
-def get_client_ip(request: Request):
+def get_client_ip(request: Request) -> str | None:
+    """
+    Get client IP address from the request, considering possible proxy headers
+    """
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     if x_forwarded_for:
         # If there are multiple, the first one is the client IP
         client_ip = x_forwarded_for.split(",")[0].strip()
     else:
-        client_ip = request.client.host
+        client_ip = request.client.host if request.client is not None else None
     return client_ip
 
 
-def _build_event_log_for_response(wst_tx: EthIbetWSTTx | AvaIbetWSTTx):
+def _to_event_log_int(value: object, default: int) -> int:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str | float):
+        return int(value)
+    return default
+
+
+def _build_event_log_for_response(
+    wst_tx: EthIbetWSTTx | AvaIbetWSTTx,
+) -> dict[str, Any] | None:
     """
     Format the event_log from the DB for API response
     """
@@ -1268,11 +1288,11 @@ def _build_event_log_for_response(wst_tx: EthIbetWSTTx | AvaIbetWSTTx):
         IbetWSTTxType.ACCEPT_TRADE,
         IbetWSTTxType.REJECT_TRADE,
     ]:
-        sc_value = event_log.get("sc_value", 0)
-        sc_decimals = event_log.get("sc_decimals", 6)
+        sc_value = _to_event_log_int(event_log.get("sc_value", 0), default=0)
+        sc_decimals = _to_event_log_int(event_log.get("sc_decimals", 6), default=6)
 
-        event_log["sc_value"] = int(sc_value)
-        event_log["sc_decimals"] = int(sc_decimals)
+        event_log["sc_value"] = sc_value
+        event_log["sc_decimals"] = sc_decimals
 
         # Return as a fixed-point decimal string with sc_decimals digits
         if sc_decimals > 0:
