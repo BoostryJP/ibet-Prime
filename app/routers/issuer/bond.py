@@ -3512,14 +3512,20 @@ async def list_bond_token_lock_unlock_events(
 
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
-        if request_query.sort_item == ListAllTokenLockEventsSortItem.block_timestamp.value:
+        if (
+            request_query.sort_item
+            == ListAllTokenLockEventsSortItem.block_timestamp.value
+        ):
             stmt = stmt.order_by(
                 all_lock_event_alias.c.source_event_order,
                 all_lock_event_alias.c.source_event_id,
             )
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-        if request_query.sort_item == ListAllTokenLockEventsSortItem.block_timestamp.value:
+        if (
+            request_query.sort_item
+            == ListAllTokenLockEventsSortItem.block_timestamp.value
+        ):
             stmt = stmt.order_by(
                 desc(all_lock_event_alias.c.source_event_order),
                 desc(all_lock_event_alias.c.source_event_id),

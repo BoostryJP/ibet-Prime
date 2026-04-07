@@ -147,9 +147,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_2_1>
     # offset, limit
     @pytest.mark.asyncio
-    async def test_normal_2_1(
-        self, async_client: AsyncClient, async_db: AsyncSession
-    ):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -255,9 +253,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_2_2>
     # offset, limit with same block_timestamp
     @pytest.mark.asyncio
-    async def test_normal_2_2(
-        self, async_client, async_db
-    ):
+    async def test_normal_2_2(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND

@@ -1089,12 +1089,8 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_6>
     # Pagination: same block_timestamp
     @pytest.mark.asyncio
-    async def test_normal_6(
-        self, async_client, async_db
-    ):
-        same_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(
-            tzinfo=None
-        )
+    async def test_normal_6(self, async_client, async_db):
+        same_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(tzinfo=None)
         created_list = [
             datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(tzinfo=None),
             datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(tzinfo=None),

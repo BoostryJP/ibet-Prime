@@ -347,9 +347,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # Normal_5
     # Pagination with same block_timestamp
     @pytest.mark.asyncio
-    async def test_normal_5(
-        self, async_client, async_db
-    ):
+    async def test_normal_5(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
