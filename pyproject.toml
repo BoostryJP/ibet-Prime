@@ -117,6 +117,9 @@ include = [
     "batch/**/*",
 ]
 
+[tool.uv]
+exclude-newer = "7 days"
+
 [tool.uv.sources]
 ibet-prime-settlement = { path = "cmd/settlement", editable = true}
 
