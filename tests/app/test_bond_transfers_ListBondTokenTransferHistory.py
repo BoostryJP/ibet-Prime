@@ -141,10 +141,10 @@ class TestAppRoutersBondTransfersGET:
         }
         assert resp.json() == assumed_response
 
-    # <Normal_2>
+    # <Normal_2_1>
     # offset, limit
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client, async_db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -246,6 +246,54 @@ class TestAppRoutersBondTransfersGET:
             ],
         }
         assert resp.json() == assumed_response
+
+    # <Normal_2_2>
+    # offset, limit with same block_timestamp
+    @pytest.mark.asyncio
+    async def test_normal_2_2(
+        self, async_client, async_db
+    ):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        for amount in range(0, 3):
+            _idx_transfer = IDXTransfer()
+            _idx_transfer.transaction_hash = self.test_transaction_hash
+            _idx_transfer.token_address = self.test_token_address
+            _idx_transfer.from_address = self.test_from_address_1
+            _idx_transfer.to_address = self.test_to_address_1
+            _idx_transfer.amount = amount
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER
+            _idx_transfer.data = None
+            _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+            async_db.add(_idx_transfer)
+
+        await async_db.commit()
+
+        returned_amounts = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.base_url.format(self.test_token_address),
+                params={"offset": offset, "limit": 1},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "offset": offset,
+                "limit": 1,
+                "total": 3,
+            }
+            returned_amounts.append(body["transfer_history"][0]["amount"])
+
+        assert returned_amounts == [2, 1, 0]
 
     # <Normal_3_1>
     # filter: block_timestamp_from
