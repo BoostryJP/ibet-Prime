@@ -18,16 +18,20 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone as tz
 from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
     ScheduledEvents,
     ScheduledEventType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -46,7 +50,7 @@ class TestScheduleBondTokenUpdateEvent:
     # <Normal_1>
     # Timezone of input data is UTC
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -98,7 +102,7 @@ class TestScheduleBondTokenUpdateEvent:
         }
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -125,6 +129,7 @@ class TestScheduleBondTokenUpdateEvent:
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert resp.status_code == 200
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND
@@ -138,7 +143,7 @@ class TestScheduleBondTokenUpdateEvent:
     # <Normal_2>
     # Timezone of input data is JST
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -190,7 +195,7 @@ class TestScheduleBondTokenUpdateEvent:
         }
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -217,6 +222,7 @@ class TestScheduleBondTokenUpdateEvent:
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert resp_1.status_code == 200
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND
@@ -234,7 +240,7 @@ class TestScheduleBondTokenUpdateEvent:
     # <Error_1_1>
     # RequestValidationError: issuer_address
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -242,10 +248,10 @@ class TestScheduleBondTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -280,7 +286,7 @@ class TestScheduleBondTokenUpdateEvent:
     # <Error_1_2>
     # RequestValidationError: is_canceled
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -291,7 +297,7 @@ class TestScheduleBondTokenUpdateEvent:
         update_data = {"is_redeemed": False}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -322,7 +328,7 @@ class TestScheduleBondTokenUpdateEvent:
     # AuthorizationError
     # issuer_address does not exists
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -335,7 +341,7 @@ class TestScheduleBondTokenUpdateEvent:
         }
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -358,7 +364,7 @@ class TestScheduleBondTokenUpdateEvent:
     # AuthorizationError
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -385,7 +391,7 @@ class TestScheduleBondTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
         req_param = {
@@ -411,7 +417,7 @@ class TestScheduleBondTokenUpdateEvent:
     # NotFound
     # token not found
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -429,7 +435,7 @@ class TestScheduleBondTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
         req_param = {
@@ -455,13 +461,13 @@ class TestScheduleBondTokenUpdateEvent:
     # RequestValidationError
     # event_data
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": "this is not datetime format",
             "event_type": "aUpdateb",
             "data": {
@@ -506,7 +512,7 @@ class TestScheduleBondTokenUpdateEvent:
     # <Error_6>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -525,7 +531,7 @@ class TestScheduleBondTokenUpdateEvent:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -552,7 +558,7 @@ class TestScheduleBondTokenUpdateEvent:
         }
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -576,7 +582,7 @@ class TestScheduleBondTokenUpdateEvent:
     # <Error_7_1>
     # OperationNotSupportedVersionError: v23.12
     @pytest.mark.asyncio
-    async def test_error_7_1(self, async_client, async_db):
+    async def test_error_7_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -595,7 +601,7 @@ class TestScheduleBondTokenUpdateEvent:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 1
+        token.token_status = TokenStatus.SUCCEEDED
         token.version = TokenVersion.V_22_12
         async_db.add(token)
 
@@ -609,7 +615,7 @@ class TestScheduleBondTokenUpdateEvent:
         }
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -647,7 +653,12 @@ class TestScheduleBondTokenUpdateEvent:
         ],
     )
     @pytest.mark.asyncio
-    async def test_error_7_2(self, async_client, async_db, update_data):
+    async def test_error_7_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        update_data: dict[str, Any],
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -666,7 +677,7 @@ class TestScheduleBondTokenUpdateEvent:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 1
+        token.token_status = TokenStatus.SUCCEEDED
         token.version = TokenVersion.V_23_12
         async_db.add(token)
 
@@ -677,7 +688,7 @@ class TestScheduleBondTokenUpdateEvent:
         datetime_now_str = datetime_now_utc.isoformat()
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,

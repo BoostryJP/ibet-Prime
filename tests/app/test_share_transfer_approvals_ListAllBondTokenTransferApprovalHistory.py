@@ -20,12 +20,15 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from app.model.db import (
     IDXTransferApproval,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
     TransferApprovalHistory,
@@ -93,7 +96,7 @@ class TestListAllShareTokenTransferApprovalHistory:
     # <Normal_1>
     # no data
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token(failed)
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -101,7 +104,7 @@ class TestListAllShareTokenTransferApprovalHistory:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
-        _token.token_status = 2
+        _token.token_status = TokenStatus.FAILED
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -187,7 +190,7 @@ class TestListAllShareTokenTransferApprovalHistory:
 
         # assertion
         assert resp.status_code == 200
-        assumed_response = {
+        assumed_response: dict[str, object] = {
             "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
             "transfer_approvals": [],
         }
@@ -196,7 +199,7 @@ class TestListAllShareTokenTransferApprovalHistory:
     # <Normal_2>
     # single data
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token(issuer-1)
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -380,7 +383,7 @@ class TestListAllShareTokenTransferApprovalHistory:
     # multi data
     # issuer address is specified
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token(issuer-1)
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -566,7 +569,7 @@ class TestListAllShareTokenTransferApprovalHistory:
     # multi data
     # issuer address is not specified
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token(issuer-1)
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -759,7 +762,7 @@ class TestListAllShareTokenTransferApprovalHistory:
     # <Normal_4>
     # offset - limit
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token(issuer-1)
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -926,7 +929,7 @@ class TestListAllShareTokenTransferApprovalHistory:
     # validation error
     # type_error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url,

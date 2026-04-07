@@ -213,6 +213,7 @@ from .token import (
     IbetStraightBondResponse,
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
+    IssueRedeemSortItem,
     ListAdditionalIssuanceHistoryQuery,
     ListAllAdditionalIssueUploadQuery,
     ListAllHoldersQuery,
@@ -245,6 +246,7 @@ from .token_holders import (
 from .transfer import (
     ListSpecificTokenTransferApprovalHistoryQuery,
     ListTransferApprovalHistoryQuery,
+    ListTransferApprovalHistorySortItem,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     TransferApprovalHistoryResponse,

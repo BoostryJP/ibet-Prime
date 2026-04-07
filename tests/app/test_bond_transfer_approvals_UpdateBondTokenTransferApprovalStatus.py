@@ -19,11 +19,14 @@ SPDX-License-Identifier: Apache-2.0
 
 import hashlib
 from datetime import UTC, datetime
+from typing import Sequence
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -34,6 +37,7 @@ from app.model.db import (
     IDXTransferApproval,
     PersonalInfoDataSource,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
     TransferApprovalHistory,
@@ -75,7 +79,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # token
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -117,7 +121,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -133,7 +137,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -169,18 +173,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "application_id": 100,
-            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
-        }
-
         mock_transfer.assert_called_once_with(
-            tx_params=ApproveTransferParams(**_expected),
+            tx_params=ApproveTransferParams(
+                application_id=100,
+                data=str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+            ),
             tx_sender=issuer_address,
             tx_sender_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = (
+        approval_op_list: Sequence[TransferApprovalHistory] = (
             await async_db.scalars(select(TransferApprovalHistory))
         ).all()
         assert len(approval_op_list) == 1
@@ -215,7 +217,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # exchange
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -258,7 +260,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -274,7 +276,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -310,18 +312,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "escrow_id": 100,
-            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
-        }
-
         mock_transfer.assert_called_once_with(
-            tx_params=EscrowApproveTransferParams(**_expected),
+            tx_params=EscrowApproveTransferParams(
+                escrow_id=100,
+                data=str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+            ),
             tx_sender=issuer_address,
             tx_sender_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = (
+        approval_op_list: Sequence[TransferApprovalHistory] = (
             await async_db.scalars(select(TransferApprovalHistory))
         ).all()
         assert len(approval_op_list) == 1
@@ -356,7 +356,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # token
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -398,7 +398,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -414,7 +414,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -450,18 +450,16 @@ class TestUpdateBondTokenTransferApprovalStatus:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "application_id": 100,
-            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
-        }
-
         mock_transfer.assert_called_once_with(
-            tx_params=CancelTransferParams(**_expected),
+            tx_params=CancelTransferParams(
+                application_id=100,
+                data=str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+            ),
             tx_sender=issuer_address,
             tx_sender_key=ANY,
         )
 
-        cancel_op_list: list[TransferApprovalHistory] = (
+        cancel_op_list: Sequence[TransferApprovalHistory] = (
             await async_db.scalars(select(TransferApprovalHistory))
         ).all()
         assert len(cancel_op_list) == 1
@@ -495,7 +493,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Authorization by auth-token
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -543,7 +541,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -559,7 +557,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -595,13 +593,11 @@ class TestUpdateBondTokenTransferApprovalStatus:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "application_id": 100,
-            "data": str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
-        }
-
         mock_transfer.assert_called_once_with(
-            tx_params=ApproveTransferParams(**_expected),
+            tx_params=ApproveTransferParams(
+                application_id=100,
+                data=str(datetime.now(UTC).replace(tzinfo=None).timestamp()),
+            ),
             tx_sender=issuer_address,
             tx_sender_key=ANY,
         )
@@ -614,7 +610,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Validation Error
     # missing headers: issuer-address, body
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         id = 10
 
         # request target api
@@ -646,7 +642,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Validation Error
     # missing body: operation_type
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
@@ -678,7 +674,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Validation Error
     # invalid value: body
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
@@ -712,7 +708,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Validation Error
     # invalid value: header
     @pytest.mark.asyncio
-    async def test_error_1_4(self, async_client, async_db):
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         id = 10
 
         # request target api
@@ -746,7 +742,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Authorize Error
     # not account
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -773,7 +769,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Authorize Error
     # invalid password
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -809,7 +805,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Not Found Error
     # token
     @pytest.mark.asyncio
-    async def test_error_3_1(self, async_client, async_db):
+    async def test_error_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -845,7 +841,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Not Found Error
     # transfer approval
     @pytest.mark.asyncio
-    async def test_error_3_2(self, async_client, async_db):
+    async def test_error_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -890,7 +886,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Invalid Parameter Error
     # processing Token
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_client, async_db):
+    async def test_error_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -907,7 +903,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -936,7 +932,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Invalid Parameter Error
     # already approved
     @pytest.mark.asyncio
-    async def test_error_4_2(self, async_client, async_db):
+    async def test_error_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1002,7 +998,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Invalid Parameter Error
     # canceled application
     @pytest.mark.asyncio
-    async def test_error_4_3(self, async_client, async_db):
+    async def test_error_4_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1068,7 +1064,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Invalid Parameter Error
     # escrow has not been finished yet
     @pytest.mark.asyncio
-    async def test_error_4_4(self, async_client, async_db):
+    async def test_error_4_4(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1132,7 +1128,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Invalid Parameter Error
     # application that cannot be canceled
     @pytest.mark.asyncio
-    async def test_error_4_5(self, async_client, async_db):
+    async def test_error_4_5(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1196,7 +1192,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # Invalid Parameter Error
     # This operation is duplicated
     @pytest.mark.asyncio
-    async def test_error_4_6(self, async_client, async_db):
+    async def test_error_4_6(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1273,7 +1269,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
-    async def test_error_5_1(self, async_client, async_db):
+    async def test_error_5_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1315,7 +1311,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -1331,7 +1327,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -1370,7 +1366,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # IbetSecurityTokenInterface.approve_transfer
     # return fail with Revert
     @pytest.mark.asyncio
-    async def test_error_5_2(self, async_client, async_db):
+    async def test_error_5_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1412,7 +1408,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -1428,7 +1424,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -1484,7 +1480,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
-    async def test_error_5_3(self, async_client, async_db):
+    async def test_error_5_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1527,7 +1523,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -1543,7 +1539,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -1581,7 +1577,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # IbetSecurityTokenEscrow.approve_transfer
     # return fail with Revert
     @pytest.mark.asyncio
-    async def test_error_5_4(self, async_client, async_db):
+    async def test_error_5_4(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1624,7 +1620,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -1640,7 +1636,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -1689,7 +1685,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
-    async def test_error_6_1(self, async_client, async_db):
+    async def test_error_6_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1731,7 +1727,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -1747,7 +1743,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -1785,7 +1781,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # IbetSecurityTokenInterface.cancel_transfer
     # return fail with Revert
     @pytest.mark.asyncio
-    async def test_error_6_2(self, async_client, async_db):
+    async def test_error_6_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1827,7 +1823,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -1843,7 +1839,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -1886,7 +1882,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # InvalidParameterError
     # personal information for from_address is not registered
     @pytest.mark.asyncio
-    async def test_error_7_1(self, async_client, async_db):
+    async def test_error_7_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1955,7 +1951,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
     # InvalidParameterError
     # personal information for to_address is not registered
     @pytest.mark.asyncio
-    async def test_error_7_2(self, async_client, async_db):
+    async def test_error_7_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -1997,7 +1993,7 @@ class TestUpdateBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",

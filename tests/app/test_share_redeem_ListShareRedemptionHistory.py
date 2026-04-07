@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from app.model.db import (
@@ -28,6 +30,7 @@ from app.model.db import (
     IDXIssueRedeemEventType,
     IDXIssueRedeemSortItem,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -68,7 +71,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # Normal_1
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -105,7 +108,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # Normal_2
     # multiple records
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -187,7 +190,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # Normal_3
     # sort
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -275,7 +278,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # Normal_4
     # pagination
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -348,7 +351,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # Error_1
     # NotFound
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(self.base_url.format(self.test_token_address))
 
@@ -363,7 +366,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # InvalidParameterError
     # this token is temporarily unavailable
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -371,7 +374,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -391,7 +394,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # RequestValidationError
     # sort_item
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address),
@@ -421,7 +424,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # RequestValidationError
     # sort_order(min)
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_client, async_db):
+    async def test_error_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": -1}
@@ -446,7 +449,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
     # RequestValidationError
     # sort_order(max)
     @pytest.mark.asyncio
-    async def test_error_4_2(self, async_client, async_db):
+    async def test_error_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": 2}

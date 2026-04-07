@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -38,7 +39,7 @@ class UpdateToken(Base):
     # token type
     type: Mapped[str] = mapped_column(String(40), nullable=False)
     # arguments
-    arguments: Mapped[dict] = mapped_column(JSON, nullable=False)
+    arguments: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
     status: Mapped[int] = mapped_column(Integer, nullable=False)
     # update trigger

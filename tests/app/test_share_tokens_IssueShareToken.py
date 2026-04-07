@@ -25,7 +25,9 @@ from unittest import mock
 from unittest.mock import ANY, patch
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -47,8 +49,6 @@ from app.model.db import (
     TokenVersion,
     UpdateToken,
 )
-from app.model.ibet.token import IbetShareContract
-from app.model.ibet.token_list import TokenListContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import AsyncContractUtils
 from tests.account_config import default_eth_account
@@ -68,7 +68,7 @@ class TestIssueShareToken:
     # <Normal_1_1>
     # create only
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -104,8 +104,8 @@ class TestIssueShareToken:
         )
 
         with (
-            IbetShareContract_create,
-            TokenListContract_register,
+            IbetShareContract_create as mock_create,
+            TokenListContract_register as mock_register,
             ContractUtils_get_block_by_transaction_hash,
         ):
             # request target api
@@ -130,7 +130,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            IbetShareContract.create.assert_called_with(
+            mock_create.assert_called_with(
                 args=[
                     "name_test1",
                     "symbol_test1",
@@ -145,7 +145,7 @@ class TestIssueShareToken:
                 tx_sender=test_account["address"],
                 tx_sender_key=ANY,
             )
-            TokenListContract.register.assert_called_with(
+            mock_register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
                 tx_sender=test_account["address"],
@@ -180,6 +180,7 @@ class TestIssueShareToken:
             assert token_1.ibet_wst_name is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
+            assert position is not None
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -188,6 +189,7 @@ class TestIssueShareToken:
             assert position.pending_transfer == 0
 
             utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
+            assert utxo is not None
             assert (
                 utxo.transaction_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -206,6 +208,7 @@ class TestIssueShareToken:
             operation_log = (
                 await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
             ).first()
+            assert operation_log is not None
             assert operation_log.token_address == "contract_address_test1"
             assert operation_log.type == TokenType.IBET_SHARE
             assert operation_log.original_contents is None
@@ -218,7 +221,7 @@ class TestIssueShareToken:
     # create only
     # No input for symbol, dividends and cancellation_date.
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -254,8 +257,8 @@ class TestIssueShareToken:
         )
 
         with (
-            IbetShareContract_create,
-            TokenListContract_register,
+            IbetShareContract_create as mock_create,
+            TokenListContract_register as mock_register,
             ContractUtils_get_block_by_transaction_hash,
         ):
             # request target api
@@ -275,12 +278,12 @@ class TestIssueShareToken:
             )
 
             # assertion
-            IbetShareContract.create.assert_called_with(
+            mock_create.assert_called_with(
                 args=["name_test1", "", 1000, 10000, 0, "", "", "", 1000],
                 tx_sender=test_account["address"],
                 tx_sender_key=ANY,
             )
-            TokenListContract.register.assert_called_with(
+            mock_register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
                 tx_sender=test_account["address"],
@@ -315,6 +318,7 @@ class TestIssueShareToken:
             assert token_1.ibet_wst_name is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
+            assert position is not None
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -323,6 +327,7 @@ class TestIssueShareToken:
             assert position.pending_transfer == 0
 
             utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
+            assert utxo is not None
             assert (
                 utxo.transaction_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -341,6 +346,7 @@ class TestIssueShareToken:
             operation_log = (
                 await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
             ).first()
+            assert operation_log is not None
             assert operation_log.token_address == "contract_address_test1"
             assert operation_log.type == TokenType.IBET_SHARE
             assert operation_log.original_contents is None
@@ -352,7 +358,7 @@ class TestIssueShareToken:
     # <Normal_2>
     # include updates
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -388,9 +394,9 @@ class TestIssueShareToken:
         )
 
         with (
-            IbetShareContract_create,
-            TokenListContract_register,
-            ContractUtils_get_block_by_transaction_hash,
+            IbetShareContract_create as mock_create,
+            TokenListContract_register as mock_register,
+            ContractUtils_get_block_by_transaction_hash as mock_get_block,
         ):
             # request target api
             req_param = {
@@ -427,7 +433,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            IbetShareContract.create.assert_called_with(
+            mock_create.assert_called_with(
                 args=[
                     "name_test1",
                     "symbol_test1",
@@ -442,8 +448,8 @@ class TestIssueShareToken:
                 tx_sender=test_account["address"],
                 tx_sender_key=ANY,
             )
-            TokenListContract.register.assert_not_called()
-            AsyncContractUtils.get_block_by_transaction_hash.assert_not_called()
+            mock_register.assert_not_called()
+            mock_get_block.assert_not_called()
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -476,6 +482,7 @@ class TestIssueShareToken:
             update_token = (
                 await async_db.scalars(select(UpdateToken).limit(1))
             ).first()
+            assert update_token is not None
             assert update_token.id == 1
             assert update_token.token_address == "contract_address_test1"
             assert update_token.issuer_address == test_account["address"]
@@ -490,7 +497,7 @@ class TestIssueShareToken:
     # <Normal_3>
     # Authorization by auth-token
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -532,8 +539,8 @@ class TestIssueShareToken:
         )
 
         with (
-            IbetShareContract_create,
-            TokenListContract_register,
+            IbetShareContract_create as mock_create,
+            TokenListContract_register as mock_register,
             ContractUtils_get_block_by_transaction_hash,
         ):
             # request target api
@@ -558,7 +565,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            IbetShareContract.create.assert_called_with(
+            mock_create.assert_called_with(
                 args=[
                     "name_test1",
                     "symbol_test1",
@@ -573,7 +580,7 @@ class TestIssueShareToken:
                 tx_sender=test_account["address"],
                 tx_sender_key=ANY,
             )
-            TokenListContract.register.assert_called_with(
+            mock_register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
                 tx_sender=test_account["address"],
@@ -608,6 +615,7 @@ class TestIssueShareToken:
             assert token_1.ibet_wst_name is None
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
+            assert position is not None
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -616,6 +624,7 @@ class TestIssueShareToken:
             assert position.pending_transfer == 0
 
             utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
+            assert utxo is not None
             assert (
                 utxo.transaction_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -634,6 +643,7 @@ class TestIssueShareToken:
             operation_log = (
                 await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
             ).first()
+            assert operation_log is not None
             assert operation_log.token_address == "contract_address_test1"
             assert operation_log.type == TokenType.IBET_SHARE
             assert operation_log.original_contents is None
@@ -645,7 +655,7 @@ class TestIssueShareToken:
     # <Normal_4_1>
     # YYYYMMDD parameter is not empty
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db):
+    async def test_normal_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -679,7 +689,7 @@ class TestIssueShareToken:
         )
 
         with (
-            IbetShareContract_create,
+            IbetShareContract_create as mock_create,
             TokenListContract_register,
             ContractUtils_get_block_by_transaction_hash,
         ):
@@ -705,7 +715,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            IbetShareContract.create.assert_called_with(
+            mock_create.assert_called_with(
                 args=[
                     "name_test1",
                     "symbol_test1",
@@ -728,7 +738,7 @@ class TestIssueShareToken:
     # <Normal_4_2>
     # YYYYMMDD parameter is empty
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db):
+    async def test_normal_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -762,7 +772,7 @@ class TestIssueShareToken:
         )
 
         with (
-            IbetShareContract_create,
+            IbetShareContract_create as mock_create,
             TokenListContract_register,
             ContractUtils_get_block_by_transaction_hash,
         ):
@@ -788,7 +798,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            IbetShareContract.create.assert_called_with(
+            mock_create.assert_called_with(
                 args=[
                     "name_test1",
                     "symbol_test1",
@@ -815,7 +825,7 @@ class TestIssueShareToken:
         "0x1234567890123456789012345678901234567890",
     )
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -851,8 +861,8 @@ class TestIssueShareToken:
         )
 
         with (
-            IbetShareContract_create,
-            TokenListContract_register,
+            IbetShareContract_create as mock_create,
+            TokenListContract_register as mock_register,
             ContractUtils_get_block_by_transaction_hash,
         ):
             # request target api
@@ -880,7 +890,7 @@ class TestIssueShareToken:
             )
 
             # assertion
-            IbetShareContract.create.assert_called_with(
+            mock_create.assert_called_with(
                 args=[
                     "name_test1",
                     "symbol_test1",
@@ -895,7 +905,7 @@ class TestIssueShareToken:
                 tx_sender=test_account["address"],
                 tx_sender_key=ANY,
             )
-            TokenListContract.register.assert_called_with(
+            mock_register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE,
                 tx_sender=test_account["address"],
@@ -930,6 +940,7 @@ class TestIssueShareToken:
             assert token_1.ibet_wst_name == "ibet_wst_name_test1"
 
             position = (await async_db.scalars(select(IDXPosition).limit(1))).first()
+            assert position is not None
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -938,6 +949,7 @@ class TestIssueShareToken:
             assert position.pending_transfer == 0
 
             utxo = (await async_db.scalars(select(UTXO).limit(1))).first()
+            assert utxo is not None
             assert (
                 utxo.transaction_hash
                 == "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -956,6 +968,7 @@ class TestIssueShareToken:
             operation_log = (
                 await async_db.scalars(select(TokenUpdateOperationLog).limit(1))
             ).first()
+            assert operation_log is not None
             assert operation_log.token_address == "contract_address_test1"
             assert operation_log.type == TokenType.IBET_SHARE
             assert operation_log.original_contents is None
@@ -982,7 +995,7 @@ class TestIssueShareToken:
         "0x1234567890123456789012345678901234567891",
     )
     @pytest.mark.asyncio
-    async def test_normal_6(self, async_client, async_db):
+    async def test_normal_6(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         account = Account()
@@ -1042,6 +1055,7 @@ class TestIssueShareToken:
 
             assert resp.status_code == 200
             token_1 = (await async_db.scalars(select(Token).limit(1))).first()
+            assert token_1 is not None
             assert token_1.is_ibet_wst_activated("avalanche") is True
 
             ibet_wst_tx = (await async_db.scalars(select(EthIbetWSTTx))).all()
@@ -1070,7 +1084,7 @@ class TestIssueShareToken:
     # Validation Error
     # missing fields
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.post(self.apiurl)
 
@@ -1098,7 +1112,7 @@ class TestIssueShareToken:
     # Validation Error
     # format error
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # request target api
@@ -1154,7 +1168,7 @@ class TestIssueShareToken:
     # Validation Error
     # required headers
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         req_param = {
             "name": "name_test1",
@@ -1189,7 +1203,7 @@ class TestIssueShareToken:
     # Validation Error
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
-    async def test_error_2_3(self, async_client, async_db):
+    async def test_error_2_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_1 = default_eth_account("user1")
 
         # prepare data
@@ -1240,7 +1254,7 @@ class TestIssueShareToken:
     # Validation Error
     # min value
     @pytest.mark.asyncio
-    async def test_error_2_4(self, async_client, async_db):
+    async def test_error_2_4(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # request target api
@@ -1310,7 +1324,7 @@ class TestIssueShareToken:
     # Validation Error
     # max value or max length
     @pytest.mark.asyncio
-    async def test_error_2_5(self, async_client, async_db):
+    async def test_error_2_5(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # request target api
@@ -1408,7 +1422,7 @@ class TestIssueShareToken:
     # Validation Error
     # YYYYMMDD regex
     @pytest.mark.asyncio
-    async def test_error_2_6(self, async_client, async_db):
+    async def test_error_2_6(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # request target api
@@ -1492,7 +1506,7 @@ class TestIssueShareToken:
     # Validation Error
     # ibet_wst_name when activate_ibet_wst is True
     @pytest.mark.asyncio
-    async def test_error_2_7(self, async_client, async_db):
+    async def test_error_2_7(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # request target api
@@ -1543,7 +1557,7 @@ class TestIssueShareToken:
     # <Error_3_1>
     # Not Exists Address
     @pytest.mark.asyncio
-    async def test_error_3_1(self, async_client, async_db):
+    async def test_error_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_1 = default_eth_account("user1")
         test_account_2 = default_eth_account("user2")
 
@@ -1587,7 +1601,7 @@ class TestIssueShareToken:
     # <Error_3_2>
     # Password Mismatch
     @pytest.mark.asyncio
-    async def test_error_3_2(self, async_client, async_db):
+    async def test_error_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_1 = default_eth_account("user1")
 
         # prepare data
@@ -1631,7 +1645,7 @@ class TestIssueShareToken:
     # Send Transaction Error
     # IbetShareContract.create
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_client, async_db):
+    async def test_error_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_1 = default_eth_account("user1")
         test_account_2 = default_eth_account("user2")
 
@@ -1683,7 +1697,7 @@ class TestIssueShareToken:
     # Send Transaction Error
     # TokenListContract.register
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account_1 = default_eth_account("user1")
         test_account_2 = default_eth_account("user2")
 
@@ -1740,6 +1754,6 @@ class TestIssueShareToken:
             }
 
 
-def GetRandomStr(num):
+def GetRandomStr(num: int) -> str:
     dat = string.digits + string.ascii_lowercase + string.ascii_uppercase
-    return "".join([random.choice(dat) for i in range(num)])
+    return "".join([random.choice(dat) for _ in range(num)])

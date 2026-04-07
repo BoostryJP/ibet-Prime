@@ -18,9 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import UTC, datetime
+from typing import Any, TypedDict
 
 import pytest
 import pytz
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
 from config import TZ
@@ -33,7 +36,19 @@ class TestListShareTokenBulkTransfers:
     # target API endpoint
     test_url = "/share/bulk_transfer"
 
-    upload_issuer_list = [
+    class UploadIssuer(TypedDict):
+        address: str
+        keyfile: dict[str, Any]
+
+    class UploadResponse(TypedDict):
+        issuer_address: str
+        token_type: str
+        token_address: str | None
+        upload_id: str
+        status: int
+        created: str
+
+    upload_issuer_list: list[UploadIssuer] = [
         {
             "address": default_eth_account("user1")["address"],
             "keyfile": default_eth_account("user1")["keyfile_json"],
@@ -65,7 +80,7 @@ class TestListShareTokenBulkTransfers:
     # - Header: issuer address is set
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
@@ -117,7 +132,7 @@ class TestListShareTokenBulkTransfers:
     # - Header: issuer address is not set
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : BulkTransferUpload
         utc_now = datetime.now(UTC).replace(tzinfo=None)
         for i in range(0, 3):
@@ -144,7 +159,7 @@ class TestListShareTokenBulkTransfers:
             "total": 3,
         }
 
-        assumed_response = []
+        assumed_response: list[TestListShareTokenBulkTransfers.UploadResponse] = []
         for i in range(0, 3):
             assumed_response.append(
                 {
@@ -159,7 +174,9 @@ class TestListShareTokenBulkTransfers:
                     .isoformat(),
                 }
             )
-        sorted_assumed = sorted(assumed_response, key=lambda x: x["upload_id"])
+        sorted_assumed: list[TestListShareTokenBulkTransfers.UploadResponse] = sorted(
+            assumed_response, key=lambda item: item["upload_id"]
+        )
         sorted_resp = sorted(
             resp.json()["bulk_transfer_uploads"], key=lambda x: x["upload_id"]
         )
@@ -169,7 +186,7 @@ class TestListShareTokenBulkTransfers:
     # Search by token_address
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
@@ -276,7 +293,7 @@ class TestListShareTokenBulkTransfers:
     # offset / limit
     @pytest.mark.freeze_time("2021-05-20 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
@@ -332,7 +349,7 @@ class TestListShareTokenBulkTransfers:
     # RequestValidationError
     # invalid type : issuer-address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.test_url, headers={"issuer-address": "DUMMY ADDRESS"}

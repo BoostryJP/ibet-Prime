@@ -43,7 +43,7 @@ class Base(DeclarativeBase):
     )
 
     @staticmethod
-    def datetime_to_timestamp(date):
+    def datetime_to_timestamp(date: datetime_date | None) -> int | None:
         if isinstance(date, datetime_date):
             return int(time.mktime(date.timetuple()))
         else:

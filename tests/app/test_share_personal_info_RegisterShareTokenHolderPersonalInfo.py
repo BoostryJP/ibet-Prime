@@ -21,7 +21,9 @@ import hashlib
 from unittest.mock import patch
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import SendTransactionError
 from app.model.db import (
@@ -30,10 +32,11 @@ from app.model.db import (
     IDXPersonalInfo,
     IDXPersonalInfoHistory,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
-from app.model.ibet import IbetShareContract, PersonalInfoContract
+from app.model.ibet import IbetShareContract
 from app.model.schema import PersonalInfoDataSource
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
@@ -50,7 +53,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Normal_1_1>
     # data_source = on_chain
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -99,7 +102,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         with (
             IbetShareContract_get,
             PersonalInfoContract_init,
-            PersonalInfoContract_register_info,
+            PersonalInfoContract_register_info as mock_register_info,
         ):
             # request target API
             req_param = {
@@ -125,7 +128,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.register_info.assert_called_with(
+            mock_register_info.assert_called_with(
                 account_address=_test_account_address,
                 data={
                     "key_manager": "test_key_manager",
@@ -143,7 +146,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Normal_1_2>
     # data_source = off_chain
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -255,6 +258,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
                     .limit(1)
                 )
             ).first()
+            assert _personal_info_history is not None
             assert _personal_info_history.id is not None
             assert _personal_info_history.issuer_address == _issuer_address
             assert _personal_info_history.account_address == _test_account_address
@@ -272,7 +276,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Normal_2_1>
     # Optional items
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -321,7 +325,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         with (
             IbetShareContract_get,
             PersonalInfoContract_init,
-            PersonalInfoContract_register_info,
+            PersonalInfoContract_register_info as mock_register_info,
         ):
             # request target API
             req_param = {
@@ -340,7 +344,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.register_info.assert_called_with(
+            mock_register_info.assert_called_with(
                 account_address=_test_account_address,
                 data={
                     "key_manager": "test_key_manager",
@@ -358,7 +362,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Normal_2_2>
     # Nullable items
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -407,7 +411,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         with (
             IbetShareContract_get,
             PersonalInfoContract_init,
-            PersonalInfoContract_register_info,
+            PersonalInfoContract_register_info as mock_register_info,
         ):
             # request target API
             req_param = {
@@ -433,7 +437,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.register_info.assert_called_with(
+            mock_register_info.assert_called_with(
                 account_address=_test_account_address,
                 data={
                     "key_manager": "test_key_manager",
@@ -451,7 +455,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Normal_3>
     # Authorization by auth-token
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -506,7 +510,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         with (
             IbetShareContract_get,
             PersonalInfoContract_init,
-            PersonalInfoContract_register_info,
+            PersonalInfoContract_register_info as mock_register_info,
         ):
             # request target API
             req_param = {
@@ -532,7 +536,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.register_info.assert_called_with(
+            mock_register_info.assert_called_with(
                 account_address=_test_account_address,
                 data={
                     "key_manager": "test_key_manager",
@@ -555,7 +559,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # RequestValidationError
     # headers and body required
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -592,7 +596,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # RequestValidationError
     # personal_info
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -641,7 +645,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # RequestValidationError
     # personal_info.account_address is invalid
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -691,7 +695,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # RequestValidationError
     # issuer_address
     @pytest.mark.asyncio
-    async def test_error_1_4(self, async_client, async_db):
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
@@ -736,7 +740,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # RequestValidationError
     # eoa-password not encrypted
     @pytest.mark.asyncio
-    async def test_error_1_5(self, async_client, async_db):
+    async def test_error_1_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -785,7 +789,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # RequestValidationError
     # data_source
     @pytest.mark.asyncio
-    async def test_error_1_6(self, async_client, async_db):
+    async def test_error_1_6(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -836,7 +840,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # AuthorizationError
     # issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -878,7 +882,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # AuthorizationError
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -929,7 +933,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # HTTPException 404
     # token not found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -980,7 +984,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # InvalidParameterError
     # processing token
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -1003,7 +1007,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -1040,7 +1044,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_5>
     # SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -1122,7 +1126,7 @@ class TestRegisterShareTokenHolderPersonalInfo:
     # <Error_6>
     # PersonalInfoExceedsSizeLimit
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]

@@ -18,12 +18,15 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
     IDXLockedPosition,
     IDXPosition,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -42,7 +45,7 @@ class TestCountBondTokenHolders:
     # position is None
     # locked_position is None
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -77,7 +80,7 @@ class TestCountBondTokenHolders:
     # position is not None
     # locked_position is None
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -122,7 +125,7 @@ class TestCountBondTokenHolders:
     # position is not None
     # locked_position is not None
     @pytest.mark.asyncio
-    async def test_normal_1_3(self, async_client, async_db):
+    async def test_normal_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -185,7 +188,7 @@ class TestCountBondTokenHolders:
     # position is not None (but zero)
     # locked_position is not None (but zero)
     @pytest.mark.asyncio
-    async def test_normal_1_4(self, async_client, async_db):
+    async def test_normal_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -238,7 +241,7 @@ class TestCountBondTokenHolders:
     # <Normal_2>
     # Multiple records
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -334,7 +337,7 @@ class TestCountBondTokenHolders:
     # RequestValidationError
     # issuer-address is not a valid address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -360,7 +363,7 @@ class TestCountBondTokenHolders:
     # InvalidParameterError
     # issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -382,7 +385,7 @@ class TestCountBondTokenHolders:
     # NotFound
     # token not found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -411,7 +414,7 @@ class TestCountBondTokenHolders:
     # InvalidParameterError
     # this token is temporarily unavailable
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -427,7 +430,7 @@ class TestCountBondTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 

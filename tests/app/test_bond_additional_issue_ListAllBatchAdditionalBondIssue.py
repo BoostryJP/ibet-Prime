@@ -21,6 +21,8 @@ import uuid
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     BatchIssueRedeemProcessingCategory,
@@ -43,7 +45,7 @@ class TestListAllBatchAdditionalBondIssue:
     # <Normal Case 1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -70,7 +72,7 @@ class TestListAllBatchAdditionalBondIssue:
     # <Normal Case 2>
     # 1 record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -117,7 +119,7 @@ class TestListAllBatchAdditionalBondIssue:
     # <Normal_3_1>
     # Multi record
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -225,7 +227,7 @@ class TestListAllBatchAdditionalBondIssue:
     # <Normal_3_2>
     # Multi record (Issuer specified)
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -320,7 +322,7 @@ class TestListAllBatchAdditionalBondIssue:
     # <Normal_3_3>
     # Multi record (status)
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -423,7 +425,7 @@ class TestListAllBatchAdditionalBondIssue:
     # <Normal_4>
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -518,7 +520,7 @@ class TestListAllBatchAdditionalBondIssue:
     # <Normal_5>
     # Sort
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -634,7 +636,7 @@ class TestListAllBatchAdditionalBondIssue:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"

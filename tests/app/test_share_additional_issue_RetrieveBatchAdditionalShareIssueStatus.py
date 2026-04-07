@@ -17,7 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import TypedDict
+
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -34,6 +38,11 @@ from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
 
 
+class AdditionalIssueAccount(TypedDict):
+    address: str
+    amount: int
+
+
 class TestRetrieveBatchAdditionalShareIssueStatus:
     # target API endpoint
     base_url = "/share/tokens/{}/additional_issue/batch/{}"
@@ -43,7 +52,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
         "0e778f46-864e-4ec0-b566-21bd31cf63ff",
     ]
 
-    account_list = [
+    account_list: list[AdditionalIssueAccount] = [
         {"address": default_eth_account("user1")["address"], "amount": 1},
         {"address": default_eth_account("user2")["address"], "amount": 2},
     ]
@@ -55,7 +64,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
     # Normal_1_1
     # Single Record(No personal information)
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
@@ -97,7 +106,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = "other_issuer_address"
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -144,7 +153,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
     # Normal_1_2
     # Single Record(With personal information)
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
@@ -186,7 +195,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = issuer_address
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -233,7 +242,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
     # Normal_2
     # Multiple Records
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
@@ -282,7 +291,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = issuer_address
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -348,7 +357,7 @@ class TestRetrieveBatchAdditionalShareIssueStatus:
     # Error_1
     # NotFound
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
