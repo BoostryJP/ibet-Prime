@@ -1086,6 +1086,59 @@ class TestListTokenHoldersPersonalInfoHistory:
             ],
         }
 
+    # <Normal_6>
+    # Pagination: same block_timestamp
+    @pytest.mark.asyncio
+    async def test_normal_6(self, async_client: AsyncClient, async_db: AsyncSession):
+        same_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(tzinfo=None)
+        created_list = [
+            datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(tzinfo=None),
+            datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(tzinfo=None),
+            datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(tzinfo=None),
+        ]
+
+        for index in range(0, 3):
+            history = IDXPersonalInfoHistory()
+            history.issuer_address = self.test_issuer_address_1
+            history.account_address = self.test_account_address_1
+            history.event_type = PersonalInfoEventType.REGISTER
+            history.personal_info = {
+                "key_manager": f"key_manager_test{index + 1}",
+                "name": f"name_test{index + 1}",
+                "postal_code": f"postal_code_test{index + 1}",
+                "address": f"address_test{index + 1}",
+                "email": f"email_test{index + 1}",
+                "birth": f"birth_test{index + 1}",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+            history.block_timestamp = same_timestamp
+            history.created = created_list[index]
+            async_db.add(history)
+
+        await async_db.commit()
+
+        returned_names: list[str] = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.url,
+                headers={
+                    "issuer-address": self.test_issuer_address_1,
+                },
+                params={"sort_order": 0, "offset": offset, "limit": 1},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "limit": 1,
+                "offset": offset,
+                "total": 3,
+            }
+            returned_names.append(body["personal_info"][0]["personal_info"]["name"])
+
+        assert returned_names == ["name_test1", "name_test2", "name_test3"]
+
     ###########################################################################
     # Error Case
     ###########################################################################

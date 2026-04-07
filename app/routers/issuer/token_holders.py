@@ -268,8 +268,10 @@ async def list_all_token_holders_personal_info_history(
     # Sort
     if get_query.sort_order == 0:
         stmt = stmt.order_by(IDXPersonalInfoHistory.block_timestamp)
+        stmt = stmt.order_by(IDXPersonalInfoHistory.id)
     else:
         stmt = stmt.order_by(desc(IDXPersonalInfoHistory.block_timestamp))
+        stmt = stmt.order_by(desc(IDXPersonalInfoHistory.id))
 
     # Pagination
     if get_query.limit is not None:
