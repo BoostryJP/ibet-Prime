@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Notification, NotificationType
 from tests.account_config import default_eth_account
@@ -37,7 +39,7 @@ class TestDeleteNotification:
     # <Normal_1>
     # Non filtered
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -141,7 +143,7 @@ class TestDeleteNotification:
     # <Error_1>
     # Parameter Error(required)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.delete(
             self.base_url.format(notice_id="notice_id_2"),
@@ -164,7 +166,7 @@ class TestDeleteNotification:
     # <Error_2>
     # Parameter Error(invalid address)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.delete(
             self.base_url.format(notice_id="notice_id_2"),
@@ -190,7 +192,7 @@ class TestDeleteNotification:
     # <Error_3>
     # notification does not exist
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
 

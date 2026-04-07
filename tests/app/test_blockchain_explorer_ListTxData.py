@@ -17,9 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import IDXTxData
 
@@ -29,7 +32,7 @@ class TestListTxData:
     apiurl = "/blockchain_explorer/tx_data"
 
     # Test data
-    A_tx_1 = {
+    A_tx_1: dict[str, Any] = {
         "block_hash": "0x94670853c83f3c444d8515cbb9902c9e88b3619c27b9577714baaa07d35874ff",
         "block_number": 6791869,
         "from_address": "0x8456ac4FEc4869A16ad5C3584306181Af6410682",
@@ -42,7 +45,7 @@ class TestListTxData:
         "transaction_index": 0,
         "value": 0,
     }
-    A_tx_2 = {
+    A_tx_2: dict[str, Any] = {
         "block_hash": "0x077e42cfe8bc9577b85a6347136c2d38a2b165e7b31bb340c33d302565b900b6",
         "block_number": 6791869,
         "from_address": "0x30406Cd5f18DD87367B782b9D63b4d79F7f5eBb8",
@@ -55,7 +58,7 @@ class TestListTxData:
         "transaction_index": 0,
         "value": 0,
     }
-    B_tx_1 = {
+    B_tx_1: dict[str, Any] = {
         "block_hash": "0x6698ebc4866223855dbea153eec7a9455682fd6d2f8451746102afb320412a6b",
         "block_number": 10407084,
         "from_address": "0x8456ac4FEc4869A16ad5C3584306181Af6410682",
@@ -70,7 +73,7 @@ class TestListTxData:
     }
 
     @staticmethod
-    def filter_response_item(tx_data):
+    def filter_response_item(tx_data: dict[str, Any]) -> dict[str, Any]:
         return {
             "hash": tx_data.get("hash"),
             "block_hash": tx_data.get("block_hash"),
@@ -81,9 +84,9 @@ class TestListTxData:
         }
 
     @staticmethod
-    async def insert_tx_data(async_db, tx_data):
+    async def insert_tx_data(async_db: AsyncSession, tx_data: dict[str, Any]) -> None:
         tx_model = IDXTxData()
-        tx_model.hash = tx_data.get("hash")
+        tx_model.hash = tx_data.get("hash", "")
         tx_model.block_hash = tx_data.get("block_hash")
         tx_model.block_number = tx_data.get("block_number")
         tx_model.transaction_index = tx_data.get("transaction_index")
@@ -104,7 +107,7 @@ class TestListTxData:
     # Normal_1
     # Query parameter: block_number(required)
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.A_tx_1)
         await self.insert_tx_data(async_db, self.A_tx_2)
         await self.insert_tx_data(async_db, self.B_tx_1)
@@ -136,7 +139,7 @@ class TestListTxData:
     # Normal_2_1
     # Query parameter: from_address(optional)
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.A_tx_1)
         await self.insert_tx_data(async_db, self.A_tx_2)
         await self.insert_tx_data(async_db, self.B_tx_1)
@@ -166,7 +169,7 @@ class TestListTxData:
     # Normal_2_2
     # Query parameter: to_address(optional)
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.A_tx_1)
         await self.insert_tx_data(async_db, self.A_tx_2)
         await self.insert_tx_data(async_db, self.B_tx_1)
@@ -194,7 +197,7 @@ class TestListTxData:
     # Normal_3_1
     # Pagination: offset
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.A_tx_1)
         await self.insert_tx_data(async_db, self.A_tx_2)
         await self.insert_tx_data(async_db, self.B_tx_1)
@@ -221,7 +224,7 @@ class TestListTxData:
     # Normal_3_2
     # Pagination: limit
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.A_tx_1)
         await self.insert_tx_data(async_db, self.A_tx_2)
         await self.insert_tx_data(async_db, self.B_tx_1)
@@ -250,7 +253,7 @@ class TestListTxData:
     # Error_1
     # BC_EXPLORER_ENABLED = False (default)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
             resp = await async_client.get(
@@ -268,7 +271,7 @@ class TestListTxData:
     # Error_2_1
     # Invalid Parameter
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"offset": -1, "limit": -1, "block_number": -1}
@@ -306,7 +309,7 @@ class TestListTxData:
     # Error_2_2
     # Invalid Parameter
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {
@@ -341,7 +344,7 @@ class TestListTxData:
     # Error_3
     # ResponseLimitExceededError
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.A_tx_1)
         await self.insert_tx_data(async_db, self.A_tx_2)
         await self.insert_tx_data(async_db, self.B_tx_1)

@@ -17,9 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db.ibet_wst import IDXAvaIbetWSTTrade, IDXEthIbetWSTTrade
 
@@ -40,14 +43,18 @@ class TestGetIbetWSTTrade:
     sc_token_address_1 = "0x1234567890123456789012345678900000001001"
 
     @staticmethod
-    async def insert_trade_eth(async_db, trade_data):
+    async def insert_trade_eth(
+        async_db: AsyncSession, trade_data: dict[str, Any]
+    ) -> None:
         """Insert a trade record into the database."""
         trade = IDXEthIbetWSTTrade(**trade_data)
         async_db.add(trade)
         await async_db.commit()
 
     @staticmethod
-    async def insert_trade_ava(async_db, trade_data):
+    async def insert_trade_ava(
+        async_db: AsyncSession, trade_data: dict[str, Any]
+    ) -> None:
         """Insert a trade record into the database."""
         trade = IDXAvaIbetWSTTrade(**trade_data)
         async_db.add(trade)
@@ -61,7 +68,7 @@ class TestGetIbetWSTTrade:
     # Test normal case with typical values for all fields.
     # This verifies that the API can retrieve and return trade details correctly.
     # - blockchain_platform = "ethereum" (default)
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Create test data
         trade1 = {
             "ibet_wst_address": self.ibet_wst_address_1,
@@ -116,7 +123,7 @@ class TestGetIbetWSTTrade:
     # Test normal case with typical values for all fields.
     # This verifies that the API can retrieve and return trade details correctly.
     # - blockchain_platform = "avalanche"
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Create test data
         trade1 = {
             "ibet_wst_address": self.ibet_wst_address_1,
@@ -157,7 +164,7 @@ class TestGetIbetWSTTrade:
     # <Normal_2>
     # This test verifies that the API can handle and return maximum uint256 values correctly.
     # RESPONSE_VALIDATION_MODE is set False to allow the API to return large integers without validation errors.
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Create test data
         trade1 = {
             "ibet_wst_address": self.ibet_wst_address_1,
@@ -201,7 +208,7 @@ class TestGetIbetWSTTrade:
     ###########################################################################
 
     # <Error_1>
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Call API with a non-existent IbetWST address
         resp = await async_client.get(
             self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1, index=1)

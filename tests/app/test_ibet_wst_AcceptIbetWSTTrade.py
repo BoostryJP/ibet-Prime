@@ -23,7 +23,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     EthIbetWSTTx,
@@ -96,7 +98,7 @@ class TestCancelIbetWSTTrade:
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -150,6 +152,7 @@ class TestCancelIbetWSTTrade:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.ACCEPT_TRADE
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -196,7 +199,7 @@ class TestCancelIbetWSTTrade:
         "app.routers.misc.ibet_wst.AVA_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_2(self, async_db, async_client):
+    async def test_normal_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -255,7 +258,7 @@ class TestCancelIbetWSTTrade:
 
     # <Error_1>
     # Missing required fields in request body
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.post(
             self.api_url.format(ibet_wst_address=self.ibet_wst_address), json={}
@@ -288,7 +291,7 @@ class TestCancelIbetWSTTrade:
         }
 
     # <Error_2>
-    async def test_error_2(self, async_db, async_client):
+    async def test_error_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Generate nonce
         nonce = secrets.token_bytes(32)
 
@@ -360,7 +363,7 @@ class TestCancelIbetWSTTrade:
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_error_3(self, async_db, async_client):
+    async def test_error_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address
@@ -445,7 +448,7 @@ class TestCancelIbetWSTTrade:
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_error_4(self, async_db, async_client):
+    async def test_error_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_token_address

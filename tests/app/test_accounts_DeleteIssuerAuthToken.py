@@ -21,7 +21,9 @@ import hashlib
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
@@ -42,7 +44,7 @@ class TestDeleteIssuerAuthToken:
     # Normal_1
     # Authorization by eoa_password
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -70,7 +72,7 @@ class TestDeleteIssuerAuthToken:
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
@@ -82,7 +84,7 @@ class TestDeleteIssuerAuthToken:
     # Normal_2
     # Authorization by auth_token
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -109,7 +111,7 @@ class TestDeleteIssuerAuthToken:
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
@@ -126,7 +128,7 @@ class TestDeleteIssuerAuthToken:
     # RequestValidationError
     # issuer-address is not a valid address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -165,7 +167,7 @@ class TestDeleteIssuerAuthToken:
             ],
         }
 
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
@@ -178,7 +180,7 @@ class TestDeleteIssuerAuthToken:
     # RequestValidationError
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -217,7 +219,7 @@ class TestDeleteIssuerAuthToken:
             ],
         }
 
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
@@ -230,7 +232,7 @@ class TestDeleteIssuerAuthToken:
     # AuthorizationError
     # eoa-password (or auth-token) not set
     @pytest.mark.asyncio
-    async def test_error_3_1(self, async_client, async_db):
+    async def test_error_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -261,7 +263,7 @@ class TestDeleteIssuerAuthToken:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
@@ -274,7 +276,7 @@ class TestDeleteIssuerAuthToken:
     # AuthorizationError
     # eoa-password (or auth-token) is not correct
     @pytest.mark.asyncio
-    async def test_error_3_2(self, async_client, async_db):
+    async def test_error_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data
@@ -308,7 +310,7 @@ class TestDeleteIssuerAuthToken:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
@@ -320,7 +322,7 @@ class TestDeleteIssuerAuthToken:
     # Error_4
     # NotFound
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
 
         # prepare data

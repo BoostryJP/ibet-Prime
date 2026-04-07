@@ -21,6 +21,8 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.mark.asyncio
@@ -39,7 +41,7 @@ class TestGetERC20Balance:
         "app.routers.misc.ibet_wst.EthereumERC20.balance_of",
         AsyncMock(return_value=1000),
     )
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
         token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
@@ -64,7 +66,7 @@ class TestGetERC20Balance:
         "app.routers.misc.ibet_wst.AvalancheERC20.balance_of",
         AsyncMock(return_value=1000),
     )
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
         token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
@@ -85,7 +87,7 @@ class TestGetERC20Balance:
 
     # <Normal_2>
     # Return 0 balance if token does not exist
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
         token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
@@ -110,7 +112,7 @@ class TestGetERC20Balance:
     # <Error_1>
     # Missing parameters
     # - Return 422 error
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.get(
             self.api_url,
@@ -140,7 +142,7 @@ class TestGetERC20Balance:
     # <Error_2>
     # Invalid addresses
     # - Return 422 error
-    async def test_error_2(self, async_client):
+    async def test_error_2(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.get(
             self.api_url,

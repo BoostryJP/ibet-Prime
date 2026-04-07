@@ -17,9 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import eth_keyfile
 import pytest
+from eth_keyfile.keyfile import decode_keyfile_json
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, AccountRsaStatus
 from app.model.ibet import IbetStraightBondContract
@@ -38,7 +40,7 @@ class TestChangeIssuerEOAPassword:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
@@ -68,13 +70,16 @@ class TestChangeIssuerEOAPassword:
         assert resp.status_code == 200
         assert resp.json() is None
         _account = (await async_db.scalars(select(Account).limit(1))).first()
+        assert _account is not None
         _account_keyfile = _account.keyfile
+        assert _account_keyfile is not None
+        assert _account.eoa_password is not None
         _account_eoa_password = E2EEUtils.decrypt(_account.eoa_password)
         assert _account_keyfile != _old_keyfile
         assert _account_eoa_password == _new_password
 
         # deploy test
-        private_key = eth_keyfile.decode_keyfile_json(
+        private_key = decode_keyfile_json(
             raw_keyfile_json=_account_keyfile,
             password=_account_eoa_password.encode("utf-8"),
         )
@@ -102,7 +107,7 @@ class TestChangeIssuerEOAPassword:
     # <Error_1>
     # parameter error(required body)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
@@ -126,7 +131,7 @@ class TestChangeIssuerEOAPassword:
     # <Error_2>
     # parameter error(required field)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
@@ -161,7 +166,7 @@ class TestChangeIssuerEOAPassword:
     # <Error_3>
     # parameter error(not decrypt)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_password = "password"
@@ -203,7 +208,7 @@ class TestChangeIssuerEOAPassword:
     # <Error_4>
     # No data
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _old_password = "password"
         _new_password = "passwordnew"
 
@@ -226,7 +231,7 @@ class TestChangeIssuerEOAPassword:
     # <Error_5>
     # old password mismatch
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
@@ -262,7 +267,7 @@ class TestChangeIssuerEOAPassword:
     # <Error_6>
     # password policy
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]

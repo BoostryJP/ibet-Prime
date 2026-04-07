@@ -23,9 +23,11 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.db import Account, AuthToken, Token, TokenStatus, TokenType, TokenVersion
 from app.model.ibet.tx_params.ibet_security_token import ForceLockParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
@@ -45,7 +47,10 @@ class TestForceLock:
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_1(
-        self, IbetSecurityTokenInterface_mock, async_client, async_db
+        self,
+        IbetSecurityTokenInterface_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -96,14 +101,10 @@ class TestForceLock:
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
             tx_params=ForceLockParams(
-                **{
-                    "lock_address": _lock_address,
-                    "account_address": account_address,
-                    "value": 10,
-                    "data": json.dumps(
-                        {"message": "force_lock"}, separators=(",", ":")
-                    ),
-                }
+                lock_address=_lock_address,
+                account_address=account_address,
+                value=10,
+                data=json.dumps({"message": "force_lock"}, separators=(",", ":")),
             ),
             tx_sender=_admin_address,
             tx_sender_key=ANY,
@@ -118,7 +119,10 @@ class TestForceLock:
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_1_2(
-        self, IbetSecurityTokenInterface_mock, async_client, async_db
+        self,
+        IbetSecurityTokenInterface_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -170,14 +174,10 @@ class TestForceLock:
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
             tx_params=ForceLockParams(
-                **{
-                    "lock_address": _lock_address,
-                    "account_address": account_address,
-                    "value": 10,
-                    "data": json.dumps(
-                        {"message": "garnishment"}, separators=(",", ":")
-                    ),
-                }
+                lock_address=_lock_address,
+                account_address=account_address,
+                value=10,
+                data=json.dumps({"message": "garnishment"}, separators=(",", ":")),
             ),
             tx_sender=_admin_address,
             tx_sender_key=ANY,
@@ -191,7 +191,10 @@ class TestForceLock:
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_lock")
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, IbetSecurityTokenInterface_mock, async_client, async_db
+        self,
+        IbetSecurityTokenInterface_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -245,14 +248,10 @@ class TestForceLock:
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
             tx_params=ForceLockParams(
-                **{
-                    "lock_address": _lock_address,
-                    "account_address": account_address,
-                    "value": 10,
-                    "data": json.dumps(
-                        {"message": "force_lock"}, separators=(",", ":")
-                    ),
-                }
+                lock_address=_lock_address,
+                account_address=account_address,
+                value=10,
+                data=json.dumps({"message": "force_lock"}, separators=(",", ":")),
             ),
             tx_sender=_admin_address,
             tx_sender_key=ANY,
@@ -269,11 +268,11 @@ class TestForceLock:
     # RequestValidationError
     # Required fields are not set
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target API
-        req_param = {}
+        req_param: dict[str, str] = {}
         resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
@@ -311,7 +310,7 @@ class TestForceLock:
     # - address is invalid
     # - value is not greater than 0
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
@@ -362,7 +361,7 @@ class TestForceLock:
     # RequestValidationError
     # Header and body are required
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
         # request target API
         resp = await async_client.post(
@@ -393,7 +392,7 @@ class TestForceLock:
     # RequestValidationError
     # issuer-address is not a valid address
     @pytest.mark.asyncio
-    async def test_error_1_4(self, async_client, async_db):
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -435,7 +434,7 @@ class TestForceLock:
     # RequestValidationError
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
-    async def test_error_1_5(self, async_client, async_db):
+    async def test_error_1_5(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -480,7 +479,7 @@ class TestForceLock:
     # RequestValidationError
     # Invalid message
     @pytest.mark.asyncio
-    async def test_error_1_6(self, async_client, async_db):
+    async def test_error_1_6(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -537,7 +536,7 @@ class TestForceLock:
     # AuthorizationError
     # Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -575,7 +574,7 @@ class TestForceLock:
     # AuthorizationError
     # Password mismatch
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -621,7 +620,7 @@ class TestForceLock:
     # InvalidParameterError
     # account_address is not a valid address
     @pytest.mark.asyncio
-    async def test_error_3_1(self, async_client, async_db):
+    async def test_error_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "invalid_address"
 
         _admin_account = default_eth_account("user1")
@@ -676,7 +675,7 @@ class TestForceLock:
     # InvalidParameterError
     # token not found
     @pytest.mark.asyncio
-    async def test_error_3_2(self, async_client, async_db):
+    async def test_error_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -722,7 +721,7 @@ class TestForceLock:
     # InvalidParameterError
     # token is temporarily unavailable
     @pytest.mark.asyncio
-    async def test_error_3_3(self, async_client, async_db):
+    async def test_error_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -746,7 +745,7 @@ class TestForceLock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -777,7 +776,7 @@ class TestForceLock:
     # <Error_4>
     # OperationNotSupportedVersionError
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -835,7 +834,7 @@ class TestForceLock:
         MagicMock(side_effect=ContractRevertError(code_msg="121601")),
     )
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -893,7 +892,7 @@ class TestForceLock:
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")

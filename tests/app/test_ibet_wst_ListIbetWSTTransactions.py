@@ -22,6 +22,8 @@ import uuid
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     AvaIbetWSTTx,
@@ -66,7 +68,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_1>
     # Return empty list when no transactions found for the specified address
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -123,7 +125,9 @@ class TestListIbetWSTTransactions:
     # <Normal_2_1_1>
     # Return transactions for the specified address
     # - blockchain_platform = "ethereum" (default)
-    async def test_normal_2_1_1(self, async_db, async_client):
+    async def test_normal_2_1_1(
+        self, async_db: AsyncSession, async_client: AsyncClient
+    ):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -236,7 +240,9 @@ class TestListIbetWSTTransactions:
     # <Normal_2_1_2>
     # Return transactions for the specified address
     # - blockchain_platform = "avalanche"
-    async def test_normal_2_1_2(self, async_db, async_client):
+    async def test_normal_2_1_2(
+        self, async_db: AsyncSession, async_client: AsyncClient
+    ):
         tx_id_1 = str(uuid.uuid4())
         tx_1 = AvaIbetWSTTx()
         tx_1.tx_id = tx_id_1
@@ -283,7 +289,7 @@ class TestListIbetWSTTransactions:
     # <Normal_2_2>
     # Return transactions for the specified address
     # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
-    async def test_normal_2_2(self, async_db, async_client):
+    async def test_normal_2_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -376,7 +382,7 @@ class TestListIbetWSTTransactions:
     # <Normal_2_3>
     # Return transactions for the specified address
     # - For trade-related transactions, handle large sc_value correctly (greater than 2^63-1)
-    async def test_normal_2_3(self, async_db, async_client):
+    async def test_normal_2_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -437,7 +443,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_1>
     # Filter by tx_id
-    async def test_normal_3_1(self, async_db, async_client):
+    async def test_normal_3_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -536,7 +542,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_2>
     # Filter by tx_type
-    async def test_normal_3_2(self, async_db, async_client):
+    async def test_normal_3_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -635,7 +641,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_3>
     # Filter by tx_hash
-    async def test_normal_3_3(self, async_db, async_client):
+    async def test_normal_3_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -734,7 +740,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_4>
     # Filter by authorizer
-    async def test_normal_3_4(self, async_db, async_client):
+    async def test_normal_3_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -833,7 +839,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_5>
     # Filter by finalized status
-    async def test_normal_3_5(self, async_db, async_client):
+    async def test_normal_3_5(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -929,7 +935,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_6>
     # Filter by created date range
-    async def test_normal_3_6(self, async_db, async_client):
+    async def test_normal_3_6(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -1062,7 +1068,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_7>
     # Filter by status
-    async def test_normal_3_7(self, async_db, async_client):
+    async def test_normal_3_7(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -1168,7 +1174,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_4>
     # Return transactions with pagination
-    async def test_normal_4(self, async_db, async_client):
+    async def test_normal_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -1272,7 +1278,7 @@ class TestListIbetWSTTransactions:
 
     # <Error_1>
     # Return error when required query parameter is missing
-    async def test_error_1(self, async_db, async_client):
+    async def test_error_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request with pagination
         resp = await async_client.get(self.api_url, params={})
 
@@ -1292,7 +1298,7 @@ class TestListIbetWSTTransactions:
 
     # <Error_2>
     # Return error when query parameters are invalid
-    async def test_error_2(self, async_db, async_client):
+    async def test_error_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request with pagination
         resp = await async_client.get(
             self.api_url,

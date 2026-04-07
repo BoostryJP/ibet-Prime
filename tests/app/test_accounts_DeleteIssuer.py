@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, AccountRsaStatus
 from tests.account_config import default_eth_account
@@ -34,7 +36,7 @@ class TestDeleteIssuer:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _admin_account = default_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -60,6 +62,7 @@ class TestDeleteIssuer:
             "is_deleted": True,
         }
         _account_after = (await async_db.scalars(select(Account).limit(1))).first()
+        assert _account_after is not None
         assert _account_after.issuer_address == _admin_account["address"]
         assert _account_after.is_deleted == True
 
@@ -70,7 +73,7 @@ class TestDeleteIssuer:
     # <Error_1>
     # No data
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.delete(
             self.base_url.format("non_existent_issuer_address")
