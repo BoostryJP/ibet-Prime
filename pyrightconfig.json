@@ -1,51 +1,16 @@
 {
     "include": [
         "config.py",
-        "app/main.py",
-        "app/database.py",
-        "app/exceptions.py",
-        "app/log.py",
-        "app/utils",
-        "app/model/ibet",
-        "app/model/wst",
-        "app/model/schema",
-        "app/model/db",
-        "app/routers/common",
-        "app/routers/issuer/account.py",
-        "app/routers/issuer/bond.py",
-        "app/routers/issuer/file.py",
-        "app/routers/issuer/ledger.py",
-        "app/routers/issuer/notification.py",
-        "app/routers/issuer/position.py",
-        // "app/routers/issuer/settlement_issuer.py",
-        "app/routers/issuer/share.py",
-        "app/routers/issuer/token_common.py",
-        "app/routers/issuer/token_holders.py",
-        "app/routers/misc",
-        "tests/conftest.py",
-        "tests/app/model",
-        "tests/app/utils",
-        "tests/app/test_docs_GET.py",
-        "tests/app/test_e2ee_GetE2EEncryptionKey.py",  // common
-        "tests/app/test_common_*.py",  // common
-        "tests/app/test_accounts_*.py",  // issuer
-        "tests/app/test_bond_*.py",  // issuer
-        "tests/app/test_file_*.py",  // issuer
-        "tests/app/test_ledger_*.py",  // issuer
-        "tests/app/test_notifications_*.py",  // issuer
-        "tests/app/test_positions_*.py",  // issuer
-        // "tests/app/test_settlement_issuer_*.py",  // issuer
-        "tests/app/test_share_*.py",  // issuer
-        "tests/app/test_token_common_*.py",  // issuer
-        "tests/app/test_token_holders_*.py",  // issuer
-        "tests/app/test_blockchain_explorer_*.py",  // misc
-        "tests/app/test_e2e_messaging_*.py",  // misc
-        "tests/app/test_freeze_log_*.py",  // misc
-        "tests/app/test_ibet_wst_*.py",  // misc
-        "tests/app/test_sealed_tx_*.py",  // misc
-        "tests/app/test_settlement_agent_*.py",  // misc
+        "eth_config.py",
+        "avalanche_config.py",
+        "app/",
+        "tests/app/",
         "tests/batch/test_indexer_token_cache.py",
-        "tests/batch/test_processor_create_ledger.py"
+        "tests/batch/test_processor_create_ledger.py",
+        "tests/account_config.py",
+        "tests/conftest.py",
+        "tests/contract_utils.py",
+        "tests/types.py"
     ],
     "exclude": [
         "**/node_modules",
@@ -56,7 +21,6 @@
         "batch/",
         "cmd/",
         "docs/",
-        "eth_config.py",
         "migrations/",
         "run.py",
         "server.py"
