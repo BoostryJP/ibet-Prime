@@ -18,11 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+from collections.abc import Generator, Sequence
 from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3.types import RPCEndpoint
 
 from app.model.db import (
@@ -40,7 +42,9 @@ from batch.indexer_wst_ava_trades import Processor
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> Generator[Processor, None, None]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -79,7 +83,12 @@ class TestProcessor:
     # <Normal_1_1>
     # No target tokens to process
     # - The synchronized block number is updated.
-    async def test_normal_1_1(self, processor, async_db, caplog):
+    async def test_normal_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
@@ -107,9 +116,10 @@ class TestProcessor:
         async_db.expire_all()
 
         # Check IDXAvaIbetWSTTradeBlockNumber
-        synced_block_number = (
+        synced_block_number: IDXAvaIbetWSTTradeBlockNumber | None = (
             await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
+        assert synced_block_number is not None
         assert synced_block_number.latest_block_number == latest_finalized_block
 
         # Check log
@@ -122,7 +132,12 @@ class TestProcessor:
     # Issuer is deleted
     # - Not included in the processing target.
     # - The synchronized block number is updated.
-    async def test_normal_1_2(self, processor, async_db, caplog):
+    async def test_normal_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
@@ -151,9 +166,10 @@ class TestProcessor:
         async_db.expire_all()
 
         # Check IDXAvaIbetWSTTradeBlockNumber
-        synced_block_number = (
+        synced_block_number: IDXAvaIbetWSTTradeBlockNumber | None = (
             await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
+        assert synced_block_number is not None
         assert synced_block_number.latest_block_number == latest_finalized_block
 
         # Check log
@@ -192,7 +208,12 @@ class TestProcessor:
             )
         ),
     )
-    async def test_normal_2_1(self, processor, async_db, caplog):
+    async def test_normal_2_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
@@ -221,13 +242,14 @@ class TestProcessor:
         async_db.expire_all()
 
         # Check IDXAvaIbetWSTTrade data
-        wst_trade = (
+        wst_trade: IDXAvaIbetWSTTrade | None = (
             await async_db.scalars(
                 select(IDXAvaIbetWSTTrade)
                 .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
+        assert wst_trade is not None
         assert wst_trade.index == 1
         assert wst_trade.seller_st_account_address == self.user_address_1
         assert wst_trade.buyer_st_account_address == self.user_address_2
@@ -240,9 +262,10 @@ class TestProcessor:
         assert wst_trade.memo == ""
 
         # Check IDXAvaIbetWSTTradeBlockNumber
-        synced_block_number = (
+        synced_block_number: IDXAvaIbetWSTTradeBlockNumber | None = (
             await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
+        assert synced_block_number is not None
         assert synced_block_number.latest_block_number == latest_finalized_block
 
         # Check log
@@ -281,7 +304,12 @@ class TestProcessor:
             )
         ),
     )
-    async def test_normal_2_2(self, processor, async_db, caplog):
+    async def test_normal_2_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
@@ -310,18 +338,20 @@ class TestProcessor:
         async_db.expire_all()
 
         # Check IDXAvaIbetWSTTradeBlockNumber
-        synced_block_number = (
+        synced_block_number: IDXAvaIbetWSTTradeBlockNumber | None = (
             await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
+        assert synced_block_number is not None
         assert synced_block_number.latest_block_number == latest_finalized_block
 
-        wst_trade = (
+        wst_trade: IDXAvaIbetWSTTrade | None = (
             await async_db.scalars(
                 select(IDXAvaIbetWSTTrade)
                 .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
+        assert wst_trade is not None
         assert wst_trade.index == 1
         assert wst_trade.seller_st_account_address == self.user_address_1
         assert wst_trade.buyer_st_account_address == self.user_address_2
@@ -369,7 +399,12 @@ class TestProcessor:
             )
         ),
     )
-    async def test_normal_2_3(self, processor, async_db, caplog):
+    async def test_normal_2_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
@@ -398,18 +433,20 @@ class TestProcessor:
         async_db.expire_all()
 
         # Check IDXAvaIbetWSTTradeBlockNumber
-        synced_block_number = (
+        synced_block_number: IDXAvaIbetWSTTradeBlockNumber | None = (
             await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
+        assert synced_block_number is not None
         assert synced_block_number.latest_block_number == latest_finalized_block
 
-        wst_trade = (
+        wst_trade: IDXAvaIbetWSTTrade | None = (
             await async_db.scalars(
                 select(IDXAvaIbetWSTTrade)
                 .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
+        assert wst_trade is not None
         assert wst_trade.index == 1
         assert wst_trade.seller_st_account_address == self.user_address_1
         assert wst_trade.buyer_st_account_address == self.user_address_2
@@ -457,7 +494,12 @@ class TestProcessor:
             )
         ),
     )
-    async def test_normal_2_4(self, processor, async_db, caplog):
+    async def test_normal_2_4(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
@@ -486,18 +528,20 @@ class TestProcessor:
         async_db.expire_all()
 
         # Check IDXAvaIbetWSTTradeBlockNumber
-        synced_block_number = (
+        synced_block_number: IDXAvaIbetWSTTradeBlockNumber | None = (
             await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
+        assert synced_block_number is not None
         assert synced_block_number.latest_block_number == latest_finalized_block
 
-        wst_trade = (
+        wst_trade: IDXAvaIbetWSTTrade | None = (
             await async_db.scalars(
                 select(IDXAvaIbetWSTTrade)
                 .where(IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1)
                 .limit(1)
             )
         ).first()
+        assert wst_trade is not None
         assert wst_trade.index == 1
         assert wst_trade.seller_st_account_address == self.user_address_1
         assert wst_trade.buyer_st_account_address == self.user_address_2
@@ -545,7 +589,12 @@ class TestProcessor:
             ),
         ),
     )
-    async def test_normal_3(self, processor, async_db, caplog):
+    async def test_normal_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
@@ -574,12 +623,13 @@ class TestProcessor:
         async_db.expire_all()
 
         # Check IDXAvaIbetWSTTradeBlockNumber
-        synced_block_number = (
+        synced_block_number: IDXAvaIbetWSTTradeBlockNumber | None = (
             await async_db.scalars(select(IDXAvaIbetWSTTradeBlockNumber).limit(1))
         ).first()
+        assert synced_block_number is not None
         assert synced_block_number.latest_block_number == latest_finalized_block
 
-        wst_trade = (
+        wst_trade: Sequence[IDXAvaIbetWSTTrade] = (
             await async_db.scalars(
                 select(IDXAvaIbetWSTTrade).where(
                     IDXAvaIbetWSTTrade.ibet_wst_address == self.ibet_wst_address_1,

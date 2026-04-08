@@ -21,13 +21,14 @@ import asyncio
 import json
 import sys
 from datetime import UTC, datetime
-from typing import Sequence
+from typing import Any, Sequence
 
 import uvloop
 from eth_utils.address import to_checksum_address
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from web3.types import BlockData
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -60,7 +61,7 @@ web3 = AsyncWeb3Wrapper()
 
 class Processor:
     def __init__(self):
-        self.personal_info_contract_list = []
+        self.personal_info_contract_list: list[PersonalInfoContract] = []
 
     async def process(self):
         db_session = BatchAsyncSessionLocal()
@@ -122,14 +123,14 @@ class Processor:
                 .where(Token.token_status == TokenStatus.SUCCEEDED)
             )
         ).all()
-        tmp_list = []
+        tmp_list: list[dict[str, str]] = []
         for _token in _tokens:
             personal_info_address = ZERO_ADDRESS
-            if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
+            if _token.type == TokenType.IBET_STRAIGHT_BOND:
                 bond_token = IbetStraightBondContract(_token.token_address)
                 await bond_token.get()
                 personal_info_address = bond_token.personal_info_contract_address
-            elif _token.type == TokenType.IBET_SHARE.value:
+            elif _token.type == TokenType.IBET_SHARE:
                 share_token = IbetShareContract(_token.token_address)
                 await share_token.get()
                 personal_info_address = share_token.personal_info_contract_address
@@ -153,6 +154,8 @@ class Processor:
                     .limit(1)
                 )
             ).first()
+            if issuer_account is None:
+                continue
             personal_info_contract = PersonalInfoContract(
                 logger=LOG,
                 issuer=issuer_account,
@@ -161,7 +164,7 @@ class Processor:
             self.personal_info_contract_list.append(personal_info_contract)
 
     @staticmethod
-    async def __get_block_number(db_session: AsyncSession):
+    async def __get_block_number(db_session: AsyncSession) -> int:
         """Get the most recent blockNumber"""
         block_number: IDXPersonalInfoBlockNumber | None = (
             await db_session.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
@@ -196,7 +199,7 @@ class Processor:
         )
 
     async def __sync_personal_info_register(
-        self, db_session: AsyncSession, block_from, block_to
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         for _personal_info_contract in self.personal_info_contract_list:
             try:
@@ -208,9 +211,12 @@ class Processor:
                     account_address = args.get("account_address", ZERO_ADDRESS)
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
-                        block = await web3.eth.get_block(event["blockNumber"])
+                        block_number = event["blockNumber"]
+                        block: BlockData = await web3.eth.get_block(block_number)
+                        block_timestamp = block.get("timestamp")
+                        assert block_timestamp is not None
                         timestamp = datetime.fromtimestamp(
-                            block["timestamp"], UTC
+                            int(block_timestamp), UTC
                         ).replace(tzinfo=None)
                         decrypted_personal_info = (
                             await _personal_info_contract.get_info(
@@ -230,7 +236,7 @@ class Processor:
                 raise
 
     async def __sync_personal_info_modify(
-        self, db_session: AsyncSession, block_from, block_to
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         for _personal_info_contract in self.personal_info_contract_list:
             try:
@@ -242,9 +248,12 @@ class Processor:
                     account_address = args.get("account_address", ZERO_ADDRESS)
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
-                        block = await web3.eth.get_block(event["blockNumber"])
+                        block_number = event["blockNumber"]
+                        block: BlockData = await web3.eth.get_block(block_number)
+                        block_timestamp = block.get("timestamp")
+                        assert block_timestamp is not None
                         timestamp = datetime.fromtimestamp(
-                            block["timestamp"], UTC
+                            int(block_timestamp), UTC
                         ).replace(tzinfo=None)
                         decrypted_personal_info = (
                             await _personal_info_contract.get_info(
@@ -269,7 +278,7 @@ class Processor:
         account_address: str,
         issuer_address: str,
         event_type: PersonalInfoEventType,
-        personal_info: dict,
+        personal_info: dict[str, Any],
         timestamp: datetime,
     ):
         _personal_info: IDXPersonalInfo | None = (

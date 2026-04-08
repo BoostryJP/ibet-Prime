@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import logging
 from datetime import UTC, datetime
+from typing import Sequence
 from unittest import mock
 from unittest.mock import patch
 
@@ -27,8 +28,8 @@ from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
-from web3.middleware import ExtraDataToPOAMiddleware
+from web3.contract import Contract
+from web3.types import TxReceipt
 
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
@@ -37,6 +38,7 @@ from app.model.db import (
     IDXIssueRedeemBlockNumber,
     IDXIssueRedeemEventType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -51,11 +53,10 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from batch.indexer_issue_redeem import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
+from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import default_eth_account
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+web3 = AsyncWeb3Wrapper()
 
 
 @pytest.fixture(scope="function")
@@ -70,7 +71,7 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -81,11 +82,11 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
 ):
     arguments = [
         "token.name",
@@ -117,11 +118,11 @@ async def deploy_bond_token_contract(
 
 
 async def deploy_share_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
 ):
     arguments = [
         "token.name",
@@ -150,6 +151,19 @@ async def deploy_share_token_contract(
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
+def _get_block_number(tx_receipt: TxReceipt) -> int:
+    block_number = tx_receipt.get("blockNumber")
+    assert block_number is not None
+    return block_number
+
+
+async def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:
+    block = await web3.eth.get_block(_get_block_number(tx_receipt))
+    timestamp = block.get("timestamp")
+    assert timestamp is not None
+    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
+
+
 class TestProcessor:
     ###########################################################################
     # Normal Case
@@ -158,7 +172,12 @@ class TestProcessor:
     # Normal_1
     # No token issued
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
@@ -169,13 +188,13 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = {}
         token_1.tx_hash = "tx_hash"
-        token_1.token_status = 0
+        token_1.token_status = TokenStatus.PENDING
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
         await async_db.commit()
 
         # Run target process
-        block_number = web3.eth.block_number
+        block_number = await web3.eth.block_number
         await processor.sync_new_logs()
         async_db.expire_all()
 
@@ -186,13 +205,19 @@ class TestProcessor:
         idx_block_number = (
             await async_db.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
+        assert idx_block_number is not None
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
     # Normal_2
     # No events emitted
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -219,7 +244,7 @@ class TestProcessor:
         await async_db.commit()
 
         # Run target process
-        block_number = web3.eth.block_number
+        block_number = await web3.eth.block_number
         await processor.sync_new_logs()
         async_db.expire_all()
 
@@ -230,6 +255,7 @@ class TestProcessor:
         idx_block_number = (
             await async_db.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
+        assert idx_block_number is not None
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -237,7 +263,12 @@ class TestProcessor:
     # "Issue" event has been emitted
     # Bond
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_3_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -284,12 +315,12 @@ class TestProcessor:
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.block_number
+        block_number = await web3.eth.block_number
         await processor.sync_new_logs()
         async_db.expire_all()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = (
+        event_list: Sequence[IDXIssueRedeem] = (
             await async_db.scalars(select(IDXIssueRedeem))
         ).all()
         assert len(event_list) == 1
@@ -301,14 +332,12 @@ class TestProcessor:
         assert event_0.locked_address == ZERO_ADDRESS
         assert event_0.target_address == issuer_address
         assert event_0.amount == 40
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert event_0.block_timestamp == await _get_block_timestamp(tx_receipt_1)
 
         idx_block_number = (
             await async_db.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
+        assert idx_block_number is not None
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -316,7 +345,12 @@ class TestProcessor:
     # "Issue" event has been emitted
     # Share
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_3_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -363,12 +397,12 @@ class TestProcessor:
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.block_number
+        block_number = await web3.eth.block_number
         await processor.sync_new_logs()
         async_db.expire_all()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = (
+        event_list: Sequence[IDXIssueRedeem] = (
             await async_db.scalars(select(IDXIssueRedeem))
         ).all()
         assert len(event_list) == 1
@@ -380,14 +414,12 @@ class TestProcessor:
         assert event_0.locked_address == ZERO_ADDRESS
         assert event_0.target_address == issuer_address
         assert event_0.amount == 40
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert event_0.block_timestamp == await _get_block_timestamp(tx_receipt_1)
 
         idx_block_number = (
             await async_db.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
+        assert idx_block_number is not None
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -395,7 +427,12 @@ class TestProcessor:
     # "Redeem" event has been emitted
     # Bond
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_4_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -442,12 +479,12 @@ class TestProcessor:
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.block_number
+        block_number = await web3.eth.block_number
         await processor.sync_new_logs()
         async_db.expire_all()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = (
+        event_list: Sequence[IDXIssueRedeem] = (
             await async_db.scalars(select(IDXIssueRedeem))
         ).all()
         assert len(event_list) == 1
@@ -459,14 +496,12 @@ class TestProcessor:
         assert event_0.locked_address == ZERO_ADDRESS
         assert event_0.target_address == issuer_address
         assert event_0.amount == 10
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert event_0.block_timestamp == await _get_block_timestamp(tx_receipt_1)
 
         idx_block_number = (
             await async_db.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
+        assert idx_block_number is not None
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -474,7 +509,12 @@ class TestProcessor:
     # "Redeem" event has been emitted
     # Share
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_4_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -521,12 +561,12 @@ class TestProcessor:
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.block_number
+        block_number = await web3.eth.block_number
         await processor.sync_new_logs()
         async_db.expire_all()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = (
+        event_list: Sequence[IDXIssueRedeem] = (
             await async_db.scalars(select(IDXIssueRedeem))
         ).all()
         assert len(event_list) == 1
@@ -538,21 +578,24 @@ class TestProcessor:
         assert event_0.locked_address == ZERO_ADDRESS
         assert event_0.target_address == issuer_address
         assert event_0.amount == 10
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert event_0.block_timestamp == await _get_block_timestamp(tx_receipt_1)
 
         idx_block_number = (
             await async_db.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
+        assert idx_block_number is not None
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
     # Normal_5
     # Multiple events have been emitted
     @pytest.mark.asyncio
-    async def test_normal_5(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_5(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -611,12 +654,12 @@ class TestProcessor:
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.block_number
+        block_number = await web3.eth.block_number
         await processor.sync_new_logs()
         async_db.expire_all()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = (
+        event_list: Sequence[IDXIssueRedeem] = (
             await async_db.scalars(select(IDXIssueRedeem))
         ).all()
         assert len(event_list) == 2
@@ -629,10 +672,7 @@ class TestProcessor:
         assert event_0.locked_address == ZERO_ADDRESS
         assert event_0.target_address == issuer_address
         assert event_0.amount == 10
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert event_0.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert event_0.block_timestamp == await _get_block_timestamp(tx_receipt_1)
 
         event_1 = event_list[1]
         assert event_1.id == 2
@@ -642,14 +682,12 @@ class TestProcessor:
         assert event_1.locked_address == ZERO_ADDRESS
         assert event_1.target_address == issuer_address
         assert event_1.amount == 20
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert event_1.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert event_1.block_timestamp == await _get_block_timestamp(tx_receipt_2)
 
         idx_block_number = (
             await async_db.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
+        assert idx_block_number is not None
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -659,7 +697,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     @mock.patch("web3.eth.Eth.block_number", 100)
     async def test_normal_6(
-        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         _idx_position_bond_block_number = IDXIssueRedeemBlockNumber()
         _idx_position_bond_block_number.id = 1
@@ -676,7 +717,10 @@ class TestProcessor:
     # Newly tokens added
     @pytest.mark.asyncio
     async def test_normal_7(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -753,9 +797,9 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(
         self,
-        main_func,
-        async_db,
-        ibet_personal_info_contract,
+        main_func,  # type: ignore
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")

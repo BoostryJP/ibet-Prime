@@ -20,13 +20,14 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 from datetime import UTC, datetime
-from typing import Sequence
+from typing import Sequence, cast
 
 import uvloop
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from web3.types import BlockData
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -144,34 +145,35 @@ class Processor:
         ).all()
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=load_required_token.token_address, abi=load_required_token.abi
+                address=to_checksum_address(load_required_token.token_address),
+                abi=load_required_token.abi,
             )
             self.token_list[load_required_token.token_address] = (
                 AsyncContractEventsView(token_contract.address, token_contract.events)
             )
 
     @staticmethod
-    async def __get_idx_issue_redeem_block_number(db_session: AsyncSession):
-        _idx_transfer_block_number = (
+    async def __get_idx_issue_redeem_block_number(db_session: AsyncSession) -> int:
+        _idx_block_number = (
             await db_session.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
-        if _idx_transfer_block_number is None:
+        if _idx_block_number is None:
             return 0
         else:
-            return _idx_transfer_block_number.latest_block_number
+            return _idx_block_number.latest_block_number
 
     @staticmethod
     async def __set_idx_transfer_block_number(
         db_session: AsyncSession, block_number: int
     ):
-        _idx_transfer_block_number = (
+        _idx_block_number = (
             await db_session.scalars(select(IDXIssueRedeemBlockNumber).limit(1))
         ).first()
-        if _idx_transfer_block_number is None:
-            _idx_transfer_block_number = IDXIssueRedeemBlockNumber()
+        if _idx_block_number is None:
+            _idx_block_number = IDXIssueRedeemBlockNumber()
 
-        _idx_transfer_block_number.latest_block_number = block_number
-        await db_session.merge(_idx_transfer_block_number)
+        _idx_block_number.latest_block_number = block_number
+        await db_session.merge(_idx_block_number)
 
     async def __sync_all(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -179,6 +181,14 @@ class Processor:
         LOG.info(f"Syncing from={block_from}, to={block_to}")
         await self.__sync_issue(db_session, block_from, block_to)
         await self.__sync_redeem(db_session, block_from, block_to)
+
+    @staticmethod
+    async def __get_block_timestamp(event: dict[str, object]) -> datetime:
+        block_number = cast(int, event.get("blockNumber"))
+        block: BlockData = await web3.eth.get_block(block_number)
+        block_timestamp = block.get("timestamp")
+        assert block_timestamp is not None
+        return datetime.fromtimestamp(int(block_timestamp), UTC).replace(tzinfo=None)
 
     async def __sync_issue(
         self, db_session: AsyncSession, block_from: int, block_to: int
@@ -201,11 +211,9 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
-                    block_timestamp = datetime.fromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
-                        UTC,
-                    ).replace(tzinfo=None)
-                    if args["amount"] > sys.maxsize:
+                    block_timestamp = await self.__get_block_timestamp(event)
+                    amount = args["amount"]
+                    if amount > sys.maxsize:
                         pass
                     else:
                         await self.__insert_index(
@@ -215,7 +223,7 @@ class Processor:
                             token_address=to_checksum_address(token.address),
                             locked_address=args["lockAddress"],
                             target_address=args["targetAddress"],
-                            amount=args["amount"],
+                            amount=amount,
                             block_timestamp=block_timestamp,
                         )
             except Exception:
@@ -242,11 +250,9 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
-                    block_timestamp = datetime.fromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
-                        UTC,
-                    ).replace(tzinfo=None)
-                    if args["amount"] > sys.maxsize:
+                    block_timestamp = await self.__get_block_timestamp(event)
+                    amount = args["amount"]
+                    if amount > sys.maxsize:
                         pass
                     else:
                         await self.__insert_index(
@@ -256,7 +262,7 @@ class Processor:
                             token_address=to_checksum_address(token.address),
                             locked_address=args["lockAddress"],
                             target_address=args["targetAddress"],
-                            amount=args["amount"],
+                            amount=amount,
                             block_timestamp=block_timestamp,
                         )
             except Exception:

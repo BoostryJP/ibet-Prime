@@ -29,8 +29,11 @@ from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import TxReceipt
 
 import batch.indexer_e2e_messaging as indexer_e2e_messaging
 from app.model.db import (
@@ -50,11 +53,36 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, ibet_e2e_messaging_contract):
+def processor(
+    async_db: AsyncSession, ibet_e2e_messaging_contract: Contract
+) -> Processor:
     indexer_e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS = (
         ibet_e2e_messaging_contract.address
     )
     return Processor()
+
+
+def _get_block_number(tx_receipt: TxReceipt) -> int:
+    block_number = tx_receipt.get("blockNumber")
+    assert block_number is not None
+    return block_number
+
+
+def _get_timestamp(tx_receipt: TxReceipt) -> int:
+    block = web3.eth.get_block(_get_block_number(tx_receipt))
+    timestamp = block.get("timestamp")
+    assert timestamp is not None
+    return timestamp
+
+
+def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:
+    return datetime.fromtimestamp(_get_timestamp(tx_receipt), UTC).replace(tzinfo=None)
+
+
+def _shift_block_timestamp(tx_receipt: TxReceipt, seconds: int) -> datetime:
+    return datetime.fromtimestamp(_get_timestamp(tx_receipt) + seconds, UTC).replace(
+        tzinfo=None
+    )
 
 
 class TestProcessor:
@@ -135,7 +163,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_1>
     # No event logs
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(self, processor: Processor, async_db: AsyncSession):
         # Prepare data : BlockNumber
         _idx_e2e_messaging_block_number = IDXE2EMessagingBlockNumber()
         _idx_e2e_messaging_block_number.latest_block_number = 0
@@ -159,6 +187,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -166,7 +195,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Single event logs
     # not generated RSA key after send
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_2_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -199,10 +233,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_2,
             user_private_key_2,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        sending_block_timestamp = _get_block_timestamp(sending_tx_receipt)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -210,9 +241,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -242,6 +273,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -249,7 +281,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Single event logs
     # generated RSA key after send
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_2_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -282,10 +319,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_2,
             user_private_key_2,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        sending_block_timestamp = _get_block_timestamp(sending_tx_receipt)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -293,9 +327,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test1"
         _e2e_account_rsa_key.rsa_public_key = "test1"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 3, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -3
+        )
         async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -304,9 +338,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test2"
         _e2e_account_rsa_key.rsa_public_key = "test2"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 2, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -2
+        )
         async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -315,9 +349,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -326,9 +360,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test3"
         _e2e_account_rsa_key.rsa_public_key = "test3"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] + 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, 1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -337,9 +371,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = "test4"
         _e2e_account_rsa_key.rsa_public_key = "test4"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] + 2, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, 2
+        )
         async_db.add(_e2e_account_rsa_key)
         await async_db.commit()
 
@@ -367,13 +401,19 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
     # <Normal_3>
     # Multi event logs
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -404,7 +444,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         }
         message_message_str_1 = json.dumps(message)
 
-        sending_tx_hash_1, sending_tx_receipt = await E2EMessaging(
+        sending_tx_hash_1, sending_tx_receipt_1 = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
@@ -414,17 +454,14 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block_1 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_1 = datetime.fromtimestamp(
-            sending_block_1["timestamp"], UTC
-        ).replace(tzinfo=None)
+        sending_block_timestamp_1 = _get_block_timestamp(sending_tx_receipt_1)
 
         # Send Message(user3 -> user2)
         _type_2 = "test_type2"
         message = ["テスト太郎2", "東京都2"]
         message_message_str_2 = json.dumps(message)
 
-        sending_tx_hash_2, sending_tx_receipt = await E2EMessaging(
+        sending_tx_hash_2, sending_tx_receipt_2 = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_2,
@@ -434,16 +471,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block_2 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_2 = datetime.fromtimestamp(
-            sending_block_2["timestamp"], UTC
-        ).replace(tzinfo=None)
+        sending_block_timestamp_2 = _get_block_timestamp(sending_tx_receipt_2)
 
         # Send Message(user3 -> user1)
         _type_3 = "test_type3"
         message_message_str_3 = "テスト太郎1,東京都1"
 
-        sending_tx_hash_3, sending_tx_receipt = await E2EMessaging(
+        sending_tx_hash_3, sending_tx_receipt_3 = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
@@ -453,16 +487,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block_3 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_3 = datetime.fromtimestamp(
-            sending_block_3["timestamp"], UTC
-        ).replace(tzinfo=None)
+        sending_block_timestamp_3 = _get_block_timestamp(sending_tx_receipt_3)
 
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
         message_message_str_4 = "a" * 5000
 
-        sending_tx_hash_4, sending_tx_receipt = await E2EMessaging(
+        sending_tx_hash_4, sending_tx_receipt_4 = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message_external(
             user_address_2,
@@ -472,10 +503,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_3,
             user_private_key_3,
         )
-        sending_block_4 = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_4 = datetime.fromtimestamp(
-            sending_block_4["timestamp"], UTC
-        ).replace(tzinfo=None)
+        sending_block_timestamp_4 = _get_block_timestamp(sending_tx_receipt_4)
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -483,9 +511,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block_1["timestamp"] - 2, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt_1, -2
+        )
         async_db.add(_e2e_account_rsa_key)
 
         # Prepare data : E2EMessagingAccountRsaKey
@@ -494,9 +522,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block_1["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt_1, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -552,13 +580,19 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
     # <Normal_4>
     # Not target message
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_4(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -593,17 +627,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_2,
             user_private_key_2,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -623,6 +655,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -634,7 +667,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # not json
     @pytest.mark.asyncio
-    async def test_error_1_1(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -654,17 +692,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -684,6 +720,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -691,7 +728,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `type` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_2(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -709,7 +751,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -728,17 +770,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -758,6 +798,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -765,7 +806,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_3(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -789,17 +835,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -819,6 +863,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -826,7 +871,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text` max length over
     @pytest.mark.asyncio
-    async def test_error_1_4(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1_4(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -844,7 +894,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -861,17 +911,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -891,6 +939,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -898,7 +947,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text.cipher_key` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_5(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1_5(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -916,7 +970,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -932,17 +986,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -962,6 +1014,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -969,7 +1022,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # `text.message` does not exists
     @pytest.mark.asyncio
-    async def test_error_1_6(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1_6(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1002,17 +1060,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         # Run target process
@@ -1030,6 +1086,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1037,7 +1094,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # format error
     # decoded `text.message` max length over
     @pytest.mark.asyncio
-    async def test_error_1_7(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_1_7(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1055,7 +1117,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad(("a" * 5001).encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -1072,17 +1134,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -1102,13 +1162,19 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
     # <Error_2>
     # RSA key does not exists
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1141,17 +1207,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_address_2,
             user_private_key_2,
         )
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] + 1, UTC
-        ).replace(tzinfo=None)  # Registry after send message
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, 1
+        )  # Registry after send message
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -1171,6 +1235,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1178,7 +1243,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` is not AES key
     @pytest.mark.asyncio
-    async def test_error_3_1(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_3_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1196,7 +1266,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -1210,17 +1280,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -1240,6 +1308,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1247,7 +1316,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` does not encrypt with RSA key
     @pytest.mark.asyncio
-    async def test_error_3_2(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_3_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1265,7 +1339,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -1280,17 +1354,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -1310,6 +1382,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1317,7 +1390,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.cipher_key` encrypted other RSA key
     @pytest.mark.asyncio
-    async def test_error_3_3(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_3_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1338,7 +1416,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         other_rsa_public_key = rsa.publickey().exportKey().decode()
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -1355,17 +1433,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -1385,6 +1461,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1392,7 +1469,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.message` does not encrypt
     @pytest.mark.asyncio
-    async def test_error_3_4(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_3_4(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1421,7 +1503,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
 
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
@@ -1429,9 +1510,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -1451,6 +1532,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1458,7 +1540,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # message decode error
     # `text.message` encrypted other AES key
     @pytest.mark.asyncio
-    async def test_error_3_5(self, processor, async_db, ibet_e2e_messaging_contract):
+    async def test_error_3_5(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -1476,7 +1563,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(
             aes_iv + aes_cipher.encrypt(pad_message)
@@ -1494,17 +1581,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _, sending_tx_receipt = await E2EMessaging(
             ibet_e2e_messaging_contract.address
         ).send_message(user_address_1, message, user_address_2, user_private_key_2)
-        sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.fromtimestamp(
-            sending_block["timestamp"] - 1, UTC
-        ).replace(tzinfo=None)
+        _e2e_account_rsa_key.block_timestamp = _shift_block_timestamp(
+            sending_tx_receipt, -1
+        )
         async_db.add(_e2e_account_rsa_key)
 
         await async_db.commit()
@@ -1524,5 +1609,6 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _idx_e2e_messaging_block_number = (
             await async_db.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
+        assert _idx_e2e_messaging_block_number is not None
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
