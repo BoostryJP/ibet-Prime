@@ -266,10 +266,9 @@ else:
     e2ee_rsa_resource_mode = os.environ.get("E2EE_RSA_RESOURCE_MODE")
     e2ee_rsa_resource = os.environ.get("E2EE_RSA_RESOURCE")
     e2ee_rsa_passphrase = os.environ.get("E2EE_RSA_PASSPHRASE")
-    assert e2ee_rsa_resource_mode is not None
-    assert e2ee_rsa_resource is not None
-    assert e2ee_rsa_passphrase is not None
-E2EE_RSA_RESOURCE_MODE = int(e2ee_rsa_resource_mode)
+E2EE_RSA_RESOURCE_MODE = (
+    int(e2ee_rsa_resource_mode) if e2ee_rsa_resource_mode is not None else None
+)
 E2EE_RSA_RESOURCE = e2ee_rsa_resource
 E2EE_RSA_PASSPHRASE = e2ee_rsa_passphrase
 E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" else True
