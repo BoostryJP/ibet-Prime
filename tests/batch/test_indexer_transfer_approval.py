@@ -19,7 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 
 import logging
 from datetime import UTC, datetime
-from typing import cast
 from unittest import mock
 from unittest.mock import patch
 from uuid import UUID
@@ -159,14 +158,14 @@ async def deploy_share_token_contract(
 def _get_block_number(tx_receipt: TxReceipt) -> int:
     block_number = tx_receipt.get("blockNumber")
     assert block_number is not None
-    return cast(int, block_number)
+    return block_number
 
 
 def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:
     block = web3.eth.get_block(_get_block_number(tx_receipt))
     timestamp = block.get("timestamp")
     assert timestamp is not None
-    return datetime.fromtimestamp(cast(int, timestamp), UTC).replace(tzinfo=None)
+    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
 
 
 class TestProcessor:

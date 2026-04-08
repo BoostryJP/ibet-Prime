@@ -178,23 +178,20 @@ def _build_contract_transaction(
 ) -> TxParams:
     contract_functions = contract.functions
     contract_function = getattr(contract_functions, function_name)
-    return cast(
-        TxParams,
-        contract_function(*args).build_transaction(_build_tx_params(from_address)),
-    )
+    return contract_function(*args).build_transaction(_build_tx_params(from_address))
 
 
 def _get_block_number(tx_receipt: TxReceipt) -> int:
     block_number = tx_receipt.get("blockNumber")
     assert block_number is not None
-    return cast(int, block_number)
+    return block_number
 
 
 async def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:
     block = await web3.eth.get_block(_get_block_number(tx_receipt))
     timestamp = block.get("timestamp")
     assert timestamp is not None
-    return datetime.fromtimestamp(cast(int, timestamp), UTC).replace(tzinfo=None)
+    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
 
 
 class TestProcessor:

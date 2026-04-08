@@ -21,7 +21,7 @@ import asyncio
 import json
 import sys
 from datetime import UTC, datetime
-from typing import Any, Sequence, cast
+from typing import Any, Sequence
 
 import uvloop
 from eth_utils.address import to_checksum_address
@@ -144,9 +144,7 @@ class Processor:
                 )
 
         # Remove duplicates from the list
-        unique_list = cast(
-            list[dict[str, str]], list(map(json.loads, set(map(json.dumps, tmp_list))))
-        )
+        unique_list = list(map(json.loads, set(map(json.dumps, tmp_list))))
         # Get a list of PersonalInfoContracts
         for item in unique_list:
             issuer_account = (
@@ -209,13 +207,11 @@ class Processor:
                     block_from, block_to
                 )
                 for event in register_event_list:
-                    args = cast(dict[str, Any], event["args"])
-                    account_address = cast(
-                        str, args.get("account_address", ZERO_ADDRESS)
-                    )
-                    link_address = cast(str, args.get("link_address", ZERO_ADDRESS))
+                    args = event["args"]
+                    account_address = args.get("account_address", ZERO_ADDRESS)
+                    link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
-                        block_number = cast(int, event["blockNumber"])
+                        block_number = event["blockNumber"]
                         block: BlockData = await web3.eth.get_block(block_number)
                         block_timestamp = block.get("timestamp")
                         assert block_timestamp is not None
@@ -248,13 +244,11 @@ class Processor:
                     block_from, block_to
                 )
                 for event in register_event_list:
-                    args = cast(dict[str, Any], event["args"])
-                    account_address = cast(
-                        str, args.get("account_address", ZERO_ADDRESS)
-                    )
-                    link_address = cast(str, args.get("link_address", ZERO_ADDRESS))
+                    args = event["args"]
+                    account_address = args.get("account_address", ZERO_ADDRESS)
+                    link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
-                        block_number = cast(int, event["blockNumber"])
+                        block_number = event["blockNumber"]
                         block: BlockData = await web3.eth.get_block(block_number)
                         block_timestamp = block.get("timestamp")
                         assert block_timestamp is not None

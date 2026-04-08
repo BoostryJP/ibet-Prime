@@ -194,10 +194,7 @@ def _build_contract_transaction(
     from_address: str,
 ) -> TxParams:
     contract_function = getattr(contract.functions, function_name)
-    return cast(
-        TxParams,
-        contract_function(*args).build_transaction(_build_tx_params(from_address)),
-    )
+    return contract_function(*args).build_transaction(_build_tx_params(from_address))
 
 
 class TestProcessor:

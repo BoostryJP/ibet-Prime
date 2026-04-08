@@ -282,25 +282,23 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, Any], event["args"])
-                    value = cast(int, args.get("value", 0))
+                    args = event["args"]
+                    value = args.get("value", 0)
                     if value > sys.maxsize:  # suppress overflow
                         pass
                     else:
                         block_timestamp = await self.__get_block_timestamp(event=event)
-                        application_id = cast(int, args.get("index", 0))
+                        application_id = args.get("index", 0)
                         await self.__sink_on_transfer_approval(
                             db_session=db_session,
                             event_type="ApplyFor",
                             token_address=token.address,
                             exchange_address=ZERO_ADDRESS,
                             application_id=application_id,
-                            from_address=cast(str, args.get("from", ZERO_ADDRESS)),
-                            to_address=cast(str, args.get("to", ZERO_ADDRESS)),
+                            from_address=args.get("from", ZERO_ADDRESS),
+                            to_address=args.get("to", ZERO_ADDRESS),
                             amount=value,
-                            optional_data_applicant=cast(
-                                Optional[str], args.get("data")
-                            ),
+                            optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp,
                         )
                         self.notification_events.append(
@@ -336,17 +334,17 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, Any], event["args"])
+                    args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
-                    application_id = cast(int, args.get("index", 0))
+                    application_id = args.get("index", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Cancel",
                         token_address=token.address,
                         exchange_address=ZERO_ADDRESS,
                         application_id=application_id,
-                        from_address=cast(str, args.get("from", ZERO_ADDRESS)),
-                        to_address=cast(str, args.get("to", ZERO_ADDRESS)),
+                        from_address=args.get("from", ZERO_ADDRESS),
+                        to_address=args.get("to", ZERO_ADDRESS),
                         block_timestamp=block_timestamp,
                     )
                     self.notification_events.append(
@@ -380,18 +378,18 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, Any], event["args"])
+                    args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
-                    application_id = cast(int, args.get("index", 0))
+                    application_id = args.get("index", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Approve",
                         token_address=token.address,
                         exchange_address=ZERO_ADDRESS,
                         application_id=application_id,
-                        from_address=cast(str, args.get("from", ZERO_ADDRESS)),
-                        to_address=cast(str, args.get("to", ZERO_ADDRESS)),
-                        optional_data_approver=cast(Optional[str], args.get("data")),
+                        from_address=args.get("from", ZERO_ADDRESS),
+                        to_address=args.get("to", ZERO_ADDRESS),
+                        optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp,
                     )
                     self.notification_events.append(
@@ -425,25 +423,23 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, Any], event["args"])
-                    value = cast(int, args.get("value", 0))
+                    args = event["args"]
+                    value = args.get("value", 0)
                     if value > sys.maxsize:  # suppress overflow
                         pass
                     else:
                         block_timestamp = await self.__get_block_timestamp(event=event)
-                        application_id = cast(int, args.get("escrowId", 0))
+                        application_id = args.get("escrowId", 0)
                         await self.__sink_on_transfer_approval(
                             db_session=db_session,
                             event_type="ApplyFor",
-                            token_address=cast(str, args.get("token", ZERO_ADDRESS)),
+                            token_address=args.get("token", ZERO_ADDRESS),
                             exchange_address=exchange.address,
                             application_id=application_id,
-                            from_address=cast(str, args.get("from", ZERO_ADDRESS)),
-                            to_address=cast(str, args.get("to", ZERO_ADDRESS)),
+                            from_address=args.get("from", ZERO_ADDRESS),
+                            to_address=args.get("to", ZERO_ADDRESS),
                             amount=value,
-                            optional_data_applicant=cast(
-                                Optional[str], args.get("data")
-                            ),
+                            optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp,
                         )
                         self.notification_events.append(
@@ -451,9 +447,7 @@ class Processor:
                                 "transaction_hash": event[
                                     "transactionHash"
                                 ].to_0x_hex(),
-                                "token_address": cast(
-                                    str, args.get("token", ZERO_ADDRESS)
-                                ),
+                                "token_address": args.get("token", ZERO_ADDRESS),
                                 "exchange_address": exchange.address,
                                 "application_id": application_id,
                                 "notice_code": 0,
@@ -481,23 +475,23 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, Any], event["args"])
+                    args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
-                    application_id = cast(int, args.get("escrowId", 0))
+                    application_id = args.get("escrowId", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Cancel",
-                        token_address=cast(str, args.get("token", ZERO_ADDRESS)),
+                        token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
                         application_id=application_id,
-                        from_address=cast(str, args.get("from", ZERO_ADDRESS)),
-                        to_address=cast(str, args.get("to", ZERO_ADDRESS)),
+                        from_address=args.get("from", ZERO_ADDRESS),
+                        to_address=args.get("to", ZERO_ADDRESS),
                         block_timestamp=block_timestamp,
                     )
                     self.notification_events.append(
                         {
                             "transaction_hash": event["transactionHash"].to_0x_hex(),
-                            "token_address": cast(str, args.get("token", ZERO_ADDRESS)),
+                            "token_address": args.get("token", ZERO_ADDRESS),
                             "exchange_address": exchange.address,
                             "application_id": application_id,
                             "notice_code": 1,
@@ -526,21 +520,21 @@ class Processor:
                     argument_filters={"transferApprovalRequired": True},
                 )
                 for event in events:
-                    args = cast(dict[str, Any], event["args"])
-                    application_id = cast(int, args.get("escrowId", 0))
+                    args = event["args"]
+                    application_id = args.get("escrowId", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="EscrowFinish",
-                        token_address=cast(str, args.get("token", ZERO_ADDRESS)),
+                        token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
                         application_id=application_id,
-                        from_address=cast(str, args.get("sender", ZERO_ADDRESS)),
-                        to_address=cast(str, args.get("recipient", ZERO_ADDRESS)),
+                        from_address=args.get("sender", ZERO_ADDRESS),
+                        to_address=args.get("recipient", ZERO_ADDRESS),
                     )
                     self.notification_events.append(
                         {
                             "transaction_hash": event["transactionHash"].to_0x_hex(),
-                            "token_address": cast(str, args.get("token", ZERO_ADDRESS)),
+                            "token_address": args.get("token", ZERO_ADDRESS),
                             "exchange_address": exchange.address,
                             "application_id": application_id,
                             "notice_code": 3,
@@ -568,22 +562,22 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, Any], event["args"])
+                    args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
-                    application_id = cast(int, args.get("escrowId", 0))
+                    application_id = args.get("escrowId", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Approve",
-                        token_address=cast(str, args.get("token", ZERO_ADDRESS)),
+                        token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
                         application_id=application_id,
-                        optional_data_approver=cast(Optional[str], args.get("data")),
+                        optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp,
                     )
                     self.notification_events.append(
                         {
                             "transaction_hash": event["transactionHash"].to_0x_hex(),
-                            "token_address": cast(str, args.get("token", ZERO_ADDRESS)),
+                            "token_address": args.get("token", ZERO_ADDRESS),
                             "exchange_address": exchange.address,
                             "application_id": application_id,
                             "notice_code": 2,

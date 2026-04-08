@@ -21,7 +21,6 @@ import base64
 import json
 import os
 from datetime import UTC, datetime
-from typing import cast
 
 import pytest
 from Crypto import Random
@@ -66,14 +65,14 @@ def processor(
 def _get_block_number(tx_receipt: TxReceipt) -> int:
     block_number = tx_receipt.get("blockNumber")
     assert block_number is not None
-    return cast(int, block_number)
+    return block_number
 
 
 def _get_timestamp(tx_receipt: TxReceipt) -> int:
     block = web3.eth.get_block(_get_block_number(tx_receipt))
     timestamp = block.get("timestamp")
     assert timestamp is not None
-    return cast(int, timestamp)
+    return timestamp
 
 
 def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:

@@ -209,10 +209,10 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, object], event["args"])
+                    args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
                     block_timestamp = await self.__get_block_timestamp(event)
-                    amount = cast(int, args["amount"])
+                    amount = args["amount"]
                     if amount > sys.maxsize:
                         pass
                     else:
@@ -221,8 +221,8 @@ class Processor:
                             event_type=IDXIssueRedeemEventType.ISSUE,
                             transaction_hash=transaction_hash,
                             token_address=to_checksum_address(token.address),
-                            locked_address=cast(str, args["lockAddress"]),
-                            target_address=cast(str, args["targetAddress"]),
+                            locked_address=args["lockAddress"],
+                            target_address=args["targetAddress"],
                             amount=amount,
                             block_timestamp=block_timestamp,
                         )
@@ -248,10 +248,10 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, object], event["args"])
+                    args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
                     block_timestamp = await self.__get_block_timestamp(event)
-                    amount = cast(int, args["amount"])
+                    amount = args["amount"]
                     if amount > sys.maxsize:
                         pass
                     else:
@@ -260,8 +260,8 @@ class Processor:
                             event_type=IDXIssueRedeemEventType.REDEEM,
                             transaction_hash=transaction_hash,
                             token_address=to_checksum_address(token.address),
-                            locked_address=cast(str, args["lockAddress"]),
-                            target_address=cast(str, args["targetAddress"]),
+                            locked_address=args["lockAddress"],
+                            target_address=args["targetAddress"],
                             amount=amount,
                             block_timestamp=block_timestamp,
                         )

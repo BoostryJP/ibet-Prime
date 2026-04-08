@@ -363,7 +363,7 @@ class Processor:
             )
 
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 from_account = str(args.get("from", ZERO_ADDRESS))
                 to_account = str(args.get("to", ZERO_ADDRESS))
                 amount = cast(int, args.get("value", 0))
@@ -410,10 +410,10 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 account_address = str(args.get("targetAddress", ZERO_ADDRESS))
                 lock_address = str(args.get("lockAddress", ZERO_ADDRESS))
-                amount = cast(int, args.get("amount", 0))
+                amount = args.get("amount", 0)
                 if lock_address == ZERO_ADDRESS:
                     if amount <= sys.maxsize:
                         # Update Balance
@@ -447,10 +447,10 @@ class Processor:
             )
 
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 account_address = str(args.get("targetAddress", ZERO_ADDRESS))
                 lock_address = str(args.get("lockAddress", ZERO_ADDRESS))
-                amount = cast(int, args.get("amount", 0))
+                amount = args.get("amount", 0)
                 if lock_address == ZERO_ADDRESS:
                     if amount <= sys.maxsize:
                         # Update Balance
@@ -483,9 +483,9 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 account_address = str(args.get("accountAddress", ZERO_ADDRESS))
-                amount = cast(int, args.get("value", 0))
+                amount = args.get("value", 0)
                 if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, amount=-amount, locked=+amount
@@ -515,9 +515,9 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 account_address = str(args.get("accountAddress", ZERO_ADDRESS))
-                amount = cast(int, args.get("value", 0))
+                amount = args.get("value", 0)
                 if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, amount=-amount, locked=+amount
@@ -547,10 +547,10 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 account_address = str(args.get("accountAddress", ZERO_ADDRESS))
                 recipient_address = str(args.get("recipientAddress", ZERO_ADDRESS))
-                amount = cast(int, args.get("value", 0))
+                amount = args.get("value", 0)
                 if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, locked=-amount
@@ -583,10 +583,10 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 account_address = str(args.get("accountAddress", ZERO_ADDRESS))
                 recipient_address = str(args.get("recipientAddress", ZERO_ADDRESS))
-                amount = cast(int, args.get("value", 0))
+                amount = args.get("value", 0)
                 if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, locked=-amount
@@ -621,14 +621,14 @@ class Processor:
                 block_to=block_to,
             )
             for event in events:
-                args = cast(dict[str, object], event["args"])
+                args = event["args"]
                 before_account_address = str(
                     args.get("beforeAccountAddress", ZERO_ADDRESS)
                 )
                 after_account_address = str(
                     args.get("afterAccountAddress", ZERO_ADDRESS)
                 )
-                amount = cast(int, args.get("value", 0))
+                amount = args.get("value", 0)
                 if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=before_account_address, locked=-amount

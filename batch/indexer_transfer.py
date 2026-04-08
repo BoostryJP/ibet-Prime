@@ -218,8 +218,8 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, object], event["args"])
-                    value = cast(int, args["value"])
+                    args = event["args"]
+                    value = args["value"]
                     if value > sys.maxsize:
                         # If the value is larger than sys.maxsize, skip processing
                         pass
@@ -245,8 +245,8 @@ class Processor:
                                 db_session=db_session,
                                 transaction_hash=transaction_hash,
                                 token_address=to_checksum_address(token.address),
-                                from_address=cast(str, args["from"]),
-                                to_address=cast(str, args["to"]),
+                                from_address=args["from"],
+                                to_address=args["to"],
                                 amount=value,
                                 source_event=IDXTransferSourceEventType.REALLOCATION,
                                 data_str=None,
@@ -257,8 +257,8 @@ class Processor:
                                 db_session=db_session,
                                 transaction_hash=transaction_hash,
                                 token_address=to_checksum_address(token.address),
-                                from_address=cast(str, args["from"]),
-                                to_address=cast(str, args["to"]),
+                                from_address=args["from"],
+                                to_address=args["to"],
                                 amount=value,
                                 source_event=IDXTransferSourceEventType.TRANSFER,
                                 data_str=None,
@@ -286,20 +286,16 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, object], event["args"])
+                    args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
                     block_timestamp = await self.__get_block_timestamp(event)
-                    value = cast(int, args["value"])
+                    value = args["value"]
                     if value > sys.maxsize:
                         pass
                     else:
-                        from_address = cast(
-                            str, args.get("accountAddress", ZERO_ADDRESS)
-                        )
-                        to_address = cast(
-                            str, args.get("recipientAddress", ZERO_ADDRESS)
-                        )
-                        data_str = cast(str, args.get("data", ""))
+                        from_address = args.get("accountAddress", ZERO_ADDRESS)
+                        to_address = args.get("recipientAddress", ZERO_ADDRESS)
+                        data_str = args.get("data", "")
                         if from_address != to_address:
                             await self.__sink_on_transfer(
                                 db_session=db_session,
@@ -334,20 +330,16 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, object], event["args"])
+                    args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
                     block_timestamp = await self.__get_block_timestamp(event)
-                    value = cast(int, args["value"])
+                    value = args["value"]
                     if value > sys.maxsize:
                         pass
                     else:
-                        from_address = cast(
-                            str, args.get("accountAddress", ZERO_ADDRESS)
-                        )
-                        to_address = cast(
-                            str, args.get("recipientAddress", ZERO_ADDRESS)
-                        )
-                        data_str = cast(str, args.get("data", ""))
+                        from_address = args.get("accountAddress", ZERO_ADDRESS)
+                        to_address = args.get("recipientAddress", ZERO_ADDRESS)
+                        data_str = args.get("data", "")
                         if from_address != to_address:
                             await self.__sink_on_transfer(
                                 db_session=db_session,
@@ -382,20 +374,16 @@ class Processor:
                     block_to=block_to,
                 )
                 for event in events:
-                    args = cast(dict[str, object], event["args"])
+                    args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
                     block_timestamp = await self.__get_block_timestamp(event)
-                    value = cast(int, args["value"])
+                    value = args["value"]
                     if value > sys.maxsize:
                         pass
                     else:
-                        from_address = cast(
-                            str, args.get("beforeAccountAddress", ZERO_ADDRESS)
-                        )
-                        to_address = cast(
-                            str, args.get("afterAccountAddress", ZERO_ADDRESS)
-                        )
-                        data_str = cast(str, args.get("data", ""))
+                        from_address = args.get("beforeAccountAddress", ZERO_ADDRESS)
+                        to_address = args.get("afterAccountAddress", ZERO_ADDRESS)
+                        data_str = args.get("data", "")
                         if from_address != to_address:
                             await self.__sink_on_transfer(
                                 db_session=db_session,
