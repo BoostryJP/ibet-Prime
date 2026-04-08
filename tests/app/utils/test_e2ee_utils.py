@@ -55,14 +55,14 @@ class TestE2EEUtils:
             "expiration_datetime": datetime.min,
         },
     )
-    def test_error_when_rsa_resource_mode_is_invalid(self):
+    def test_error_when_rsa_resource_mode_is_not_configured(self):
         with (
-            mock.patch("app.utils.e2ee_utils.E2EE_RSA_RESOURCE_MODE", "invalid"),
+            mock.patch("app.utils.e2ee_utils.E2EE_RSA_RESOURCE_MODE", None),
             mock.patch("app.utils.e2ee_utils.E2EE_RSA_RESOURCE", "dummy.pem"),
             mock.patch("app.utils.e2ee_utils.E2EE_RSA_PASSPHRASE", "password"),
         ):
             with pytest.raises(
-                ValueError, match="E2EE_RSA_RESOURCE_MODE must be an integer"
+                ValueError, match="E2EE_RSA_RESOURCE_MODE is not configured"
             ):
                 E2EEUtils.get_key()
 
@@ -78,6 +78,7 @@ def test_config_import_does_not_require_e2ee_env(monkeypatch: pytest.MonkeyPatch
         # without test or migration tooling already imported. This ensures the
         # test validates that E2EE env vars are not required merely because
         # pytest/alembic-specific import-time detection is unavailable.
+        context.delitem(sys.modules, "pytest", raising=False)
         context.delitem(sys.modules, "alembic", raising=False)
         context.delitem(sys.modules, "config", raising=False)
 
