@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import base64
 import importlib
 import sys
 from datetime import datetime
@@ -65,6 +66,54 @@ class TestE2EEUtils:
                 ValueError, match="E2EE_RSA_RESOURCE_MODE is not configured"
             ):
                 E2EEUtils.get_key()
+
+    @mock.patch(
+        "app.utils.e2ee_utils.E2EEUtils.cache",
+        {
+            "private_key": "cached-private-key",
+            "public_key": "cached-public-key",
+            "encrypted_length": 256,
+            "expiration_datetime": datetime.max,
+        },
+    )
+    def test_error_when_rsa_passphrase_is_not_configured_even_if_cache_is_warm(self):
+        with (
+            mock.patch("app.utils.e2ee_utils.E2EE_RSA_RESOURCE_MODE", 0),
+            mock.patch("app.utils.e2ee_utils.E2EE_RSA_RESOURCE", "dummy.pem"),
+            mock.patch("app.utils.e2ee_utils.E2EE_RSA_PASSPHRASE", None),
+        ):
+            with pytest.raises(
+                ValueError, match="E2EE_RSA_PASSPHRASE is not configured"
+            ):
+                E2EEUtils.get_key()
+
+    def test_decrypt_uses_validated_rsa_passphrase(self):
+        crypto_data = {"private_key": "dummy-private-key", "encrypted_length": None}
+        cipher = mock.MagicMock()
+        cipher.decrypt.return_value = b"decrypted"
+        validated_rsa_settings = (0, "dummy.pem", "validated-passphrase")
+        base64_encrypt_data = base64.b64encode(b"encrypted").decode()
+
+        with (
+            mock.patch("app.utils.e2ee_utils.E2EE_RSA_PASSPHRASE", None),
+            mock.patch(
+                "app.utils.e2ee_utils.E2EEUtils._E2EEUtils__get_rsa_settings",
+                return_value=validated_rsa_settings,
+            ),
+            mock.patch(
+                "app.utils.e2ee_utils.E2EEUtils._E2EEUtils__get_crypto_data",
+                return_value=crypto_data,
+            ) as mock_get_crypto_data,
+            mock.patch("app.utils.e2ee_utils.RSA.importKey") as mock_import_key,
+            mock.patch("app.utils.e2ee_utils.PKCS1_OAEP.new", return_value=cipher),
+        ):
+            assert E2EEUtils.decrypt(base64_encrypt_data) == "decrypted"
+
+        mock_get_crypto_data.assert_called_once_with()
+        mock_import_key.assert_called_once_with(
+            "dummy-private-key", passphrase="validated-passphrase"
+        )
+        cipher.decrypt.assert_called_once_with(b"encrypted")
 
 
 def test_config_import_does_not_require_e2ee_env(monkeypatch: pytest.MonkeyPatch):

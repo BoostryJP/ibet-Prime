@@ -70,12 +70,14 @@ class E2EEUtils:
         :param base64_encrypt_data: Base64-encoded encrypted data
         :return: Decrypted data
         """
+        rsa_settings = E2EEUtils.__get_rsa_settings()
         crypto_data = E2EEUtils.__get_crypto_data()
         private_key = cast(str | None, crypto_data.get("private_key"))
         if private_key is None:
             return base64_encrypt_data
 
-        rsa_key = RSA.importKey(private_key, passphrase=E2EE_RSA_PASSPHRASE)
+        _, _, rsa_passphrase = rsa_settings
+        rsa_key = RSA.importKey(private_key, passphrase=rsa_passphrase)
         cipher = PKCS1_OAEP.new(rsa_key)
 
         try:
@@ -135,6 +137,8 @@ class E2EEUtils:
                 }
             )
 
+        rsa_resource_mode, rsa_resource, rsa_passphrase = E2EEUtils.__get_rsa_settings()
+
         # Use Cache
         expiration_datetime = cast(
             datetime | None, E2EEUtils.cache.get("expiration_datetime")
@@ -143,8 +147,6 @@ class E2EEUtils:
             UTC
         ).replace(tzinfo=None):
             return E2EEUtils.cache
-
-        rsa_resource_mode, rsa_resource, rsa_passphrase = E2EEUtils.__get_rsa_settings()
 
         # Get Private Key
         private_key: str | None = None
