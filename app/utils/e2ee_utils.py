@@ -70,12 +70,14 @@ class E2EEUtils:
         :param base64_encrypt_data: Base64-encoded encrypted data
         :return: Decrypted data
         """
+        rsa_settings = E2EEUtils.__get_rsa_settings()
         crypto_data = E2EEUtils.__get_crypto_data()
         private_key = cast(str | None, crypto_data.get("private_key"))
         if private_key is None:
             return base64_encrypt_data
 
-        rsa_key = RSA.importKey(private_key, passphrase=E2EE_RSA_PASSPHRASE)
+        _, _, rsa_passphrase = rsa_settings
+        rsa_key = RSA.importKey(private_key, passphrase=rsa_passphrase)
         cipher = PKCS1_OAEP.new(rsa_key)
 
         try:
@@ -109,6 +111,21 @@ class E2EEUtils:
         )
 
     @staticmethod
+    def __get_rsa_settings() -> tuple[int, str, str]:
+        if E2EE_RSA_RESOURCE_MODE is None:
+            raise ValueError("E2EE_RSA_RESOURCE_MODE is not configured")
+        if E2EE_RSA_RESOURCE is None:
+            raise ValueError("E2EE_RSA_RESOURCE is not configured")
+        if E2EE_RSA_PASSPHRASE is None:
+            raise ValueError("E2EE_RSA_PASSPHRASE is not configured")
+
+        return (
+            E2EE_RSA_RESOURCE_MODE,
+            E2EE_RSA_RESOURCE,
+            E2EE_RSA_PASSPHRASE,
+        )
+
+    @staticmethod
     def __get_crypto_data() -> DictCache:
         if E2EEUtils.cache.get("expiration_datetime") is None:
             cast(Any, E2EEUtils.cache).update(
@@ -119,6 +136,8 @@ class E2EEUtils:
                     "expiration_datetime": datetime.min,
                 }
             )
+
+        rsa_resource_mode, rsa_resource, rsa_passphrase = E2EEUtils.__get_rsa_settings()
 
         # Use Cache
         expiration_datetime = cast(
@@ -131,21 +150,21 @@ class E2EEUtils:
 
         # Get Private Key
         private_key: str | None = None
-        if E2EE_RSA_RESOURCE_MODE == 0:
-            with open(E2EE_RSA_RESOURCE, "r") as f:
+        if rsa_resource_mode == 0:
+            with open(rsa_resource, "r") as f:
                 private_key = f.read()
-        elif E2EE_RSA_RESOURCE_MODE == 1:
+        elif rsa_resource_mode == 1:
             secrets_manager: Any = boto3.client(
                 service_name="secretsmanager", region_name=AWS_REGION_NAME
             )
-            result: Any = secrets_manager.get_secret_value(SecretId=E2EE_RSA_RESOURCE)
+            result: Any = secrets_manager.get_secret_value(SecretId=rsa_resource)
             private_key = cast(str | None, result.get("SecretString"))
 
         if private_key is None:
             raise ValueError("RSA private key is not configured")
 
         # Get Public Key
-        rsa_key = RSA.importKey(private_key, passphrase=E2EE_RSA_PASSPHRASE)
+        rsa_key = RSA.importKey(private_key, passphrase=rsa_passphrase)
 
         public_key = rsa_key.publickey().exportKey().decode()
 
