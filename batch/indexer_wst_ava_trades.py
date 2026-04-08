@@ -126,10 +126,15 @@ class Processor:
 
         wst_address_all: tuple[str, ...] = tuple(
             {
-                token.get_ibet_wst_address(IbetWSTBlockchain.AVALANCHE)
+                wst_address
                 for token in token_list
                 if token.is_ibet_wst_deployed(IbetWSTBlockchain.AVALANCHE)
-                and token.get_ibet_wst_address(IbetWSTBlockchain.AVALANCHE) is not None
+                if (
+                    wst_address := token.get_ibet_wst_address(
+                        IbetWSTBlockchain.AVALANCHE
+                    )
+                )
+                is not None
             }
         )
 
@@ -147,9 +152,9 @@ class Processor:
 
         for _token in token_list:
             wst_address = _token.get_ibet_wst_address(IbetWSTBlockchain.AVALANCHE)
-            if wst_address not in load_required_address_list:
-                continue
             if wst_address is None:
+                continue
+            if wst_address not in load_required_address_list:
                 continue
             wst = AvalancheIbetWST(wst_address)
             self.wst_list[wst_address] = AvaAsyncContractEventsView(
@@ -157,14 +162,15 @@ class Processor:
             )
 
     @staticmethod
-    async def get_finalized_block_number():
+    async def get_finalized_block_number() -> int:
         """Get the finalized block number
 
         :return: finalized block number
         """
         block = await AvaWeb3.eth.get_block("finalized")
         block_number = block.get("number")
-        return block_number
+        assert block_number is not None
+        return int(block_number)
 
     @staticmethod
     async def get_from_block_number(db_session: AsyncSession) -> int:

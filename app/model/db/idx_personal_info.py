@@ -126,7 +126,7 @@ class IDXPersonalInfoBlockNumber(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
-    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
+    latest_block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
 class PersonalInfoEventType(StrEnum):

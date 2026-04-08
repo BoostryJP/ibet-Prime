@@ -426,7 +426,7 @@ class IDXEthIbetWSTTradeBlockNumber(Base):
     # Record ID
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # Synchronized block number
-    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
+    latest_block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
 class IDXAvaIbetWSTTradeBlockNumber(Base):
@@ -437,7 +437,7 @@ class IDXAvaIbetWSTTradeBlockNumber(Base):
     # Record ID
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # Synchronized block number
-    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
+    latest_block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
 class IDXIbetWSTTradeState(StrEnum):

@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 from unittest import mock
 from unittest.mock import patch
 
@@ -28,7 +30,9 @@ from sqlalchemy import and_, select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import TxParams
 
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
@@ -42,6 +46,7 @@ from app.model.db import (
     NotificationType,
     Token,
     TokenCache,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -88,7 +93,9 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> Generator[Processor, None, None]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -99,12 +106,12 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 async def deploy_share_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -133,12 +140,12 @@ async def deploy_share_token_contract(
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -168,6 +175,31 @@ async def deploy_bond_token_contract(
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
+def _build_tx_params(from_address: str) -> TxParams:
+    return cast(
+        TxParams,
+        {
+            "chainId": CHAIN_ID,
+            "from": from_address,
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0,
+        },
+    )
+
+
+def _build_contract_transaction(
+    contract: Contract,
+    function_name: str,
+    args: tuple[Any, ...],
+    from_address: str,
+) -> TxParams:
+    contract_function = getattr(contract.functions, function_name)
+    return cast(
+        TxParams,
+        contract_function(*args).build_transaction(_build_tx_params(from_address)),
+    )
+
+
 class TestProcessor:
     ###########################################################################
     # Normal Case
@@ -179,7 +211,10 @@ class TestProcessor:
     # not issue token
     @pytest.mark.asyncio
     async def test_normal_1_1(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -208,7 +243,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -225,6 +260,7 @@ class TestProcessor:
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -234,7 +270,10 @@ class TestProcessor:
     # issued token
     @pytest.mark.asyncio
     async def test_normal_1_2(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -280,7 +319,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -306,6 +345,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100
@@ -316,6 +356,7 @@ class TestProcessor:
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -325,7 +366,10 @@ class TestProcessor:
     # - Issue
     @pytest.mark.asyncio
     async def test_normal_2_1(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -373,7 +417,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -407,12 +451,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -420,15 +466,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -438,7 +487,10 @@ class TestProcessor:
     # - Transfer(to account)
     @pytest.mark.asyncio
     async def test_normal_2_2_1(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -486,7 +538,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -513,6 +565,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 2
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -520,12 +573,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -533,15 +588,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -553,9 +611,9 @@ class TestProcessor:
     async def test_normal_2_2_2(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -604,7 +662,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -631,6 +689,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -638,15 +697,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 40
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -658,9 +720,9 @@ class TestProcessor:
     async def test_normal_2_2_3(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -711,7 +773,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -736,6 +798,7 @@ class TestProcessor:
 
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -743,6 +806,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -783,6 +847,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 2
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -790,12 +855,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -803,15 +870,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 0
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -821,7 +891,10 @@ class TestProcessor:
     # - Lock
     @pytest.mark.asyncio
     async def test_normal_2_3_1(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -867,7 +940,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -924,6 +997,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 60
@@ -943,6 +1017,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _locked_position is not None
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
@@ -1033,6 +1108,7 @@ class TestProcessor:
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -1042,7 +1118,10 @@ class TestProcessor:
     # - ForceLock
     @pytest.mark.asyncio
     async def test_normal_2_3_2(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1088,7 +1167,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -1123,6 +1202,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -1142,6 +1222,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _locked_position is not None
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
@@ -1184,6 +1265,7 @@ class TestProcessor:
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -1193,7 +1275,10 @@ class TestProcessor:
     # - Unlock
     @pytest.mark.asyncio
     async def test_normal_2_4_1(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1239,7 +1324,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -1272,6 +1357,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -1308,6 +1394,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40 + 30
@@ -1327,6 +1414,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _locked_position is not None
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
@@ -1399,6 +1487,7 @@ class TestProcessor:
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -1408,7 +1497,10 @@ class TestProcessor:
     # - ForceUnlock
     @pytest.mark.asyncio
     async def test_normal_2_4_2(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1454,7 +1546,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -1487,6 +1579,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -1527,6 +1620,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40 + 30
@@ -1546,6 +1640,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _locked_position is not None
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
@@ -1618,6 +1713,7 @@ class TestProcessor:
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -1627,7 +1723,10 @@ class TestProcessor:
     # - Redeem
     @pytest.mark.asyncio
     async def test_normal_2_5(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1673,7 +1772,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -1700,6 +1799,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -1707,15 +1807,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -1725,7 +1828,10 @@ class TestProcessor:
     # - ApplyForTransfer
     @pytest.mark.asyncio
     async def test_normal_2_6(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1779,7 +1885,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -1812,6 +1918,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -1819,15 +1926,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 40
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -1837,7 +1947,10 @@ class TestProcessor:
     # - CancelTransfer
     @pytest.mark.asyncio
     async def test_normal_2_7(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1891,7 +2004,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -1922,6 +2035,7 @@ class TestProcessor:
 
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -1929,6 +2043,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -1955,6 +2070,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -1962,15 +2078,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -1980,7 +2099,10 @@ class TestProcessor:
     # - ApproveTransfer
     @pytest.mark.asyncio
     async def test_normal_2_8(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -2034,7 +2156,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -2065,6 +2187,7 @@ class TestProcessor:
 
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2072,6 +2195,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -2098,6 +2222,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 2
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2105,12 +2230,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2118,15 +2245,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -2138,9 +2268,9 @@ class TestProcessor:
     async def test_normal_2_9_1(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_exchange_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_exchange_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -2196,7 +2326,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -2234,6 +2364,7 @@ class TestProcessor:
 
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2241,6 +2372,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -2269,6 +2401,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2276,15 +2409,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 30
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -2296,9 +2432,9 @@ class TestProcessor:
     async def test_normal_2_9_2(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_exchange_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
@@ -2408,6 +2544,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2415,12 +2552,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2428,12 +2567,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 30
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2441,15 +2582,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -2461,9 +2605,9 @@ class TestProcessor:
     async def test_normal_2_9_3(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_exchange_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
@@ -2576,6 +2720,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2583,12 +2728,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2596,12 +2743,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 30
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2609,15 +2758,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -2629,9 +2781,9 @@ class TestProcessor:
     async def test_normal_2_9_4(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_exchange_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
@@ -2744,6 +2896,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2751,12 +2904,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2764,12 +2919,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 20
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 10
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2777,15 +2934,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -2797,9 +2957,9 @@ class TestProcessor:
     async def test_normal_2_9_5(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_exchange_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
@@ -2921,6 +3081,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2928,12 +3089,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2941,12 +3104,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 20
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -2954,15 +3119,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 20
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -2974,9 +3142,9 @@ class TestProcessor:
     async def test_normal_2_9_6(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_exchange_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
@@ -3098,6 +3266,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3105,12 +3274,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3118,12 +3289,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 20
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 10
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3131,15 +3304,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -3151,9 +3327,9 @@ class TestProcessor:
     async def test_normal_2_10_1(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -3211,7 +3387,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -3249,6 +3425,7 @@ class TestProcessor:
 
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3256,6 +3433,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -3264,15 +3442,11 @@ class TestProcessor:
         assert _position.pending_transfer == 0
 
         # EscrowCreated
-        tx = ibet_security_token_escrow_contract.functions.createEscrow(
-            token_contract_1.address, user_address_1, 30, issuer_address, "", ""
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_escrow_contract,
+            "createEscrow",
+            (token_contract_1.address, user_address_1, 30, issuer_address, "", ""),
+            issuer_address,
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
@@ -3284,6 +3458,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3291,15 +3466,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 30
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -3311,11 +3489,11 @@ class TestProcessor:
     async def test_normal_2_10_2(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
-        escrow_contract = ibet_security_token_escrow_contract
+        escrow_contract: Contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -3424,6 +3602,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3431,12 +3610,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3444,12 +3625,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 0
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3457,15 +3640,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -3477,11 +3663,11 @@ class TestProcessor:
     async def test_normal_2_10_3(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
-        escrow_contract = ibet_security_token_escrow_contract
+        escrow_contract: Contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -3592,6 +3778,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3599,12 +3786,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3612,12 +3801,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 0
         assert _position.exchange_balance == 20
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3625,15 +3816,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 10
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -3645,9 +3839,9 @@ class TestProcessor:
     async def test_normal_2_11_1(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -3705,7 +3899,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -3743,6 +3937,7 @@ class TestProcessor:
 
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3750,6 +3945,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -3778,6 +3974,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 1
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3785,15 +3982,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 40 - 30
         assert _position.exchange_commitment == 30
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -3805,9 +4005,9 @@ class TestProcessor:
     async def test_normal_2_11_2(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -3920,6 +4120,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3927,12 +4128,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3940,12 +4143,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 0
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -3953,15 +4158,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -3973,9 +4181,9 @@ class TestProcessor:
     async def test_normal_2_11_3(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -4093,6 +4301,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4100,12 +4309,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4113,12 +4324,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 0
         assert _position.exchange_balance == 20
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4126,15 +4339,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 10
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -4146,9 +4362,9 @@ class TestProcessor:
     async def test_normal_2_11_4(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -4267,6 +4483,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4274,12 +4491,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4287,12 +4506,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 0
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4300,15 +4521,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -4318,7 +4542,10 @@ class TestProcessor:
     # - ForceChangeLockedAccount
     @pytest.mark.asyncio
     async def test_normal_2_12(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -4399,6 +4626,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert position_before_account is not None
         assert position_before_account.token_address == token_address_1
         assert position_before_account.account_address == issuer_address
         assert position_before_account.balance == 100 - 40
@@ -4418,6 +4646,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert locked_position_before_account is not None
         assert locked_position_before_account.token_address == token_address_1
         assert locked_position_before_account.lock_address == lock_account["address"]
         assert locked_position_before_account.account_address == issuer_address
@@ -4430,6 +4659,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert position_after_account is not None
         assert position_after_account.token_address == token_address_1
         assert position_after_account.account_address == after_locked_account["address"]
         assert position_after_account.balance == 0
@@ -4450,6 +4680,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert locked_position_after_account is not None
         assert locked_position_after_account.token_address == token_address_1
         assert locked_position_after_account.lock_address == lock_account["address"]
         assert (
@@ -4544,6 +4775,7 @@ class TestProcessor:
         idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert idx_position_share_block_number is not None
         assert idx_position_share_block_number.id == 1
         assert idx_position_share_block_number.latest_block_number == block_number
 
@@ -4553,7 +4785,10 @@ class TestProcessor:
     # - Transfer(twice)
     @pytest.mark.asyncio
     async def test_normal_3_1(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -4609,7 +4844,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = "abi"
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -4663,6 +4898,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4670,12 +4906,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4683,12 +4921,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 40 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4696,15 +4936,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -4714,7 +4957,10 @@ class TestProcessor:
     # - Transfer(BulkTransfer)
     @pytest.mark.asyncio
     async def test_normal_3_2(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -4847,6 +5093,7 @@ class TestProcessor:
 
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 5
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4854,12 +5101,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 60 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4867,12 +5116,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 11
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4880,12 +5131,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 22
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4893,12 +5146,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_3
         assert _position.balance == 33
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -4906,21 +5161,25 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_4
         assert _position.balance == 4
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -4933,9 +5192,9 @@ class TestProcessor:
     async def test_normal_3_3(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_exchange_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
@@ -5059,6 +5318,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5066,12 +5326,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5079,12 +5341,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 30
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5092,15 +5356,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -5113,9 +5380,9 @@ class TestProcessor:
     async def test_normal_3_4(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
@@ -5226,6 +5493,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 3
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5233,12 +5501,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5246,12 +5516,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 0
         assert _position.exchange_balance == 30
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5259,15 +5531,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -5277,9 +5552,9 @@ class TestProcessor:
     async def test_normal_4(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
@@ -5400,6 +5675,7 @@ class TestProcessor:
         # Assertion
         _position_list = (await async_db.scalars(select(IDXPosition))).all()
         assert len(_position_list) == 6
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5412,12 +5688,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 30 - 10
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5430,12 +5708,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_1
         assert _position.balance == 30
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5448,6 +5728,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_1
         assert _position.account_address == user_address_2
         assert _position.balance == 10
@@ -5466,12 +5747,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_2
         assert _position.account_address == issuer_address
         assert _position.balance == 0
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5484,12 +5767,14 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_2
         assert _position.account_address == user_address_1
         assert _position.balance == 40
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _position = (
             await async_db.scalars(
                 select(IDXPosition)
@@ -5502,15 +5787,18 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _position is not None
         assert _position.token_address == token_address_2
         assert _position.account_address == user_address_2
         assert _position.balance == 60
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
         _idx_position_share_block_number = (
             await async_db.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
+        assert _idx_position_share_block_number is not None
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
 
@@ -5520,7 +5808,10 @@ class TestProcessor:
     @mock.patch("web3.eth.Eth.block_number", 100)
     @pytest.mark.asyncio
     async def test_normal_5(
-        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         _idx_position_share_block_number = IDXPositionShareBlockNumber()
         _idx_position_share_block_number.id = 1
@@ -5541,9 +5832,9 @@ class TestProcessor:
     async def test_normal_6_1(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
@@ -5601,6 +5892,7 @@ class TestProcessor:
         }
 
         token_af = (await async_db.scalars(select(Token).limit(1))).first()
+        assert token_af is not None
         assert token_af.initial_position_synced is True
 
         # Prepare additional token
@@ -5639,9 +5931,9 @@ class TestProcessor:
     async def test_normal_6_2(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
@@ -5700,9 +5992,9 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(
         self,
-        main_func,
-        async_db,
-        ibet_personal_info_contract,
+        main_func,  # type: ignore
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")

@@ -19,9 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import sys
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence, TypedDict, cast
 
 import uvloop
+from eth_utils.address import to_checksum_address
 from sqlalchemy import and_, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +55,14 @@ LOG = batch_log.get_logger(process_name=process_name)
 web3 = AsyncWeb3Wrapper()
 
 
+class TransferEventRecord(TypedDict):
+    event: str
+    args: dict[str, str | int]
+    transaction_hash: str
+    block_number: int
+    log_index: int
+
+
 class Processor:
     """Processor for collecting Token Holders at given block number and token."""
 
@@ -71,8 +80,9 @@ class Processor:
                 token_holder.locked_balance = 0 + locked
                 self.pages[account_address] = token_holder
             else:
-                self.pages[account_address].hold_balance += amount
-                self.pages[account_address].locked_balance += locked
+                page = self.pages[account_address]
+                page.hold_balance = (page.hold_balance or 0) + amount
+                page.locked_balance = (page.locked_balance or 0) + locked
 
     target: Optional[TokenHoldersList]
     balance_book: BalanceBook
@@ -104,13 +114,17 @@ class Processor:
         return True if self.target else False
 
     async def __load_token_info(self, db_session: AsyncSession) -> bool:
+        target = self.target
+        assert target is not None
+        token_address = target.token_address
+
         # Fetch token list information from DB
         issued_token: Optional[Token] = (
             await db_session.scalars(
                 select(Token)
                 .where(
                     and_(
-                        Token.token_address == self.target.token_address,
+                        Token.token_address == token_address,
                         Token.token_status == TokenStatus.SUCCEEDED,
                     )
                 )
@@ -122,17 +136,17 @@ class Processor:
         self.token_owner_address = issued_token.issuer_address
         token_type = issued_token.type
         # Store token contract.
-        if token_type == TokenType.IBET_STRAIGHT_BOND.value:
+        if token_type == TokenType.IBET_STRAIGHT_BOND:
             self.token_contract = AsyncContractUtils.get_contract(
-                "IbetStraightBond", self.target.token_address
+                "IbetStraightBond", token_address
             )
-            token_cache = IbetStraightBondContract(self.target.token_address)
+            token_cache = IbetStraightBondContract(token_address)
             await token_cache.get()
-        elif token_type == TokenType.IBET_SHARE.value:
+        elif token_type == TokenType.IBET_SHARE:
             self.token_contract = AsyncContractUtils.get_contract(
-                "IbetShare", self.target.token_address
+                "IbetShare", token_address
             )
-            token_cache = IbetShareContract(self.target.token_address)
+            token_cache = IbetShareContract(token_address)
             await token_cache.get()
         else:
             return False
@@ -173,8 +187,8 @@ class Processor:
             for holder in _holders:
                 self.balance_book.store(
                     account_address=holder.account_address,
-                    amount=holder.hold_balance,
-                    locked=holder.locked_balance,
+                    amount=holder.hold_balance or 0,
+                    locked=holder.locked_balance or 0,
                 )
             block_from = _checkpoint.block_number + 1
             return block_from
@@ -191,9 +205,12 @@ class Processor:
                 await self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
                 await local_session.commit()
                 return
-            _target_block = self.target.block_number
+            target = self.target
+            assert target is not None
+
+            _target_block = target.block_number
             _from_block = await self.__load_checkpoint(
-                local_session, self.target.token_address, block_to=_target_block
+                local_session, target.token_address, block_to=_target_block
             )
             _to_block = INDEXER_BLOCK_LOT_MAX_SIZE - 1 + _from_block
 
@@ -231,22 +248,25 @@ class Processor:
     async def __update_status(
         self, local_session: AsyncSession, status: TokenHolderBatchStatus
     ):
+        target = self.target
+        assert target is not None
+
         if status == TokenHolderBatchStatus.DONE:
             # Not to store non-holders
             await local_session.execute(
                 delete(TokenHolder).where(
                     and_(
-                        TokenHolder.holder_list_id == self.target.id,
+                        TokenHolder.holder_list_id == target.id,
                         TokenHolder.hold_balance == 0,
                         TokenHolder.locked_balance == 0,
                     )
                 )
             )
 
-        self.target.batch_status = status.value
-        await local_session.merge(self.target)
+        target.batch_status = status
+        await local_session.merge(target)
         LOG.info(
-            f"Token holder list({self.target.list_id}) status changes to be {status.value}."
+            f"Token holder list({target.list_id}) status changes to be {status.value}."
         )
 
         self.target = None
@@ -261,6 +281,8 @@ class Processor:
         self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         LOG.info("syncing from={}, to={}".format(block_from, block_to))
+        target = self.target
+        assert target is not None
 
         await self.__process_transfer(block_from, block_to)
         await self.__process_issue(block_from, block_to)
@@ -274,8 +296,8 @@ class Processor:
         await self.__save_holders(
             db_session,
             self.balance_book,
-            self.target.id,
-            self.target.token_address,
+            target.id,
+            target.token_address,
             self.token_owner_address,
         )
 
@@ -291,17 +313,22 @@ class Processor:
         :return: None
         """
         try:
-            tmp_events = []
+            exchange_contract = self.exchange_contract
+            token_contract = self.token_contract
+            assert exchange_contract is not None
+            assert token_contract is not None
+
+            tmp_events: list[TransferEventRecord] = []
             # Get "HolderChanged" events from exchange contract
             holder_changed_events = await AsyncContractUtils.get_event_logs(
-                contract=self.exchange_contract,
+                contract=exchange_contract,
                 event="HolderChanged",
                 block_from=block_from,
                 block_to=block_to,
-                argument_filters={"token": self.token_contract.address},
+                argument_filters={"token": token_contract.address},
             )
             for _event in holder_changed_events:
-                if self.token_contract.address == _event["args"]["token"]:
+                if token_contract.address == _event["args"]["token"]:
                     tmp_events.append(
                         {
                             "event": _event["event"],
@@ -314,7 +341,7 @@ class Processor:
 
             # Get "Transfer" events from token contract
             token_transfer_events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="Transfer",
                 block_from=block_from,
                 block_to=block_to,
@@ -331,23 +358,25 @@ class Processor:
                 )
 
             # Marge & Sort: block_number > log_index
-            events = sorted(
+            events: list[TransferEventRecord] = sorted(
                 tmp_events, key=lambda x: (x["block_number"], x["log_index"])
             )
 
             for event in events:
-                args = event["args"]
-                from_account = args.get("from", ZERO_ADDRESS)
-                to_account = args.get("to", ZERO_ADDRESS)
-                amount = int(args.get("value"))
+                args = cast(dict[str, object], event["args"])
+                from_account = str(args.get("from", ZERO_ADDRESS))
+                to_account = str(args.get("to", ZERO_ADDRESS))
+                amount = cast(int, args.get("value", 0))
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if (await web3.eth.get_code(from_account)).to_0x_hex() != "0x" or (
-                    await web3.eth.get_code(to_account)
+                if (
+                    await web3.eth.get_code(to_checksum_address(from_account))
+                ).to_0x_hex() != "0x" or (
+                    await web3.eth.get_code(to_checksum_address(to_account))
                 ).to_0x_hex() != "0x":
                     continue
 
-                if amount is not None and amount <= sys.maxsize:
+                if amount <= sys.maxsize:
                     # Update Balance（from account）
                     self.balance_book.store(
                         account_address=from_account, amount=-amount
@@ -370,20 +399,23 @@ class Processor:
         :return: None
         """
         try:
+            token_contract = self.token_contract
+            assert token_contract is not None
+
             # Get "Issue" events from token contract
             events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="Issue",
                 block_from=block_from,
                 block_to=block_to,
             )
             for event in events:
-                args = event["args"]
-                account_address = args.get("targetAddress", ZERO_ADDRESS)
-                lock_address = args.get("lockAddress", ZERO_ADDRESS)
-                amount = args.get("amount")
+                args = cast(dict[str, object], event["args"])
+                account_address = str(args.get("targetAddress", ZERO_ADDRESS))
+                lock_address = str(args.get("lockAddress", ZERO_ADDRESS))
+                amount = cast(int, args.get("amount", 0))
                 if lock_address == ZERO_ADDRESS:
-                    if amount is not None and amount <= sys.maxsize:
+                    if amount <= sys.maxsize:
                         # Update Balance
                         self.balance_book.store(
                             account_address=account_address, amount=+amount
@@ -403,21 +435,24 @@ class Processor:
         :return: None
         """
         try:
+            token_contract = self.token_contract
+            assert token_contract is not None
+
             # Get "Redeem" events from token contract
             events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="Redeem",
                 block_from=block_from,
                 block_to=block_to,
             )
 
             for event in events:
-                args = event["args"]
-                account_address = args.get("targetAddress", ZERO_ADDRESS)
-                lock_address = args.get("lockAddress", ZERO_ADDRESS)
-                amount = args.get("amount")
+                args = cast(dict[str, object], event["args"])
+                account_address = str(args.get("targetAddress", ZERO_ADDRESS))
+                lock_address = str(args.get("lockAddress", ZERO_ADDRESS))
+                amount = cast(int, args.get("amount", 0))
                 if lock_address == ZERO_ADDRESS:
-                    if amount is not None and amount <= sys.maxsize:
+                    if amount <= sys.maxsize:
                         # Update Balance
                         self.balance_book.store(
                             account_address=account_address, amount=-amount
@@ -437,18 +472,21 @@ class Processor:
         :return: None
         """
         try:
+            token_contract = self.token_contract
+            assert token_contract is not None
+
             # Get "Lock" events from token contract
             events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="Lock",
                 block_from=block_from,
                 block_to=block_to,
             )
             for event in events:
-                args = event["args"]
-                account_address = args.get("accountAddress", ZERO_ADDRESS)
-                amount = args.get("value")
-                if amount is not None and amount <= sys.maxsize:
+                args = cast(dict[str, object], event["args"])
+                account_address = str(args.get("accountAddress", ZERO_ADDRESS))
+                amount = cast(int, args.get("value", 0))
+                if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, amount=-amount, locked=+amount
                     )
@@ -466,18 +504,21 @@ class Processor:
         :return: None
         """
         try:
+            token_contract = self.token_contract
+            assert token_contract is not None
+
             # Get "Lock" events from token contract
             events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="ForceLock",
                 block_from=block_from,
                 block_to=block_to,
             )
             for event in events:
-                args = event["args"]
-                account_address = args.get("accountAddress", ZERO_ADDRESS)
-                amount = args.get("value")
-                if amount is not None and amount <= sys.maxsize:
+                args = cast(dict[str, object], event["args"])
+                account_address = str(args.get("accountAddress", ZERO_ADDRESS))
+                amount = cast(int, args.get("value", 0))
+                if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, amount=-amount, locked=+amount
                     )
@@ -495,19 +536,22 @@ class Processor:
         :return: None
         """
         try:
+            token_contract = self.token_contract
+            assert token_contract is not None
+
             # Get "Unlock" events from token contract
             events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="Unlock",
                 block_from=block_from,
                 block_to=block_to,
             )
             for event in events:
-                args = event["args"]
-                account_address = args.get("accountAddress", ZERO_ADDRESS)
-                recipient_address = args.get("recipientAddress", ZERO_ADDRESS)
-                amount = args.get("value")
-                if amount is not None and amount <= sys.maxsize:
+                args = cast(dict[str, object], event["args"])
+                account_address = str(args.get("accountAddress", ZERO_ADDRESS))
+                recipient_address = str(args.get("recipientAddress", ZERO_ADDRESS))
+                amount = cast(int, args.get("value", 0))
+                if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, locked=-amount
                     )
@@ -528,19 +572,22 @@ class Processor:
         :return: None
         """
         try:
+            token_contract = self.token_contract
+            assert token_contract is not None
+
             # Get "ForceUnlock" events from token contract
             events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="ForceUnlock",
                 block_from=block_from,
                 block_to=block_to,
             )
             for event in events:
-                args = event["args"]
-                account_address = args.get("accountAddress", ZERO_ADDRESS)
-                recipient_address = args.get("recipientAddress", ZERO_ADDRESS)
-                amount = args.get("value")
-                if amount is not None and amount <= sys.maxsize:
+                args = cast(dict[str, object], event["args"])
+                account_address = str(args.get("accountAddress", ZERO_ADDRESS))
+                recipient_address = str(args.get("recipientAddress", ZERO_ADDRESS))
+                amount = cast(int, args.get("value", 0))
+                if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=account_address, locked=-amount
                     )
@@ -563,19 +610,26 @@ class Processor:
         :return: None
         """
         try:
+            token_contract = self.token_contract
+            assert token_contract is not None
+
             # Get "ForceChangeLockedAccount" events from token contract
             events = await AsyncContractUtils.get_event_logs(
-                contract=self.token_contract,
+                contract=token_contract,
                 event="ForceChangeLockedAccount",
                 block_from=block_from,
                 block_to=block_to,
             )
             for event in events:
-                args = event["args"]
-                before_account_address = args.get("beforeAccountAddress", ZERO_ADDRESS)
-                after_account_address = args.get("afterAccountAddress", ZERO_ADDRESS)
-                amount = args.get("value")
-                if amount is not None and amount <= sys.maxsize:
+                args = cast(dict[str, object], event["args"])
+                before_account_address = str(
+                    args.get("beforeAccountAddress", ZERO_ADDRESS)
+                )
+                after_account_address = str(
+                    args.get("afterAccountAddress", ZERO_ADDRESS)
+                )
+                amount = cast(int, args.get("value", 0))
+                if amount <= sys.maxsize:
                     self.balance_book.store(
                         account_address=before_account_address, locked=-amount
                     )
@@ -615,7 +669,7 @@ class Processor:
                 token_holder.hold_balance = page.hold_balance
                 token_holder.locked_balance = page.locked_balance
                 await db_session.merge(token_holder)
-            elif page.hold_balance > 0 or page.locked_balance > 0:
+            elif (page.hold_balance or 0) > 0 or (page.locked_balance or 0) > 0:
                 LOG.debug(
                     f"Collection record created : token_address={token_address}, account_address={account_address}"
                 )
